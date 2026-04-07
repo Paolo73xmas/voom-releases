@@ -1,22 +1,37 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "VOOM Sales",
+    "slug": "voom-sales",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "voom-sales",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.voom.sales",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Per registrare visite e ispezioni",
+        "NSLocationAlwaysUsageDescription": "Per il tracking GPS sul campo",
+        "NSCameraUsageDescription": "Per scattare foto durante le ispezioni",
+        "NSPhotoLibraryUsageDescription": "Per selezionare foto dalla galleria"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#1E40AF"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.voom.sales",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -31,7 +46,15 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#000"
+          "backgroundColor": "#1E40AF"
+        }
+      ],
+      "expo-location",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Per allegare foto alle ispezioni",
+          "cameraPermission": "Per scattare foto durante le visite"
         }
       ]
     ],

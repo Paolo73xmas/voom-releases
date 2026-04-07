@@ -1,0 +1,130 @@
+import { supabase } from '../supabase';
+import { Tabaccheria } from '../../types';
+
+function parseCoordinate(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined) return null;
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  return isNaN(num) ? null : num;
+}
+
+function isValidCoordinate(lat: number | null, lng: number | null): boolean {
+  if (lat === null || lng === null) return false;
+  if (lat < -90 || lat > 90) return false;
+  if (lng < -180 || lng > 180) return false;
+  if (lat === 0 && lng === 0) return false;
+  return true;
+}
+
+export async function fetchTabaccherieInBounds(
+  bounds: { north: number; south: number; east: number; west: number },
+  userId?: string,
+  userRole?: string
+): Promise<Tabaccheria[]> {
+  try {
+    console.log('[tabaccherie] Fetching in bounds:', bounds);
+
+    const { data, error } = await supabase
+      .from('tabaccherie')
+      .select(`
+        id,
+        denominazione,
+        indirizzo,
+        comune,
+        provincia,
+        cap,
+        gps_lat,
+        gps_lng,
+        customer_id,
+        agente_id,
+        stato_visita
+      `)
+      .gte('gps_lat', bounds.south.toString())
+      .lte('gps_lat', bounds.north.toString())
+      .gte('gps_lng', bounds.west.toString())
+      .lte('gps_lng', bounds.east.toString())
+      .limit(2000);
+
+    if (error) throw error;
+    if (!data) return [];
+
+    const validResults: Tabaccheria[] = [];
+
+    data.forEach((tab: any) => {
+      const lat = parseCoordinate(tab.gps_lat);
+      const lng = parseCoordinate(tab.gps_lng);
+
+      if (!isValidCoordinate(lat, lng)) return;
+
+      validResults.push({
+        id: tab.id,
+        denominazione: tab.denominazione || '',
+        indirizzo: tab.indirizzo || '',
+        comune: tab.comune || '',
+        provincia: tab.provincia || '',
+        cap: tab.cap || '',
+        gps_lat: tab.gps_lat?.toString() || '',
+        gps_lng: tab.gps_lng?.toString() || '',
+        latitude: lat,
+        longitude: lng,
+        customer_id: tab.customer_id,
+        agente_id: tab.agente_id,
+        stato_visita: tab.stato_visita,
+      });
+    });
+
+    console.log('[tabaccherie] Returning', validResults.length, 'valid points');
+    return validResults;
+  } catch (error) {
+    console.error('[tabaccherie] Error:', error);
+    throw error;
+  }
+}
+
+export async function searchTabaccherie(query: string): Promise<Tabaccheria[]> {
+  if (!query || query.length < 2) return [];
+
+  try {
+    const searchTerm = `%${query}%`;
+
+    const { data, error } = await supabase
+      .from('tabaccherie')
+      .select('*')
+      .or(`denominazione.ilike.${searchTerm},indirizzo.ilike.${searchTerm},comune.ilike.${searchTerm}`)
+      .limit(50);
+
+    if (error) throw error;
+
+    return (data || []).map((tab: any) => ({
+      ...tab,
+      latitude: parseCoordinate(tab.gps_lat),
+      longitude: parseCoordinate(tab.gps_lng),
+    }));
+  } catch (error) {
+    console.error('[searchTabaccherie] Error:', error);
+    throw error;
+  }
+}
+
+export function getStatusColor(status: string | null | undefined): string {
+  switch (status) {
+    case 'ordinato':
+      return '#10B981'; // Green
+    case 'visitato':
+      return '#3B82F6'; // Blue
+    case 'non_visitato':
+    default:
+      return '#EF4444'; // Red
+  }
+}
+
+export function getStatusLabel(status: string | null | undefined): string {
+  switch (status) {
+    case 'ordinato':
+      return 'Ordinato';
+    case 'visitato':
+      return 'Visitato';
+    case 'non_visitato':
+    default:
+      return 'Non Visitato';
+  }
+}

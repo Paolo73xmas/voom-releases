@@ -124,6 +124,8 @@ export interface Product {
   iva_percentage: number;
   image_url?: string;
   is_active: boolean;
+  cashback_eligible?: boolean;
+  estero?: boolean;
 }
 
 export interface Inspection {

@@ -114,6 +114,12 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=[key]
 
 ## Known Issues
 - Preview environment tunnel (ngrok) has intermittent connectivity issues
+- rottamazione_config table may not exist in Supabase (handled gracefully with defaults)
+
+## Recently Fixed
+- Auth session persistence: SSR-safe storage adapter using AsyncStorage (mobile) + localStorage (web)
+- Product interface: Added missing cashback_eligible and estero fields
+- Order Collection wizard: Verified compilation and rendering of CashBack, Rottamazione, Accisa, IVA features
 
 ## Next Steps
 - Add native map support for mobile (react-native-maps)

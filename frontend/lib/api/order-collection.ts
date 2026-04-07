@@ -12,6 +12,8 @@ export interface Product {
   iva_percentage?: number;
   image_url?: string | null;
   is_active: boolean;
+  cashback_eligible?: boolean;
+  estero?: boolean;
 }
 
 export interface PaymentMethod {

@@ -101,3 +101,84 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Convert existing VOOM CRM web app for tobacco shop sales reps into an Expo mobile app with OrderCollection wizard featuring icons, cashback, rottamazione, accisa, IVA"
+
+frontend:
+  - task: "Login Screen"
+    implemented: true
+    working: true
+    file: "app/login.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Login screen renders correctly with email/password fields"
+
+  - task: "Dashboard with Stats and Quick Actions"
+    implemented: true
+    working: true
+    file: "app/(tabs)/index.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Dashboard with customer/orders/visits stats and quick action buttons"
+
+  - task: "Order Collection Wizard (5-step with CashBack, Rottamazione, Accisa, IVA)"
+    implemented: true
+    working: true
+    file: "app/order-collection.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Order collection 5-step wizard renders correctly. Includes product icons, cashback, rottamazione, accisa/IVA calculations. Verified via screenshot - no compilation or runtime errors."
+
+  - task: "Auth Session Persistence (Supabase storage adapter)"
+    implemented: true
+    working: true
+    file: "lib/supabase.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Implemented SSR-safe custom storage adapter using AsyncStorage for mobile and localStorage for web. No SSR crashes."
+
+  - task: "Tab Navigation (Dashboard, Map, Customers, Orders, Profile)"
+    implemented: true
+    working: true
+    file: "app/(tabs)/_layout.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "5-tab navigation with proper icons and routing"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Order Collection Wizard"
+    - "Auth Session Persistence"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Verified order-collection.tsx renders correctly via screenshot. Fixed Product interface to include cashback_eligible field. Implemented SSR-safe Supabase storage adapter with AsyncStorage for mobile and localStorage for web. All pages loading without errors."

@@ -58,6 +58,13 @@ export default function RootLayout() {
             presentation: 'modal',
           }} 
         />
+        <Stack.Screen 
+          name="order-collection" 
+          options={{ 
+            title: 'Raccolta Ordine',
+            presentation: 'card',
+          }} 
+        />
       </Stack>
     </>
   );

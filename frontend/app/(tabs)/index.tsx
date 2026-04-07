@@ -58,6 +58,12 @@ export default function Dashboard() {
 
   const quickActions = [
     {
+      title: 'Raccolta Ordine',
+      icon: 'cart',
+      color: '#1E40AF',
+      onPress: () => router.push('/order-collection'),
+    },
+    {
       title: 'Nuova Visita',
       icon: 'location',
       color: '#10B981',
@@ -74,12 +80,6 @@ export default function Dashboard() {
       icon: 'map',
       color: '#3B82F6',
       onPress: () => router.push('/(tabs)/map'),
-    },
-    {
-      title: 'Vedi Clienti',
-      icon: 'people',
-      color: '#F59E0B',
-      onPress: () => router.push('/(tabs)/customers'),
     },
   ];
 

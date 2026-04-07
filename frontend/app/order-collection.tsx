@@ -109,7 +109,7 @@ export default function OrderCollectionScreen() {
     loadInitialData();
     loadRottamazioneConfig();
     getLocation();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (params.customerId) {

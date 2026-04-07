@@ -15,8 +15,8 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { useAuthStore } from '../../store/authStore';
-import { fetchCustomers, fetchCustomerById } from '../../lib/api/customers';
+import { useAuthStore } from '../store/authStore';
+import { fetchCustomers, fetchCustomerById } from '../lib/api/customers';
 import { 
   fetchProducts, 
   fetchPaymentMethods, 
@@ -25,8 +25,8 @@ import {
   Product,
   PaymentMethod,
   ShippingMethod,
-} from '../../lib/api/order-collection';
-import { Customer } from '../../types';
+} from '../lib/api/order-collection';
+import { Customer } from '../types';
 
 interface CartItem {
   product: Product;

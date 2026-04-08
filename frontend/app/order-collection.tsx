@@ -238,7 +238,7 @@ export default function OrderCollectionScreen() {
 
           const validItems = (items || []).filter((i: any) => i.products);
           const totalPieces = validItems.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0);
-          const totalPrice = validItems.reduce((sum: number, i: any) => sum + ((i.unit_price || i.products.unit_price || 0) * (i.quantity || 0)), 0);
+          const totalPrice = validItems.reduce((sum: number, i: any) => sum + (((i.unit_price ?? i.products.unit_price) ?? 0) * (i.quantity || 0)), 0);
 
           return {
             ...pkg,
@@ -267,7 +267,7 @@ export default function OrderCollectionScreen() {
         id: item.products.id || item.product_id,
       },
       quantity: item.quantity,
-      unit_price: item.unit_price || item.products.unit_price,
+      unit_price: (item.unit_price ?? item.products.unit_price) ?? 0,
     }));
 
     let updatedCart = [...cart];
@@ -1331,7 +1331,7 @@ export default function OrderCollectionScreen() {
                               {item.products?.short_description || item.products?.name || 'Prodotto'}
                             </Text>
                             <Text style={styles.packageItemPrice}>
-                              {formatCurrency(item.unit_price || item.products?.unit_price || 0)}
+                              {formatCurrency((item.unit_price ?? item.products?.unit_price) ?? 0)}
                             </Text>
                           </View>
                         ))}

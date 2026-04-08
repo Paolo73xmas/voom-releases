@@ -287,15 +287,29 @@ export default function OrderCollectionScreen() {
 
   // Cart functions
   const addMultipleToCart = (product: Product, count: number) => {
+    const stock = product.stock_quantity || 0;
     const existing = cart.find(item => item.product.id === product.id);
+    const currentQty = existing ? existing.quantity : 0;
+    const maxAddable = stock - currentQty;
+    
+    if (maxAddable <= 0) {
+      Alert.alert('Stock esaurito', `Nessun pezzo disponibile per "${product.short_description || product.name}" (magazzino: ${stock})`);
+      return;
+    }
+    
+    const actualCount = Math.min(count, maxAddable);
+    if (actualCount < count) {
+      Alert.alert('Limite magazzino', `Aggiunti ${actualCount} pz invece di ${count} (max disponibile: ${stock})`);
+    }
+
     if (existing) {
       setCart(cart.map(item =>
         item.product.id === product.id
-          ? { ...item, quantity: item.quantity + count }
+          ? { ...item, quantity: item.quantity + actualCount }
           : item
       ));
     } else {
-      setCart([...cart, { product, quantity: count, unit_price: product.unit_price }]);
+      setCart([...cart, { product, quantity: actualCount, unit_price: product.unit_price }]);
     }
   };
 
@@ -535,10 +549,14 @@ export default function OrderCollectionScreen() {
     );
   });
 
-  // Render product row - compact list layout with small icon, name+price, accisa, +1, +10
+  // Render product row - compact list layout
   const renderProductRow = ({ item }: { item: Product }) => {
     const inCart = cart.find(c => c.product.id === item.id);
     const hasImage = item.image_url && item.image_url.trim() !== '';
+    const stock = item.stock_quantity || 0;
+    const cartQty = inCart ? inCart.quantity : 0;
+    const canAdd1 = cartQty + 1 <= stock;
+    const canAdd10 = cartQty + 10 <= stock;
     
     return (
       <View style={[styles.productRow, inCart && styles.productRowInCart]}>
@@ -565,37 +583,51 @@ export default function OrderCollectionScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Name + Price */}
+        {/* Name + Price + Accisa (stacked) */}
         <View style={styles.productRowInfo}>
           <Text style={styles.productRowName} numberOfLines={1}>
             {item.short_description || item.name}
           </Text>
-          <Text style={styles.productRowPrice}>{formatCurrency(item.unit_price)}</Text>
+          <View style={styles.productRowPriceRow}>
+            <Text style={styles.productRowPrice}>{formatCurrency(item.unit_price)}</Text>
+            {(item.accisa || 0) > 0 && (
+              <Text style={styles.productRowAccisaInline}>+{formatCurrency(item.accisa || 0)} acc.</Text>
+            )}
+          </View>
         </View>
 
-        {/* Accisa */}
-        <View style={styles.productRowAccisaWrap}>
-          {(item.accisa || 0) > 0 ? (
-            <Text style={styles.productRowAccisa}>+{formatCurrency(item.accisa || 0)}</Text>
-          ) : (
-            <Text style={styles.productRowAccisaEmpty}>—</Text>
-          )}
+        {/* Stock Quantity (where accisa was) */}
+        <View style={[styles.stockBadge, stock <= 0 && styles.stockBadgeEmpty, stock > 0 && stock <= 20 && styles.stockBadgeLow]}>
+          <Text style={[styles.stockBadgeText, stock <= 0 && styles.stockBadgeTextEmpty]}>{stock}</Text>
         </View>
 
         {/* +1 Button */}
         <TouchableOpacity 
-          style={styles.addOneBtn} 
-          onPress={() => addMultipleToCart(item, 1)}
+          style={[styles.addOneBtn, !canAdd1 && styles.addBtnDisabled]} 
+          onPress={() => canAdd1 && addMultipleToCart(item, 1)}
+          disabled={!canAdd1}
         >
-          <Text style={styles.addOneBtnText}>+1</Text>
+          <Text style={[styles.addOneBtnText, !canAdd1 && styles.addBtnTextDisabled]}>+1</Text>
         </TouchableOpacity>
 
         {/* +10 Button */}
         <TouchableOpacity 
-          style={styles.addTenBtn} 
-          onPress={() => addMultipleToCart(item, 10)}
+          style={[styles.addTenBtn, !canAdd10 && styles.addBtnDisabled]} 
+          onPress={() => {
+            if (canAdd10) {
+              addMultipleToCart(item, 10);
+            } else {
+              const remaining = stock - cartQty;
+              if (remaining > 0) {
+                addMultipleToCart(item, remaining);
+                Alert.alert('Limite raggiunto', `Aggiunti ${remaining} pz (max disponibile: ${stock})`);
+              } else {
+                Alert.alert('Stock esaurito', `Non ci sono più pezzi disponibili (${stock} in magazzino)`);
+              }
+            }
+          }}
         >
-          <Text style={styles.addTenBtnText}>+10</Text>
+          <Text style={[styles.addTenBtnText, !canAdd10 && styles.addBtnTextDisabled]}>+10</Text>
         </TouchableOpacity>
       </View>
     );
@@ -1632,6 +1664,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1E40AF',
   },
+  productRowPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  productRowAccisaInline: {
+    fontSize: 10,
+    color: '#F59E0B',
+    fontWeight: '500',
+  },
   productRowAccisaWrap: {
     width: 52,
     alignItems: 'center',
@@ -1645,6 +1687,29 @@ const styles = StyleSheet.create({
   productRowAccisaEmpty: {
     fontSize: 10,
     color: '#D1D5DB',
+  },
+  stockBadge: {
+    backgroundColor: '#ECFDF5',
+    borderRadius: 6,
+    minWidth: 36,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  stockBadgeLow: {
+    backgroundColor: '#FEF3C7',
+  },
+  stockBadgeEmpty: {
+    backgroundColor: '#FEE2E2',
+  },
+  stockBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  stockBadgeTextEmpty: {
+    color: '#DC2626',
   },
   addOneBtn: {
     backgroundColor: '#1E40AF',
@@ -1672,6 +1737,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  addBtnDisabled: {
+    backgroundColor: '#D1D5DB',
+    opacity: 0.6,
+  },
+  addBtnTextDisabled: {
+    color: '#9CA3AF',
   },
   // Cart Bottom Section
   cartBottomSection: {

@@ -36,13 +36,21 @@ export async function fetchTabaccherieInBounds(
         gps_lng,
         customer_id,
         agente_id,
-        stato_visita
+        stato_visita,
+        customers!tabaccherie_customer_id_fkey (
+          id,
+          business_name,
+          agent_id,
+          last_order_date,
+          last_visit_date,
+          first_visit_date
+        )
       `)
       .gte('gps_lat', bounds.south.toString())
       .lte('gps_lat', bounds.north.toString())
       .gte('gps_lng', bounds.west.toString())
       .lte('gps_lng', bounds.east.toString())
-      .limit(2000);
+      .limit(3000);
 
     if (error) throw error;
     if (!data) return [];
@@ -54,6 +62,8 @@ export async function fetchTabaccherieInBounds(
       const lng = parseCoordinate(tab.gps_lng);
 
       if (!isValidCoordinate(lat, lng)) return;
+
+      const customerData = tab.customers || null;
 
       validResults.push({
         id: tab.id,
@@ -69,10 +79,95 @@ export async function fetchTabaccherieInBounds(
         customer_id: tab.customer_id,
         agente_id: tab.agente_id,
         stato_visita: tab.stato_visita,
+        customer_business_name: customerData?.business_name || null,
+        customer_last_order_date: customerData?.last_order_date || null,
+        customer_last_visit_date: customerData?.last_visit_date || null,
       });
     });
 
     console.log('[tabaccherie] Returning', validResults.length, 'valid points');
+    return validResults;
+  } catch (error) {
+    console.error('[tabaccherie] Error:', error);
+    throw error;
+  }
+}
+
+export async function fetchAllTabaccherie(
+  userId?: string,
+  userRole?: string,
+  filterMode?: string
+): Promise<Tabaccheria[]> {
+  try {
+    console.log('[tabaccherie] Fetching ALL tabaccherie, filter:', filterMode);
+
+    let query = supabase
+      .from('tabaccherie')
+      .select(`
+        id,
+        denominazione,
+        indirizzo,
+        comune,
+        provincia,
+        cap,
+        gps_lat,
+        gps_lng,
+        customer_id,
+        agente_id,
+        stato_visita,
+        customers!tabaccherie_customer_id_fkey (
+          id,
+          business_name,
+          agent_id,
+          last_order_date,
+          last_visit_date,
+          first_visit_date
+        )
+      `)
+      .limit(5000);
+
+    if (filterMode === 'active') {
+      query = query.in('stato_visita', ['visitato', 'ordinato']);
+    } else if (filterMode === 'not_visited') {
+      query = query.or('stato_visita.is.null,stato_visita.eq.non_visitato');
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    if (!data) return [];
+
+    const validResults: Tabaccheria[] = [];
+
+    data.forEach((tab: any) => {
+      const lat = parseCoordinate(tab.gps_lat);
+      const lng = parseCoordinate(tab.gps_lng);
+
+      if (!isValidCoordinate(lat, lng)) return;
+
+      const customerData = tab.customers || null;
+
+      validResults.push({
+        id: tab.id,
+        denominazione: tab.denominazione || '',
+        indirizzo: tab.indirizzo || '',
+        comune: tab.comune || '',
+        provincia: tab.provincia || '',
+        cap: tab.cap || '',
+        gps_lat: tab.gps_lat?.toString() || '',
+        gps_lng: tab.gps_lng?.toString() || '',
+        latitude: lat,
+        longitude: lng,
+        customer_id: tab.customer_id,
+        agente_id: tab.agente_id,
+        stato_visita: tab.stato_visita,
+        customer_business_name: customerData?.business_name || null,
+        customer_last_order_date: customerData?.last_order_date || null,
+        customer_last_visit_date: customerData?.last_visit_date || null,
+      });
+    });
+
+    console.log('[tabaccherie] Returning', validResults.length, 'valid points (ALL)');
     return validResults;
   } catch (error) {
     console.error('[tabaccherie] Error:', error);

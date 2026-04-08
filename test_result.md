@@ -140,6 +140,21 @@ frontend:
       - working: true
         agent: "main"
         comment: "Order collection 5-step wizard renders correctly. Includes product icons, cashback, rottamazione, accisa/IVA calculations. Verified via screenshot - no compilation or runtime errors."
+      - working: true
+        agent: "main"
+        comment: "Package (Pacchetto) selection modal implemented. Loads packages from Supabase, shows card with items/prices/totals, search filter, and Aggiungi button to apply package to cart. Verified via screenshot."
+
+  - task: "Package Selection Modal (Pacchetto)"
+    implemented: true
+    working: true
+    file: "app/order-collection.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Package modal fully implemented with: header, search bar, package cards with items list, total price, Aggiungi button. DB fetch from packages+package_items tables. Apply logic merges items into cart. Verified via screenshot - modal opens and displays real data from Supabase."
 
   - task: "Auth Session Persistence (Supabase storage adapter)"
     implemented: true

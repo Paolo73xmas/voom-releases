@@ -1239,6 +1239,152 @@ export default function OrderCollectionScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Package Selection Modal */}
+      <Modal
+        visible={showPackageModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPackageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.packageModal}>
+            {/* Header */}
+            <View style={styles.packageModalHeader}>
+              <View style={styles.packageModalHeaderLeft}>
+                <Ionicons name="layers" size={22} color="#8B5CF6" />
+                <Text style={styles.packageModalTitle}>Pacchetti Predefiniti</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowPackageModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search */}
+            <View style={styles.packageSearchBar}>
+              <Ionicons name="search" size={18} color="#9CA3AF" />
+              <TextInput
+                style={styles.packageSearchInput}
+                placeholder="Cerca pacchetto..."
+                value={packageSearch}
+                onChangeText={setPackageSearch}
+                placeholderTextColor="#9CA3AF"
+              />
+              {packageSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setPackageSearch('')}>
+                  <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Package List */}
+            {loadingPackages ? (
+              <View style={styles.packageLoading}>
+                <ActivityIndicator size="large" color="#8B5CF6" />
+                <Text style={styles.packageLoadingText}>Caricamento pacchetti...</Text>
+              </View>
+            ) : (
+              <ScrollView style={styles.packageList} showsVerticalScrollIndicator={false}>
+                {packages
+                  .filter(pkg => {
+                    if (!packageSearch) return true;
+                    const s = packageSearch.toLowerCase();
+                    return (
+                      (pkg.name || '').toLowerCase().includes(s) ||
+                      (pkg.description || '').toLowerCase().includes(s) ||
+                      (pkg.branchName || '').toLowerCase().includes(s)
+                    );
+                  })
+                  .map((pkg) => (
+                    <View key={pkg.id} style={styles.packageCard}>
+                      {/* Package Header */}
+                      <View style={styles.packageCardHeader}>
+                        <View style={styles.packageCardHeaderLeft}>
+                          <View style={styles.packageIconWrap}>
+                            <Ionicons name="cube" size={18} color="#8B5CF6" />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.packageCardName} numberOfLines={1}>{pkg.name}</Text>
+                            {pkg.branchName && (
+                              <Text style={styles.packageCardBranch}>{pkg.branchName}</Text>
+                            )}
+                          </View>
+                        </View>
+                        <View style={styles.packageStatsBadge}>
+                          <Text style={styles.packageStatsText}>
+                            {pkg.totalProducts} prod. · {pkg.totalPieces} pz
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Description */}
+                      {pkg.description ? (
+                        <Text style={styles.packageCardDesc} numberOfLines={2}>{pkg.description}</Text>
+                      ) : null}
+
+                      {/* Items List */}
+                      <View style={styles.packageItemsList}>
+                        {(pkg.items || []).slice(0, 5).map((item: any, idx: number) => (
+                          <View key={item.products?.id || idx} style={styles.packageItemRow}>
+                            <Text style={styles.packageItemQty}>{item.quantity}x</Text>
+                            <Text style={styles.packageItemName} numberOfLines={1}>
+                              {item.products?.short_description || item.products?.name || 'Prodotto'}
+                            </Text>
+                            <Text style={styles.packageItemPrice}>
+                              {formatCurrency(item.unit_price || item.products?.unit_price || 0)}
+                            </Text>
+                          </View>
+                        ))}
+                        {(pkg.items || []).length > 5 && (
+                          <Text style={styles.packageMoreItems}>
+                            +{(pkg.items || []).length - 5} altri prodotti...
+                          </Text>
+                        )}
+                      </View>
+
+                      {/* Footer with Total + Apply Button */}
+                      <View style={styles.packageCardFooter}>
+                        <View>
+                          <Text style={styles.packageTotalLabel}>Totale pacchetto</Text>
+                          <Text style={styles.packageTotalValue}>{formatCurrency(pkg.totalPrice)}</Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.packageApplyBtn}
+                          onPress={() => applyPackage(pkg)}
+                        >
+                          <Ionicons name="add-circle" size={18} color="#FFFFFF" />
+                          <Text style={styles.packageApplyText}>Aggiungi</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))
+                }
+                {packages.filter(pkg => {
+                  if (!packageSearch) return true;
+                  const s = packageSearch.toLowerCase();
+                  return (
+                    (pkg.name || '').toLowerCase().includes(s) ||
+                    (pkg.description || '').toLowerCase().includes(s) ||
+                    (pkg.branchName || '').toLowerCase().includes(s)
+                  );
+                }).length === 0 && (
+                  <View style={styles.packageEmptyState}>
+                    <Ionicons name="layers-outline" size={48} color="#D1D5DB" />
+                    <Text style={styles.packageEmptyTitle}>
+                      {packageSearch ? 'Nessun pacchetto trovato' : 'Nessun pacchetto disponibile'}
+                    </Text>
+                    <Text style={styles.packageEmptySubtitle}>
+                      {packageSearch 
+                        ? 'Prova con un termine di ricerca diverso' 
+                        : 'I pacchetti predefiniti verranno mostrati qui'}
+                    </Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 
@@ -3089,5 +3235,222 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 24,
     fontSize: 14,
+  },
+  // Package Toggle Button
+  productHeaderBtns: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  packageToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3E8FF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  packageToggleText: {
+    fontSize: 12,
+    color: '#8B5CF6',
+    fontWeight: '600',
+  },
+  // Package Modal
+  packageModal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    maxHeight: '80%',
+    width: '100%',
+    position: 'absolute',
+    bottom: 0,
+  },
+  packageModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  packageModalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  packageModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  packageSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+    gap: 8,
+  },
+  packageSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1F2937',
+    paddingVertical: 0,
+  },
+  packageLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  packageLoadingText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginTop: 10,
+  },
+  packageList: {
+    flex: 1,
+  },
+  packageCard: {
+    backgroundColor: '#FAFAFA',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  packageCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  packageCardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  packageIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#F3E8FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  packageCardName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  packageCardBranch: {
+    fontSize: 11,
+    color: '#8B5CF6',
+    marginTop: 1,
+  },
+  packageStatsBadge: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  packageStatsText: {
+    fontSize: 11,
+    color: '#4338CA',
+    fontWeight: '600',
+  },
+  packageCardDesc: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  packageItemsList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 10,
+  },
+  packageItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    gap: 8,
+  },
+  packageItemQty: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8B5CF6',
+    width: 30,
+  },
+  packageItemName: {
+    fontSize: 12,
+    color: '#374151',
+    flex: 1,
+  },
+  packageItemPrice: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  packageMoreItems: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  packageCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 10,
+  },
+  packageTotalLabel: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  packageTotalValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  packageApplyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#8B5CF6',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  packageApplyText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  packageEmptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  packageEmptyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 12,
+  },
+  packageEmptySubtitle: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 4,
+    textAlign: 'center',
   },
 });

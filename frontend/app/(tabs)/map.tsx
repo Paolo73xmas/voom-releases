@@ -827,18 +827,22 @@ export default function MapScreen() {
                     </TouchableOpacity>
                   )}
 
-                  {/* Red: Visit */}
+                  {/* Red: Visit → Anagrafica */}
                   {selectedColor === 'red' && !isOwnedByOther && (
                     <TouchableOpacity
                       style={[styles.actionBtn, styles.actionBtnPrimary]}
                       onPress={() => {
                         setShowPopup(false);
-                        // Navigate to first-visit would go here
-                        Alert.alert('Visita', 'Navigazione alla prima visita');
+                        router.push({
+                          pathname: '/anagrafica',
+                          params: selectedTab.customer_id
+                            ? { tabaccheriaId: selectedTab.id }
+                            : { tabaccheriaId: selectedTab.id },
+                        });
                       }}
                     >
                       <Ionicons name="document-text" size={18} color="#FFF" />
-                      <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Visita</Text>
+                      <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Anagrafica</Text>
                     </TouchableOpacity>
                   )}
 

@@ -43,6 +43,7 @@ interface TabSearchResult {
   cf_iva?: string;
   customer_id?: string;
   agente_id?: string;
+  Num_Ordinale?: number | string;
 }
 
 function parseCfIva(cfIva?: string | null): { vatNumber: string; fiscalCode: string } {
@@ -113,6 +114,7 @@ export default function AnagraficaScreen() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchCity, setSearchCity] = useState('');
   const [searchAddress, setSearchAddress] = useState('');
+  const [searchNumOrdinale, setSearchNumOrdinale] = useState('');
   const [searchResults, setSearchResults] = useState<TabSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -207,15 +209,21 @@ export default function AnagraficaScreen() {
     const timer = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        let query = supabase.from('tabaccherie').select('id, denominazione, indirizzo, comune, provincia, cap, telefono_mobile, email, cf_iva, customer_id, agente_id')
+        let query = supabase.from('tabaccherie').select('id, denominazione, indirizzo, comune, provincia, cap, telefono_mobile, email, cf_iva, customer_id, agente_id, "Num_Ordinale"')
           .ilike('comune', `%${searchCity}%`).order('denominazione').limit(50);
         if (searchAddress.length >= 1) query = query.ilike('indirizzo', `%${searchAddress}%`);
+        if (searchNumOrdinale.length >= 1) {
+          const numVal = parseInt(searchNumOrdinale);
+          if (!isNaN(numVal)) {
+            query = query.eq('Num_Ordinale', numVal);
+          }
+        }
         const { data } = await query;
         setSearchResults((data as TabSearchResult[]) || []);
       } catch {} finally { setSearchLoading(false); }
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchCity, searchAddress]);
+  }, [searchCity, searchAddress, searchNumOrdinale]);
 
   // Select tabaccheria from search
   const handleSelectTab = async (tab: TabSearchResult) => {
@@ -242,7 +250,7 @@ export default function AnagraficaScreen() {
       tabaccheriaId: tab.id,
     }));
     setShowSearch(false);
-    setSearchCity(''); setSearchAddress('');
+    setSearchCity(''); setSearchAddress(''); setSearchNumOrdinale('');
     Alert.alert('Dati caricati', 'Completa i campi mancanti per procedere.');
   };
 
@@ -625,19 +633,19 @@ export default function AnagraficaScreen() {
         )}
       </View>
 
-      {/* Search Tabaccheria Modal */}
-      <Modal visible={showSearch} transparent animationType="slide" onRequestClose={() => setShowSearch(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.searchModal, { paddingBottom: insets.bottom + 16 }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Cerca Tabaccheria</Text>
-              <TouchableOpacity onPress={() => setShowSearch(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
+      {/* Search Tabaccheria Modal - Fullscreen with keyboard handling */}
+      <Modal visible={showSearch} animationType="slide" onRequestClose={() => setShowSearch(false)}>
+        <View style={[styles.searchModalFull, { paddingTop: insets.top }]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Cerca Tabaccheria</Text>
+            <TouchableOpacity onPress={() => { setShowSearch(false); setSearchCity(''); setSearchAddress(''); setSearchNumOrdinale(''); }} style={{ padding: 4 }}>
+              <Ionicons name="close" size={24} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
             <View style={styles.searchInputRow}>
               <Ionicons name="location" size={18} color="#9CA3AF" />
-              <TextInput style={styles.searchInput} placeholder="Comune..." value={searchCity}
+              <TextInput style={styles.searchInput} placeholder="Comune *..." value={searchCity}
                 onChangeText={setSearchCity} placeholderTextColor="#9CA3AF" autoCapitalize="characters" />
             </View>
             <View style={styles.searchInputRow}>
@@ -645,17 +653,25 @@ export default function AnagraficaScreen() {
               <TextInput style={styles.searchInput} placeholder="Indirizzo (opzionale)..." value={searchAddress}
                 onChangeText={setSearchAddress} placeholderTextColor="#9CA3AF" autoCapitalize="characters" />
             </View>
+            <View style={styles.searchInputRow}>
+              <Ionicons name="list-outline" size={18} color="#9CA3AF" />
+              <TextInput style={styles.searchInput} placeholder="N. Ordinale (opzionale)..." value={searchNumOrdinale}
+                onChangeText={setSearchNumOrdinale} placeholderTextColor="#9CA3AF" keyboardType="numeric" />
+            </View>
             {searchLoading ? (
               <ActivityIndicator style={{ marginTop: 20 }} color="#7C3AED" size="large" />
             ) : (
               <FlatList
                 data={searchResults}
                 keyExtractor={item => item.id}
-                style={{ marginTop: 8 }}
+                style={{ flex: 1, marginTop: 4 }}
+                keyboardShouldPersistTaps="handled"
                 renderItem={({ item }) => (
                   <TouchableOpacity style={styles.searchResultItem} onPress={() => handleSelectTab(item)}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.searchResultName} numberOfLines={1}>{item.denominazione}</Text>
+                      <Text style={styles.searchResultName} numberOfLines={1}>
+                        {item.Num_Ordinale ? `[${item.Num_Ordinale}] ` : ''}{item.denominazione}
+                      </Text>
                       <Text style={styles.searchResultAddr} numberOfLines={1}>
                         {item.indirizzo}, {item.comune} ({item.provincia})
                       </Text>
@@ -674,7 +690,8 @@ export default function AnagraficaScreen() {
                 )}
               />
             )}
-          </View>
+          </KeyboardAvoidingView>
+          <View style={{ paddingBottom: insets.bottom }} />
         </View>
       </Modal>
     </View>
@@ -779,9 +796,8 @@ const styles = StyleSheet.create({
   submitBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#10B981', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },
   submitBtnText: { fontSize: 14, fontWeight: '600', color: '#FFF' },
   // Search Modal
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
-  searchModal: { backgroundColor: '#FFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, maxHeight: '80%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  searchModalFull: { flex: 1, backgroundColor: '#FFF', paddingHorizontal: 16 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingTop: 8 },
   modalTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
   searchInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8, marginBottom: 8 },
   searchInput: { flex: 1, fontSize: 14, color: '#1F2937', paddingVertical: 0 },

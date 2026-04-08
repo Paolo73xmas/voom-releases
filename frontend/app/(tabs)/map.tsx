@@ -553,7 +553,7 @@ export default function MapScreen() {
     setShowPopup(false);
     router.push({
       pathname: '/order-collection',
-      params: { customer_id: tab.customer_id || tab.id },
+      params: { customerId: tab.customer_id || tab.id },
     });
   };
 

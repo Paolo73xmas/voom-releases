@@ -167,11 +167,15 @@ export default function CustomersScreen() {
         ))}
       </View>
 
-      {/* Stats */}
-      <View style={styles.statsBar}>
+      {/* Stats + Nuovo Cliente */}
+      <View style={styles.statsRow}>
         <Text style={styles.statsText}>
           {filteredCustomers.length} di {customers.length} clienti
         </Text>
+        <TouchableOpacity style={styles.newClientBtn} onPress={() => router.push('/anagrafica')}>
+          <Ionicons name="add-circle" size={18} color="#FFF" />
+          <Text style={styles.newClientBtnText}>Nuovo Cliente</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Customer List */}
@@ -250,9 +254,26 @@ const styles = StyleSheet.create({
   filterTextActive: {
     color: '#FFFFFF',
   },
-  statsBar: {
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  newClientBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10B981',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    gap: 6,
+  },
+  newClientBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFF',
   },
   statsText: {
     fontSize: 14,

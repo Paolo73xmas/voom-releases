@@ -107,12 +107,19 @@ export default function OrderCollectionScreen() {
   const [editCartItem, setEditCartItem] = useState<CartItem | null>(null);
   const [editPrice, setEditPrice] = useState('');
 
+  // Packages
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [packageSearch, setPackageSearch] = useState('');
+  const [loadingPackages, setLoadingPackages] = useState(false);
+
   // Location
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
     loadInitialData();
     loadRottamazioneConfig();
+    loadPackages();
     getLocation();
   }, [user]);
 
@@ -206,6 +213,81 @@ export default function OrderCollectionScreen() {
       console.log('Using default rottamazione config');
     }
   };
+
+  // Load packages with items and product details
+  const loadPackages = async () => {
+    setLoadingPackages(true);
+    try {
+      const { data: pkgs, error: pkgError } = await supabase
+        .from('packages')
+        .select('*, branches(name)')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (pkgError || !pkgs) {
+        setLoadingPackages(false);
+        return;
+      }
+
+      const packagesWithItems = await Promise.all(
+        pkgs.map(async (pkg: any) => {
+          const { data: items } = await supabase
+            .from('package_items')
+            .select('*, products(id, name, short_description, sku, unit_price, image_url, accisa, iva_percentage, stock_quantity, cashback_eligible, estero, rottamazione_no, is_active)')
+            .eq('package_id', pkg.id);
+
+          const validItems = (items || []).filter((i: any) => i.products);
+          const totalPieces = validItems.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0);
+          const totalPrice = validItems.reduce((sum: number, i: any) => sum + ((i.unit_price || i.products.unit_price || 0) * (i.quantity || 0)), 0);
+
+          return {
+            ...pkg,
+            branchName: pkg.branches?.name || null,
+            items: validItems,
+            totalProducts: validItems.length,
+            totalPieces,
+            totalPrice,
+          };
+        })
+      );
+
+      setPackages(packagesWithItems);
+    } catch (error) {
+      console.log('Error loading packages:', error);
+    } finally {
+      setLoadingPackages(false);
+    }
+  };
+
+  // Apply a package to the cart
+  const applyPackage = (pkg: any) => {
+    const newItems: CartItem[] = pkg.items.map((item: any) => ({
+      product: {
+        ...item.products,
+        id: item.products.id || item.product_id,
+      },
+      quantity: item.quantity,
+      unit_price: item.unit_price || item.products.unit_price,
+    }));
+
+    let updatedCart = [...cart];
+    for (const newItem of newItems) {
+      const existingIndex = updatedCart.findIndex(c => c.product.id === newItem.product.id);
+      if (existingIndex >= 0) {
+        updatedCart[existingIndex] = {
+          ...updatedCart[existingIndex],
+          quantity: updatedCart[existingIndex].quantity + newItem.quantity,
+          unit_price: newItem.unit_price,
+        };
+      } else {
+        updatedCart.push(newItem);
+      }
+    }
+    setCart(updatedCart);
+    setShowPackageModal(false);
+    Alert.alert('Pacchetto applicato', `"${pkg.name}" aggiunto al carrello (${pkg.totalProducts} prodotti, ${pkg.totalPieces} pz)`);
+  };
+
 
   const loadCashBackBalance = async () => {
     if (!selectedCustomer) return;
@@ -817,15 +899,24 @@ export default function OrderCollectionScreen() {
     <View style={styles.stepContent}>
       <View style={styles.productHeader}>
         <Text style={styles.stepTitle}>Aggiungi Prodotti</Text>
-        <TouchableOpacity
-          style={[styles.foreignToggle, isForeignOrder && styles.foreignToggleActive]}
-          onPress={() => setIsForeignOrder(!isForeignOrder)}
-        >
-          <Ionicons name="globe-outline" size={16} color={isForeignOrder ? '#FFFFFF' : '#6B7280'} />
-          <Text style={[styles.foreignToggleText, isForeignOrder && styles.foreignToggleTextActive]}>
-            Estero
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.productHeaderBtns}>
+          <TouchableOpacity
+            style={styles.packageToggle}
+            onPress={() => setShowPackageModal(true)}
+          >
+            <Ionicons name="layers-outline" size={16} color="#8B5CF6" />
+            <Text style={styles.packageToggleText}>Pacchetto</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.foreignToggle, isForeignOrder && styles.foreignToggleActive]}
+            onPress={() => setIsForeignOrder(!isForeignOrder)}
+          >
+            <Ionicons name="globe-outline" size={16} color={isForeignOrder ? '#FFFFFF' : '#6B7280'} />
+            <Text style={[styles.foreignToggleText, isForeignOrder && styles.foreignToggleTextActive]}>
+              Estero
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.searchBar}>

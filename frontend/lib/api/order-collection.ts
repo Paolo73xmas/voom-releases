@@ -14,6 +14,7 @@ export interface Product {
   is_active: boolean;
   cashback_eligible?: boolean;
   estero?: boolean;
+  rottamazione_no?: boolean;
 }
 
 export interface PaymentMethod {

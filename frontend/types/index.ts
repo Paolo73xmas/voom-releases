@@ -126,9 +126,8 @@ export interface Product {
   is_active: boolean;
   cashback_eligible?: boolean;
   estero?: boolean;
-}
-
-export interface Inspection {
+  rottamazione_no?: boolean;
+}export interface Inspection {
   id: string;
   customer_id: string;
   agent_id: string;

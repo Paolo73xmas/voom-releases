@@ -389,16 +389,28 @@ export default function OrderCollectionScreen() {
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
-  // Calculate rottamazione spreaded prices across all products
+  // Calculate rottamazione spreaded prices - ONLY on eligible products (rottamazione_no !== true)
   const getSpreadedPrices = () => {
     if (rottamazioneAmount === 0) return [];
     const netDiscount = getRottamazioneNetAmount(rottamazioneAmount);
-    const totalImponibile = getCartSubtotal();
-    if (totalImponibile === 0) return [];
+    // Only eligible products participate in the spread
+    const eligibleItems = cart.filter(item => item.product.rottamazione_no !== true);
+    const eligibleImponibile = eligibleItems.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+    if (eligibleImponibile === 0) return [];
 
     return cart.map(item => {
+      const isExcluded = item.product.rottamazione_no === true;
+      if (isExcluded) {
+        return {
+          product: item.product,
+          quantity: item.quantity,
+          originalPrice: item.unit_price,
+          newPrice: item.unit_price,
+          excluded: true,
+        };
+      }
       const itemImponibile = item.unit_price * item.quantity;
-      const itemShare = itemImponibile / totalImponibile;
+      const itemShare = itemImponibile / eligibleImponibile;
       const itemDiscount = netDiscount * itemShare;
       const discountPerUnit = itemDiscount / item.quantity;
       const newUnitPrice = Math.round((item.unit_price - discountPerUnit) * 100) / 100;
@@ -408,8 +420,16 @@ export default function OrderCollectionScreen() {
         quantity: item.quantity,
         originalPrice: item.unit_price,
         newPrice: newUnitPrice,
+        excluded: false,
       };
     });
+  };
+
+  // Rottamazione eligible imponibile (excluding rottamazione_no products)
+  const getRottamazioneEligibleSubtotal = (): number => {
+    return cart
+      .filter(item => item.product.rottamazione_no !== true)
+      .reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
   };
 
   // Conflict detection: non-estero products in cart while estero mode is active
@@ -1263,6 +1283,11 @@ export default function OrderCollectionScreen() {
                 <Text style={styles.rottamazioneRuleText}>
                   • Imponibile attuale: {formatCurrency(getCartSubtotal())}
                 </Text>
+                {getRottamazioneEligibleSubtotal() < getCartSubtotal() && (
+                  <Text style={styles.rottamazioneRuleTextBold}>
+                    • Imponibile eligible (esclusi prodotti "Rott. No"): {formatCurrency(getRottamazioneEligibleSubtotal())}
+                  </Text>
+                )}
                 <Text style={styles.rottamazioneRuleText}>
                   • Formula: imponibile minimo = rottamazione × {rottamazioneConfig.multiplier}
                 </Text>
@@ -1275,7 +1300,7 @@ export default function OrderCollectionScreen() {
                       • Netto da spalmare (scorporo IVA {Math.round((rottamazioneConfig.iva_rate - 1) * 100)}%): {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}
                     </Text>
                     <Text style={styles.rottamazioneRuleTextNote}>
-                      • Lo sconto netto verrà spalmato proporzionalmente sui prezzi unitari imponibili
+                      • Lo sconto netto verrà spalmato solo sui prodotti eligible alla rottamazione
                     </Text>
                   </>
                 )}
@@ -1303,8 +1328,14 @@ export default function OrderCollectionScreen() {
                   Preview prezzi con Rottamazione spalmata (netto {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}):
                 </Text>
                 {getSpreadedPrices().map((item) => (
-                  <Text key={item.product.id} style={styles.spreadedPreviewItem}>
-                    {item.product.short_description || item.product.name}: {formatCurrency(item.originalPrice)} → {formatCurrency(item.newPrice)} ({item.quantity} pz)
+                  <Text 
+                    key={item.product.id} 
+                    style={item.excluded ? styles.spreadedPreviewItemExcluded : styles.spreadedPreviewItem}
+                  >
+                    {item.excluded 
+                      ? `✗ ${item.product.short_description || item.product.name}: ${formatCurrency(item.originalPrice)} (${item.quantity} pz) — Escluso da rottamazione`
+                      : `${item.product.short_description || item.product.name}: ${formatCurrency(item.originalPrice)} → ${formatCurrency(item.newPrice)} (${item.quantity} pz)`
+                    }
                   </Text>
                 ))}
               </View>
@@ -1976,6 +2007,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#1E3A8A',
     marginBottom: 2,
+  },
+  spreadedPreviewItemExcluded: {
+    fontSize: 11,
+    color: '#DC2626',
+    marginBottom: 2,
+    textDecorationLine: 'line-through',
+    opacity: 0.7,
   },
   // Cart Summary
   cartSummaryCard: {

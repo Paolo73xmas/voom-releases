@@ -102,6 +102,10 @@ export default function OrderCollectionScreen() {
   // Product detail modal
   const [selectedProductDetail, setSelectedProductDetail] = useState<Product | null>(null);
   const [showCartModal, setShowCartModal] = useState(false);
+  
+  // Cart item edit modal
+  const [editCartItem, setEditCartItem] = useState<CartItem | null>(null);
+  const [editPrice, setEditPrice] = useState('');
 
   // Location
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -583,18 +587,27 @@ export default function OrderCollectionScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Name + Price + Accisa (stacked) */}
-        <View style={styles.productRowInfo}>
-          <Text style={styles.productRowName} numberOfLines={1}>
+        {/* Name + Price + Accisa (stacked) - tappable if in cart */}
+        <TouchableOpacity 
+          style={styles.productRowInfo}
+          disabled={!inCart}
+          onPress={() => {
+            if (inCart) {
+              setEditCartItem(inCart);
+              setEditPrice(inCart.unit_price.toString());
+            }
+          }}
+        >
+          <Text style={[styles.productRowName, inCart && styles.productRowNameTappable]} numberOfLines={1}>
             {item.short_description || item.name}
           </Text>
           <View style={styles.productRowPriceRow}>
-            <Text style={styles.productRowPrice}>{formatCurrency(item.unit_price)}</Text>
+            <Text style={styles.productRowPrice}>{formatCurrency(inCart ? inCart.unit_price : item.unit_price)}</Text>
             {(item.accisa || 0) > 0 && (
               <Text style={styles.productRowAccisaInline}>+{formatCurrency(item.accisa || 0)} acc.</Text>
             )}
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Stock Quantity (where accisa was) */}
         <View style={[styles.stockBadge, stock <= 0 && styles.stockBadgeEmpty, stock > 0 && stock <= 20 && styles.stockBadgeLow]}>
@@ -910,6 +923,119 @@ export default function OrderCollectionScreen() {
           </View>
         </View>
       )}
+
+      {/* Cart Item Edit Modal */}
+      <Modal
+        visible={editCartItem !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditCartItem(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.editCartModal}>
+            {editCartItem && (
+              <>
+                <View style={styles.editCartHeader}>
+                  <Text style={styles.editCartTitle}>Modifica Prodotto</Text>
+                  <TouchableOpacity onPress={() => setEditCartItem(null)}>
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Product info */}
+                <View style={styles.editCartProductInfo}>
+                  {editCartItem.product.image_url ? (
+                    <Image 
+                      source={{ uri: editCartItem.product.image_url }} 
+                      style={styles.editCartImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.editCartImagePlaceholder}>
+                      <Ionicons name="cube" size={24} color="#9CA3AF" />
+                    </View>
+                  )}
+                  <View style={styles.editCartDetails}>
+                    <Text style={styles.editCartName}>
+                      {editCartItem.product.short_description || editCartItem.product.name}
+                    </Text>
+                    <Text style={styles.editCartSku}>SKU: {editCartItem.product.sku}</Text>
+                    <Text style={styles.editCartQty}>Quantità nel carrello: {editCartItem.quantity} pz</Text>
+                    <Text style={styles.editCartStock}>
+                      Magazzino: {editCartItem.product.stock_quantity || 0} pz
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Price edit */}
+                <View style={styles.editCartSection}>
+                  <Text style={styles.editCartSectionTitle}>Prezzo Unitario</Text>
+                  <View style={styles.editCartPriceRow}>
+                    <Text style={styles.editCartOriginalLabel}>Listino:</Text>
+                    <Text style={styles.editCartOriginalPrice}>
+                      {formatCurrency(editCartItem.product.unit_price)}
+                    </Text>
+                  </View>
+                  <View style={styles.editCartPriceInputRow}>
+                    <Text style={styles.editCartPriceLabel}>Nuovo prezzo (€):</Text>
+                    <TextInput
+                      style={styles.editCartPriceInput}
+                      keyboardType="decimal-pad"
+                      value={editPrice}
+                      onChangeText={setEditPrice}
+                      placeholder="0.00"
+                    />
+                  </View>
+                  <TouchableOpacity
+                    style={styles.editCartApplyBtn}
+                    onPress={() => {
+                      const newPrice = parseFloat(editPrice.replace(',', '.')) || 0;
+                      if (newPrice > 0) {
+                        setCart(cart.map(item =>
+                          item.product.id === editCartItem.product.id
+                            ? { ...item, unit_price: newPrice }
+                            : item
+                        ));
+                        setEditCartItem(null);
+                      } else {
+                        Alert.alert('Errore', 'Inserisci un prezzo valido maggiore di 0');
+                      }
+                    }}
+                  >
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    <Text style={styles.editCartApplyText}>Applica Prezzo</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Delete from cart */}
+                <TouchableOpacity
+                  style={styles.editCartDeleteBtn}
+                  onPress={() => {
+                    Alert.alert(
+                      'Rimuovi dal carrello',
+                      `Rimuovere "${editCartItem.product.short_description || editCartItem.product.name}" dal carrello?`,
+                      [
+                        { text: 'Annulla', style: 'cancel' },
+                        {
+                          text: 'Rimuovi',
+                          style: 'destructive',
+                          onPress: () => {
+                            removeFromCart(editCartItem.product.id);
+                            setEditCartItem(null);
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <Ionicons name="trash" size={16} color="#DC2626" />
+                  <Text style={styles.editCartDeleteText}>Elimina dal Carrello</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Cart Modal */}
       <Modal
@@ -1744,6 +1870,152 @@ const styles = StyleSheet.create({
   },
   addBtnTextDisabled: {
     color: '#9CA3AF',
+  },
+  // Cart Item Edit Modal Styles
+  editCartModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    margin: 20,
+    maxHeight: '80%',
+  },
+  editCartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  editCartTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  editCartProductInfo: {
+    flexDirection: 'row',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    gap: 12,
+  },
+  editCartImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  editCartImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editCartDetails: {
+    flex: 1,
+  },
+  editCartName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  editCartSku: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginBottom: 2,
+  },
+  editCartQty: {
+    fontSize: 12,
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
+  editCartStock: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  editCartSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 16,
+    marginBottom: 16,
+  },
+  editCartSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 10,
+  },
+  editCartPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  editCartOriginalLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  editCartOriginalPrice: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textDecorationLine: 'line-through',
+  },
+  editCartPriceInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  editCartPriceLabel: {
+    fontSize: 13,
+    color: '#1F2937',
+    flex: 1,
+  },
+  editCartPriceInput: {
+    borderWidth: 1.5,
+    borderColor: '#3B82F6',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E40AF',
+    width: 110,
+    textAlign: 'center',
+  },
+  editCartApplyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1E40AF',
+    borderRadius: 8,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  editCartApplyText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  editCartDeleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#DC2626',
+    borderRadius: 8,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  editCartDeleteText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#DC2626',
+  },
+  productRowNameTappable: {
+    textDecorationLine: 'underline',
+    textDecorationColor: '#3B82F6',
   },
   // Cart Bottom Section
   cartBottomSection: {

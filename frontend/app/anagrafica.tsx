@@ -569,7 +569,8 @@ export default function AnagraficaScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <Ionicons name="arrow-back" size={22} color="#1F2937" />
+          <Text style={styles.backBtnText}>Indietro</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Anagrafica</Text>
         <View style={{ width: 44 }} />
@@ -714,7 +715,8 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  backBtn: { flexDirection: 'row', alignItems: 'center', height: 44, paddingRight: 8, gap: 4 },
+  backBtnText: { fontSize: 15, color: '#1F2937', fontWeight: '500' },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
   stepper: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 16, gap: 24 },
   stepItem: { alignItems: 'center', gap: 4 },

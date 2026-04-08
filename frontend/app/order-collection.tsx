@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -123,6 +123,51 @@ export default function OrderCollectionScreen() {
       loadCashBackBalance();
     }
   }, [selectedCustomer]);
+
+  // When Estero toggle changes, reload products and shipping methods
+  const isForeignInitialMount = useRef(true);
+  useEffect(() => {
+    if (isForeignInitialMount.current) {
+      isForeignInitialMount.current = false;
+      return; // Skip on initial mount - loadInitialData handles first load
+    }
+    if (!user) return;
+    reloadForForeignToggle();
+  }, [isForeignOrder]);
+
+  const reloadForForeignToggle = async () => {
+    setLoadingProducts(true);
+    try {
+      const [productsData, shippingsData] = await Promise.all([
+        fetchProducts(isForeignOrder),
+        fetchShippingMethods(isForeignOrder),
+      ]);
+      setProducts(productsData);
+      setShippingMethods(shippingsData);
+
+      // Remove cart items not eligible for foreign sales
+      if (isForeignOrder) {
+        const eligibleIds = new Set(productsData.map((p: Product) => p.id));
+        setCart(prev => {
+          const filtered = prev.filter(item => eligibleIds.has(item.product.id));
+          if (filtered.length < prev.length) {
+            Alert.alert(
+              'Prodotti rimossi',
+              'Alcuni prodotti nel carrello non sono disponibili per ordini esteri e sono stati rimossi.'
+            );
+          }
+          return filtered;
+        });
+      }
+
+      // Reset shipping selection as available methods may change
+      setSelectedShipping('');
+    } catch (error) {
+      console.error('Error reloading for foreign toggle:', error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   const loadCustomerFromParams = async () => {
     try {

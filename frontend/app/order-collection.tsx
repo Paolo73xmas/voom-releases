@@ -389,6 +389,29 @@ export default function OrderCollectionScreen() {
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
+  // Calculate rottamazione spreaded prices across all products
+  const getSpreadedPrices = () => {
+    if (rottamazioneAmount === 0) return [];
+    const netDiscount = getRottamazioneNetAmount(rottamazioneAmount);
+    const totalImponibile = getCartSubtotal();
+    if (totalImponibile === 0) return [];
+
+    return cart.map(item => {
+      const itemImponibile = item.unit_price * item.quantity;
+      const itemShare = itemImponibile / totalImponibile;
+      const itemDiscount = netDiscount * itemShare;
+      const discountPerUnit = itemDiscount / item.quantity;
+      const newUnitPrice = Math.round((item.unit_price - discountPerUnit) * 100) / 100;
+
+      return {
+        product: item.product,
+        quantity: item.quantity,
+        originalPrice: item.unit_price,
+        newPrice: newUnitPrice,
+      };
+    });
+  };
+
   // Conflict detection: non-estero products in cart while estero mode is active
   const getIncompatibleCartItems = (): CartItem[] => {
     if (!isForeignOrder) return [];
@@ -1182,6 +1205,11 @@ export default function OrderCollectionScreen() {
             <View style={styles.rottamazioneHeader}>
               <Ionicons name="refresh" size={18} color="#8B5CF6" />
               <Text style={styles.rottamazioneHeaderTitle}>Rottamazione</Text>
+              {rottamazioneAmount > 0 && (
+                <View style={styles.rottamazioneBadge}>
+                  <Text style={styles.rottamazioneBadgeText}>{formatCurrency(rottamazioneAmount)}</Text>
+                </View>
+              )}
             </View>
             <View style={[styles.summaryCard, styles.rottamazioneCard]}>
               <Text style={styles.rottamazioneInfo}>
@@ -1204,25 +1232,32 @@ export default function OrderCollectionScreen() {
                       styles.rottamazioneLotText,
                       rottamazioneAmount === lot && styles.rottamazioneLotTextSelected
                     ]}>
-                      {lot === 0 ? 'Nessuna' : formatCurrency(lot)}
+                      {lot === 0 ? 'Nessuna' : `${formatCurrency(lot)} (min: ${formatCurrency(lot * rottamazioneConfig.multiplier)})`}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
+
               {rottamazioneAmount > 0 && (
                 <>
-                  <Text style={styles.rottamazioneNet}>
-                    Sconto netto applicato: {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}
-                  </Text>
                   <TextInput
                     style={styles.rottamazioneInput}
-                    placeholder="Descrizione merce da rottamare *"
+                    placeholder="Descrivi la merce da rottamare... *"
                     value={rottamazioneDescription}
                     onChangeText={setRottamazioneDescription}
                     multiline
                   />
+                  {!rottamazioneDescription.trim() && (
+                    <View style={styles.rottamazioneWarning}>
+                      <Ionicons name="warning" size={14} color="#92400E" />
+                      <Text style={styles.rottamazioneWarningText}>
+                        La descrizione della merce da rottamare è obbligatoria
+                      </Text>
+                    </View>
+                  )}
                 </>
               )}
+
               {/* Rottamazione rules */}
               <View style={styles.rottamazioneRulesBox}>
                 <Text style={styles.rottamazioneRuleText}>
@@ -1231,8 +1266,49 @@ export default function OrderCollectionScreen() {
                 <Text style={styles.rottamazioneRuleText}>
                   • Formula: imponibile minimo = rottamazione × {rottamazioneConfig.multiplier}
                 </Text>
+                {rottamazioneAmount > 0 && (
+                  <>
+                    <Text style={styles.rottamazioneRuleText}>
+                      • Importo lordo (IVA incl.): {formatCurrency(rottamazioneAmount)}
+                    </Text>
+                    <Text style={styles.rottamazioneRuleTextBold}>
+                      • Netto da spalmare (scorporo IVA {Math.round((rottamazioneConfig.iva_rate - 1) * 100)}%): {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}
+                    </Text>
+                    <Text style={styles.rottamazioneRuleTextNote}>
+                      • Lo sconto netto verrà spalmato proporzionalmente sui prezzi unitari imponibili
+                    </Text>
+                  </>
+                )}
               </View>
             </View>
+
+            {/* Rottamazione Summary Box */}
+            {rottamazioneAmount > 0 && (
+              <View style={styles.rottamazioneSummaryBox}>
+                <View style={styles.rottamazioneSummaryRow}>
+                  <Text style={styles.rottamazioneSummaryLabel}>Rottamazione (lordo IVA incl.):</Text>
+                  <Text style={styles.rottamazioneSummaryValue}>{formatCurrency(rottamazioneAmount)}</Text>
+                </View>
+                <View style={styles.rottamazioneSummaryRow}>
+                  <Text style={styles.rottamazioneSummaryLabel}>Sconto netto spalmato (scorporo IVA {Math.round((rottamazioneConfig.iva_rate - 1) * 100)}%):</Text>
+                  <Text style={styles.rottamazioneSummaryDiscount}>-{formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Preview prezzi spalmati */}
+            {rottamazioneAmount > 0 && (
+              <View style={styles.spreadedPreviewBox}>
+                <Text style={styles.spreadedPreviewTitle}>
+                  Preview prezzi con Rottamazione spalmata (netto {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}):
+                </Text>
+                {getSpreadedPrices().map((item) => (
+                  <Text key={item.product.id} style={styles.spreadedPreviewItem}>
+                    {item.product.short_description || item.product.name}: {formatCurrency(item.originalPrice)} → {formatCurrency(item.newPrice)} ({item.quantity} pz)
+                  </Text>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
@@ -1811,6 +1887,94 @@ const styles = StyleSheet.create({
   rottamazioneRuleText: {
     fontSize: 11,
     color: '#5B21B6',
+    marginBottom: 2,
+  },
+  rottamazioneRuleTextBold: {
+    fontSize: 11,
+    color: '#5B21B6',
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  rottamazioneRuleTextNote: {
+    fontSize: 10,
+    color: '#7C3AED',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  rottamazioneBadge: {
+    backgroundColor: '#F97316',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginLeft: 'auto',
+  },
+  rottamazioneBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  rottamazioneWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    borderRadius: 8,
+    padding: 10,
+    gap: 6,
+    marginTop: 8,
+  },
+  rottamazioneWarningText: {
+    fontSize: 11,
+    color: '#92400E',
+    flex: 1,
+  },
+  rottamazioneSummaryBox: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FB923C',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+  },
+  rottamazioneSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  rottamazioneSummaryLabel: {
+    fontSize: 12,
+    color: '#9A3412',
+    flex: 1,
+  },
+  rottamazioneSummaryValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#EA580C',
+  },
+  rottamazioneSummaryDiscount: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
+  spreadedPreviewBox: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+  },
+  spreadedPreviewTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E40AF',
+    marginBottom: 6,
+  },
+  spreadedPreviewItem: {
+    fontSize: 11,
+    color: '#1E3A8A',
     marginBottom: 2,
   },
   // Cart Summary

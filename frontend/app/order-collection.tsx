@@ -145,19 +145,18 @@ export default function OrderCollectionScreen() {
       setProducts(productsData);
       setShippingMethods(shippingsData);
 
-      // Remove cart items not eligible for foreign sales
-      if (isForeignOrder) {
+      // Check for incompatible cart items (non-estero products in estero mode)
+      if (isForeignOrder && cart.length > 0) {
         const eligibleIds = new Set(productsData.map((p: Product) => p.id));
-        setCart(prev => {
-          const filtered = prev.filter(item => eligibleIds.has(item.product.id));
-          if (filtered.length < prev.length) {
-            Alert.alert(
-              'Prodotti rimossi',
-              'Alcuni prodotti nel carrello non sono disponibili per ordini esteri e sono stati rimossi.'
-            );
-          }
-          return filtered;
-        });
+        const incompatible = cart.filter(item => !eligibleIds.has(item.product.id));
+        if (incompatible.length > 0) {
+          const nomi = incompatible.map(i => i.product.short_description || i.product.name).join(', ');
+          Alert.alert(
+            'Conflitto Ordine Estero',
+            `Hai ${incompatible.length} prodotto/i nel carrello NON abilitati per ordini esteri:\n\n${nomi}\n\nRimuovili dal carrello prima di procedere.`,
+            [{ text: 'Ho capito', style: 'default' }]
+          );
+        }
       }
 
       // Reset shipping selection as available methods may change
@@ -383,11 +382,20 @@ export default function OrderCollectionScreen() {
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
+  // Conflict detection: non-estero products in cart while estero mode is active
+  const getIncompatibleCartItems = (): CartItem[] => {
+    if (!isForeignOrder) return [];
+    const eligibleIds = new Set(products.map(p => p.id));
+    return cart.filter(item => !eligibleIds.has(item.product.id));
+  };
+
+  const hasCartConflict = isForeignOrder && cart.length > 0 && getIncompatibleCartItems().length > 0;
+
   // Navigation
   const canProceed = () => {
     switch (currentStep) {
       case 0: return selectedCustomer !== null;
-      case 1: return cart.length > 0;
+      case 1: return cart.length > 0 && !hasCartConflict;
       case 2: return selectedPayment !== '';
       case 3: return selectedShipping !== '';
       case 4: return rottamazioneAmount === 0 || rottamazioneDescription.trim() !== '';
@@ -396,6 +404,14 @@ export default function OrderCollectionScreen() {
   };
 
   const handleNext = () => {
+    if (currentStep === 1 && hasCartConflict) {
+      Alert.alert(
+        'Impossibile procedere',
+        'Hai prodotti nel carrello NON abilitati per ordini esteri. Rimuovili dal carrello prima di continuare.',
+        [{ text: 'Apri carrello', onPress: () => setShowCartModal(true) }]
+      );
+      return;
+    }
     if (canProceed() && currentStep < 4) {
       setCurrentStep(currentStep + 1);
     }
@@ -535,8 +551,24 @@ export default function OrderCollectionScreen() {
       item.product.iva_percentage || 22
     );
 
+    // Check if this item is incompatible with current estero mode
+    const isIncompatible = isForeignOrder && !products.some(p => p.id === item.product.id);
+
     return (
-      <View key={item.product.id} style={styles.cartItem}>
+      <View key={item.product.id} style={[styles.cartItem, isIncompatible && styles.cartItemIncompatible]}>
+        {/* Incompatibility badge */}
+        {isIncompatible && (
+          <View style={styles.incompatibleBadge}>
+            <Ionicons name="alert-circle" size={12} color="#FFFFFF" />
+            <Text style={styles.incompatibleBadgeText}>Non abilitato Estero</Text>
+            <TouchableOpacity
+              style={styles.incompatibleRemoveBtn}
+              onPress={() => removeFromCart(item.product.id)}
+            >
+              <Text style={styles.incompatibleRemoveText}>Rimuovi</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {/* Product Image */}
         <View style={styles.cartItemImage}>
           {item.product.image_url ? (
@@ -701,6 +733,27 @@ export default function OrderCollectionScreen() {
           onChangeText={setProductSearch}
         />
       </View>
+
+      {/* Conflict Warning Banner */}
+      {hasCartConflict && (
+        <View style={styles.conflictBanner}>
+          <View style={styles.conflictBannerHeader}>
+            <Ionicons name="warning" size={20} color="#DC2626" />
+            <Text style={styles.conflictBannerTitle}>Conflitto Ordine Estero</Text>
+          </View>
+          <Text style={styles.conflictBannerText}>
+            Hai {getIncompatibleCartItems().length} prodotto/i nel carrello NON abilitati per ordini esteri. 
+            Rimuovili dal carrello per poter procedere.
+          </Text>
+          <TouchableOpacity 
+            style={styles.conflictViewCartBtn}
+            onPress={() => setShowCartModal(true)}
+          >
+            <Ionicons name="cart" size={14} color="#DC2626" />
+            <Text style={styles.conflictViewCartText}>Apri carrello per rimuoverli</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Products List - compact rows */}
       {loadingProducts ? (
@@ -1475,6 +1528,82 @@ const styles = StyleSheet.create({
   },
   cartModalList: {
     maxHeight: 300,
+  },
+  // Conflict Banner Styles
+  conflictBanner: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  conflictBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  conflictBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
+  conflictBannerText: {
+    fontSize: 12,
+    color: '#7F1D1D',
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  conflictViewCartBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DC2626',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  conflictViewCartText: {
+    fontSize: 12,
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  // Incompatible cart item styles
+  cartItemIncompatible: {
+    borderWidth: 1.5,
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  incompatibleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EF4444',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 4,
+    marginBottom: 6,
+  },
+  incompatibleBadgeText: {
+    fontSize: 10,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    flex: 1,
+  },
+  incompatibleRemoveBtn: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  incompatibleRemoveText: {
+    fontSize: 10,
+    color: '#EF4444',
+    fontWeight: '700',
   },
   // Cart Summary
   cartSummaryCard: {

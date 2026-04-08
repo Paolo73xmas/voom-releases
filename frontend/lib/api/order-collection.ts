@@ -173,7 +173,11 @@ export async function createOrder(data: CreateOrderData): Promise<{ orderId: str
         total_amount: totalAmount,
         shipping_cost: shippingCost,
         is_foreign: data.is_foreign,
-        notes: data.notes,
+        notes: [
+          data.notes,
+          data.rottamazione_amount ? `[ROTTAMAZIONE: ${data.rottamazione_amount}€ - ${data.rottamazione_description || ''}]` : null,
+          data.cashback_amount ? `[CASHBACK: ${data.cashback_amount}€]` : null,
+        ].filter(Boolean).join('\n') || null,
         shipping_address: data.shipping_address,
         latitude: data.latitude,
         longitude: data.longitude,
@@ -188,13 +192,6 @@ export async function createOrder(data: CreateOrderData): Promise<{ orderId: str
         agent_full_name: agent?.full_name,
         agent_email: agent?.email,
         codice_agente_prestashop: agent?.codice_agente_prestashop,
-        ...(data.rottamazione_amount ? { 
-          rottamazione_amount: data.rottamazione_amount,
-          rottamazione_description: data.rottamazione_description,
-        } : {}),
-        ...(data.cashback_amount ? { 
-          cashback_amount: data.cashback_amount,
-        } : {}),
       })
       .select()
       .single();

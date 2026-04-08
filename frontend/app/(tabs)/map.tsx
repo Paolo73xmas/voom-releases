@@ -22,16 +22,18 @@ let WebView: any = null;
 if (Platform.OS !== 'web') {
   WebView = require('react-native-webview').WebView;
 }
-import { fetchTabaccherieInBounds, fetchAllTabaccherie, searchTabaccherie } from '../../lib/api/tabaccherie';
+import { fetchTabaccherieInRadius, fetchAllTabaccherie, searchTabaccherie } from '../../lib/api/tabaccherie';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { Tabaccheria } from '../../types';
 
 type FilterMode = 'all' | 'active' | 'not_visited';
 
-function getMarkerColor(tab: Tabaccheria, userId?: string): string {
-  // Gray: belongs to another agent
-  if (tab.agente_id && tab.agente_id !== userId) {
+function getMarkerColor(tab: Tabaccheria, userId?: string, userRole?: string): string {
+  const isAdmin = userRole === 'admin' || userRole === 'admincustom' || userRole === 'supervisor' || userRole === 'branch_admin';
+
+  // Gray: belongs to another agent (only for non-admin users)
+  if (!isAdmin && tab.agente_id && tab.agente_id !== userId) {
     return 'gray';
   }
   if (!tab.stato_visita || tab.stato_visita === 'non_visitato') {
@@ -226,8 +228,10 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
 export default function MapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user } = useAuthStore();
-  const webViewRef = useRef<WebView>(null);
+  const { user, profile } = useAuthStore();
+  const userRole = profile?.role || 'agent';
+  const webViewRef = useRef<any>(null);
+  const iframeRef = useRef<any>(null);
 
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -254,6 +258,13 @@ export default function MapScreen() {
 
   const currentBoundsRef = useRef<{ north: number; south: number; east: number; west: number } | null>(null);
   const tabaccherieRef = useRef<Tabaccheria[]>([]);
+
+  // Web-only: Leaflet direct map refs
+  const leafletMapRef = useRef<any>(null);
+  const leafletMarkersRef = useRef<any[]>([]);
+  const leafletUserMarkerRef = useRef<any>(null);
+  const mapDivRef = useRef<any>(null);
+  const leafletReadyRef = useRef(false);
 
   useEffect(() => {
     tabaccherieRef.current = tabaccherie;
@@ -292,41 +303,216 @@ export default function MapScreen() {
     }
   }, [filterMode]);
 
+  // Web-only: Initialize Leaflet map directly in the DOM
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !userLocation || loading) return;
+    if (leafletMapRef.current) return; // Already initialized
+
+    // Load Leaflet CSS
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    // Add custom styles
+    if (!document.getElementById('leaflet-custom-css')) {
+      const style = document.createElement('style');
+      style.id = 'leaflet-custom-css';
+      style.textContent = `.custom-marker{border:none!important;background:none!important}@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}70%{box-shadow:0 0 0 10px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}#leaflet-map-container{position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;}`;
+      document.head.appendChild(style);
+    }
+
+    // Load Leaflet JS then init map
+    const initMap = () => {
+      const L = (window as any).L;
+      // Find or create the map container by ID
+      let container = document.getElementById('leaflet-map-container');
+      if (!container) {
+        console.error('[Map] No container found');
+        return;
+      }
+
+      const map = L.map(container, { zoomControl: false, attributionControl: false })
+        .setView([userLocation.lat, userLocation.lng], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      // User location marker
+      const userIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background:#3b82f6;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);animation:pulse 2s infinite;"></div>',
+        iconSize: [16, 16], iconAnchor: [8, 8],
+      });
+      leafletUserMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+
+      leafletMapRef.current = map;
+      leafletReadyRef.current = true;
+      console.log('[Map] Leaflet map initialized successfully');
+
+      // Debounced bounds change
+      let debounce: any = null;
+      map.on('moveend', () => {
+        if (debounce) clearTimeout(debounce);
+        debounce = setTimeout(() => {
+          const b = map.getBounds();
+          const bounds = { north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() };
+          currentBoundsRef.current = bounds;
+          if (filterMode === 'all') {
+            loadByBounds(bounds);
+          }
+        }, 500);
+      });
+
+      // Initial load with slight delay to ensure everything is ready
+      setTimeout(() => {
+        const b = map.getBounds();
+        const bounds = { north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() };
+        currentBoundsRef.current = bounds;
+        loadByBounds(bounds);
+      }, 500);
+
+      // Force map to recalculate size
+      setTimeout(() => map.invalidateSize(), 200);
+    };
+
+    if ((window as any).L) {
+      // Small delay to ensure DOM is ready
+      setTimeout(initMap, 300);
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => setTimeout(initMap, 300);
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+        leafletReadyRef.current = false;
+      }
+    };
+  }, [userLocation, loading]);
+
+  // Web-only: Update markers when tabaccherie data changes
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !leafletReadyRef.current || !leafletMapRef.current) return;
+    const L = (window as any).L;
+    if (!L) return;
+
+    // Remove old markers
+    leafletMarkersRef.current.forEach(m => leafletMapRef.current.removeLayer(m));
+    leafletMarkersRef.current = [];
+
+    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d' };
+
+    tabaccherie.forEach(t => {
+      if (!t.latitude || !t.longitude) return;
+      const color = getMarkerColor(t, user?.id, userRole);
+      const opacity = color === 'gray' ? '0.6' : '1';
+      const icon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background:${COLORS[color] || COLORS.red};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);opacity:${opacity};"></div>`,
+        iconSize: [14, 14], iconAnchor: [7, 7],
+      });
+      const marker = L.marker([t.latitude, t.longitude], { icon }).addTo(leafletMapRef.current);
+      marker.on('click', () => {
+        setSelectedTab(t);
+        setShowPopup(true);
+      });
+      leafletMarkersRef.current.push(marker);
+    });
+  }, [tabaccherie, user?.id, userRole]);
+
+  // Direct function to update Leaflet markers on web
+  const updateLeafletMarkers = useCallback((data: Tabaccheria[]) => {
+    if (Platform.OS !== 'web') return;
+    const L = (window as any).L;
+    if (!L || !leafletMapRef.current) return;
+
+    // Remove old markers
+    leafletMarkersRef.current.forEach(m => leafletMapRef.current.removeLayer(m));
+    leafletMarkersRef.current = [];
+
+    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d' };
+
+    data.forEach(t => {
+      if (!t.latitude || !t.longitude) return;
+      const color = getMarkerColor(t, user?.id, userRole);
+      const opacity = color === 'gray' ? '0.6' : '1';
+      const icon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background:${COLORS[color] || COLORS.red};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);opacity:${opacity};"></div>`,
+        iconSize: [14, 14], iconAnchor: [7, 7],
+      });
+      const marker = L.marker([t.latitude, t.longitude], { icon }).addTo(leafletMapRef.current);
+      marker.on('click', () => {
+        setSelectedTab(t);
+        setShowPopup(true);
+      });
+      leafletMarkersRef.current.push(marker);
+    });
+    console.log('[Map] Updated', leafletMarkersRef.current.length, 'Leaflet markers');
+  }, [user?.id, userRole]);
+
   const loadByBounds = useCallback(async (bounds: { north: number; south: number; east: number; west: number }) => {
     try {
       setLoadingPoints(true);
-      const data = await fetchTabaccherieInBounds(bounds, user?.id, 'agent');
+      const centerLat = (bounds.north + bounds.south) / 2;
+      const centerLng = (bounds.east + bounds.west) / 2;
+      const data = await fetchTabaccherieInRadius(centerLat, centerLng, 40, user?.id, userRole);
       setTabaccherie(data);
+      // Directly update Leaflet markers on web
+      updateLeafletMarkers(data);
       sendMarkersToWebView(data);
     } catch (e) {
-      console.error('[Map] Error loading by bounds:', e);
+      console.error('[Map] Error loading by radius:', e);
     } finally {
       setLoadingPoints(false);
     }
-  }, [user?.id]);
+  }, [user?.id, userRole, updateLeafletMarkers, sendMarkersToWebView]);
 
   const loadAll = useCallback(async () => {
     try {
       setLoadingPoints(true);
       const data = await fetchAllTabaccherie(user?.id, 'agent', filterMode);
       setTabaccherie(data);
+      // Directly update Leaflet markers on web
+      updateLeafletMarkers(data);
       sendMarkersToWebView(data);
     } catch (e) {
       console.error('[Map] Error loading all:', e);
     } finally {
       setLoadingPoints(false);
     }
-  }, [user?.id, filterMode]);
+  }, [user?.id, filterMode, updateLeafletMarkers, sendMarkersToWebView]);
 
-  const sendMarkersToWebView = (data: Tabaccheria[]) => {
+  // Helper to send messages to map
+  const sendToMap = useCallback((msg: any) => {
+    if (Platform.OS === 'web') {
+      // Direct Leaflet access on web - handled by useEffect on tabaccherie change
+      if (msg.type === 'setCenter' && leafletMapRef.current) {
+        leafletMapRef.current.setView([msg.lat, msg.lng], msg.zoom || 16);
+      }
+    } else {
+      const str = typeof msg === 'string' ? msg : JSON.stringify(msg);
+      webViewRef.current?.postMessage(str);
+    }
+  }, []);
+
+  const sendMarkersToWebView = useCallback((data: Tabaccheria[]) => {
     const markers = data.map(t => ({
       id: t.id,
       lat: t.latitude,
       lng: t.longitude,
-      color: getMarkerColor(t, user?.id),
+      color: getMarkerColor(t, user?.id, userRole),
     }));
-    webViewRef.current?.postMessage(JSON.stringify({ type: 'updateMarkers', data: markers }));
-  };
+    sendToMap({ type: 'updateMarkers', data: markers });
+  }, [user?.id, userRole, sendToMap]);
 
   // Handle WebView messages
   const onWebViewMessage = useCallback((event: any) => {
@@ -412,7 +598,7 @@ export default function MapScreen() {
       const result = results[0];
       const lat = parseFloat(result.lat);
       const lon = parseFloat(result.lon);
-      webViewRef.current?.postMessage(JSON.stringify({ type: 'setCenter', lat, lng: lon, zoom: 16 }));
+      sendToMap({ type: 'setCenter', lat, lng: lon, zoom: 16 });
       setShowSearch(false);
       setSearchQuery('');
     } catch {
@@ -425,12 +611,12 @@ export default function MapScreen() {
   // Recenter on user
   const recenterOnUser = () => {
     if (userLocation) {
-      webViewRef.current?.postMessage(JSON.stringify({
+      sendToMap({
         type: 'setCenter',
         lat: userLocation.lat,
         lng: userLocation.lng,
         zoom: 13,
-      }));
+      });
     }
   };
 
@@ -443,37 +629,16 @@ export default function MapScreen() {
     );
   }
 
-  const selectedColor = selectedTab ? getMarkerColor(selectedTab, user?.id) : 'red';
+  const selectedColor = selectedTab ? getMarkerColor(selectedTab, user?.id, userRole) : 'red';
   const isOwnedByOther = selectedColor === 'gray';
 
   return (
     <View style={styles.container}>
-      {/* WebView Map (native) or iframe (web) */}
+      {/* Map rendering: direct div for web, WebView for native */}
       {Platform.OS === 'web' ? (
-        <iframe
-          ref={(ref: any) => {
-            if (ref) {
-              // Store the iframe for communication
-              const iframeWindow = ref.contentWindow;
-              (webViewRef as any).current = {
-                postMessage: (msg: string) => {
-                  iframeWindow?.postMessage(msg, '*');
-                },
-              };
-              // Listen for messages from iframe
-              const handler = (event: any) => {
-                try {
-                  const msg = JSON.parse(event.data);
-                  if (msg.type === 'boundsChanged' || msg.type === 'markerClick') {
-                    onWebViewMessage({ nativeEvent: { data: event.data } });
-                  }
-                } catch {}
-              };
-              window.addEventListener('message', handler);
-            }
-          }}
-          srcDoc={LEAFLET_HTML(userLocation.lat, userLocation.lng)}
-          style={{ flex: 1, border: 'none', width: '100%', height: '100%' } as any}
+        <div
+          id="leaflet-map-container"
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 } as any}
         />
       ) : WebView ? (
         <WebView
@@ -797,6 +962,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
+    zIndex: 1000,
   },
   loadingBadgeText: {
     fontSize: 12,
@@ -814,6 +980,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
+    zIndex: 1000,
   },
   counterText: {
     fontSize: 12,
@@ -827,6 +994,7 @@ const styles = StyleSheet.create({
     right: 60,
     flexDirection: 'row',
     gap: 6,
+    zIndex: 1000,
   },
   filterBtn: {
     backgroundColor: '#FFF',
@@ -864,6 +1032,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
+    zIndex: 1000,
   },
   // Legend
   legendBox: {
@@ -877,6 +1046,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     minWidth: 160,
+    zIndex: 1000,
   },
   legendHeader: {
     flexDirection: 'row',

@@ -20,8 +20,42 @@ export async function fetchTabaccherieInBounds(
   userId?: string,
   userRole?: string
 ): Promise<Tabaccheria[]> {
+  // Deprecated: use fetchTabaccherieInRadius instead
+  return fetchTabaccherieInRadius(
+    (bounds.north + bounds.south) / 2,
+    (bounds.east + bounds.west) / 2,
+    40,
+    userId,
+    userRole
+  );
+}
+
+/**
+ * Fetch tabaccherie within a radius (km) from center point.
+ * Calculates a bounding box from the center and radius, then queries Supabase.
+ */
+export async function fetchTabaccherieInRadius(
+  centerLat: number,
+  centerLng: number,
+  radiusKm: number,
+  userId?: string,
+  userRole?: string
+): Promise<Tabaccheria[]> {
   try {
-    console.log('[tabaccherie] Fetching in bounds:', bounds);
+    // Calculate bounding box from center + radius
+    // 1 degree latitude ≈ 111km
+    // 1 degree longitude ≈ 111km * cos(latitude)
+    const latDelta = radiusKm / 111;
+    const lngDelta = radiusKm / (111 * Math.cos(centerLat * Math.PI / 180));
+
+    const bounds = {
+      north: centerLat + latDelta,
+      south: centerLat - latDelta,
+      east: centerLng + lngDelta,
+      west: centerLng - lngDelta,
+    };
+
+    console.log('[tabaccherie] Fetching in radius', radiusKm, 'km from center:', centerLat, centerLng, 'bounds:', bounds);
 
     const { data, error } = await supabase
       .from('tabaccherie')
@@ -50,7 +84,7 @@ export async function fetchTabaccherieInBounds(
       .lte('gps_lat', bounds.north.toString())
       .gte('gps_lng', bounds.west.toString())
       .lte('gps_lng', bounds.east.toString())
-      .limit(3000);
+      .limit(5000);
 
     if (error) throw error;
     if (!data) return [];
@@ -85,7 +119,7 @@ export async function fetchTabaccherieInBounds(
       });
     });
 
-    console.log('[tabaccherie] Returning', validResults.length, 'valid points');
+    console.log('[tabaccherie] Returning', validResults.length, 'valid points in', radiusKm, 'km radius');
     return validResults;
   } catch (error) {
     console.error('[tabaccherie] Error:', error);

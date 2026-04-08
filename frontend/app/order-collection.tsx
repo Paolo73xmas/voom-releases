@@ -583,6 +583,64 @@ export default function OrderCollectionScreen() {
 
     setIsSubmitting(true);
     try {
+      // Build items array with modified prices based on rottamazione/cashback
+      let orderItems: { product_id: string; quantity: number; unit_price: number; discount_percent: number }[];
+
+      if (rottamazioneAmount > 0) {
+        // Apply rottamazione: use spreaded prices
+        const spreadedPrices = getSpreadedPrices();
+        if (spreadedPrices.length > 0) {
+          orderItems = spreadedPrices.map(sp => ({
+            product_id: sp.product.id,
+            quantity: sp.quantity,
+            unit_price: sp.newPrice,  // Spreaded price (reduced for eligible, original for excluded)
+            discount_percent: 0,
+          }));
+        } else {
+          // Fallback: no eligible products, use original prices
+          orderItems = cart.map(item => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount_percent: 0,
+          }));
+        }
+      } else if (cashBackToUse > 0) {
+        // Apply cashback: spread proportionally on eligible products
+        const eligibleItems = cart.filter(item => item.product.cashback_eligible === true);
+        const eligibleSubtotal = eligibleItems.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+
+        orderItems = cart.map(item => {
+          if (item.product.cashback_eligible === true && eligibleSubtotal > 0) {
+            const itemImponibile = item.unit_price * item.quantity;
+            const itemShare = itemImponibile / eligibleSubtotal;
+            const itemDiscount = cashBackToUse * itemShare;
+            const discountPerUnit = itemDiscount / item.quantity;
+            const newUnitPrice = Math.round((item.unit_price - discountPerUnit) * 100) / 100;
+            return {
+              product_id: item.product.id,
+              quantity: item.quantity,
+              unit_price: Math.max(0, newUnitPrice),
+              discount_percent: 0,
+            };
+          }
+          return {
+            product_id: item.product.id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount_percent: 0,
+          };
+        });
+      } else {
+        // No discount: use original prices
+        orderItems = cart.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_percent: 0,
+        }));
+      }
+
       const result = await createOrder({
         customer_id: selectedCustomer.id,
         agent_id: user.id,
@@ -593,12 +651,14 @@ export default function OrderCollectionScreen() {
         notes: notes || undefined,
         latitude: location?.latitude,
         longitude: location?.longitude,
-        items: cart.map(item => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          discount_percent: 0,
-        })),
+        items: orderItems,
+        ...(rottamazioneAmount > 0 ? {
+          rottamazione_amount: rottamazioneAmount,
+          rottamazione_description: rottamazioneDescription,
+        } : {}),
+        ...(cashBackToUse > 0 ? {
+          cashback_amount: cashBackToUse,
+        } : {}),
       });
 
       Alert.alert(

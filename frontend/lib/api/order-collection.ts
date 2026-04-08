@@ -113,6 +113,9 @@ export interface CreateOrderData {
   latitude?: number;
   longitude?: number;
   items: OrderItem[];
+  rottamazione_amount?: number;
+  rottamazione_description?: string;
+  cashback_amount?: number;
 }
 
 function generateOrderNumber(): string {
@@ -185,6 +188,13 @@ export async function createOrder(data: CreateOrderData): Promise<{ orderId: str
         agent_full_name: agent?.full_name,
         agent_email: agent?.email,
         codice_agente_prestashop: agent?.codice_agente_prestashop,
+        ...(data.rottamazione_amount ? { 
+          rottamazione_amount: data.rottamazione_amount,
+          rottamazione_description: data.rottamazione_description,
+        } : {}),
+        ...(data.cashback_amount ? { 
+          cashback_amount: data.cashback_amount,
+        } : {}),
       })
       .select()
       .single();

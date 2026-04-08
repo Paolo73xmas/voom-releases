@@ -551,9 +551,13 @@ export default function MapScreen() {
 
   const handleOrderClick = (tab: Tabaccheria) => {
     setShowPopup(false);
+    const customerName = tab.customer_business_name || tab.denominazione || '';
     router.push({
       pathname: '/order-collection',
-      params: { customerId: tab.customer_id || tab.id },
+      params: {
+        ...(tab.customer_id ? { customerId: tab.customer_id } : {}),
+        customerName: customerName,
+      },
     });
   };
 

@@ -124,10 +124,10 @@ export default function OrderCollectionScreen() {
   }, [user]);
 
   useEffect(() => {
-    if (params.customerId) {
+    if (params.customerId || params.customerName) {
       loadCustomerFromParams();
     }
-  }, [params.customerId]);
+  }, [params.customerId, params.customerName]);
 
   useEffect(() => {
     if (selectedCustomer) {
@@ -181,10 +181,55 @@ export default function OrderCollectionScreen() {
 
   const loadCustomerFromParams = async () => {
     try {
-      const customer = await fetchCustomerById(params.customerId as string);
-      if (customer) {
-        setSelectedCustomer(customer);
-        setCurrentStep(1);
+      // 1. Try loading by customer ID first
+      if (params.customerId) {
+        try {
+          const customer = await fetchCustomerById(params.customerId as string);
+          if (customer) {
+            setSelectedCustomer(customer);
+            setCurrentStep(1);
+            return;
+          }
+        } catch (e) {
+          console.log('[OrderCollection] Customer ID lookup failed, trying name search...');
+        }
+      }
+
+      // 2. Fallback: pre-fill search box with customer name
+      if (params.customerName) {
+        const name = params.customerName as string;
+        setCustomerSearch(name);
+
+        // Try to auto-match the customer from the loaded list
+        if (customers.length > 0) {
+          const match = customers.find(c =>
+            c.business_name.toLowerCase() === name.toLowerCase()
+          );
+          if (match) {
+            setSelectedCustomer(match);
+            setCurrentStep(1);
+            return;
+          }
+        }
+
+        // If customers not loaded yet, search Supabase directly
+        if (user) {
+          try {
+            const { data } = await supabase
+              .from('customers')
+              .select('*')
+              .ilike('business_name', `%${name}%`)
+              .limit(1)
+              .single();
+            if (data) {
+              setSelectedCustomer(data as Customer);
+              setCurrentStep(1);
+              return;
+            }
+          } catch (e) {
+            console.log('[OrderCollection] Name search fallback, showing search results');
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading customer:', error);

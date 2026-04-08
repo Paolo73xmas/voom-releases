@@ -30,6 +30,12 @@ interface Product {
   iva_percentage?: number;
 }
 
+interface SubCategory {
+  name: string;
+  count: number;
+  image_url?: string | null;
+}
+
 interface Stats {
   totalProducts: number;
   activeProducts: number;
@@ -37,20 +43,28 @@ interface Stats {
   suppliers: number;
 }
 
+type ViewLevel = 'categories' | 'subcategories' | 'products';
+
 export default function ProductsScreen() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<Stats>({ totalProducts: 0, activeProducts: 0, categories: 0, suppliers: 0 });
   const [categories, setCategories] = useState<ProductCategory[]>([]);
+
+  // Navigation state
+  const [viewLevel, setViewLevel] = useState<ViewLevel>('categories');
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
+
+  // Data
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [productsLoading, setProductsLoading] = useState(false);
+  const [innerLoading, setInnerLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const loadData = useCallback(async () => {
     try {
-      // Fetch categories with product count
       const { data: cats } = await supabase
         .from('product_categories')
         .select('id, name, description, is_active')
@@ -59,7 +73,6 @@ export default function ProductsScreen() {
 
       const activeCats = cats || [];
 
-      // Fetch product counts per category
       const catsWithCount = await Promise.all(
         activeCats.map(async (cat) => {
           const { count } = await supabase
@@ -73,20 +86,12 @@ export default function ProductsScreen() {
 
       setCategories(catsWithCount);
 
-      // Fetch stats
       const { count: totalCount } = await supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true });
-
+        .from('products').select('id', { count: 'exact', head: true });
       const { count: activeCount } = await supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('is_active', true);
-
+        .from('products').select('id', { count: 'exact', head: true }).eq('is_active', true);
       const { count: supplierCount } = await supabase
-        .from('suppliers')
-        .select('id', { count: 'exact', head: true })
-        .eq('is_active', true);
+        .from('suppliers').select('id', { count: 'exact', head: true }).eq('is_active', true);
 
       setStats({
         totalProducts: totalCount || 0,
@@ -103,65 +108,108 @@ export default function ProductsScreen() {
 
   useEffect(() => { loadData(); }, []);
 
-  const loadProducts = useCallback(async (categoryId: string) => {
-    setProductsLoading(true);
+  // Load sub-categories (unique product names) for a category
+  const loadSubCategories = useCallback(async (categoryId: string) => {
+    setInnerLoading(true);
+    try {
+      const { data } = await supabase
+        .from('products')
+        .select('name, image_url')
+        .eq('category_id', categoryId)
+        .eq('is_active', true)
+        .order('name');
+
+      if (data) {
+        const grouped: Record<string, { count: number; image_url?: string | null }> = {};
+        data.forEach((p) => {
+          if (!grouped[p.name]) {
+            grouped[p.name] = { count: 0, image_url: p.image_url };
+          }
+          grouped[p.name].count++;
+        });
+        const subs: SubCategory[] = Object.entries(grouped)
+          .map(([name, info]) => ({ name, count: info.count, image_url: info.image_url }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        setSubCategories(subs);
+      }
+    } catch (e) {
+      console.error('[Products] Error loading sub-categories:', e);
+    } finally {
+      setInnerLoading(false);
+    }
+  }, []);
+
+  // Load products for a specific name within a category
+  const loadProducts = useCallback(async (categoryId: string, productName: string) => {
+    setInnerLoading(true);
     try {
       const { data } = await supabase
         .from('products')
         .select('*')
         .eq('category_id', categoryId)
+        .eq('name', productName)
         .eq('is_active', true)
-        .order('name');
+        .order('short_description');
       setProducts(data || []);
     } catch (e) {
       console.error('[Products] Error loading products:', e);
     } finally {
-      setProductsLoading(false);
+      setInnerLoading(false);
     }
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    if (selectedCategory) {
-      await loadProducts(selectedCategory.id);
+    if (viewLevel === 'products' && selectedCategory && selectedSubCategory) {
+      await loadProducts(selectedCategory.id, selectedSubCategory);
+    } else if (viewLevel === 'subcategories' && selectedCategory) {
+      await loadSubCategories(selectedCategory.id);
     } else {
       await loadData();
     }
     setRefreshing(false);
   };
 
+  // Navigation handlers
   const handleSelectCategory = (cat: ProductCategory) => {
     setSelectedCategory(cat);
+    setViewLevel('subcategories');
     setSearchQuery('');
-    loadProducts(cat.id);
+    loadSubCategories(cat.id);
+  };
+
+  const handleSelectSubCategory = (name: string) => {
+    if (!selectedCategory) return;
+    setSelectedSubCategory(name);
+    setViewLevel('products');
+    setSearchQuery('');
+    loadProducts(selectedCategory.id, name);
   };
 
   const handleBack = () => {
-    setSelectedCategory(null);
-    setProducts([]);
-    setSearchQuery('');
+    if (viewLevel === 'products') {
+      setViewLevel('subcategories');
+      setSelectedSubCategory(null);
+      setProducts([]);
+      setSearchQuery('');
+    } else if (viewLevel === 'subcategories') {
+      setViewLevel('categories');
+      setSelectedCategory(null);
+      setSubCategories([]);
+      setSearchQuery('');
+    }
   };
 
-  const filteredProducts = searchQuery.trim()
-    ? products.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.sku.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : products;
+  const formatPrice = (price: number) => price.toFixed(2).replace('.', ',') + ' \u20AC';
 
-  const formatPrice = (price: number) => {
-    return price.toFixed(2).replace('.', ',') + ' \u20AC';
-  };
-
-  // ---- CATEGORY LIST VIEW ----
+  // ===== LEVEL 1: CATEGORIES =====
   const renderCategoryView = () => (
     <ScrollView
-      style={styles.content}
+      style={styles.scrollContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      {/* Stats Cards */}
       <View style={styles.statsGrid}>
-        <View style={[styles.statCard, { borderLeftColor: '#3B82F6' }]}>  
+        <View style={[styles.statCard, { borderLeftColor: '#3B82F6' }]}>
           <Ionicons name="cube-outline" size={20} color="#3B82F6" />
           <Text style={styles.statValue}>{stats.totalProducts}</Text>
           <Text style={styles.statLabel}>Totale Prodotti</Text>
@@ -183,33 +231,108 @@ export default function ProductsScreen() {
         </View>
       </View>
 
-      {/* Subtitle */}
       <Text style={styles.subtitle}>Seleziona una categoria per visualizzare i prodotti</Text>
 
-      {/* Categories Grid */}
-      <View style={styles.categoriesGrid}>
+      <View style={styles.grid}>
         {categories.map((cat) => (
           <TouchableOpacity
             key={cat.id}
-            style={styles.categoryCard}
+            style={styles.gridCard}
             onPress={() => handleSelectCategory(cat)}
             activeOpacity={0.7}
           >
-            <View style={styles.categoryIconWrap}>
+            <View style={[styles.gridIconWrap, { backgroundColor: '#EFF6FF' }]}>
               <Ionicons name="folder-open-outline" size={22} color="#3B82F6" />
             </View>
-            <Text style={styles.categoryName} numberOfLines={1}>{cat.name}</Text>
+            <Text style={styles.gridCardTitle} numberOfLines={1}>{cat.name}</Text>
             {cat.description ? (
-              <Text style={styles.categoryDesc} numberOfLines={2}>{cat.description}</Text>
+              <Text style={styles.gridCardDesc} numberOfLines={2}>{cat.description}</Text>
             ) : null}
-            <Text style={styles.categoryCount}>{cat.product_count} prodotti</Text>
+            <Text style={styles.gridCardCount}>{cat.product_count} prodotti</Text>
           </TouchableOpacity>
         ))}
       </View>
     </ScrollView>
   );
 
-  // ---- PRODUCT LIST VIEW ----
+  // ===== LEVEL 2: SUB-CATEGORIES (Product Names) =====
+  const filteredSubCategories = searchQuery.trim()
+    ? subCategories.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : subCategories;
+
+  const renderSubCategoryView = () => (
+    <View style={styles.innerContent}>
+      <View style={styles.navHeader}>
+        <TouchableOpacity onPress={handleBack} style={styles.backRow}>
+          <Ionicons name="arrow-back" size={20} color="#1E40AF" />
+          <Text style={styles.backText}>Categorie</Text>
+        </TouchableOpacity>
+        <Text style={styles.navTitle}>{selectedCategory?.name}</Text>
+        <Text style={styles.navCount}>{subCategories.length} sotto-categorie</Text>
+      </View>
+
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={18} color="#6B7280" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Cerca sotto-categoria..."
+          placeholderTextColor="#9CA3AF"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {innerLoading ? (
+        <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={filteredSubCategories}
+          keyExtractor={(item) => item.name}
+          numColumns={2}
+          columnWrapperStyle={styles.gridRow}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.subCatCard}
+              onPress={() => handleSelectSubCategory(item.name)}
+              activeOpacity={0.7}
+            >
+              {item.image_url ? (
+                <Image source={{ uri: item.image_url }} style={styles.subCatImage} resizeMode="contain" />
+              ) : (
+                <View style={[styles.gridIconWrap, { backgroundColor: '#F0FDF4' }]}>
+                  <Ionicons name="pricetag-outline" size={22} color="#10B981" />
+                </View>
+              )}
+              <Text style={styles.gridCardTitle} numberOfLines={2}>{item.name}</Text>
+              <Text style={styles.gridCardCount}>{item.count} prodotti</Text>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <Ionicons name="folder-open-outline" size={48} color="#D1D5DB" />
+              <Text style={styles.emptyText}>Nessuna sotto-categoria trovata</Text>
+            </View>
+          }
+        />
+      )}
+    </View>
+  );
+
+  // ===== LEVEL 3: PRODUCTS (by short_description) =====
+  const filteredProducts = searchQuery.trim()
+    ? products.filter(p =>
+        (p.short_description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.sku.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : products;
+
   const renderProductItem = ({ item }: { item: Product }) => (
     <View style={styles.productCard}>
       {item.image_url ? (
@@ -220,11 +343,10 @@ export default function ProductsScreen() {
         </View>
       )}
       <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+        <Text style={styles.productName} numberOfLines={2}>
+          {item.short_description || item.name}
+        </Text>
         <Text style={styles.productSku}>SKU: {item.sku}</Text>
-        {item.short_description ? (
-          <Text style={styles.productDesc} numberOfLines={1}>{item.short_description}</Text>
-        ) : null}
       </View>
       <View style={styles.productPriceWrap}>
         <Text style={styles.productPrice}>{formatPrice(item.unit_price)}</Text>
@@ -236,18 +358,16 @@ export default function ProductsScreen() {
   );
 
   const renderProductView = () => (
-    <View style={styles.content}>
-      {/* Back + Category Title */}
-      <View style={styles.productHeader}>
+    <View style={styles.innerContent}>
+      <View style={styles.navHeader}>
         <TouchableOpacity onPress={handleBack} style={styles.backRow}>
           <Ionicons name="arrow-back" size={20} color="#1E40AF" />
-          <Text style={styles.backText}>Categorie</Text>
+          <Text style={styles.backText}>{selectedCategory?.name}</Text>
         </TouchableOpacity>
-        <Text style={styles.productHeaderTitle}>{selectedCategory?.name}</Text>
-        <Text style={styles.productHeaderCount}>{filteredProducts.length} prodotti</Text>
+        <Text style={styles.navTitle}>{selectedSubCategory}</Text>
+        <Text style={styles.navCount}>{filteredProducts.length} prodotti</Text>
       </View>
 
-      {/* Search */}
       <View style={styles.searchBar}>
         <Ionicons name="search" size={18} color="#6B7280" />
         <TextInput
@@ -264,7 +384,7 @@ export default function ProductsScreen() {
         )}
       </View>
 
-      {productsLoading ? (
+      {innerLoading ? (
         <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
@@ -276,7 +396,7 @@ export default function ProductsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Ionicons name="cube-outline" size={48} color="#D1D5DB" />
-              <Text style={styles.emptyText}>Nessun prodotto in questa categoria</Text>
+              <Text style={styles.emptyText}>Nessun prodotto trovato</Text>
             </View>
           }
         />
@@ -294,7 +414,9 @@ export default function ProductsScreen() {
 
   return (
     <View style={styles.container}>
-      {selectedCategory ? renderProductView() : renderCategoryView()}
+      {viewLevel === 'categories' && renderCategoryView()}
+      {viewLevel === 'subcategories' && renderSubCategoryView()}
+      {viewLevel === 'products' && renderProductView()}
     </View>
   );
 }
@@ -302,47 +424,48 @@ export default function ProductsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { flex: 1, paddingHorizontal: 16 },
+  scrollContent: { flex: 1, paddingHorizontal: 16 },
+  innerContent: { flex: 1, paddingHorizontal: 16 },
 
   // Stats
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
   statCard: {
-    width: '47%',
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 14,
-    borderLeftWidth: 4,
+    width: '47%', backgroundColor: '#FFF', borderRadius: 12, padding: 14, borderLeftWidth: 4,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
   statValue: { fontSize: 26, fontWeight: '700', color: '#1F2937', marginTop: 6 },
   statLabel: { fontSize: 12, color: '#6B7280', marginTop: 2 },
 
-  // Subtitle
   subtitle: { fontSize: 14, color: '#6B7280', marginTop: 20, marginBottom: 12 },
 
-  // Categories
-  categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 24 },
-  categoryCard: {
-    width: '47%',
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
+  // Grid (categories & sub-categories)
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 24 },
+  gridRow: { gap: 10 },
+  gridCard: {
+    width: '47%', backgroundColor: '#FFF', borderRadius: 12, padding: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
-  categoryIconWrap: {
-    width: 40, height: 40, borderRadius: 10, backgroundColor: '#EFF6FF',
+  gridIconWrap: {
+    width: 40, height: 40, borderRadius: 10,
     alignItems: 'center', justifyContent: 'center', marginBottom: 10,
   },
-  categoryName: { fontSize: 15, fontWeight: '600', color: '#1F2937' },
-  categoryDesc: { fontSize: 12, color: '#6B7280', marginTop: 4 },
-  categoryCount: { fontSize: 12, color: '#3B82F6', fontWeight: '500', marginTop: 6 },
+  gridCardTitle: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
+  gridCardDesc: { fontSize: 11, color: '#6B7280', marginTop: 3 },
+  gridCardCount: { fontSize: 12, color: '#3B82F6', fontWeight: '500', marginTop: 6 },
 
-  // Product list header
-  productHeader: { marginTop: 12, marginBottom: 8 },
-  backRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
+  // Sub-category card
+  subCatCard: {
+    width: '48%', backgroundColor: '#FFF', borderRadius: 12, padding: 14,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
+  },
+  subCatImage: { width: 40, height: 40, borderRadius: 8, marginBottom: 10, backgroundColor: '#F9FAFB' },
+
+  // Navigation header
+  navHeader: { marginTop: 12, marginBottom: 10 },
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
   backText: { fontSize: 14, color: '#1E40AF', fontWeight: '500' },
-  productHeaderTitle: { fontSize: 22, fontWeight: '700', color: '#1F2937' },
-  productHeaderCount: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  navTitle: { fontSize: 22, fontWeight: '700', color: '#1F2937' },
+  navCount: { fontSize: 13, color: '#6B7280', marginTop: 2 },
 
   // Search
   searchBar: {
@@ -366,7 +489,6 @@ const styles = StyleSheet.create({
   productInfo: { flex: 1, marginLeft: 12 },
   productName: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
   productSku: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
-  productDesc: { fontSize: 12, color: '#6B7280', marginTop: 2 },
   productPriceWrap: { alignItems: 'flex-end', marginLeft: 8 },
   productPrice: { fontSize: 15, fontWeight: '700', color: '#1E40AF' },
   productUnit: { fontSize: 11, color: '#9CA3AF' },

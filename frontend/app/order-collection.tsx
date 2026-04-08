@@ -188,8 +188,12 @@ export default function OrderCollectionScreen() {
         .single();
       
       if (data && !error) {
+        const lotsRaw = data.lots;
+        const lots = Array.isArray(lotsRaw) 
+          ? lotsRaw 
+          : (typeof lotsRaw === 'string' ? JSON.parse(lotsRaw) : DEFAULT_ROTTAMAZIONE_LOTS);
         setRottamazioneConfig({
-          lots: data.lots || DEFAULT_ROTTAMAZIONE_LOTS,
+          lots: Array.isArray(lots) ? lots : DEFAULT_ROTTAMAZIONE_LOTS,
           multiplier: data.multiplier || DEFAULT_ROTTAMAZIONE_MULTIPLIER,
           iva_rate: data.iva_rate || DEFAULT_ROTTAMAZIONE_IVA_RATE,
         });
@@ -202,14 +206,17 @@ export default function OrderCollectionScreen() {
   const loadCashBackBalance = async () => {
     if (!selectedCustomer) return;
     try {
+      // Get latest cashback transaction to get current balance
       const { data, error } = await supabase
-        .from('cashback_balances')
-        .select('available_balance')
+        .from('cashback_transactions')
+        .select('balance_after')
         .eq('customer_id', selectedCustomer.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single();
       
       if (data && !error) {
-        setCashBackBalance(data.available_balance || 0);
+        setCashBackBalance(data.balance_after || 0);
       } else {
         setCashBackBalance(0);
       }
@@ -362,9 +369,9 @@ export default function OrderCollectionScreen() {
 
   const getAvailableRottamazioneLots = (): number[] => {
     if (isForeignOrder) return [0];
-    
+    const lots = Array.isArray(rottamazioneConfig.lots) ? rottamazioneConfig.lots : [0];
     const imponibile = getCartSubtotal();
-    return rottamazioneConfig.lots.filter(lot => {
+    return lots.filter(lot => {
       if (lot === 0) return true;
       const requiredImponibile = lot * rottamazioneConfig.multiplier;
       return imponibile >= requiredImponibile;
@@ -813,6 +820,22 @@ export default function OrderCollectionScreen() {
         </View>
       )}
 
+      {/* CashBack Disponibile Banner */}
+      {cashBackBalance > 0 && selectedCustomer && !isForeignOrder && (
+        <View style={styles.cashbackBanner}>
+          <View style={styles.cashbackBannerLeft}>
+            <Ionicons name="gift" size={18} color="#10B981" />
+            <View>
+              <Text style={styles.cashbackBannerTitle}>CashBack Disponibile</Text>
+              <Text style={styles.cashbackBannerSub}>Utilizzabile allo step Riepilogo</Text>
+            </View>
+          </View>
+          <View style={styles.cashbackBannerBadge}>
+            <Text style={styles.cashbackBannerAmount}>{formatCurrency(cashBackBalance)}</Text>
+          </View>
+        </View>
+      )}
+
       {/* Cart Modal */}
       <Modal
         visible={showCartModal}
@@ -1020,7 +1043,11 @@ export default function OrderCollectionScreen() {
     const payment = paymentMethods.find(m => m.id === selectedPayment);
     const availableLots = getAvailableRottamazioneLots();
     const eligibleSubtotal = getCashBackEligibleSubtotal();
-    const maxCashBack = Math.min(cashBackBalance, eligibleSubtotal);
+    const orderTotal = getCartTotal();
+    const cashbackLimit50 = orderTotal * 0.5; // 50% del totale ordine
+    const maxCashBack = Math.min(cashBackBalance, eligibleSubtotal, cashbackLimit50);
+    const cashbackMinThreshold = 10; // Soglia minima 10€
+    const eligibleProducts = cart.filter(item => item.product.cashback_eligible === true);
 
     return (
       <ScrollView style={styles.stepContent}>
@@ -1077,36 +1104,67 @@ export default function OrderCollectionScreen() {
         {/* CashBack Section */}
         {cashBackBalance > 0 && rottamazioneAmount === 0 && !isForeignOrder && (
           <View style={styles.summarySection}>
-            <Text style={styles.summaryLabel}>
-              <Ionicons name="gift" size={16} color="#10B981" /> CashBack Disponibile
-            </Text>
+            <View style={styles.cashbackHeader}>
+              <View style={styles.cashbackHeaderLeft}>
+                <Ionicons name="gift" size={18} color="#10B981" />
+                <Text style={styles.cashbackHeaderTitle}>Utilizza CashBack</Text>
+              </View>
+              <View style={styles.cashbackSaldoBadge}>
+                <Text style={styles.cashbackSaldoText}>Saldo: {formatCurrency(cashBackBalance)}</Text>
+              </View>
+            </View>
             <View style={[styles.summaryCard, styles.cashbackCard]}>
-              <Text style={styles.cashbackAvailable}>
-                Disponibile: {formatCurrency(cashBackBalance)}
-              </Text>
               {eligibleSubtotal > 0 ? (
                 <>
-                  <Text style={styles.cashbackEligible}>
-                    Applicabile (prodotti idonei): max {formatCurrency(maxCashBack)}
-                  </Text>
+                  {/* Eligible products info */}
+                  <View style={styles.cashbackEligibleBox}>
+                    <Ionicons name="information-circle" size={16} color="#1E40AF" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.cashbackEligibleTitle}>
+                        Subtotale prodotti eligible: {formatCurrency(eligibleSubtotal)}
+                      </Text>
+                      <Text style={styles.cashbackEligibleProducts}>
+                        Prodotti eligible: {eligibleProducts.map(i => i.product.short_description || i.product.name).join(', ')}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Input field */}
+                  <Text style={styles.cashbackInputTitle}>Importo CashBack da utilizzare (€)</Text>
                   <View style={styles.cashbackInputRow}>
-                    <Text style={styles.cashbackInputLabel}>Usa:</Text>
                     <TextInput
                       style={styles.cashbackInput}
                       keyboardType="decimal-pad"
-                      value={cashBackToUse.toString()}
+                      value={cashBackToUse > 0 ? cashBackToUse.toString() : ''}
                       onChangeText={(text) => {
                         const val = parseFloat(text) || 0;
+                        if (val < cashbackMinThreshold && val > 0) {
+                          // Allow typing but will validate on submit
+                        }
                         setCashBackToUse(Math.min(val, maxCashBack));
                       }}
-                      placeholder="0.00"
+                      placeholder="0,00"
                     />
                     <TouchableOpacity
                       style={styles.cashbackMaxBtn}
                       onPress={() => setCashBackToUse(maxCashBack)}
                     >
-                      <Text style={styles.cashbackMaxBtnText}>MAX</Text>
+                      <Text style={styles.cashbackMaxBtnText}>Max</Text>
                     </TouchableOpacity>
+                  </View>
+
+                  {/* Rules */}
+                  <View style={styles.cashbackRulesBox}>
+                    <Ionicons name="alert-circle-outline" size={14} color="#92400E" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.cashbackRuleNote}>
+                        Lo sconto CashBack verrà spalmato proporzionalmente sui prezzi unitari dei prodotti per compatibilità con PrestaShop.
+                      </Text>
+                      <Text style={styles.cashbackRule}>• Max utilizzabile: {formatCurrency(cashBackBalance)}</Text>
+                      <Text style={styles.cashbackRule}>• Subtotale prodotti eligible: {formatCurrency(eligibleSubtotal)}</Text>
+                      <Text style={styles.cashbackRule}>• Soglia minima: {formatCurrency(cashbackMinThreshold)}</Text>
+                      <Text style={styles.cashbackRule}>• Limite: 50% del totale ordine</Text>
+                    </View>
                   </View>
                 </>
               ) : (
@@ -1121,12 +1179,13 @@ export default function OrderCollectionScreen() {
         {/* Rottamazione Section */}
         {!isForeignOrder && cashBackToUse === 0 && (
           <View style={styles.summarySection}>
-            <Text style={styles.summaryLabel}>
-              <Ionicons name="refresh" size={16} color="#8B5CF6" /> Rottamazione
-            </Text>
+            <View style={styles.rottamazioneHeader}>
+              <Ionicons name="refresh" size={18} color="#8B5CF6" />
+              <Text style={styles.rottamazioneHeaderTitle}>Rottamazione</Text>
+            </View>
             <View style={[styles.summaryCard, styles.rottamazioneCard]}>
               <Text style={styles.rottamazioneInfo}>
-                Seleziona importo rottamazione (lordo IVA inclusa)
+                Seleziona importo rottamazione
               </Text>
               <View style={styles.rottamazioneLots}>
                 {availableLots.map((lot) => (
@@ -1164,6 +1223,15 @@ export default function OrderCollectionScreen() {
                   />
                 </>
               )}
+              {/* Rottamazione rules */}
+              <View style={styles.rottamazioneRulesBox}>
+                <Text style={styles.rottamazioneRuleText}>
+                  • Imponibile attuale: {formatCurrency(getCartSubtotal())}
+                </Text>
+                <Text style={styles.rottamazioneRuleText}>
+                  • Formula: imponibile minimo = rottamazione × {rottamazioneConfig.multiplier}
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -1613,6 +1681,137 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#EF4444',
     fontWeight: '700',
+  },
+  // CashBack Banner (Step 2)
+  cashbackBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1.5,
+    borderColor: '#10B981',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+  },
+  cashbackBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cashbackBannerTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  cashbackBannerSub: {
+    fontSize: 10,
+    color: '#047857',
+  },
+  cashbackBannerBadge: {
+    backgroundColor: '#10B981',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  cashbackBannerAmount: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  // CashBack Section (Step 5)
+  cashbackHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  cashbackHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cashbackHeaderTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  cashbackSaldoBadge: {
+    backgroundColor: '#10B981',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  cashbackSaldoText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  cashbackEligibleBox: {
+    flexDirection: 'row',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 8,
+    padding: 10,
+    gap: 8,
+    marginBottom: 10,
+  },
+  cashbackEligibleTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1E40AF',
+  },
+  cashbackEligibleProducts: {
+    fontSize: 11,
+    color: '#3B82F6',
+    marginTop: 2,
+  },
+  cashbackInputTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#065F46',
+    marginBottom: 4,
+  },
+  cashbackRulesBox: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 8,
+    padding: 10,
+    gap: 6,
+    marginTop: 10,
+  },
+  cashbackRuleNote: {
+    fontSize: 10,
+    color: '#92400E',
+    marginBottom: 6,
+    fontStyle: 'italic',
+  },
+  cashbackRule: {
+    fontSize: 10,
+    color: '#92400E',
+    marginBottom: 2,
+  },
+  // Rottamazione Section (Step 5)
+  rottamazioneHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  rottamazioneHeaderTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#5B21B6',
+  },
+  rottamazioneRulesBox: {
+    backgroundColor: '#F5F3FF',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 10,
+  },
+  rottamazioneRuleText: {
+    fontSize: 11,
+    color: '#5B21B6',
+    marginBottom: 2,
   },
   // Cart Summary
   cartSummaryCard: {

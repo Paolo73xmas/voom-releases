@@ -152,21 +152,6 @@ export default function CustomersScreen() {
         </View>
       </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filterTabs}>
-        {(['all', 'client', 'prospect'] as const).map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.filterTab, filter === f && styles.filterTabActive]}
-            onPress={() => setFilter(f)}
-          >
-            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
-              {f === 'all' ? 'Tutti' : f === 'client' ? 'Clienti' : 'Prospect'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       {/* Stats + Nuovo Cliente */}
       <View style={styles.statsRow}>
         <Text style={styles.statsText}>

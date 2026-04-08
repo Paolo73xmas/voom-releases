@@ -470,11 +470,20 @@ export default function OrderCollectionScreen() {
     c.city.toLowerCase().includes(customerSearch.toLowerCase())
   );
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    p.sku.toLowerCase().includes(productSearch.toLowerCase()) ||
-    (p.short_description?.toLowerCase() || '').includes(productSearch.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => {
+    // When Estero is OFF, hide products with short_description starting with "EST-"
+    if (!isForeignOrder && p.short_description && p.short_description.toUpperCase().startsWith('EST-')) {
+      return false;
+    }
+    // Search filter
+    const search = productSearch.toLowerCase();
+    if (!search) return true;
+    return (
+      p.name.toLowerCase().includes(search) ||
+      p.sku.toLowerCase().includes(search) ||
+      (p.short_description?.toLowerCase() || '').includes(search)
+    );
+  });
 
   // Render product row - compact list layout with small icon, name+price, accisa, +1, +10
   const renderProductRow = ({ item }: { item: Product }) => {

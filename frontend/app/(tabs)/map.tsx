@@ -459,6 +459,29 @@ export default function MapScreen() {
     console.log('[Map] Updated', leafletMarkersRef.current.length, 'Leaflet markers');
   }, [user?.id, userRole]);
 
+  // Helper to send messages to map
+  const sendToMap = useCallback((msg: any) => {
+    if (Platform.OS === 'web') {
+      // Direct Leaflet access on web - handled by useEffect on tabaccherie change
+      if (msg.type === 'setCenter' && leafletMapRef.current) {
+        leafletMapRef.current.setView([msg.lat, msg.lng], msg.zoom || 16);
+      }
+    } else {
+      const str = typeof msg === 'string' ? msg : JSON.stringify(msg);
+      webViewRef.current?.postMessage(str);
+    }
+  }, []);
+
+  const sendMarkersToWebView = useCallback((data: Tabaccheria[]) => {
+    const markers = data.map(t => ({
+      id: t.id,
+      lat: t.latitude,
+      lng: t.longitude,
+      color: getMarkerColor(t, user?.id, userRole),
+    }));
+    sendToMap({ type: 'updateMarkers', data: markers });
+  }, [user?.id, userRole, sendToMap]);
+
   const loadByBounds = useCallback(async (bounds: { north: number; south: number; east: number; west: number }) => {
     try {
       setLoadingPoints(true);
@@ -490,29 +513,6 @@ export default function MapScreen() {
       setLoadingPoints(false);
     }
   }, [user?.id, filterMode, updateLeafletMarkers, sendMarkersToWebView]);
-
-  // Helper to send messages to map
-  const sendToMap = useCallback((msg: any) => {
-    if (Platform.OS === 'web') {
-      // Direct Leaflet access on web - handled by useEffect on tabaccherie change
-      if (msg.type === 'setCenter' && leafletMapRef.current) {
-        leafletMapRef.current.setView([msg.lat, msg.lng], msg.zoom || 16);
-      }
-    } else {
-      const str = typeof msg === 'string' ? msg : JSON.stringify(msg);
-      webViewRef.current?.postMessage(str);
-    }
-  }, []);
-
-  const sendMarkersToWebView = useCallback((data: Tabaccheria[]) => {
-    const markers = data.map(t => ({
-      id: t.id,
-      lat: t.latitude,
-      lng: t.longitude,
-      color: getMarkerColor(t, user?.id, userRole),
-    }));
-    sendToMap({ type: 'updateMarkers', data: markers });
-  }, [user?.id, userRole, sendToMap]);
 
   // Handle WebView messages
   const onWebViewMessage = useCallback((event: any) => {

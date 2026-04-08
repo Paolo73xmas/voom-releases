@@ -120,10 +120,16 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=[key]
 - Auth session persistence: SSR-safe storage adapter using AsyncStorage (mobile) + localStorage (web)
 - Product interface: Added missing cashback_eligible and estero fields
 - Order Collection wizard: Verified compilation and rendering of CashBack, Rottamazione, Accisa, IVA features
+- Package (Pacchetto) modal with pricing bug fix (nullish coalescing)
+- Rottamazione/CashBack price application on order submission
+- Map rewrite using react-native-webview (mobile) + DOM Leaflet (web)
+- 40km radius boundary filtering for tabaccherie
+- Admin marker color visibility (real colors vs gray for agents)
+- Map -> Order Collection navigation with customer pre-selection
+- **Anagrafica (First Visit)**: Complete 3-step wizard with photo/GPS, form with search, summary/review, Supabase submission
 
 ## Next Steps
-- Add native map support for mobile (react-native-maps)
-- Implement offline data sync
-- Add push notifications
-- Implement order creation flow
-- Add commission tracking
+- Implement offline data sync (critical for field agents in areas with bad reception)
+- Camera integration for photo uploads in anagrafica visits
+- Cart persistence in Order Collection
+- Refactoring of large files (order-collection.tsx ~3500 lines, map.tsx ~1100 lines)

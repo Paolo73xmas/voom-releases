@@ -180,20 +180,56 @@ frontend:
         agent: "main"
         comment: "5-tab navigation with proper icons and routing"
 
+  - task: "Map Feature (WebView/Leaflet with 40km radius, marker colors, popups)"
+    implemented: true
+    working: true
+    file: "app/(tabs)/map.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Map rewritten with react-native-webview for mobile and DOM Leaflet for web. 40km radius filtering, admin color logic, functional popups with Ordine and Anagrafica buttons."
+
+  - task: "Anagrafica (First Visit) - 3-step wizard"
+    implemented: true
+    working: true
+    file: "app/anagrafica.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Complete 3-step wizard: Step 1 (Photo/GPS with phone visit toggle), Step 2 (Full form with search modal, validation for P.IVA/CF/PEC/SDI), Step 3 (Summary/review with follow-up appointment). Supabase insert for customers, visits, tabaccherie. Customer-tabaccheria bidirectional linking. Dashboard quick action added. Verified all 3 steps via screenshots."
+
+  - task: "Dashboard Anagrafica Quick Action"
+    implemented: true
+    working: true
+    file: "app/(tabs)/index.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added Anagrafica quick action button to dashboard grid. Verified via screenshot."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 1
+  test_sequence: 2
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Order Collection Wizard"
-    - "Auth Session Persistence"
+    - "Anagrafica (First Visit)"
+    - "Map to Anagrafica navigation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "Verified order-collection.tsx renders correctly via screenshot. Fixed Product interface to include cashback_eligible field. Implemented SSR-safe Supabase storage adapter with AsyncStorage for mobile and localStorage for web. All pages loading without errors."
+    message: "Completed Anagrafica (First Visit) feature. 3-step wizard with photo/GPS, full form with search modal, and summary/review. All steps verified via screenshots. Dashboard quick action added. Fixed customer-tabaccheria bidirectional linking on new tabaccheria creation."

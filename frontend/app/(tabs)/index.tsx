@@ -76,6 +76,12 @@ export default function Dashboard() {
       onPress: () => router.push('/inspection/new'),
     },
     {
+      title: 'Anagrafica',
+      icon: 'document-text',
+      color: '#F59E0B',
+      onPress: () => router.push('/anagrafica'),
+    },
+    {
       title: 'Vedi Mappa',
       icon: 'map',
       color: '#3B82F6',

@@ -340,7 +340,7 @@ export default function AnagraficaScreen() {
         }).eq('id', form.tabaccheriaId);
       } else {
         const codice = await generateUniqueCodiceRivendita();
-        await supabase.from('tabaccherie').insert({
+        const { data: newTab, error: tabErr } = await supabase.from('tabaccherie').insert({
           codice_rivendita: codice,
           denominazione: form.businessName,
           indirizzo: form.address,
@@ -355,7 +355,15 @@ export default function AnagraficaScreen() {
           stato_visita: 'visitato',
           agente_id: user.id,
           customer_id: customer.id,
-        });
+        }).select().single();
+        if (tabErr) {
+          console.error('Tabaccheria insert error:', tabErr);
+        } else if (newTab) {
+          // Link customer back to the new tabaccheria
+          await supabase.from('customers')
+            .update({ tabaccheria_id: newTab.id })
+            .eq('id', customer.id);
+        }
       }
 
       // Optional appointment

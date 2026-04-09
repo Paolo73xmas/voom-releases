@@ -76,6 +76,12 @@ export default function Dashboard() {
       onPress: () => router.push('/anagrafica'),
     },
     {
+      title: 'Rivendite No Mappa',
+      icon: 'globe',
+      color: '#EF4444',
+      onPress: () => router.push('/rivendite-no-mappa'),
+    },
+    {
       title: 'Vedi Mappa',
       icon: 'map',
       color: '#3B82F6',

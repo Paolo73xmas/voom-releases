@@ -65,6 +65,13 @@ export default function RootLayout() {
             presentation: 'card',
           }} 
         />
+        <Stack.Screen 
+          name="rivendite-no-mappa" 
+          options={{ 
+            headerShown: false,
+            presentation: 'card',
+          }} 
+        />
       </Stack>
     </>
   );

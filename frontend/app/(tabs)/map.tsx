@@ -787,117 +787,114 @@ export default function MapScreen() {
         </View>
       </Modal>
 
-      {/* Marker Popup (Bottom Sheet) */}
-      <Modal visible={showPopup} transparent animationType="slide" onRequestClose={() => setShowPopup(false)}>
-        <TouchableOpacity style={styles.popupOverlay} activeOpacity={1} onPress={() => setShowPopup(false)}>
+      {/* Marker Popup (Bottom Sheet - NO Modal to avoid blocking Leaflet) */}
+      {showPopup && selectedTab && (
+        <View style={styles.popupOverlayInline}>
+          <TouchableOpacity style={styles.popupOverlayBg} activeOpacity={1} onPress={() => setShowPopup(false)} />
           <View style={[styles.popupSheet, { paddingBottom: insets.bottom + 16 }]}>
-            {selectedTab && (
-              <>
-                {/* Header */}
-                <View style={styles.popupHandle} />
-                <View style={styles.popupHeader}>
-                  <View style={styles.popupHeaderLeft}>
-                    <View style={[styles.popupColorDot, {
-                      backgroundColor: selectedColor === 'gray' ? '#475569' :
-                        selectedColor === 'red' ? '#DC2626' :
-                        selectedColor === 'orange' ? '#F97316' :
-                        selectedColor === 'green' ? '#15803D' : '#DC2626'
-                    }]} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.popupName} numberOfLines={2}>{getDisplayName(selectedTab)}</Text>
-                      <Text style={styles.popupAddress} numberOfLines={1}>{selectedTab.indirizzo}</Text>
-                      <Text style={styles.popupStatus}>
-                        {getStatusEmoji(selectedColor)} {getStatusLabel(selectedColor)}
-                      </Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity onPress={() => setShowPopup(false)} style={styles.popupCloseBtn}>
-                    <Ionicons name="close" size={22} color="#6B7280" />
+            {/* Header */}
+            <View style={styles.popupHandle} />
+            <View style={styles.popupHeader}>
+              <View style={styles.popupHeaderLeft}>
+                <View style={[styles.popupColorDot, {
+                  backgroundColor: selectedColor === 'gray' ? '#475569' :
+                    selectedColor === 'red' ? '#DC2626' :
+                    selectedColor === 'orange' ? '#F97316' :
+                    selectedColor === 'green' ? '#15803D' : '#DC2626'
+                }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.popupName} numberOfLines={2}>{getDisplayName(selectedTab)}</Text>
+                  <Text style={styles.popupAddress} numberOfLines={1}>{selectedTab.indirizzo}</Text>
+                  <Text style={styles.popupStatus}>
+                    {getStatusEmoji(selectedColor)} {getStatusLabel(selectedColor)}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setShowPopup(false)} style={styles.popupCloseBtn}>
+                <Ionicons name="close" size={22} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Actions */}
+            <View style={styles.popupActions}>
+              {/* Navigate - for all except gray */}
+              {!isOwnedByOther && selectedTab.latitude && selectedTab.longitude && (
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.actionBtnOutline]}
+                  onPress={() => openNavigation(selectedTab.latitude!, selectedTab.longitude!)}
+                >
+                  <Ionicons name="navigate" size={18} color="#3B82F6" />
+                  <Text style={[styles.actionBtnText, { color: '#3B82F6' }]}>Naviga</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Red: Visit → Anagrafica */}
+              {selectedColor === 'red' && !isOwnedByOther && (
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.actionBtnPrimary]}
+                  onPress={() => {
+                    setShowPopup(false);
+                    router.push({
+                      pathname: '/anagrafica',
+                      params: selectedTab.customer_id
+                        ? { tabaccheriaId: selectedTab.id }
+                        : { tabaccheriaId: selectedTab.id },
+                    });
+                  }}
+                >
+                  <Ionicons name="document-text" size={18} color="#FFF" />
+                  <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Anagrafica</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Orange/Green: Order + Data + Inspection */}
+              {(selectedColor === 'orange' || selectedColor === 'green') && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.actionBtnPrimary]}
+                    onPress={() => handleOrderClick(selectedTab)}
+                  >
+                    <Ionicons name="cart" size={18} color="#FFF" />
+                    <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Ordine</Text>
                   </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.actionBtnSecondary]}
+                    onPress={() => handleShowOrderData(selectedTab)}
+                  >
+                    <Ionicons name="calendar" size={18} color="#374151" />
+                    <Text style={[styles.actionBtnText, { color: '#374151' }]}>Dati</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
+                    onPress={() => {
+                      setShowPopup(false);
+                      const custId = selectedTab?.customer_id;
+                      if (custId) {
+                        router.push({ pathname: '/inspection/new', params: { customerId: custId } });
+                      } else {
+                        Alert.alert('Errore', 'Nessun cliente associato a questa tabaccheria');
+                      }
+                    }}
+                  >
+                    <Ionicons name="camera" size={18} color="#FFF" />
+                    <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Ispezione</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* Gray: info message */}
+              {isOwnedByOther && (
+                <View style={styles.grayInfoBox}>
+                  <Ionicons name="information-circle" size={18} color="#9CA3AF" />
+                  <Text style={styles.grayInfoText}>Cliente di altro agente</Text>
                 </View>
-
-                {/* Actions */}
-                <View style={styles.popupActions}>
-                  {/* Navigate - for all except gray */}
-                  {!isOwnedByOther && selectedTab.latitude && selectedTab.longitude && (
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.actionBtnOutline]}
-                      onPress={() => openNavigation(selectedTab.latitude!, selectedTab.longitude!)}
-                    >
-                      <Ionicons name="navigate" size={18} color="#3B82F6" />
-                      <Text style={[styles.actionBtnText, { color: '#3B82F6' }]}>Naviga</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Red: Visit → Anagrafica */}
-                  {selectedColor === 'red' && !isOwnedByOther && (
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.actionBtnPrimary]}
-                      onPress={() => {
-                        setShowPopup(false);
-                        router.push({
-                          pathname: '/anagrafica',
-                          params: selectedTab.customer_id
-                            ? { tabaccheriaId: selectedTab.id }
-                            : { tabaccheriaId: selectedTab.id },
-                        });
-                      }}
-                    >
-                      <Ionicons name="document-text" size={18} color="#FFF" />
-                      <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Anagrafica</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Orange/Green: Order + Data + Inspection */}
-                  {(selectedColor === 'orange' || selectedColor === 'green') && (
-                    <>
-                      <TouchableOpacity
-                        style={[styles.actionBtn, styles.actionBtnPrimary]}
-                        onPress={() => handleOrderClick(selectedTab)}
-                      >
-                        <Ionicons name="cart" size={18} color="#FFF" />
-                        <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Ordine</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[styles.actionBtn, styles.actionBtnSecondary]}
-                        onPress={() => handleShowOrderData(selectedTab)}
-                      >
-                        <Ionicons name="calendar" size={18} color="#374151" />
-                        <Text style={[styles.actionBtnText, { color: '#374151' }]}>Dati</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
-                        onPress={() => {
-                          setShowPopup(false);
-                          const custId = selectedTab?.customer_id;
-                          if (custId) {
-                            router.push({ pathname: '/inspection/new', params: { customerId: custId } });
-                          } else {
-                            Alert.alert('Errore', 'Nessun cliente associato a questa tabaccheria');
-                          }
-                        }}
-                      >
-                        <Ionicons name="camera" size={18} color="#FFF" />
-                        <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Ispezione</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-
-                  {/* Gray: info message */}
-                  {isOwnedByOther && (
-                    <View style={styles.grayInfoBox}>
-                      <Ionicons name="information-circle" size={18} color="#9CA3AF" />
-                      <Text style={styles.grayInfoText}>Cliente di altro agente</Text>
-                    </View>
-                  )}
-                </View>
-              </>
-            )}
+              )}
+            </View>
           </View>
-        </TouchableOpacity>
-      </Modal>
+        </View>
+      )}
 
       {/* Order Data Modal */}
       <Modal visible={showOrderDataModal} transparent animationType="fade" onRequestClose={() => setShowOrderDataModal(false)}>
@@ -1149,10 +1146,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFF',
   },
-  // Popup (Bottom Sheet)
-  popupOverlay: {
-    flex: 1,
+  // Popup (Inline Bottom Sheet - no Modal)
+  popupOverlayInline: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'flex-end',
+    zIndex: 2000,
+  },
+  popupOverlayBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.3)',
   },
   popupSheet: {

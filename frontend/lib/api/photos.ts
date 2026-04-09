@@ -1,6 +1,6 @@
 import { supabase } from '../supabase';
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 
 const BUCKET_NAME = 'visit-photos';
@@ -32,8 +32,8 @@ export async function ensurePhotoBucket(): Promise<boolean> {
 }
 
 /**
- * Upload a single photo to Supabase Storage using base64 (reliable on mobile).
- * Returns the public URL or null on failure.
+ * Upload a single photo to Supabase Storage.
+ * Uses expo-file-system File.arrayBuffer() for mobile (SDK 54+), fetch for web.
  */
 export async function uploadSinglePhoto(
   uri: string,
@@ -43,16 +43,13 @@ export async function uploadSinglePhoto(
     let arrayBuffer: ArrayBuffer;
 
     if (Platform.OS === 'web') {
-      // Web: fetch + blob works fine
       const response = await fetch(uri);
       const blob = await response.blob();
       arrayBuffer = await blob.arrayBuffer();
     } else {
-      // Mobile: read file as base64 using expo-file-system, then decode
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      arrayBuffer = decode(base64);
+      // Mobile: use expo-file-system File class (SDK 54+)
+      const file = new File(uri);
+      arrayBuffer = await file.arrayBuffer();
     }
 
     if (!arrayBuffer || arrayBuffer.byteLength === 0) {

@@ -45,13 +45,6 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
-          name="visit/new" 
-          options={{ 
-            title: 'Nuova Visita',
-            presentation: 'modal',
-          }} 
-        />
-        <Stack.Screen 
           name="inspection/new" 
           options={{ 
             title: 'Nuova Ispezione',

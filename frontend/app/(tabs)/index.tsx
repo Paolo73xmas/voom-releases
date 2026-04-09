@@ -64,12 +64,6 @@ export default function Dashboard() {
       onPress: () => router.push('/order-collection'),
     },
     {
-      title: 'Nuova Visita',
-      icon: 'location',
-      color: '#10B981',
-      onPress: () => router.push('/visit/new'),
-    },
-    {
       title: 'Nuova Ispezione',
       icon: 'camera',
       color: '#8B5CF6',

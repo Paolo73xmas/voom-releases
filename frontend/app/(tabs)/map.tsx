@@ -863,7 +863,12 @@ export default function MapScreen() {
                         style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
                         onPress={() => {
                           setShowPopup(false);
-                          Alert.alert('Ispezione', 'Navigazione alla nuova ispezione');
+                          const custId = selectedTab?.customer_id;
+                          if (custId) {
+                            router.push({ pathname: '/inspection/new', params: { customerId: custId } });
+                          } else {
+                            Alert.alert('Errore', 'Nessun cliente associato a questa tabaccheria');
+                          }
                         }}
                       >
                         <Ionicons name="camera" size={18} color="#FFF" />

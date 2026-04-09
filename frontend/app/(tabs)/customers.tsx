@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
-import { fetchCustomers, searchCustomers } from '../../lib/api/customers';
+import { fetchCustomers } from '../../lib/api/customers';
 import { Customer } from '../../types';
 
 export default function CustomersScreen() {
@@ -23,14 +23,12 @@ export default function CustomersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'client' | 'prospect'>('all');
 
   const loadCustomers = async () => {
     if (!user) return;
     try {
       const data = await fetchCustomers(user.id, user.role);
       setCustomers(data);
-      applyFilters(data, searchQuery, filter);
     } catch (error) {
       console.error('Error loading customers:', error);
     } finally {
@@ -42,29 +40,19 @@ export default function CustomersScreen() {
     loadCustomers();
   }, [user]);
 
-  const applyFilters = useCallback((data: Customer[], search: string, cat: string) => {
-    let result = data;
-
-    if (cat !== 'all') {
-      result = result.filter(c => c.category === cat);
-    }
-
-    if (search.trim()) {
-      const term = search.toLowerCase();
-      result = result.filter(c =>
-        c.business_name.toLowerCase().includes(term) ||
-        c.city.toLowerCase().includes(term) ||
-        c.contact_name.toLowerCase().includes(term) ||
-        c.contact_phone.includes(term)
-      );
-    }
-
-    setFilteredCustomers(result);
-  }, []);
+  const filteredList = searchQuery.trim()
+    ? customers.filter(c => {
+        const term = searchQuery.toLowerCase();
+        return c.business_name.toLowerCase().includes(term) ||
+          c.city.toLowerCase().includes(term) ||
+          c.contact_name.toLowerCase().includes(term) ||
+          c.contact_phone.includes(term);
+      })
+    : customers;
 
   useEffect(() => {
-    applyFilters(customers, searchQuery, filter);
-  }, [searchQuery, filter, customers]);
+    setFilteredCustomers(filteredList);
+  }, [searchQuery, customers]);
 
   const onRefresh = async () => {
     setRefreshing(true);

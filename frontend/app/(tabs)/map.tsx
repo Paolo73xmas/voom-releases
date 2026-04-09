@@ -697,6 +697,14 @@ export default function MapScreen() {
         <Ionicons name="search" size={22} color="#7C3AED" />
       </TouchableOpacity>
 
+      {/* Rivendite No Mappa button */}
+      <TouchableOpacity
+        style={[styles.fabButton, { top: 86, left: 12, backgroundColor: '#EF4444' }]}
+        onPress={() => router.push('/rivendite-no-mappa')}
+      >
+        <Ionicons name="add" size={22} color="#FFF" />
+      </TouchableOpacity>
+
       {/* Recenter button */}
       <TouchableOpacity
         style={[styles.fabButton, { bottom: insets.bottom + 100, right: 12 }]}

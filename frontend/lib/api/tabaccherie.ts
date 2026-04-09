@@ -84,11 +84,14 @@ export async function fetchTabaccherieByBounds(
       if (!data || data.length === 0) break;
 
       allData = allData.concat(data);
-      hasMore = data.length === PAGE_SIZE;
+      hasMore = data.length === PAGE_SIZE && allData.length < 1000;
       page++;
 
-      // Safety limit: max 5 pages (5000 rows)
-      if (page >= 5) break;
+      // Max 1000 points visible
+      if (allData.length >= 1000) {
+        allData = allData.slice(0, 1000);
+        break;
+      }
     }
 
     const validResults: Tabaccheria[] = [];

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,6 @@ export default function CustomersScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,18 +39,16 @@ export default function CustomersScreen() {
     loadCustomers();
   }, [user]);
 
-  const filteredList = searchQuery.trim()
-    ? customers.filter(c => {
-        const term = searchQuery.toLowerCase();
-        return c.business_name.toLowerCase().includes(term) ||
-          c.city.toLowerCase().includes(term) ||
-          c.contact_name.toLowerCase().includes(term) ||
-          c.contact_phone.includes(term);
-      })
-    : customers;
-
-  useEffect(() => {
-    setFilteredCustomers(filteredList);
+  // Derived filtered list using useMemo - no extra state/effect needed
+  const filteredCustomers = useMemo(() => {
+    if (!searchQuery.trim()) return customers;
+    const term = searchQuery.toLowerCase();
+    return customers.filter(c =>
+      c.business_name.toLowerCase().includes(term) ||
+      c.city.toLowerCase().includes(term) ||
+      c.contact_name.toLowerCase().includes(term) ||
+      c.contact_phone.includes(term)
+    );
   }, [searchQuery, customers]);
 
   const onRefresh = async () => {
@@ -203,29 +200,6 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
     color: '#1F2937',
-  },
-  filterTabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  filterTab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginRight: 8,
-    backgroundColor: '#E5E7EB',
-  },
-  filterTabActive: {
-    backgroundColor: '#1E40AF',
-  },
-  filterText: {
-    fontSize: 14,
-    color: '#4B5563',
-    fontWeight: '500',
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
   },
   statsRow: {
     flexDirection: 'row',

@@ -10,6 +10,7 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
+import { uploadVisitPhotos } from '../lib/api/photos';
 
 interface PhotoData {
   uri: string;
@@ -110,6 +111,36 @@ export default function RivenditeNoMappaScreen() {
 
   const removePhoto = (index: number) => {
     setPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Gallery picker
+  const pickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permesso Galleria', 'Per favore abilita l\'accesso alla galleria nelle impostazioni');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.7,
+        allowsMultipleSelection: true,
+        selectionLimit: 5,
+      });
+      if (!result.canceled && result.assets?.length > 0) {
+        const photoLat = latitude || 0;
+        const photoLng = longitude || 0;
+        const newPhotos = result.assets.map(asset => ({
+          uri: asset.uri,
+          latitude: photoLat,
+          longitude: photoLng,
+        }));
+        setPhotos(prev => [...prev, ...newPhotos]);
+      }
+    } catch (e) {
+      console.error('[OffMap] Gallery error:', e);
+      Alert.alert('Errore', 'Impossibile selezionare le foto');
+    }
   };
 
   // Validation
@@ -236,7 +267,7 @@ export default function RivenditeNoMappaScreen() {
       await supabase.from('customers').update({ tabaccheria_id: newTab.id }).eq('id', customer.id);
 
       // 4. Create visit
-      await supabase.from('visits').insert({
+      const { data: visit } = await supabase.from('visits').insert({
         customer_id: customer.id,
         agent_id: user.id,
         visit_type: 'first_visit',
@@ -246,7 +277,23 @@ export default function RivenditeNoMappaScreen() {
         notes: form.notes || 'Rivendita registrata fuori mappa',
         status: 'completed',
         visit_date: new Date().toISOString(),
-      });
+      }).select().single();
+
+      // 5. Upload photos to Supabase Storage
+      if (photos.length > 0) {
+        try {
+          const photoUrls = await uploadVisitPhotos(photos, user.id, customer.id);
+          if (photoUrls.length > 0 && visit) {
+            const photoNote = `\n[FOTO: ${photoUrls.join(', ')}]`;
+            await supabase.from('visits')
+              .update({ notes: (form.notes || 'Rivendita registrata fuori mappa') + photoNote })
+              .eq('id', visit.id);
+          }
+          console.log(`[OffMap] ${photoUrls.length}/${photos.length} foto caricate`);
+        } catch (uploadErr) {
+          console.warn('[OffMap] Errore upload foto (non bloccante):', uploadErr);
+        }
+      }
 
       Alert.alert(
         'Registrazione Completata',
@@ -455,10 +502,14 @@ export default function RivenditeNoMappaScreen() {
             </View>
           ))}
 
-          {/* Add photo button */}
+          {/* Add photo buttons */}
           <TouchableOpacity style={styles.addPhotoBtn} onPress={takePhoto}>
             <Ionicons name="camera" size={32} color="#7C3AED" />
             <Text style={styles.addPhotoText}>Scatta Foto</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.addPhotoBtn, { borderColor: '#3B82F6' }]} onPress={pickFromGallery}>
+            <Ionicons name="images" size={32} color="#3B82F6" />
+            <Text style={[styles.addPhotoText, { color: '#3B82F6' }]}>Galleria</Text>
           </TouchableOpacity>
         </View>
 

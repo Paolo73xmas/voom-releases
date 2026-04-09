@@ -23,6 +23,7 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { uploadVisitPhotos } from '../lib/api/photos';
 
 type CustomerType = 'retail' | 'horeca' | 'industry' | 'other';
 
@@ -203,6 +204,30 @@ export default function AnagraficaScreen() {
     }
   };
 
+  // Gallery picker
+  const handlePickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permesso negato', 'Abilita l\'accesso alla galleria per selezionare foto.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.7,
+        allowsMultipleSelection: true,
+        selectionLimit: 5,
+      });
+      if (!result.canceled && result.assets?.length > 0) {
+        const gps = gpsPosition ? { lat: gpsPosition.lat, lon: gpsPosition.lng } : { lat: 0, lon: 0 };
+        const newPhotos = result.assets.map(asset => ({ uri: asset.uri, gps }));
+        setPhotos(prev => [...prev, ...newPhotos]);
+      }
+    } catch {
+      Alert.alert('Errore', 'Impossibile selezionare le foto.');
+    }
+  };
+
   // Search tabaccherie
   useEffect(() => {
     if (!searchCity || searchCity.length < 2) { setSearchResults([]); return; }
@@ -325,7 +350,7 @@ export default function AnagraficaScreen() {
       if (custErr) throw new Error(`Errore creazione cliente: ${custErr.message}`);
 
       // Create visit
-      const { error: visitErr } = await supabase
+      const { data: visit, error: visitErr } = await supabase
         .from('visits')
         .insert({
           customer_id: customer.id,
@@ -336,8 +361,27 @@ export default function AnagraficaScreen() {
           notes: form.notes,
           status: 'completed',
           visit_date: new Date().toISOString(),
-        });
+        })
+        .select()
+        .single();
       if (visitErr) console.error('Visit insert error:', visitErr);
+
+      // Upload photos to Supabase Storage
+      if (photos.length > 0 && !isPhoneVisit) {
+        try {
+          const photoUrls = await uploadVisitPhotos(photos, user.id, customer.id);
+          if (photoUrls.length > 0 && visit) {
+            // Store photo URLs in visit notes
+            const photoNote = `\n[FOTO: ${photoUrls.join(', ')}]`;
+            await supabase.from('visits')
+              .update({ notes: (form.notes || '') + photoNote })
+              .eq('id', visit.id);
+          }
+          console.log(`[Anagrafica] ${photoUrls.length}/${photos.length} foto caricate`);
+        } catch (uploadErr) {
+          console.warn('[Anagrafica] Errore upload foto (non bloccante):', uploadErr);
+        }
+      }
 
       // Update or create tabaccheria
       if (form.tabaccheriaId) {
@@ -458,8 +502,12 @@ export default function AnagraficaScreen() {
               </View>
             ))}
             <TouchableOpacity style={styles.photoAdd} onPress={handleTakePhoto}>
-              <Ionicons name="camera" size={32} color="#6B7280" />
+              <Ionicons name="camera" size={28} color="#6B7280" />
               <Text style={styles.photoAddText}>Scatta</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.photoAdd, { borderColor: '#7C3AED' }]} onPress={handlePickFromGallery}>
+              <Ionicons name="images" size={28} color="#7C3AED" />
+              <Text style={[styles.photoAddText, { color: '#7C3AED' }]}>Galleria</Text>
             </TouchableOpacity>
           </View>
           {photos.length < 2 && (

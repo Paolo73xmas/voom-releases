@@ -1,23 +1,22 @@
 import { supabase } from '../supabase';
 import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
 
 const BUCKET_NAME = 'visit-photos';
 
 /**
  * Ensures the storage bucket exists. Creates it if missing.
- * Silently ignores errors (bucket may already exist or Storage may not be enabled).
  */
 export async function ensurePhotoBucket(): Promise<boolean> {
   try {
-    // Check if bucket exists first
     const { data: buckets } = await supabase.storage.listBuckets();
     const exists = buckets?.some((b) => b.name === BUCKET_NAME);
     if (exists) return true;
 
-    // Try to create it
     const { error } = await supabase.storage.createBucket(BUCKET_NAME, {
       public: true,
-      fileSizeLimit: 5 * 1024 * 1024, // 5MB per photo
+      fileSizeLimit: 5 * 1024 * 1024,
       allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
     });
 
@@ -33,7 +32,7 @@ export async function ensurePhotoBucket(): Promise<boolean> {
 }
 
 /**
- * Upload a single photo to Supabase Storage.
+ * Upload a single photo to Supabase Storage using base64 (reliable on mobile).
  * Returns the public URL or null on failure.
  */
 export async function uploadSinglePhoto(
@@ -41,21 +40,29 @@ export async function uploadSinglePhoto(
   storagePath: string
 ): Promise<string | null> {
   try {
-    let uploadData: Blob | ArrayBuffer;
+    let arrayBuffer: ArrayBuffer;
 
     if (Platform.OS === 'web') {
-      // Web: fetch returns usable blob
+      // Web: fetch + blob works fine
       const response = await fetch(uri);
-      uploadData = await response.blob();
+      const blob = await response.blob();
+      arrayBuffer = await blob.arrayBuffer();
     } else {
-      // Mobile: fetch local file:// URI
-      const response = await fetch(uri);
-      uploadData = await response.blob();
+      // Mobile: read file as base64 using expo-file-system, then decode
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      arrayBuffer = decode(base64);
+    }
+
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      console.warn('[Photos] Empty file for', storagePath);
+      return null;
     }
 
     const { data, error } = await supabase.storage
       .from(BUCKET_NAME)
-      .upload(storagePath, uploadData, {
+      .upload(storagePath, arrayBuffer, {
         contentType: 'image/jpeg',
         upsert: true,
       });
@@ -65,11 +72,11 @@ export async function uploadSinglePhoto(
       return null;
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from(BUCKET_NAME)
       .getPublicUrl(data.path);
 
+    console.log('[Photos] Uploaded:', storagePath, '- Size:', arrayBuffer.byteLength, 'bytes');
     return urlData.publicUrl;
   } catch (e) {
     console.warn('[Photos] Upload exception for', storagePath, ':', e);
@@ -79,8 +86,6 @@ export async function uploadSinglePhoto(
 
 /**
  * Upload multiple photos to Supabase Storage.
- * Photos are stored in: {userId}/{entityId}/{timestamp}_{index}.jpg
- * Returns array of public URLs (only successful uploads).
  */
 export async function uploadPhotosToStorage(
   photos: { uri: string }[],
@@ -89,7 +94,6 @@ export async function uploadPhotosToStorage(
 ): Promise<string[]> {
   if (photos.length === 0) return [];
 
-  // Ensure bucket exists
   await ensurePhotoBucket();
 
   const timestamp = Date.now();
@@ -109,7 +113,6 @@ export async function uploadPhotosToStorage(
 
 /**
  * Upload photos for an INSPECTION and save to inspection_photos table.
- * Schema: inspection_photos (id, inspection_id, photo_url, created_at)
  */
 export async function uploadInspectionPhotos(
   photos: { uri: string }[],
@@ -119,7 +122,6 @@ export async function uploadInspectionPhotos(
 ): Promise<string[]> {
   const urls = await uploadPhotosToStorage(photos, userId, customerId);
 
-  // Insert rows into inspection_photos table
   for (const url of urls) {
     const { error } = await supabase.from('inspection_photos').insert({
       inspection_id: inspectionId,
@@ -135,7 +137,6 @@ export async function uploadInspectionPhotos(
 
 /**
  * Upload photos for a VISIT and save to visit_photos table.
- * Schema: visit_photos (id, visit_id, photo_url, created_at, latitude, longitude)
  */
 export async function uploadVisitPhotos(
   photos: { uri: string; latitude?: number; longitude?: number }[],
@@ -146,7 +147,6 @@ export async function uploadVisitPhotos(
   const photoObjects = photos.map(p => ({ uri: p.uri }));
   const urls = await uploadPhotosToStorage(photoObjects, userId, customerId);
 
-  // Insert rows into visit_photos table if visitId provided
   if (visitId) {
     for (let i = 0; i < urls.length; i++) {
       const photo = photos[i];

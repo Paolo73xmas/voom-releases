@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { uploadVisitPhotos } from '../lib/api/photos';
+import { usePhotoStamper } from '../components/PhotoStamper';
 
 interface PhotoData {
   uri: string;
@@ -33,6 +34,7 @@ export default function RivenditeNoMappaScreen() {
   const [longitude, setLongitude] = useState<number | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [useManualGPS, setUseManualGPS] = useState(false);
+  const { stampPhoto, StamperView } = usePhotoStamper();
   const [manualLat, setManualLat] = useState('');
   const [manualLng, setManualLng] = useState('');
 
@@ -101,7 +103,8 @@ export default function RivenditeNoMappaScreen() {
       if (!result.canceled && result.assets[0]) {
         const photoLat = latitude || 0;
         const photoLng = longitude || 0;
-        setPhotos(prev => [...prev, { uri: result.assets[0].uri, latitude: photoLat, longitude: photoLng }]);
+        const stamped = await stampPhoto(result.assets[0].uri);
+        setPhotos(prev => [...prev, { uri: stamped, latitude: photoLat, longitude: photoLng }]);
       }
     } catch (e) {
       console.error('[OffMap] Camera error:', e);
@@ -130,12 +133,10 @@ export default function RivenditeNoMappaScreen() {
       if (!result.canceled && result.assets?.length > 0) {
         const photoLat = latitude || 0;
         const photoLng = longitude || 0;
-        const newPhotos = result.assets.map(asset => ({
-          uri: asset.uri,
-          latitude: photoLat,
-          longitude: photoLng,
-        }));
-        setPhotos(prev => [...prev, ...newPhotos]);
+        for (const asset of result.assets) {
+          const stamped = await stampPhoto(asset.uri);
+          setPhotos(prev => [...prev, { uri: stamped, latitude: photoLat, longitude: photoLng }]);
+        }
       }
     } catch (e) {
       console.error('[OffMap] Gallery error:', e);
@@ -541,6 +542,7 @@ export default function RivenditeNoMappaScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StamperView />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => step === 1 ? router.back() : setStep(1)} style={styles.backBtn}>

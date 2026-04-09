@@ -24,6 +24,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { uploadVisitPhotos } from '../lib/api/photos';
+import { usePhotoStamper } from '../components/PhotoStamper';
 
 type CustomerType = 'retail' | 'horeca' | 'industry' | 'other';
 
@@ -89,6 +90,7 @@ export default function AnagraficaScreen() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isPhoneVisit, setIsPhoneVisit] = useState(false);
+  const { stampPhoto, StamperView } = usePhotoStamper();
 
   // Step 1: Photos + GPS
   const [photos, setPhotos] = useState<PhotoData[]>([]);
@@ -197,7 +199,8 @@ export default function AnagraficaScreen() {
       });
       if (!result.canceled && result.assets?.[0]) {
         const gps = gpsPosition ? { lat: gpsPosition.lat, lon: gpsPosition.lng } : { lat: 0, lon: 0 };
-        setPhotos(prev => [...prev, { uri: result.assets[0].uri, gps }]);
+        const stamped = await stampPhoto(result.assets[0].uri);
+        setPhotos(prev => [...prev, { uri: stamped, gps }]);
       }
     } catch {
       Alert.alert('Errore', 'Impossibile scattare la foto.');
@@ -220,8 +223,10 @@ export default function AnagraficaScreen() {
       });
       if (!result.canceled && result.assets?.length > 0) {
         const gps = gpsPosition ? { lat: gpsPosition.lat, lon: gpsPosition.lng } : { lat: 0, lon: 0 };
-        const newPhotos = result.assets.map(asset => ({ uri: asset.uri, gps }));
-        setPhotos(prev => [...prev, ...newPhotos]);
+        for (const asset of result.assets) {
+          const stamped = await stampPhoto(asset.uri);
+          setPhotos(prev => [...prev, { uri: stamped, gps }]);
+        }
       }
     } catch {
       Alert.alert('Errore', 'Impossibile selezionare le foto.');
@@ -616,6 +621,7 @@ export default function AnagraficaScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StamperView />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>

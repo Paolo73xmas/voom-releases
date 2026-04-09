@@ -21,6 +21,7 @@ import { fetchCustomerById, fetchCustomers } from '../../lib/api/customers';
 import { createInspection } from '../../lib/api/inspections';
 import { uploadInspectionPhotos } from '../../lib/api/photos';
 import { Customer } from '../../types';
+import { usePhotoStamper } from '../../components/PhotoStamper';
 
 export default function NewInspectionScreen() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function NewInspectionScreen() {
   const [notes, setNotes] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [location, setLocation] = useState<{ latitude: number; longitude: number; accuracy: number } | null>(null);
+  const { stampPhoto, StamperView } = usePhotoStamper();
 
   useEffect(() => {
     loadData();
@@ -103,8 +105,10 @@ export default function NewInspectionScreen() {
       });
 
       if (!result.canceled && result.assets?.length > 0) {
-        const newUris = result.assets.map(a => a.uri);
-        setPhotos(prev => [...prev, ...newUris]);
+        for (const asset of result.assets) {
+          const stamped = await stampPhoto(asset.uri);
+          setPhotos(prev => [...prev, stamped]);
+        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -125,7 +129,8 @@ export default function NewInspectionScreen() {
       });
 
       if (!result.canceled && result.assets?.[0]) {
-        setPhotos(prev => [...prev, result.assets[0].uri]);
+        const stamped = await stampPhoto(result.assets[0].uri);
+        setPhotos(prev => [...prev, stamped]);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -195,6 +200,7 @@ export default function NewInspectionScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <StamperView />
       <ScrollView contentContainerStyle={styles.content}>
         {/* GPS Status */}
         <View style={styles.gpsCard}>

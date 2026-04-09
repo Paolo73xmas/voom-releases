@@ -78,14 +78,14 @@ export async function uploadSinglePhoto(
 }
 
 /**
- * Upload multiple visit photos to Supabase Storage.
- * Photos are stored in: {userId}/{customerId}/{timestamp}_{index}.jpg
+ * Upload multiple photos to Supabase Storage.
+ * Photos are stored in: {userId}/{entityId}/{timestamp}_{index}.jpg
  * Returns array of public URLs (only successful uploads).
  */
-export async function uploadVisitPhotos(
+export async function uploadPhotosToStorage(
   photos: { uri: string }[],
   userId: string,
-  customerId: string
+  entityId: string
 ): Promise<string[]> {
   if (photos.length === 0) return [];
 
@@ -96,7 +96,7 @@ export async function uploadVisitPhotos(
   const urls: string[] = [];
 
   for (let i = 0; i < photos.length; i++) {
-    const path = `${userId}/${customerId}/${timestamp}_${i}.jpg`;
+    const path = `${userId}/${entityId}/${timestamp}_${i}.jpg`;
     const url = await uploadSinglePhoto(photos[i].uri, path);
     if (url) {
       urls.push(url);
@@ -104,5 +104,63 @@ export async function uploadVisitPhotos(
   }
 
   console.log(`[Photos] Uploaded ${urls.length}/${photos.length} photos successfully`);
+  return urls;
+}
+
+/**
+ * Upload photos for an INSPECTION and save to inspection_photos table.
+ * Schema: inspection_photos (id, inspection_id, photo_url, created_at)
+ */
+export async function uploadInspectionPhotos(
+  photos: { uri: string }[],
+  userId: string,
+  inspectionId: string,
+  customerId: string
+): Promise<string[]> {
+  const urls = await uploadPhotosToStorage(photos, userId, customerId);
+
+  // Insert rows into inspection_photos table
+  for (const url of urls) {
+    const { error } = await supabase.from('inspection_photos').insert({
+      inspection_id: inspectionId,
+      photo_url: url,
+    });
+    if (error) {
+      console.warn('[Photos] inspection_photos insert error:', error.message);
+    }
+  }
+
+  return urls;
+}
+
+/**
+ * Upload photos for a VISIT and save to visit_photos table.
+ * Schema: visit_photos (id, visit_id, photo_url, created_at, latitude, longitude)
+ */
+export async function uploadVisitPhotos(
+  photos: { uri: string; latitude?: number; longitude?: number }[],
+  userId: string,
+  customerId: string,
+  visitId?: string
+): Promise<string[]> {
+  const photoObjects = photos.map(p => ({ uri: p.uri }));
+  const urls = await uploadPhotosToStorage(photoObjects, userId, customerId);
+
+  // Insert rows into visit_photos table if visitId provided
+  if (visitId) {
+    for (let i = 0; i < urls.length; i++) {
+      const photo = photos[i];
+      const { error } = await supabase.from('visit_photos').insert({
+        visit_id: visitId,
+        photo_url: urls[i],
+        latitude: photo?.latitude || 0,
+        longitude: photo?.longitude || 0,
+      });
+      if (error) {
+        console.warn('[Photos] visit_photos insert error:', error.message);
+      }
+    }
+  }
+
   return urls;
 }

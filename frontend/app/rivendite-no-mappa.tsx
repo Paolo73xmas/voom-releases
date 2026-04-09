@@ -279,17 +279,12 @@ export default function RivenditeNoMappaScreen() {
         visit_date: new Date().toISOString(),
       }).select().single();
 
-      // 5. Upload photos to Supabase Storage
-      if (photos.length > 0) {
+      // 5. Upload photos to visit_photos table
+      if (photos.length > 0 && visit) {
         try {
-          const photoUrls = await uploadVisitPhotos(photos, user.id, customer.id);
-          if (photoUrls.length > 0 && visit) {
-            const photoNote = `\n[FOTO: ${photoUrls.join(', ')}]`;
-            await supabase.from('visits')
-              .update({ notes: (form.notes || 'Rivendita registrata fuori mappa') + photoNote })
-              .eq('id', visit.id);
-          }
-          console.log(`[OffMap] ${photoUrls.length}/${photos.length} foto caricate`);
+          const photoObjects = photos.map(p => ({ uri: p.uri, latitude: p.latitude, longitude: p.longitude }));
+          const photoUrls = await uploadVisitPhotos(photoObjects, user.id, customer.id, visit.id);
+          console.log(`[OffMap] ${photoUrls.length}/${photos.length} foto caricate in visit_photos`);
         } catch (uploadErr) {
           console.warn('[OffMap] Errore upload foto (non bloccante):', uploadErr);
         }

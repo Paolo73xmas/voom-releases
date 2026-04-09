@@ -19,8 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
 import { fetchCustomerById, fetchCustomers } from '../../lib/api/customers';
 import { createInspection } from '../../lib/api/inspections';
-import { uploadVisitPhotos } from '../../lib/api/photos';
-import { supabase } from '../../lib/supabase';
+import { uploadInspectionPhotos } from '../../lib/api/photos';
 import { Customer } from '../../types';
 
 export default function NewInspectionScreen() {
@@ -164,20 +163,12 @@ export default function NewInspectionScreen() {
         notes: notes.trim() || undefined,
       });
 
-      // Upload photos to Supabase Storage
+      // Upload photos to inspection_photos table
       if (photos.length > 0) {
         try {
           const photoObjects = photos.map(uri => ({ uri }));
-          const photoUrls = await uploadVisitPhotos(photoObjects, user.id, selectedCustomer.id);
-          if (photoUrls.length > 0 && inspection) {
-            // Append photo URLs to inspection notes
-            const { error: updateErr } = await supabase
-              .from('inspections')
-              .update({ notes: (notes.trim() ? notes.trim() + '\n' : '') + `[FOTO: ${photoUrls.join(', ')}]` })
-              .eq('id', inspection.id);
-            if (updateErr) console.warn('[Inspection] Photo URL update error:', updateErr);
-          }
-          console.log(`[Inspection] ${photoUrls.length}/${photos.length} foto caricate`);
+          const photoUrls = await uploadInspectionPhotos(photoObjects, user.id, inspection.id, selectedCustomer.id);
+          console.log(`[Inspection] ${photoUrls.length}/${photos.length} foto caricate in inspection_photos`);
         } catch (uploadErr) {
           console.warn('[Inspection] Errore upload foto (non bloccante):', uploadErr);
         }

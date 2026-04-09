@@ -366,18 +366,12 @@ export default function AnagraficaScreen() {
         .single();
       if (visitErr) console.error('Visit insert error:', visitErr);
 
-      // Upload photos to Supabase Storage
-      if (photos.length > 0 && !isPhoneVisit) {
+      // Upload photos to visit_photos table
+      if (photos.length > 0 && !isPhoneVisit && visit) {
         try {
-          const photoUrls = await uploadVisitPhotos(photos, user.id, customer.id);
-          if (photoUrls.length > 0 && visit) {
-            // Store photo URLs in visit notes
-            const photoNote = `\n[FOTO: ${photoUrls.join(', ')}]`;
-            await supabase.from('visits')
-              .update({ notes: (form.notes || '') + photoNote })
-              .eq('id', visit.id);
-          }
-          console.log(`[Anagrafica] ${photoUrls.length}/${photos.length} foto caricate`);
+          const photoObjects = photos.map(p => ({ uri: p.uri, latitude: p.gps.lat, longitude: p.gps.lon }));
+          const photoUrls = await uploadVisitPhotos(photoObjects, user.id, customer.id, visit.id);
+          console.log(`[Anagrafica] ${photoUrls.length}/${photos.length} foto caricate in visit_photos`);
         } catch (uploadErr) {
           console.warn('[Anagrafica] Errore upload foto (non bloccante):', uploadErr);
         }

@@ -244,16 +244,6 @@ export default function CustomerDetailScreen() {
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
         <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push({
-            pathname: '/visit/new',
-            params: { customerId: customer.id }
-          })}
-        >
-          <Ionicons name="location" size={20} color="#FFFFFF" />
-          <Text style={styles.primaryButtonText}>Nuova Visita</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
           style={styles.secondaryButton}
           onPress={() => router.push({
             pathname: '/inspection/new',

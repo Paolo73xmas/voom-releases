@@ -667,7 +667,7 @@ export default function MapScreen() {
 
       {/* Loading indicator */}
       {loadingPoints && (
-        <View style={[styles.loadingBadge, { top: insets.top + 8 }]}>
+        <View style={[styles.loadingBadge, { top: 8 }]}>
           <ActivityIndicator size="small" color="#10B981" />
           <Text style={styles.loadingBadgeText}>Caricamento...</Text>
         </View>
@@ -675,13 +675,13 @@ export default function MapScreen() {
 
       {/* Counter badge */}
       {!loadingPoints && tabaccherie.length > 0 && (
-        <View style={[styles.counterBadge, { top: insets.top + 8 }]}>
+        <View style={[styles.counterBadge, { top: 8 }]}>
           <Text style={styles.counterText}>{tabaccherie.length} punti</Text>
         </View>
       )}
 
       {/* Filter buttons */}
-      <View style={[styles.filterRow, { top: insets.top + 48 }]}>
+      <View style={[styles.filterRow, { top: 44 }]}>
         {(['all', 'active', 'not_visited'] as FilterMode[]).map(mode => (
           <TouchableOpacity
             key={mode}
@@ -697,7 +697,7 @@ export default function MapScreen() {
 
       {/* Search button */}
       <TouchableOpacity
-        style={[styles.fabButton, { top: insets.top + 90, right: 12 }]}
+        style={[styles.fabButton, { top: 86, right: 12 }]}
         onPress={() => setShowSearch(true)}
       >
         <Ionicons name="search" size={22} color="#7C3AED" />

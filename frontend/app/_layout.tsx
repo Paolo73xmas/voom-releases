@@ -34,6 +34,7 @@ export default function RootLayout() {
           name="customer/[id]" 
           options={{ 
             title: 'Dettaglio Cliente',
+            headerBackTitle: 'Indietro',
             presentation: 'card',
           }} 
         />
@@ -41,6 +42,7 @@ export default function RootLayout() {
           name="order/[id]" 
           options={{ 
             title: 'Dettaglio Ordine',
+            headerBackTitle: 'Indietro',
             presentation: 'card',
           }} 
         />
@@ -48,6 +50,7 @@ export default function RootLayout() {
           name="inspection/new" 
           options={{ 
             title: 'Nuova Ispezione',
+            headerBackTitle: 'Indietro',
             presentation: 'modal',
           }} 
         />
@@ -55,6 +58,7 @@ export default function RootLayout() {
           name="order-collection" 
           options={{ 
             title: 'Raccolta Ordine',
+            headerBackTitle: 'Indietro',
             presentation: 'card',
           }} 
         />

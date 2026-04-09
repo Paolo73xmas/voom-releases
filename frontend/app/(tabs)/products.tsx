@@ -7,12 +7,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
 
-interface ProductCategory {
+interface Category {
   id: string;
   name: string;
   description?: string;
+  parent_id?: string | null;
   is_active: boolean;
-  product_count?: number;
+  display_order?: number;
+  childCount?: number;
+  productCount?: number;
 }
 
 interface Product {
@@ -25,15 +28,9 @@ interface Product {
   image_url?: string | null;
   is_active: boolean;
   category_id?: string;
-  supplier_id?: string;
   accisa?: number;
   iva_percentage?: number;
-}
-
-interface SubCategory {
-  name: string;
-  count: number;
-  image_url?: string | null;
+  stock_quantity?: number;
 }
 
 interface Stats {
@@ -50,53 +47,52 @@ export default function ProductsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<Stats>({ totalProducts: 0, activeProducts: 0, categories: 0, suppliers: 0 });
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
 
   // Navigation state
   const [viewLevel, setViewLevel] = useState<ViewLevel>('categories');
-  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
-
-  // Data
-  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const [rootCategories, setRootCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<Category | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [innerLoading, setInnerLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Load root categories and stats
   const loadData = useCallback(async () => {
     try {
-      const { data: cats } = await supabase
+      // Fetch ALL categories in ONE request
+      const { data: allCats } = await supabase
         .from('product_categories')
-        .select('id, name, description, is_active')
+        .select('id, name, description, parent_id, display_order, is_active')
         .eq('is_active', true)
+        .order('display_order')
         .order('name');
 
-      const activeCats = cats || [];
+      const cats = allCats || [];
+      const roots = cats.filter(c => !c.parent_id);
+      const children = cats.filter(c => c.parent_id);
 
-      const catsWithCount = await Promise.all(
-        activeCats.map(async (cat) => {
-          const { count } = await supabase
-            .from('products')
-            .select('id', { count: 'exact', head: true })
-            .eq('category_id', cat.id)
-            .eq('is_active', true);
-          return { ...cat, product_count: count || 0 };
-        })
-      );
+      // Count children per root (no DB call needed!)
+      const rootsWithCount = roots.map(r => ({
+        ...r,
+        childCount: children.filter(ch => ch.parent_id === r.id).length,
+      }));
 
-      setCategories(catsWithCount);
+      setRootCategories(rootsWithCount);
 
-      const { count: totalCount } = await supabase
-        .from('products').select('id', { count: 'exact', head: true });
+      // Stats - single count calls
       const { count: activeCount } = await supabase
-        .from('products').select('id', { count: 'exact', head: true }).eq('is_active', true);
+        .from('products').select('id', { count: 'exact', head: true })
+        .eq('is_active', true);
       const { count: supplierCount } = await supabase
-        .from('suppliers').select('id', { count: 'exact', head: true }).eq('is_active', true);
+        .from('suppliers').select('id', { count: 'exact', head: true })
+        .eq('is_active', true);
 
       setStats({
-        totalProducts: totalCount || 0,
+        totalProducts: activeCount || 0,
         activeProducts: activeCount || 0,
-        categories: activeCats.length,
+        categories: roots.length,
         suppliers: supplierCount || 0,
       });
     } catch (e) {
@@ -108,30 +104,42 @@ export default function ProductsScreen() {
 
   useEffect(() => { loadData(); }, []);
 
-  // Load sub-categories (unique product names) for a category
-  const loadSubCategories = useCallback(async (categoryId: string) => {
+  // Load sub-categories (children of a root category)
+  const loadSubCategories = useCallback(async (parentId: string) => {
     setInnerLoading(true);
     try {
-      const { data } = await supabase
-        .from('products')
-        .select('name, image_url')
-        .eq('category_id', categoryId)
+      // First just load the sub-categories
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('id, name, description, parent_id, display_order, is_active')
+        .eq('parent_id', parentId)
         .eq('is_active', true)
         .order('name');
 
-      if (data) {
-        const grouped: Record<string, { count: number; image_url?: string | null }> = {};
-        data.forEach((p) => {
-          if (!grouped[p.name]) {
-            grouped[p.name] = { count: 0, image_url: p.image_url };
-          }
-          grouped[p.name].count++;
-        });
-        const subs: SubCategory[] = Object.entries(grouped)
-          .map(([name, info]) => ({ name, count: info.count, image_url: info.image_url }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-        setSubCategories(subs);
+      if (error) {
+        console.error('[Products] Sub-categories query error:', error);
+        setSubCategories([]);
+        return;
       }
+
+      // Set sub-categories immediately (no product counts yet)
+      const subs = (data || []).map(s => ({ ...s, productCount: 0 }));
+      setSubCategories(subs);
+
+      // Then count products one by one (sequentially to avoid ERR_ABORTED)
+      const updated = [...subs];
+      for (let i = 0; i < updated.length; i++) {
+        try {
+          const { count } = await supabase
+            .from('products')
+            .select('id', { count: 'exact', head: true })
+            .eq('category_id', updated[i].id)
+            .eq('is_active', true)
+            .not('short_description', 'like', 'EST-%');
+          updated[i] = { ...updated[i], productCount: count || 0 };
+        } catch {}
+      }
+      setSubCategories([...updated]);
     } catch (e) {
       console.error('[Products] Error loading sub-categories:', e);
     } finally {
@@ -139,16 +147,16 @@ export default function ProductsScreen() {
     }
   }, []);
 
-  // Load products for a specific name within a category
-  const loadProducts = useCallback(async (categoryId: string, productName: string) => {
+  // Load products for a sub-category
+  const loadProducts = useCallback(async (categoryId: string) => {
     setInnerLoading(true);
     try {
       const { data } = await supabase
         .from('products')
         .select('*')
         .eq('category_id', categoryId)
-        .eq('name', productName)
         .eq('is_active', true)
+        .not('short_description', 'like', 'EST-%')
         .order('short_description');
       setProducts(data || []);
     } catch (e) {
@@ -160,8 +168,8 @@ export default function ProductsScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    if (viewLevel === 'products' && selectedCategory && selectedSubCategory) {
-      await loadProducts(selectedCategory.id, selectedSubCategory);
+    if (viewLevel === 'products' && selectedSubCategory) {
+      await loadProducts(selectedSubCategory.id);
     } else if (viewLevel === 'subcategories' && selectedCategory) {
       await loadSubCategories(selectedCategory.id);
     } else {
@@ -170,20 +178,19 @@ export default function ProductsScreen() {
     setRefreshing(false);
   };
 
-  // Navigation handlers
-  const handleSelectCategory = (cat: ProductCategory) => {
+  // Navigation
+  const handleSelectCategory = (cat: Category) => {
     setSelectedCategory(cat);
     setViewLevel('subcategories');
     setSearchQuery('');
     loadSubCategories(cat.id);
   };
 
-  const handleSelectSubCategory = (name: string) => {
-    if (!selectedCategory) return;
-    setSelectedSubCategory(name);
+  const handleSelectSubCategory = (sub: Category) => {
+    setSelectedSubCategory(sub);
     setViewLevel('products');
     setSearchQuery('');
-    loadProducts(selectedCategory.id, name);
+    loadProducts(sub.id);
   };
 
   const handleBack = () => {
@@ -202,7 +209,7 @@ export default function ProductsScreen() {
 
   const formatPrice = (price: number) => price.toFixed(2).replace('.', ',') + ' \u20AC';
 
-  // ===== LEVEL 1: CATEGORIES =====
+  // ===== LEVEL 1: ROOT CATEGORIES =====
   const renderCategoryView = () => (
     <ScrollView
       style={styles.scrollContent}
@@ -234,7 +241,7 @@ export default function ProductsScreen() {
       <Text style={styles.subtitle}>Seleziona una categoria per visualizzare i prodotti</Text>
 
       <View style={styles.grid}>
-        {categories.map((cat) => (
+        {rootCategories.map((cat) => (
           <TouchableOpacity
             key={cat.id}
             style={styles.gridCard}
@@ -248,15 +255,14 @@ export default function ProductsScreen() {
             {cat.description ? (
               <Text style={styles.gridCardDesc} numberOfLines={2}>{cat.description}</Text>
             ) : null}
-            <Text style={styles.gridCardCount}>{cat.product_count} prodotti</Text>
           </TouchableOpacity>
         ))}
       </View>
     </ScrollView>
   );
 
-  // ===== LEVEL 2: SUB-CATEGORIES (Product Names) =====
-  const filteredSubCategories = searchQuery.trim()
+  // ===== LEVEL 2: SUB-CATEGORIES =====
+  const filteredSubs = searchQuery.trim()
     ? subCategories.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : subCategories;
 
@@ -268,7 +274,7 @@ export default function ProductsScreen() {
           <Text style={styles.backText}>Categorie</Text>
         </TouchableOpacity>
         <Text style={styles.navTitle}>{selectedCategory?.name}</Text>
-        <Text style={styles.navCount}>{subCategories.length} sotto-categorie</Text>
+        <Text style={styles.navCount}>{subCategories.length} sottocategorie disponibili</Text>
       </View>
 
       <View style={styles.searchBar}>
@@ -291,8 +297,8 @@ export default function ProductsScreen() {
         <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
-          data={filteredSubCategories}
-          keyExtractor={(item) => item.name}
+          data={filteredSubs}
+          keyExtractor={(item) => item.id}
           numColumns={2}
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={{ paddingBottom: 20 }}
@@ -300,18 +306,17 @@ export default function ProductsScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.subCatCard}
-              onPress={() => handleSelectSubCategory(item.name)}
+              onPress={() => handleSelectSubCategory(item)}
               activeOpacity={0.7}
             >
-              {item.image_url ? (
-                <Image source={{ uri: item.image_url }} style={styles.subCatImage} resizeMode="contain" />
-              ) : (
-                <View style={[styles.gridIconWrap, { backgroundColor: '#F0FDF4' }]}>
-                  <Ionicons name="pricetag-outline" size={22} color="#10B981" />
-                </View>
-              )}
+              <View style={[styles.gridIconWrap, { backgroundColor: '#F5F3FF' }]}>
+                <Ionicons name="folder-outline" size={22} color="#8B5CF6" />
+              </View>
               <Text style={styles.gridCardTitle} numberOfLines={2}>{item.name}</Text>
-              <Text style={styles.gridCardCount}>{item.count} prodotti</Text>
+              {item.description ? (
+                <Text style={styles.gridCardDesc} numberOfLines={1}>{item.description}</Text>
+              ) : null}
+              <Text style={styles.gridCardCount}>{item.productCount} prodotti</Text>
             </TouchableOpacity>
           )}
           ListEmptyComponent={
@@ -325,7 +330,7 @@ export default function ProductsScreen() {
     </View>
   );
 
-  // ===== LEVEL 3: PRODUCTS (by short_description) =====
+  // ===== LEVEL 3: PRODUCTS =====
   const filteredProducts = searchQuery.trim()
     ? products.filter(p =>
         (p.short_description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -346,12 +351,21 @@ export default function ProductsScreen() {
         <Text style={styles.productName} numberOfLines={2}>
           {item.short_description || item.name}
         </Text>
-        <Text style={styles.productSku}>SKU: {item.sku}</Text>
+        <Text style={styles.productSku}>{item.sku}</Text>
+        {item.accisa ? (
+          <Text style={styles.productAccisa}>Accisa: {formatPrice(item.accisa)}</Text>
+        ) : null}
       </View>
       <View style={styles.productPriceWrap}>
         <Text style={styles.productPrice}>{formatPrice(item.unit_price)}</Text>
         {item.unit_of_measure ? (
-          <Text style={styles.productUnit}>/ {item.unit_of_measure}</Text>
+          <Text style={styles.productUnit}>/{item.unit_of_measure}</Text>
+        ) : null}
+        {item.stock_quantity != null && item.stock_quantity > 0 ? (
+          <View style={styles.stockBadge}>
+            <Ionicons name="cube" size={10} color="#FFF" />
+            <Text style={styles.stockText}>{item.stock_quantity}</Text>
+          </View>
         ) : null}
       </View>
     </View>
@@ -364,8 +378,8 @@ export default function ProductsScreen() {
           <Ionicons name="arrow-back" size={20} color="#1E40AF" />
           <Text style={styles.backText}>{selectedCategory?.name}</Text>
         </TouchableOpacity>
-        <Text style={styles.navTitle}>{selectedSubCategory}</Text>
-        <Text style={styles.navCount}>{filteredProducts.length} prodotti</Text>
+        <Text style={styles.navTitle}>{selectedSubCategory?.name}</Text>
+        <Text style={styles.navCount}>{filteredProducts.length} prodotti disponibili</Text>
       </View>
 
       <View style={styles.searchBar}>
@@ -435,10 +449,9 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 26, fontWeight: '700', color: '#1F2937', marginTop: 6 },
   statLabel: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-
   subtitle: { fontSize: 14, color: '#6B7280', marginTop: 20, marginBottom: 12 },
 
-  // Grid (categories & sub-categories)
+  // Grid
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 24 },
   gridRow: { gap: 10 },
   gridCard: {
@@ -458,9 +471,8 @@ const styles = StyleSheet.create({
     width: '48%', backgroundColor: '#FFF', borderRadius: 12, padding: 14,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
-  subCatImage: { width: 40, height: 40, borderRadius: 8, marginBottom: 10, backgroundColor: '#F9FAFB' },
 
-  // Navigation header
+  // Nav header
   navHeader: { marginTop: 12, marginBottom: 10 },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
   backText: { fontSize: 14, color: '#1E40AF', fontWeight: '500' },
@@ -481,17 +493,23 @@ const styles = StyleSheet.create({
     borderRadius: 12, padding: 12, marginBottom: 8,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
   },
-  productImage: { width: 52, height: 52, borderRadius: 8, backgroundColor: '#F9FAFB' },
+  productImage: { width: 56, height: 56, borderRadius: 8, backgroundColor: '#F9FAFB' },
   productImagePlaceholder: {
-    width: 52, height: 52, borderRadius: 8, backgroundColor: '#F3F4F6',
+    width: 56, height: 56, borderRadius: 8, backgroundColor: '#F3F4F6',
     alignItems: 'center', justifyContent: 'center',
   },
   productInfo: { flex: 1, marginLeft: 12 },
   productName: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
   productSku: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
+  productAccisa: { fontSize: 11, color: '#6B7280', marginTop: 1 },
   productPriceWrap: { alignItems: 'flex-end', marginLeft: 8 },
   productPrice: { fontSize: 15, fontWeight: '700', color: '#1E40AF' },
   productUnit: { fontSize: 11, color: '#9CA3AF' },
+  stockBadge: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981',
+    borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginTop: 4, gap: 3,
+  },
+  stockText: { fontSize: 10, color: '#FFF', fontWeight: '600' },
 
   // Empty
   emptyWrap: { alignItems: 'center', marginTop: 60 },

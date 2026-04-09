@@ -31,6 +31,102 @@ export async function fetchTabaccherieInBounds(
 }
 
 /**
+ * Fetch tabaccherie within the exact visible map bounds.
+ * Paginates to overcome the Supabase 1000-row default limit.
+ */
+export async function fetchTabaccherieByBounds(
+  bounds: { north: number; south: number; east: number; west: number },
+  userId?: string,
+  userRole?: string
+): Promise<Tabaccheria[]> {
+  try {
+    console.log('[tabaccherie] Fetching by visible bounds:', bounds);
+
+    const PAGE_SIZE = 1000;
+    let allData: any[] = [];
+    let page = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error } = await supabase
+        .from('tabaccherie')
+        .select(`
+          id,
+          denominazione,
+          indirizzo,
+          comune,
+          provincia,
+          cap,
+          gps_lat,
+          gps_lng,
+          customer_id,
+          agente_id,
+          stato_visita,
+          customers!tabaccherie_customer_id_fkey (
+            id,
+            business_name,
+            agent_id,
+            last_order_date,
+            last_visit_date,
+            first_visit_date
+          )
+        `)
+        .gte('gps_lat', bounds.south.toString())
+        .lte('gps_lat', bounds.north.toString())
+        .gte('gps_lng', bounds.west.toString())
+        .lte('gps_lng', bounds.east.toString())
+        .range(from, to);
+
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allData = allData.concat(data);
+      hasMore = data.length === PAGE_SIZE;
+      page++;
+
+      // Safety limit: max 5 pages (5000 rows)
+      if (page >= 5) break;
+    }
+
+    const validResults: Tabaccheria[] = [];
+    allData.forEach((tab: any) => {
+      const lat = parseCoordinate(tab.gps_lat);
+      const lng = parseCoordinate(tab.gps_lng);
+      if (!isValidCoordinate(lat, lng)) return;
+
+      const customerData = tab.customers || null;
+      validResults.push({
+        id: tab.id,
+        denominazione: tab.denominazione || '',
+        indirizzo: tab.indirizzo || '',
+        comune: tab.comune || '',
+        provincia: tab.provincia || '',
+        cap: tab.cap || '',
+        gps_lat: tab.gps_lat?.toString() || '',
+        gps_lng: tab.gps_lng?.toString() || '',
+        latitude: lat,
+        longitude: lng,
+        customer_id: tab.customer_id,
+        agente_id: tab.agente_id,
+        stato_visita: tab.stato_visita,
+        customer_business_name: customerData?.business_name || null,
+        customer_last_order_date: customerData?.last_order_date || null,
+        customer_last_visit_date: customerData?.last_visit_date || null,
+      });
+    });
+
+    console.log('[tabaccherie] Returning', validResults.length, 'points from', allData.length, 'rows (' + page, 'pages)');
+    return validResults;
+  } catch (error) {
+    console.error('[tabaccherie] Error fetching by bounds:', error);
+    throw error;
+  }
+}
+
+/**
  * Fetch tabaccherie within a radius (km) from center point.
  * Calculates a bounding box from the center and radius, then queries Supabase.
  */
@@ -80,10 +176,10 @@ export async function fetchTabaccherieInRadius(
           first_visit_date
         )
       `)
-      .gte('gps_lat', bounds.south.toString())
-      .lte('gps_lat', bounds.north.toString())
-      .gte('gps_lng', bounds.west.toString())
-      .lte('gps_lng', bounds.east.toString())
+      .filter('gps_lat::float', 'gte', bounds.south)
+      .filter('gps_lat::float', 'lte', bounds.north)
+      .filter('gps_lng::float', 'gte', bounds.west)
+      .filter('gps_lng::float', 'lte', bounds.east)
       .limit(5000);
 
     if (error) throw error;

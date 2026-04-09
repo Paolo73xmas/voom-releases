@@ -22,7 +22,7 @@ let WebView: any = null;
 if (Platform.OS !== 'web') {
   WebView = require('react-native-webview').WebView;
 }
-import { fetchTabaccherieInRadius, fetchAllTabaccherie, searchTabaccherie } from '../../lib/api/tabaccherie';
+import { fetchTabaccherieInRadius, fetchTabaccherieByBounds, fetchAllTabaccherie, searchTabaccherie } from '../../lib/api/tabaccherie';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { Tabaccheria } from '../../types';
@@ -483,15 +483,13 @@ export default function MapScreen() {
   const loadByBounds = useCallback(async (bounds: { north: number; south: number; east: number; west: number }) => {
     try {
       setLoadingPoints(true);
-      const centerLat = (bounds.north + bounds.south) / 2;
-      const centerLng = (bounds.east + bounds.west) / 2;
-      const data = await fetchTabaccherieInRadius(centerLat, centerLng, 40, user?.id, userRole);
+      // Use the visible map bounds directly (not a fixed 40km radius)
+      const data = await fetchTabaccherieByBounds(bounds, user?.id, userRole);
       setTabaccherie(data);
-      // Directly update Leaflet markers on web
       updateLeafletMarkers(data);
       sendMarkersToWebView(data);
     } catch (e) {
-      console.error('[Map] Error loading by radius:', e);
+      console.error('[Map] Error loading by bounds:', e);
     } finally {
       setLoadingPoints(false);
     }

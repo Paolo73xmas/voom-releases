@@ -19,6 +19,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
 import { fetchCustomerById, fetchCustomers } from '../../lib/api/customers';
 import { createInspection } from '../../lib/api/inspections';
+import { uploadVisitPhotos } from '../../lib/api/photos';
+import { supabase } from '../../lib/supabase';
 import { Customer } from '../../types';
 
 export default function NewInspectionScreen() {
@@ -94,15 +96,16 @@ export default function NewInspectionScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
+        mediaTypes: ['images'],
+        allowsEditing: false,
         quality: 0.7,
-        base64: true,
+        allowsMultipleSelection: true,
+        selectionLimit: 5,
       });
 
-      if (!result.canceled && result.assets[0].base64) {
-        setPhotos([...photos, `data:image/jpeg;base64,${result.assets[0].base64}`]);
+      if (!result.canceled && result.assets?.length > 0) {
+        const newUris = result.assets.map(a => a.uri);
+        setPhotos(prev => [...prev, ...newUris]);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -118,14 +121,12 @@ export default function NewInspectionScreen() {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 0.7,
-        base64: true,
       });
 
-      if (!result.canceled && result.assets[0].base64) {
-        setPhotos([...photos, `data:image/jpeg;base64,${result.assets[0].base64}`]);
+      if (!result.canceled && result.assets?.[0]) {
+        setPhotos(prev => [...prev, result.assets[0].uri]);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -154,7 +155,7 @@ export default function NewInspectionScreen() {
 
     setLoading(true);
     try {
-      await createInspection({
+      const inspection = await createInspection({
         customer_id: selectedCustomer.id,
         agent_id: user.id,
         latitude: location.latitude,
@@ -162,6 +163,25 @@ export default function NewInspectionScreen() {
         gps_accuracy: location.accuracy,
         notes: notes.trim() || undefined,
       });
+
+      // Upload photos to Supabase Storage
+      if (photos.length > 0) {
+        try {
+          const photoObjects = photos.map(uri => ({ uri }));
+          const photoUrls = await uploadVisitPhotos(photoObjects, user.id, selectedCustomer.id);
+          if (photoUrls.length > 0 && inspection) {
+            // Append photo URLs to inspection notes
+            const { error: updateErr } = await supabase
+              .from('inspections')
+              .update({ notes: (notes.trim() ? notes.trim() + '\n' : '') + `[FOTO: ${photoUrls.join(', ')}]` })
+              .eq('id', inspection.id);
+            if (updateErr) console.warn('[Inspection] Photo URL update error:', updateErr);
+          }
+          console.log(`[Inspection] ${photoUrls.length}/${photos.length} foto caricate`);
+        } catch (uploadErr) {
+          console.warn('[Inspection] Errore upload foto (non bloccante):', uploadErr);
+        }
+      }
 
       Alert.alert('Successo', 'Ispezione registrata con successo', [
         { text: 'OK', onPress: () => router.back() }

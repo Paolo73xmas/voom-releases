@@ -361,9 +361,7 @@ export default function MapScreen() {
           const b = map.getBounds();
           const bounds = { north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() };
           currentBoundsRef.current = bounds;
-          if (filterMode === 'all') {
-            loadByBounds(bounds);
-          }
+          loadByBounds(bounds);
         }, 500);
       });
 
@@ -521,9 +519,7 @@ export default function MapScreen() {
 
       if (msg.type === 'boundsChanged') {
         currentBoundsRef.current = msg.bounds;
-        if (filterMode === 'all') {
-          loadByBounds(msg.bounds);
-        }
+        loadByBounds(msg.bounds);
       }
 
       if (msg.type === 'markerClick') {
@@ -534,7 +530,7 @@ export default function MapScreen() {
         }
       }
     } catch {}
-  }, [filterMode, loadByBounds]);
+  }, [loadByBounds]);
 
   // Actions
   const openNavigation = (lat: number, lng: number) => {

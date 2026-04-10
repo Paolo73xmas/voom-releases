@@ -14,12 +14,10 @@ import { fetchCustomers } from '../../lib/api/customers';
 import { fetchOrders } from '../../lib/api/orders';
 import { fetchVisits } from '../../lib/api/visits';
 import { supabase } from '../../lib/supabase';
-import { useLaserVideoAccess } from '../../hooks/useLaserVideoAccess';
 
 export default function Dashboard() {
   const router = useRouter();
   const { user, profile } = useAuthStore();
-  const { hasAccess: hasLaserVideo } = useLaserVideoAccess();
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     customers: 0,
@@ -199,24 +197,6 @@ export default function Dashboard() {
           </TouchableOpacity>
         ))}
       </View>
-
-      {/* Progetto LaserVideo - condizionale */}
-      {hasLaserVideo && (
-        <TouchableOpacity
-          style={styles.laserVideoBanner}
-          onPress={() => router.push('/laservideo')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.laserVideoIcon}>
-            <Ionicons name="flash" size={22} color="#FFFFFF" />
-          </View>
-          <View style={styles.laserVideoText}>
-            <Text style={styles.laserVideoTitle}>Progetto LaserVideo</Text>
-            <Text style={styles.laserVideoSub}>Gestisci i tuoi lead assegnati</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#7C3AED" />
-        </TouchableOpacity>
-      )}
 
       {/* Venduto del Mese Corrente */}
       <Text style={styles.sectionTitle}>
@@ -406,26 +386,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
   },
-  laserVideoBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F3FF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#DDD6FE',
-    gap: 12,
-  },
-  laserVideoIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: '#7C3AED',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  laserVideoText: { flex: 1 },
-  laserVideoTitle: { fontSize: 15, fontWeight: '700', color: '#5B21B6' },
-  laserVideoSub: { fontSize: 12, color: '#7C3AED', marginTop: 2 },
 });

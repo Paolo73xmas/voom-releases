@@ -724,6 +724,10 @@ export default function OrderCollectionScreen() {
       p.sku.toLowerCase().includes(search) ||
       (p.short_description?.toLowerCase() || '').includes(search)
     );
+  }).sort((a, b) => {
+    const nameA = (a.short_description || a.name || '').toLowerCase();
+    const nameB = (b.short_description || b.name || '').toLowerCase();
+    return nameA.localeCompare(nameB, 'it');
   });
 
   // Render product row - compact list layout

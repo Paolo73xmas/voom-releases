@@ -69,17 +69,15 @@ export default function Dashboard() {
 
       const { data: monthOrders } = await supabase
         .from('orders')
-        .select('id, total_amount, order_items (quantity, line_total, product:products (accisa, iva_percentage))')
+        .select('id, order_items (quantity, line_total, product:products (accisa, iva_percentage))')
         .gte('created_at', monthStart)
         .eq('agent_id', user.id);
 
       let netto = 0;
       let accisa = 0;
       let iva = 0;
-      let lordo = 0;
 
       for (const order of (monthOrders || [])) {
-        lordo += order.total_amount || 0;
         for (const item of (order.order_items || [])) {
           netto += item.line_total || 0;
           const accisaUnit = (item.product as any)?.accisa || 0;
@@ -93,7 +91,7 @@ export default function Dashboard() {
         netto,
         accisa,
         iva,
-        lordo,
+        lordo: netto + accisa + iva,
         orderCount: monthOrders?.length || 0,
         monthLabel,
       });
@@ -200,11 +198,44 @@ export default function Dashboard() {
         ))}
       </View>
 
-      {/* Recent Activity Placeholder */}
-      <Text style={styles.sectionTitle}>Attività Recenti</Text>
-      <View style={styles.recentCard}>
-        <Ionicons name="analytics-outline" size={48} color="#D1D5DB" />
-        <Text style={styles.recentText}>Le tue attività recenti appariranno qui</Text>
+      {/* Venduto del Mese Corrente */}
+      <Text style={styles.sectionTitle}>
+        Venduto {monthlySales.monthLabel ? `- ${monthlySales.monthLabel}` : 'del Mese'}
+      </Text>
+      <View style={styles.salesCard}>
+        <View style={styles.salesMainRow}>
+          <View style={styles.salesMainBlock}>
+            <Text style={styles.salesMainLabel}>Netto (no IVA, no Accisa)</Text>
+            <Text style={styles.salesMainValue}>
+              € {monthlySales.netto.toFixed(2).replace('.', ',')}
+            </Text>
+          </View>
+          <View style={styles.salesBadge}>
+            <Ionicons name="receipt-outline" size={16} color="#3B82F6" />
+            <Text style={styles.salesBadgeText}>{monthlySales.orderCount} ordini</Text>
+          </View>
+        </View>
+        <View style={styles.salesDivider} />
+        <View style={styles.salesDetailsRow}>
+          <View style={styles.salesDetailItem}>
+            <Text style={styles.salesDetailLabel}>Accisa</Text>
+            <Text style={styles.salesDetailValue}>
+              € {monthlySales.accisa.toFixed(2).replace('.', ',')}
+            </Text>
+          </View>
+          <View style={styles.salesDetailItem}>
+            <Text style={styles.salesDetailLabel}>IVA</Text>
+            <Text style={styles.salesDetailValue}>
+              € {monthlySales.iva.toFixed(2).replace('.', ',')}
+            </Text>
+          </View>
+          <View style={styles.salesDetailItem}>
+            <Text style={styles.salesDetailLabel}>Lordo</Text>
+            <Text style={[styles.salesDetailValue, { fontWeight: '700' }]}>
+              € {monthlySales.lordo.toFixed(2).replace('.', ',')}
+            </Text>
+          </View>
+        </View>
       </View>
     </ScrollView>
   );
@@ -294,17 +325,65 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     textAlign: 'center',
   },
-  recentCard: {
+  salesCard: {
     backgroundColor: '#FFFFFF',
-    padding: 32,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
   },
-  recentText: {
-    fontSize: 14,
+  salesMainRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  salesMainBlock: {
+    flex: 1,
+  },
+  salesMainLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  salesMainValue: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1E40AF',
+  },
+  salesBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  salesBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  salesDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 16,
+  },
+  salesDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  salesDetailItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  salesDetailLabel: {
+    fontSize: 12,
     color: '#9CA3AF',
-    marginTop: 12,
-    textAlign: 'center',
+    marginBottom: 4,
+  },
+  salesDetailValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#374151',
   },
 });

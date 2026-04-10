@@ -160,23 +160,31 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <View style={styles.statsGrid}>
         <View style={[styles.statCard, { backgroundColor: '#EEF2FF' }]}>
-          <Ionicons name="people" size={28} color="#3B82F6" />
-          <Text style={styles.statNumber}>{stats.customers}</Text>
+          <View style={styles.statRow}>
+            <Ionicons name="people" size={18} color="#3B82F6" />
+            <Text style={styles.statNumber}>{stats.customers}</Text>
+          </View>
           <Text style={styles.statLabel}>Clienti</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#ECFDF5' }]}>
-          <Ionicons name="cart" size={28} color="#10B981" />
-          <Text style={styles.statNumber}>{stats.orders}</Text>
+          <View style={styles.statRow}>
+            <Ionicons name="cart" size={18} color="#10B981" />
+            <Text style={styles.statNumber}>{stats.orders}</Text>
+          </View>
           <Text style={styles.statLabel}>Ordini</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#FEF3C7' }]}>
-          <Ionicons name="location" size={28} color="#F59E0B" />
-          <Text style={styles.statNumber}>{stats.visits}</Text>
+          <View style={styles.statRow}>
+            <Ionicons name="location" size={18} color="#F59E0B" />
+            <Text style={styles.statNumber}>{stats.visits}</Text>
+          </View>
           <Text style={styles.statLabel}>Visite</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#FEE2E2' }]}>
-          <Ionicons name="time" size={28} color="#EF4444" />
-          <Text style={styles.statNumber}>{stats.pendingOrders}</Text>
+          <View style={styles.statRow}>
+            <Ionicons name="time" size={18} color="#EF4444" />
+            <Text style={styles.statNumber}>{stats.pendingOrders}</Text>
+          </View>
           <Text style={styles.statLabel}>In Attesa</Text>
         </View>
       </View>
@@ -265,26 +273,32 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -6,
+    gap: 8,
     marginBottom: 24,
   },
   statCard: {
-    width: '47%',
-    margin: '1.5%',
-    padding: 16,
-    borderRadius: 16,
+    flex: 1,
+    minWidth: '22%',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 12,
     alignItems: 'center',
   },
+  statRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   statNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#1F2937',
-    marginTop: 8,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: 11,
     color: '#6B7280',
-    marginTop: 4,
+    marginTop: 2,
+    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 18,

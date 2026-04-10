@@ -13,6 +13,7 @@ import { useAuthStore } from '../../store/authStore';
 import { fetchCustomers } from '../../lib/api/customers';
 import { fetchOrders } from '../../lib/api/orders';
 import { fetchVisits } from '../../lib/api/visits';
+import { supabase } from '../../lib/supabase';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -23,6 +24,14 @@ export default function Dashboard() {
     orders: 0,
     visits: 0,
     pendingOrders: 0,
+  });
+  const [monthlySales, setMonthlySales] = useState({
+    netto: 0,
+    accisa: 0,
+    iva: 0,
+    lordo: 0,
+    orderCount: 0,
+    monthLabel: '',
   });
 
   const loadStats = async () => {
@@ -41,8 +50,55 @@ export default function Dashboard() {
         visits: visits.length,
         pendingOrders: orders.filter(o => o.status === 'confirmed' || o.status === 'processing').length,
       });
+
+      // Load monthly sales (net of IVA and Accisa)
+      await loadMonthlySales();
     } catch (error) {
       console.error('Error loading stats:', error);
+    }
+  };
+
+  const loadMonthlySales = async () => {
+    if (!user) return;
+    try {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const months = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+        'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+      const monthLabel = `${months[now.getMonth()]} ${now.getFullYear()}`;
+
+      const { data: monthOrders } = await supabase
+        .from('orders')
+        .select('id, total_amount, order_items (quantity, line_total, product:products (accisa, iva_percentage))')
+        .gte('created_at', monthStart)
+        .eq('agent_id', user.id);
+
+      let netto = 0;
+      let accisa = 0;
+      let iva = 0;
+      let lordo = 0;
+
+      for (const order of (monthOrders || [])) {
+        lordo += order.total_amount || 0;
+        for (const item of (order.order_items || [])) {
+          netto += item.line_total || 0;
+          const accisaUnit = (item.product as any)?.accisa || 0;
+          accisa += accisaUnit * (item.quantity || 0);
+          const ivaRate = (item.product as any)?.iva_percentage || 22;
+          iva += (item.line_total || 0) * (ivaRate / 100);
+        }
+      }
+
+      setMonthlySales({
+        netto,
+        accisa,
+        iva,
+        lordo,
+        orderCount: monthOrders?.length || 0,
+        monthLabel,
+      });
+    } catch (error) {
+      console.error('Error loading monthly sales:', error);
     }
   };
 

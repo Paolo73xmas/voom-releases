@@ -1175,8 +1175,9 @@ export default function OrderCollectionScreen() {
                   <TouchableOpacity
                     style={styles.editCartApplyBtn}
                     onPress={() => {
-                      const newPrice = parseFloat(editPrice.replace(',', '.')) || 0;
-                      if (newPrice > 0) {
+                      const parsed = parseFloat(editPrice.replace(',', '.'));
+                      const newPrice = isNaN(parsed) ? -1 : parsed;
+                      if (newPrice >= 0) {
                         setCart(cart.map(item =>
                           item.product.id === editCartItem.product.id
                             ? { ...item, unit_price: newPrice }
@@ -1184,7 +1185,7 @@ export default function OrderCollectionScreen() {
                         ));
                         setEditCartItem(null);
                       } else {
-                        Alert.alert('Errore', 'Inserisci un prezzo valido maggiore di 0');
+                        Alert.alert('Errore', 'Inserisci un prezzo valido (anche 0)');
                       }
                     }}
                   >

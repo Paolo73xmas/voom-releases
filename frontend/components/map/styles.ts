@@ -282,6 +282,35 @@ export const styles = StyleSheet.create({
   popupCloseBtn: {
     padding: 4,
   },
+  popupContactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 12,
+    gap: 6,
+  },
+  popupContactText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#374151',
+  },
+  popupCallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10B981',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  popupCallBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   popupActions: {
     gap: 8,
   },

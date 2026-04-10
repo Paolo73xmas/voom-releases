@@ -65,6 +65,9 @@ export async function fetchTabaccherieByBounds(
           customer_id,
           agente_id,
           stato_visita,
+          telefono_mobile,
+          telefono_fisso,
+          email,
           customers!tabaccherie_customer_id_fkey (
             id,
             business_name,
@@ -118,6 +121,9 @@ export async function fetchTabaccherieByBounds(
         customer_business_name: customerData?.business_name || null,
         customer_last_order_date: customerData?.last_order_date || null,
         customer_last_visit_date: customerData?.last_visit_date || null,
+        telefono_mobile: tab.telefono_mobile || null,
+        telefono_fisso: tab.telefono_fisso || null,
+        email: tab.email || null,
       });
     });
 
@@ -170,6 +176,9 @@ export async function fetchTabaccherieInRadius(
         customer_id,
         agente_id,
         stato_visita,
+        telefono_mobile,
+        telefono_fisso,
+        email,
         customers!tabaccherie_customer_id_fkey (
           id,
           business_name,
@@ -215,6 +224,9 @@ export async function fetchTabaccherieInRadius(
         customer_business_name: customerData?.business_name || null,
         customer_last_order_date: customerData?.last_order_date || null,
         customer_last_visit_date: customerData?.last_visit_date || null,
+        telefono_mobile: tab.telefono_mobile || null,
+        telefono_fisso: tab.telefono_fisso || null,
+        email: tab.email || null,
       });
     });
 
@@ -248,6 +260,9 @@ export async function fetchAllTabaccherie(
         customer_id,
         agente_id,
         stato_visita,
+        telefono_mobile,
+        telefono_fisso,
+        email,
         customers!tabaccherie_customer_id_fkey (
           id,
           business_name,
@@ -297,6 +312,9 @@ export async function fetchAllTabaccherie(
         customer_business_name: customerData?.business_name || null,
         customer_last_order_date: customerData?.last_order_date || null,
         customer_last_visit_date: customerData?.last_visit_date || null,
+        telefono_mobile: tab.telefono_mobile || null,
+        telefono_fisso: tab.telefono_fisso || null,
+        email: tab.email || null,
       });
     });
 

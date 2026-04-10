@@ -473,10 +473,18 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* Counter badge */}
+      {/* Counter badge with breakdown */}
       {!loadingPoints && tabaccherie.length > 0 && (
         <View style={[styles.counterBadge, { top: 8 }]}>
-          <Text style={styles.counterText}>{tabaccherie.length} punti</Text>
+          <Text style={styles.counterText}>
+            {tabaccherie.length} punti
+            {' \u2022 '}
+            <Text style={{ color: '#15803D' }}>{tabaccherie.filter(t => t.stato_visita === 'ordinato').length}</Text>
+            {' \u2022 '}
+            <Text style={{ color: '#F97316' }}>{tabaccherie.filter(t => t.stato_visita === 'visitato').length}</Text>
+            {' \u2022 '}
+            <Text style={{ color: '#DC2626' }}>{tabaccherie.filter(t => !t.stato_visita || t.stato_visita === 'non_visitato').length}</Text>
+          </Text>
         </View>
       )}
 
@@ -620,6 +628,23 @@ export default function MapScreen() {
                 <Ionicons name="close" size={22} color="#6B7280" />
               </TouchableOpacity>
             </View>
+
+            {/* Quick contact row */}
+            {(selectedTab.telefono_mobile || selectedTab.telefono_fisso) && (
+              <View style={styles.popupContactRow}>
+                <Ionicons name="call-outline" size={14} color="#6B7280" />
+                <Text style={styles.popupContactText} numberOfLines={1}>
+                  {selectedTab.telefono_mobile || selectedTab.telefono_fisso}
+                </Text>
+                <TouchableOpacity
+                  style={styles.popupCallBtn}
+                  onPress={() => Linking.openURL(`tel:${selectedTab.telefono_mobile || selectedTab.telefono_fisso}`)}
+                >
+                  <Ionicons name="call" size={14} color="#FFFFFF" />
+                  <Text style={styles.popupCallBtnText}>Chiama</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Actions */}
             <View style={styles.popupActions}>

@@ -58,6 +58,9 @@ export interface Tabaccheria {
   customer_business_name?: string | null;
   customer_last_order_date?: string | null;
   customer_last_visit_date?: string | null;
+  telefono_mobile?: string | null;
+  telefono_fisso?: string | null;
+  email?: string | null;
 }
 
 export interface Visit {

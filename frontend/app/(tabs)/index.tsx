@@ -141,6 +141,12 @@ export default function Dashboard() {
       color: '#3B82F6',
       onPress: () => router.push('/(tabs)/map'),
     },
+    {
+      title: 'Profilo',
+      icon: 'person-circle',
+      color: '#6B7280',
+      onPress: () => router.push('/(tabs)/profile'),
+    },
   ];
 
   return (

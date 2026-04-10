@@ -64,6 +64,7 @@ export default function MapScreen() {
 
   const currentBoundsRef = useRef<{ north: number; south: number; east: number; west: number } | null>(null);
   const tabaccherieRef = useRef<Tabaccheria[]>([]);
+  const filterModeRef = useRef<FilterMode>('all');
 
   // Web-only: Leaflet direct map refs
   const leafletMapRef = useRef<any>(null);
@@ -76,6 +77,10 @@ export default function MapScreen() {
   useEffect(() => {
     tabaccherieRef.current = tabaccherie;
   }, [tabaccherie]);
+
+  useEffect(() => {
+    filterModeRef.current = filterMode;
+  }, [filterMode]);
 
   // Get user location
   useEffect(() => {
@@ -182,7 +187,12 @@ export default function MapScreen() {
           const b = map.getBounds();
           const bounds = { north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() };
           currentBoundsRef.current = bounds;
-          loadByBounds(bounds);
+          // Respect active filter
+          if (filterModeRef.current !== 'all') {
+            loadAll();
+          } else {
+            loadByBounds(bounds);
+          }
         }, 500);
       });
 
@@ -395,7 +405,12 @@ export default function MapScreen() {
 
       if (msg.type === 'boundsChanged') {
         currentBoundsRef.current = msg.bounds;
-        loadByBounds(msg.bounds);
+        // Respect active filter
+        if (filterModeRef.current !== 'all') {
+          loadAll();
+        } else {
+          loadByBounds(msg.bounds);
+        }
       }
 
       if (msg.type === 'markerClick') {
@@ -406,7 +421,7 @@ export default function MapScreen() {
         }
       }
     } catch {}
-  }, [loadByBounds]);
+  }, [loadByBounds, loadAll]);
 
   // Actions
   const openNavigation = (lat: number, lng: number) => {

@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -120,45 +122,186 @@ export default function OrderDetailScreen() {
         <Text style={styles.sectionTitle}>Prodotti ({order.order_items?.length || 0})</Text>
         <View style={styles.card}>
           {order.order_items && order.order_items.length > 0 ? (
-            order.order_items.map((item, index) => (
-              <View key={item.id}>
-                {index > 0 && <View style={styles.divider} />}
-                <View style={styles.itemRow}>
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.itemName}>{item.product?.name || 'Prodotto'}</Text>
-                    <Text style={styles.itemDetails}>
-                      {item.quantity} x {formatCurrency(item.unit_price)}
-                      {item.discount_percent > 0 && ` (-${item.discount_percent}%)`}
-                    </Text>
+            order.order_items.map((item: any, index: number) => {
+              const product = item.product;
+              const accisaUnit = product?.accisa || 0;
+              const accisaTotal = accisaUnit * (item.quantity || 0);
+              const ivaRate = product?.iva_percentage || 22;
+              const ivaAmount = (item.line_total || 0) * (ivaRate / 100);
+
+              return (
+                <View key={item.id}>
+                  {index > 0 && <View style={styles.divider} />}
+                  <View style={styles.itemRow}>
+                    {/* Product image */}
+                    {product?.image_url ? (
+                      <View style={styles.itemImage}>
+                        <Image source={{ uri: product.image_url }} style={styles.itemImageImg} />
+                      </View>
+                    ) : (
+                      <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
+                        <Ionicons name="cube-outline" size={22} color="#9CA3AF" />
+                      </View>
+                    )}
+
+                    <View style={styles.itemContent}>
+                      {/* Product name (short_description) */}
+                      <Text style={styles.itemName} numberOfLines={2}>
+                        {product?.short_description || product?.name || 'Prodotto'}
+                      </Text>
+
+                      {/* SKU */}
+                      <Text style={styles.itemSku}>SKU: {product?.sku || '-'}</Text>
+
+                      {/* Quantity x Price */}
+                      <Text style={styles.itemDetails}>
+                        {item.quantity} x {formatCurrency(item.unit_price)}
+                        {item.discount_percent > 0 && (
+                          <Text style={styles.itemDiscount}> (-{item.discount_percent}%)</Text>
+                        )}
+                      </Text>
+
+                      {/* Accisa */}
+                      {accisaUnit > 0 && (
+                        <View style={styles.itemAccisaRow}>
+                          <Ionicons name="receipt-outline" size={12} color="#D97706" />
+                          <Text style={styles.itemAccisaText}>
+                            Accisa: {formatCurrency(accisaUnit)}/pz = {formatCurrency(accisaTotal)}
+                          </Text>
+                        </View>
+                      )}
+
+                      {/* IVA */}
+                      <View style={styles.itemAccisaRow}>
+                        <Ionicons name="document-text-outline" size={12} color="#6B7280" />
+                        <Text style={styles.itemIvaText}>
+                          IVA {ivaRate}%: {formatCurrency(ivaAmount)}
+                        </Text>
+                      </View>
+
+                      {/* Badges */}
+                      <View style={styles.itemBadges}>
+                        {product?.rottamazione_no && (
+                          <View style={[styles.itemBadge, { backgroundColor: '#FEF3C7' }]}>
+                            <Text style={[styles.itemBadgeText, { color: '#92400E' }]}>No Rott.</Text>
+                          </View>
+                        )}
+                        {product?.cashback_eligible && (
+                          <View style={[styles.itemBadge, { backgroundColor: '#D1FAE5' }]}>
+                            <Text style={[styles.itemBadgeText, { color: '#065F46' }]}>Cashback</Text>
+                          </View>
+                        )}
+                        {product?.estero && (
+                          <View style={[styles.itemBadge, { backgroundColor: '#E0E7FF' }]}>
+                            <Text style={[styles.itemBadgeText, { color: '#3730A3' }]}>Estero</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Line total */}
+                    <Text style={styles.itemTotal}>{formatCurrency(item.line_total)}</Text>
                   </View>
-                  <Text style={styles.itemTotal}>{formatCurrency(item.line_total)}</Text>
                 </View>
-              </View>
-            ))
+              );
+            })
           ) : (
             <Text style={styles.noItemsText}>Nessun prodotto</Text>
           )}
         </View>
       </View>
 
-      {/* Order Summary */}
+      {/* Order Summary - Detailed */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Riepilogo</Text>
         <View style={styles.card}>
+          {/* Subtotale (products) */}
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotale</Text>
+            <Text style={styles.summaryLabel}>Subtotale prodotti</Text>
             <Text style={styles.summaryValue}>
-              {formatCurrency(order.total_amount - order.shipping_cost)}
+              {formatCurrency(
+                (order.order_items || []).reduce((sum: number, i: any) => sum + (i.line_total || 0), 0)
+              )}
             </Text>
           </View>
           <View style={styles.divider} />
+
+          {/* Accisa totale */}
+          {(() => {
+            const totalAccisa = (order.order_items || []).reduce((sum: number, i: any) => {
+              const accisa = i.product?.accisa || 0;
+              return sum + (accisa * (i.quantity || 0));
+            }, 0);
+            if (totalAccisa > 0) {
+              return (
+                <>
+                  <View style={styles.summaryRow}>
+                    <View style={styles.summaryLabelRow}>
+                      <Ionicons name="receipt-outline" size={14} color="#D97706" />
+                      <Text style={[styles.summaryLabel, { marginLeft: 6, color: '#D97706' }]}>Accisa totale</Text>
+                    </View>
+                    <Text style={[styles.summaryValue, { color: '#D97706' }]}>{formatCurrency(totalAccisa)}</Text>
+                  </View>
+                  <View style={styles.divider} />
+                </>
+              );
+            }
+            return null;
+          })()}
+
+          {/* IVA totale */}
+          {(() => {
+            const totalIva = (order.order_items || []).reduce((sum: number, i: any) => {
+              const ivaRate = i.product?.iva_percentage || 22;
+              return sum + ((i.line_total || 0) * (ivaRate / 100));
+            }, 0);
+            return (
+              <>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>IVA</Text>
+                  <Text style={styles.summaryValue}>{formatCurrency(totalIva)}</Text>
+                </View>
+                <View style={styles.divider} />
+              </>
+            );
+          })()}
+
+          {/* Rottamazione */}
+          {order.rottamazione_amount > 0 && (
+            <>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: '#059669' }]}>Rottamazione</Text>
+                <Text style={[styles.summaryValue, { color: '#059669' }]}>
+                  -{formatCurrency(order.rottamazione_amount)}
+                </Text>
+              </View>
+              <View style={styles.divider} />
+            </>
+          )}
+
+          {/* Cashback */}
+          {order.cashback_used > 0 && (
+            <>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: '#7C3AED' }]}>Cashback usato</Text>
+                <Text style={[styles.summaryValue, { color: '#7C3AED' }]}>
+                  -{formatCurrency(order.cashback_used)}
+                </Text>
+              </View>
+              <View style={styles.divider} />
+            </>
+          )}
+
+          {/* Spedizione */}
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Spedizione</Text>
             <Text style={styles.summaryValue}>{formatCurrency(order.shipping_cost)}</Text>
           </View>
           <View style={styles.divider} />
+
+          {/* Totale */}
           <View style={styles.summaryRow}>
-            <Text style={styles.totalLabel}>Totale</Text>
+            <Text style={styles.totalLabel}>Totale Ordine</Text>
             <Text style={styles.totalValue}>{formatCurrency(order.total_amount)}</Text>
           </View>
         </View>
@@ -341,27 +484,87 @@ const styles = StyleSheet.create({
   },
   itemRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: 12,
+  },
+  itemImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    marginRight: 12,
+    overflow: 'hidden',
+  },
+  itemImageImg: {
+    width: 48,
+    height: 48,
+  },
+  itemImagePlaceholder: {
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemContent: {
+    flex: 1,
   },
   itemInfo: {
     flex: 1,
   },
   itemName: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#1F2937',
+    lineHeight: 18,
+  },
+  itemSku: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginTop: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   itemDetails: {
     fontSize: 13,
+    color: '#4B5563',
+    marginTop: 4,
+  },
+  itemDiscount: {
+    color: '#EF4444',
+    fontWeight: '600',
+  },
+  itemAccisaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+    gap: 4,
+  },
+  itemAccisaText: {
+    fontSize: 11,
+    color: '#D97706',
+    fontWeight: '500',
+  },
+  itemIvaText: {
+    fontSize: 11,
     color: '#6B7280',
-    marginTop: 2,
+  },
+  itemBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 6,
+    gap: 4,
+  },
+  itemBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  itemBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   itemTotal: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#1F2937',
+    marginLeft: 8,
   },
   noItemsText: {
     fontSize: 14,
@@ -377,6 +580,10 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 14,
     color: '#6B7280',
+  },
+  summaryLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   summaryValue: {
     fontSize: 14,

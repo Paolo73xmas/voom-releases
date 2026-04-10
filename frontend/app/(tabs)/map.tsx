@@ -69,6 +69,7 @@ export default function MapScreen() {
   const leafletMapRef = useRef<any>(null);
   const leafletMarkersRef = useRef<any[]>([]);
   const leafletUserMarkerRef = useRef<any>(null);
+  const leafletClusterRef = useRef<any>(null);
   const mapDivRef = useRef<any>(null);
   const leafletReadyRef = useRef(false);
 
@@ -123,11 +124,25 @@ export default function MapScreen() {
       document.head.appendChild(link);
     }
 
+    // Load MarkerCluster CSS
+    if (!document.getElementById('markercluster-css')) {
+      const link1 = document.createElement('link');
+      link1.id = 'markercluster-css';
+      link1.rel = 'stylesheet';
+      link1.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css';
+      document.head.appendChild(link1);
+      const link2 = document.createElement('link');
+      link2.id = 'markercluster-default-css';
+      link2.rel = 'stylesheet';
+      link2.href = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css';
+      document.head.appendChild(link2);
+    }
+
     // Add custom styles
     if (!document.getElementById('leaflet-custom-css')) {
       const style = document.createElement('style');
       style.id = 'leaflet-custom-css';
-      style.textContent = `.custom-marker{border:none!important;background:none!important}@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}70%{box-shadow:0 0 0 10px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}#leaflet-map-container{position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;}`;
+      style.textContent = `.custom-marker{border:none!important;background:none!important}@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}70%{box-shadow:0 0 0 10px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}#leaflet-map-container{position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;}.marker-cluster-custom{background:rgba(30,64,175,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center}.marker-cluster-custom div{background:#1E40AF;color:#fff;font-weight:700;font-size:13px;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3)}.marker-cluster-large{background:rgba(220,38,38,0.2)!important}.marker-cluster-large div{background:#DC2626!important}.marker-cluster-medium{background:rgba(249,115,22,0.2)!important}.marker-cluster-medium div{background:#F97316!important}`;
       document.head.appendChild(style);
     }
 
@@ -183,13 +198,24 @@ export default function MapScreen() {
       setTimeout(() => map.invalidateSize(), 200);
     };
 
-    if ((window as any).L) {
-      // Small delay to ensure DOM is ready
+    if ((window as any).L && (window as any).L.markerClusterGroup) {
+      // Leaflet and MarkerCluster already loaded
       setTimeout(initMap, 300);
+    } else if ((window as any).L) {
+      // Leaflet loaded but not MarkerCluster
+      const mcScript = document.createElement('script');
+      mcScript.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
+      mcScript.onload = () => setTimeout(initMap, 300);
+      document.head.appendChild(mcScript);
     } else {
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => setTimeout(initMap, 300);
+      script.onload = () => {
+        const mcScript = document.createElement('script');
+        mcScript.src = 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
+        mcScript.onload = () => setTimeout(initMap, 300);
+        document.head.appendChild(mcScript);
+      };
       document.head.appendChild(script);
     }
 
@@ -208,8 +234,30 @@ export default function MapScreen() {
     const L = (window as any).L;
     if (!L) return;
 
-    // Remove old markers
-    leafletMarkersRef.current.forEach(m => leafletMapRef.current.removeLayer(m));
+    // Initialize cluster group if needed
+    if (!leafletClusterRef.current) {
+      leafletClusterRef.current = L.markerClusterGroup({
+        maxClusterRadius: 50,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        disableClusteringAtZoom: 16,
+        iconCreateFunction: function(cluster: any) {
+          var count = cluster.getChildCount();
+          var size = count < 20 ? 'small' : count < 100 ? 'medium' : 'large';
+          var px = count < 20 ? 36 : count < 100 ? 42 : 48;
+          return L.divIcon({
+            html: '<div>' + count + '</div>',
+            className: 'marker-cluster-custom marker-cluster-' + size,
+            iconSize: L.point(px, px)
+          });
+        }
+      });
+      leafletMapRef.current.addLayer(leafletClusterRef.current);
+    }
+
+    // Clear existing markers
+    leafletClusterRef.current.clearLayers();
     leafletMarkersRef.current = [];
 
     const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d' };
@@ -223,11 +271,12 @@ export default function MapScreen() {
         html: `<div style="background:${COLORS[color] || COLORS.red};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);opacity:${opacity};"></div>`,
         iconSize: [14, 14], iconAnchor: [7, 7],
       });
-      const marker = L.marker([t.latitude, t.longitude], { icon }).addTo(leafletMapRef.current);
+      const marker = L.marker([t.latitude, t.longitude], { icon });
       marker.on('click', () => {
         setSelectedTab(t);
         setShowPopup(true);
       });
+      leafletClusterRef.current.addLayer(marker);
       leafletMarkersRef.current.push(marker);
     });
   }, [tabaccherie, user?.id, userRole]);
@@ -238,8 +287,30 @@ export default function MapScreen() {
     const L = (window as any).L;
     if (!L || !leafletMapRef.current) return;
 
-    // Remove old markers
-    leafletMarkersRef.current.forEach(m => leafletMapRef.current.removeLayer(m));
+    // Initialize cluster group if needed
+    if (!leafletClusterRef.current) {
+      leafletClusterRef.current = L.markerClusterGroup({
+        maxClusterRadius: 50,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        disableClusteringAtZoom: 16,
+        iconCreateFunction: function(cluster: any) {
+          var count = cluster.getChildCount();
+          var size = count < 20 ? 'small' : count < 100 ? 'medium' : 'large';
+          var px = count < 20 ? 36 : count < 100 ? 42 : 48;
+          return L.divIcon({
+            html: '<div>' + count + '</div>',
+            className: 'marker-cluster-custom marker-cluster-' + size,
+            iconSize: L.point(px, px)
+          });
+        }
+      });
+      leafletMapRef.current.addLayer(leafletClusterRef.current);
+    }
+
+    // Clear existing
+    leafletClusterRef.current.clearLayers();
     leafletMarkersRef.current = [];
 
     const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d' };
@@ -253,14 +324,15 @@ export default function MapScreen() {
         html: `<div style="background:${COLORS[color] || COLORS.red};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);opacity:${opacity};"></div>`,
         iconSize: [14, 14], iconAnchor: [7, 7],
       });
-      const marker = L.marker([t.latitude, t.longitude], { icon }).addTo(leafletMapRef.current);
+      const marker = L.marker([t.latitude, t.longitude], { icon });
       marker.on('click', () => {
         setSelectedTab(t);
         setShowPopup(true);
       });
+      leafletClusterRef.current.addLayer(marker);
       leafletMarkersRef.current.push(marker);
     });
-    console.log('[Map] Updated', leafletMarkersRef.current.length, 'Leaflet markers');
+    console.log('[Map] Updated', leafletMarkersRef.current.length, 'Leaflet markers (clustered)');
   }, [user?.id, userRole]);
 
   // Helper to send messages to map

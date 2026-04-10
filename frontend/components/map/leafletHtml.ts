@@ -7,12 +7,47 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <style>
     * { margin: 0; padding: 0; }
     html, body, #map { width: 100%; height: 100%; }
     .custom-marker {
       border: none !important;
       background: none !important;
+    }
+    .marker-cluster-custom {
+      background: rgba(30, 64, 175, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .marker-cluster-custom div {
+      background: #1E40AF;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .marker-cluster-large {
+      background: rgba(220, 38, 38, 0.2) !important;
+    }
+    .marker-cluster-large div {
+      background: #DC2626 !important;
+    }
+    .marker-cluster-medium {
+      background: rgba(249, 115, 22, 0.2) !important;
+    }
+    .marker-cluster-medium div {
+      background: #F97316 !important;
     }
     .user-pulse {
       animation: pulse 2s infinite;
@@ -41,6 +76,24 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
 
     var markers = [];
     var userMarker = null;
+    var clusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      disableClusteringAtZoom: 16,
+      iconCreateFunction: function(cluster) {
+        var count = cluster.getChildCount();
+        var size = count < 20 ? 'small' : count < 100 ? 'medium' : 'large';
+        var px = count < 20 ? 36 : count < 100 ? 42 : 48;
+        return L.divIcon({
+          html: '<div>' + count + '</div>',
+          className: 'marker-cluster-custom marker-cluster-' + size,
+          iconSize: L.point(px, px)
+        });
+      }
+    });
+    map.addLayer(clusterGroup);
 
     // User location marker
     var userIcon = L.divIcon({
@@ -87,7 +140,7 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
     });
 
     function updateMarkers(data) {
-      markers.forEach(function(m) { map.removeLayer(m); });
+      clusterGroup.clearLayers();
       markers = [];
       data.forEach(function(p) {
         if (!p.lat || !p.lng) return;
@@ -99,7 +152,7 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
             id: p.id
           });
         });
-        m.addTo(map);
+        clusterGroup.addLayer(m);
         markers.push(m);
       });
     }

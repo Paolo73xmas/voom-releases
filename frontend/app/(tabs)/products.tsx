@@ -310,7 +310,7 @@ export default function ProductsScreen() {
               activeOpacity={0.7}
             >
               <View style={[styles.gridIconWrap, { backgroundColor: '#F5F3FF' }]}>
-                <Ionicons name="folder-outline" size={22} color="#8B5CF6" />
+                <Ionicons name="folder-outline" size={18} color="#8B5CF6" />
               </View>
               <Text style={styles.gridCardTitle} numberOfLines={2}>{item.name}</Text>
               {item.description ? (
@@ -344,7 +344,7 @@ export default function ProductsScreen() {
         <Image source={{ uri: item.image_url }} style={styles.productImage} resizeMode="contain" />
       ) : (
         <View style={styles.productImagePlaceholder}>
-          <Ionicons name="cube-outline" size={28} color="#9CA3AF" />
+          <Ionicons name="cube-outline" size={20} color="#9CA3AF" />
         </View>
       )}
       <View style={styles.productInfo}>
@@ -453,22 +453,22 @@ const styles = StyleSheet.create({
 
   // Grid
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 24 },
-  gridRow: { gap: 10 },
+  gridRow: { gap: 10, marginBottom: 4 },
   gridCard: {
-    width: '47%', backgroundColor: '#FFF', borderRadius: 12, padding: 16,
+    width: '47%', backgroundColor: '#FFF', borderRadius: 12, padding: 14,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
   gridIconWrap: {
-    width: 40, height: 40, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+    width: 34, height: 34, borderRadius: 8,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
-  gridCardTitle: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
-  gridCardDesc: { fontSize: 11, color: '#6B7280', marginTop: 3 },
-  gridCardCount: { fontSize: 12, color: '#3B82F6', fontWeight: '500', marginTop: 6 },
+  gridCardTitle: { fontSize: 13, fontWeight: '600', color: '#1F2937' },
+  gridCardDesc: { fontSize: 10, color: '#6B7280', marginTop: 2 },
+  gridCardCount: { fontSize: 11, color: '#3B82F6', fontWeight: '500', marginTop: 4 },
 
   // Sub-category card
   subCatCard: {
-    width: '48%', backgroundColor: '#FFF', borderRadius: 12, padding: 14,
+    width: '48%', backgroundColor: '#FFF', borderRadius: 10, padding: 10,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
 
@@ -490,26 +490,26 @@ const styles = StyleSheet.create({
   // Product card
   productCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF',
-    borderRadius: 12, padding: 12, marginBottom: 8,
+    borderRadius: 10, padding: 8, paddingHorizontal: 10, marginBottom: 10,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
   },
-  productImage: { width: 56, height: 56, borderRadius: 8, backgroundColor: '#F9FAFB' },
+  productImage: { width: 42, height: 42, borderRadius: 6, backgroundColor: '#F9FAFB' },
   productImagePlaceholder: {
-    width: 56, height: 56, borderRadius: 8, backgroundColor: '#F3F4F6',
+    width: 42, height: 42, borderRadius: 6, backgroundColor: '#F3F4F6',
     alignItems: 'center', justifyContent: 'center',
   },
-  productInfo: { flex: 1, marginLeft: 12 },
-  productName: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
-  productSku: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
-  productAccisa: { fontSize: 11, color: '#6B7280', marginTop: 1 },
-  productPriceWrap: { alignItems: 'flex-end', marginLeft: 8 },
-  productPrice: { fontSize: 15, fontWeight: '700', color: '#1E40AF' },
-  productUnit: { fontSize: 11, color: '#9CA3AF' },
+  productInfo: { flex: 1, marginLeft: 10 },
+  productName: { fontSize: 13, fontWeight: '600', color: '#1F2937', lineHeight: 17 },
+  productSku: { fontSize: 10, color: '#9CA3AF', marginTop: 1 },
+  productAccisa: { fontSize: 10, color: '#6B7280', marginTop: 1 },
+  productPriceWrap: { alignItems: 'flex-end', marginLeft: 6 },
+  productPrice: { fontSize: 14, fontWeight: '700', color: '#1E40AF' },
+  productUnit: { fontSize: 10, color: '#9CA3AF' },
   stockBadge: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981',
-    borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginTop: 4, gap: 3,
+    borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1, marginTop: 3, gap: 2,
   },
-  stockText: { fontSize: 10, color: '#FFF', fontWeight: '600' },
+  stockText: { fontSize: 9, color: '#FFF', fontWeight: '600' },
 
   // Empty
   emptyWrap: { alignItems: 'center', marginTop: 60 },

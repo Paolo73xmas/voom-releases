@@ -297,7 +297,8 @@ export default function OrderCollectionScreen() {
       return;
     }
 
-    // Stock validation: check every product BEFORE adding anything
+    // Validation: check is_active and stock for every product BEFORE adding anything
+    const inactiveItems: string[] = [];
     const outOfStockItems: string[] = [];
     const insufficientStockItems: string[] = [];
 
@@ -307,6 +308,12 @@ export default function OrderCollectionScreen() {
 
       const stock = product.stock_quantity ?? 0;
       const productLabel = product.short_description || product.name;
+
+      // Check if product is active
+      if (product.is_active === false) {
+        inactiveItems.push(productLabel);
+        continue; // skip stock check for inactive products
+      }
 
       // Account for quantity already in the cart
       const existing = cart.find(c => c.product.id === (product.id || item.product_id));
@@ -322,8 +329,11 @@ export default function OrderCollectionScreen() {
       }
     }
 
-    if (outOfStockItems.length > 0 || insufficientStockItems.length > 0) {
+    if (inactiveItems.length > 0 || outOfStockItems.length > 0 || insufficientStockItems.length > 0) {
       const messages: string[] = [];
+      if (inactiveItems.length > 0) {
+        messages.push(`Prodotti non attivi:\n${inactiveItems.join('\n')}`);
+      }
       if (outOfStockItems.length > 0) {
         messages.push(`Prodotti esauriti:\n${outOfStockItems.join('\n')}`);
       }

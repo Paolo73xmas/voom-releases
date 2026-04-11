@@ -143,6 +143,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Package (Pacchetto) selection modal implemented. Loads packages from Supabase, shows card with items/prices/totals, search filter, and Aggiungi button to apply package to cart. Verified via screenshot."
+      - working: true
+        agent: "main"
+        comment: "Package stock validation implemented and tested. applyPackage now checks: 1) is_active on each product, 2) stock_quantity > 0, 3) totalRequestedQty (cart + package) <= stock. Shows Italian-language alert if validation fails. Tested via screenshot: package applied successfully when stock available, cart updated correctly with 40 products."
 
   - task: "Package Selection Modal (Pacchetto)"
     implemented: true

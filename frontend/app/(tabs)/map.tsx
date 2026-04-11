@@ -187,12 +187,7 @@ export default function MapScreen() {
           const b = map.getBounds();
           const bounds = { north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() };
           currentBoundsRef.current = bounds;
-          // Respect active filter
-          if (filterModeRef.current !== 'all') {
-            loadAll();
-          } else {
-            loadByBounds(bounds);
-          }
+          loadByBounds(bounds, filterModeRef.current);
         }, 500);
       });
 
@@ -368,11 +363,13 @@ export default function MapScreen() {
     sendToMap({ type: 'updateMarkers', data: markers });
   }, [user?.id, userRole, sendToMap]);
 
-  const loadByBounds = useCallback(async (bounds: { north: number; south: number; east: number; west: number }) => {
+  const loadByBounds = useCallback(async (
+    bounds: { north: number; south: number; east: number; west: number },
+    activeFilter?: 'all' | 'active' | 'not_visited'
+  ) => {
     try {
       setLoadingPoints(true);
-      // Use the visible map bounds directly (not a fixed 40km radius)
-      const data = await fetchTabaccherieByBounds(bounds, user?.id, userRole);
+      const data = await fetchTabaccherieByBounds(bounds, user?.id, userRole, activeFilter || 'all');
       setTabaccherie(data);
       updateLeafletMarkers(data);
       sendMarkersToWebView(data);
@@ -384,11 +381,14 @@ export default function MapScreen() {
   }, [user?.id, userRole, updateLeafletMarkers, sendMarkersToWebView]);
 
   const loadAll = useCallback(async () => {
+    // If we have current bounds, use bounds-based loading with filter (much faster)
+    if (currentBoundsRef.current) {
+      return loadByBounds(currentBoundsRef.current, filterMode);
+    }
     try {
       setLoadingPoints(true);
       const data = await fetchAllTabaccherie(user?.id, 'agent', filterMode);
       setTabaccherie(data);
-      // Directly update Leaflet markers on web
       updateLeafletMarkers(data);
       sendMarkersToWebView(data);
     } catch (e) {
@@ -396,7 +396,7 @@ export default function MapScreen() {
     } finally {
       setLoadingPoints(false);
     }
-  }, [user?.id, filterMode, updateLeafletMarkers, sendMarkersToWebView]);
+  }, [user?.id, filterMode, updateLeafletMarkers, sendMarkersToWebView, loadByBounds]);
 
   // Handle WebView messages
   const onWebViewMessage = useCallback((event: any) => {
@@ -405,12 +405,7 @@ export default function MapScreen() {
 
       if (msg.type === 'boundsChanged') {
         currentBoundsRef.current = msg.bounds;
-        // Respect active filter
-        if (filterModeRef.current !== 'all') {
-          loadAll();
-        } else {
-          loadByBounds(msg.bounds);
-        }
+        loadByBounds(msg.bounds, filterModeRef.current);
       }
 
       if (msg.type === 'markerClick') {

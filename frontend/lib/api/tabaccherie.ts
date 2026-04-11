@@ -37,10 +37,11 @@ export async function fetchTabaccherieInBounds(
 export async function fetchTabaccherieByBounds(
   bounds: { north: number; south: number; east: number; west: number },
   userId?: string,
-  userRole?: string
+  userRole?: string,
+  filterMode?: 'all' | 'active' | 'not_visited'
 ): Promise<Tabaccheria[]> {
   try {
-    console.log('[tabaccherie] Fetching by visible bounds:', bounds);
+    console.log('[tabaccherie] Fetching by visible bounds:', bounds, 'filter:', filterMode);
 
     const PAGE_SIZE = 1000;
     let allData: any[] = [];
@@ -51,7 +52,7 @@ export async function fetchTabaccherieByBounds(
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('tabaccherie')
         .select(`
           id,
@@ -80,8 +81,16 @@ export async function fetchTabaccherieByBounds(
         .gte('gps_lat', bounds.south.toString())
         .lte('gps_lat', bounds.north.toString())
         .gte('gps_lng', bounds.west.toString())
-        .lte('gps_lng', bounds.east.toString())
-        .range(from, to);
+        .lte('gps_lng', bounds.east.toString());
+
+      // Apply filter
+      if (filterMode === 'active') {
+        query = query.in('stato_visita', ['visitato', 'ordinato']);
+      } else if (filterMode === 'not_visited') {
+        query = query.or('stato_visita.is.null,stato_visita.eq.non_visitato');
+      }
+
+      const { data, error } = await query.range(from, to);
 
       if (error) throw error;
       if (!data || data.length === 0) break;

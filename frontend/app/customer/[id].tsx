@@ -164,7 +164,7 @@ export default function CustomerDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} numberOfLines={1}>{customer.business_name}</Text>
@@ -389,20 +389,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E40AF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#1E3A8A',
   },
   backBtn: { padding: 4, marginRight: 8 },
   headerCenter: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  headerSub: { fontSize: 11, color: '#6B7280' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  headerSub: { fontSize: 11, color: '#BFDBFE' },
   catBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   catBadgeText: { fontSize: 10, fontWeight: '600' },
-  clientBg: { backgroundColor: '#DCFCE7' },
-  prospectBg: { backgroundColor: '#FEF3C7' },
-  clientColor: { color: '#166534' },
-  prospectColor: { color: '#92400E' },
+  clientBg: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  prospectBg: { backgroundColor: 'rgba(255,255,255,0.15)' },
+  clientColor: { color: '#FFFFFF' },
+  prospectColor: { color: '#DBEAFE' },
 
   body: { flex: 1 },
   bodyContent: { padding: 16 },

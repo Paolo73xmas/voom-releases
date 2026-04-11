@@ -138,7 +138,7 @@ export default function CustomerDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: '#1E40AF' }]} edges={['top']}>
         <View style={styles.centered}><ActivityIndicator size="large" color="#1E40AF" /></View>
       </SafeAreaView>
     );
@@ -146,7 +146,7 @@ export default function CustomerDetailScreen() {
 
   if (!customer) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: '#1E40AF' }]} edges={['top']}>
         <View style={styles.centered}>
           <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
           <Text style={styles.errorText}>Cliente non trovato</Text>
@@ -159,7 +159,7 @@ export default function CustomerDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: '#1E40AF' }]} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       {/* Header */}
       <View style={styles.header}>

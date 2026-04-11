@@ -290,8 +290,54 @@ export default function OrderCollectionScreen() {
     }
   };
 
-  // Apply a package to the cart
+  // Apply a package to the cart (with stock validation)
   const applyPackage = (pkg: any) => {
+    if (!pkg.items || pkg.items.length === 0) {
+      Alert.alert('Errore', 'Il pacchetto selezionato non contiene prodotti');
+      return;
+    }
+
+    // Stock validation: check every product BEFORE adding anything
+    const outOfStockItems: string[] = [];
+    const insufficientStockItems: string[] = [];
+
+    for (const item of pkg.items) {
+      const product = item.products;
+      if (!product) continue;
+
+      const stock = product.stock_quantity ?? 0;
+      const productLabel = product.short_description || product.name;
+
+      // Account for quantity already in the cart
+      const existing = cart.find(c => c.product.id === (product.id || item.product_id));
+      const currentCartQty = existing ? existing.quantity : 0;
+      const totalRequestedQty = currentCartQty + item.quantity;
+
+      if (stock <= 0) {
+        outOfStockItems.push(productLabel);
+      } else if (totalRequestedQty > stock) {
+        insufficientStockItems.push(
+          `${productLabel} (richiesti: ${totalRequestedQty}, disponibili: ${stock})`
+        );
+      }
+    }
+
+    if (outOfStockItems.length > 0 || insufficientStockItems.length > 0) {
+      const messages: string[] = [];
+      if (outOfStockItems.length > 0) {
+        messages.push(`Prodotti esauriti:\n${outOfStockItems.join('\n')}`);
+      }
+      if (insufficientStockItems.length > 0) {
+        messages.push(`Stock insufficiente:\n${insufficientStockItems.join('\n')}`);
+      }
+      Alert.alert(
+        'Impossibile applicare il pacchetto',
+        `"${pkg.name}"\n\n${messages.join('\n\n')}`
+      );
+      return;
+    }
+
+    // All stock checks passed — add to cart
     const newItems: CartItem[] = pkg.items.map((item: any) => ({
       product: {
         ...item.products,

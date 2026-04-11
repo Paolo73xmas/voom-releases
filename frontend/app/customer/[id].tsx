@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   clientColor: { color: '#FFFFFF' },
   prospectColor: { color: '#DBEAFE' },
 
-  body: { flex: 1 },
+  body: { flex: 1, backgroundColor: '#F3F4F6' },
   bodyContent: { padding: 16 },
 
   // Quick Actions

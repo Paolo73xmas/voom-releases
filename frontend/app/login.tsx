@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,11 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const REMEMBER_KEY = '@remember_me';
+const SAVED_EMAIL_KEY = '@saved_email';
+const SAVED_PASSWORD_KEY = '@saved_password';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -21,6 +26,29 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [credentialsLoaded, setCredentialsLoaded] = useState(false);
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    const loadSavedCredentials = async () => {
+      try {
+        const remembered = await AsyncStorage.getItem(REMEMBER_KEY);
+        if (remembered === 'true') {
+          const savedEmail = await AsyncStorage.getItem(SAVED_EMAIL_KEY);
+          const savedPassword = await AsyncStorage.getItem(SAVED_PASSWORD_KEY);
+          if (savedEmail) setEmail(savedEmail);
+          if (savedPassword) setPassword(savedPassword);
+          setRememberMe(true);
+        }
+      } catch (e) {
+        console.log('Error loading saved credentials:', e);
+      } finally {
+        setCredentialsLoaded(true);
+      }
+    };
+    loadSavedCredentials();
+  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -31,6 +59,16 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email.trim(), password);
+
+      // Save or clear credentials based on rememberMe
+      if (rememberMe) {
+        await AsyncStorage.setItem(REMEMBER_KEY, 'true');
+        await AsyncStorage.setItem(SAVED_EMAIL_KEY, email.trim());
+        await AsyncStorage.setItem(SAVED_PASSWORD_KEY, password);
+      } else {
+        await AsyncStorage.multiRemove([REMEMBER_KEY, SAVED_EMAIL_KEY, SAVED_PASSWORD_KEY]);
+      }
+
       router.replace('/(tabs)');
     } catch (error: any) {
       Alert.alert('Errore di Login', error.message || 'Errore durante il login');
@@ -89,6 +127,18 @@ export default function LoginScreen() {
               />
             </TouchableOpacity>
           </View>
+
+          {/* Ricordami toggle */}
+          <TouchableOpacity
+            style={styles.rememberRow}
+            onPress={() => setRememberMe(!rememberMe)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.rememberCheckbox, rememberMe && styles.rememberCheckboxChecked]}>
+              {rememberMe && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+            </View>
+            <Text style={styles.rememberLabel}>Ricordami</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.button, (loading || isLoading) && styles.buttonDisabled]}
@@ -174,6 +224,32 @@ const styles = StyleSheet.create({
   },
   eyeButton: {
     padding: 8,
+  },
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    marginTop: -4,
+    gap: 10,
+    minHeight: 44,
+  },
+  rememberCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  rememberCheckboxChecked: {
+    backgroundColor: '#1E40AF',
+    borderColor: '#1E40AF',
+  },
+  rememberLabel: {
+    fontSize: 14,
+    color: '#6B7280',
   },
   button: {
     backgroundColor: '#1E40AF',

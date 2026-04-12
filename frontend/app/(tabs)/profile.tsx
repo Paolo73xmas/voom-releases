@@ -104,6 +104,14 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
           </TouchableOpacity>
           <View style={styles.divider} />
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/privacy-terms?readOnly=true')}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="shield-checkmark-outline" size={20} color="#1E40AF" />
+            </View>
+            <Text style={styles.menuLabel}>Privacy e Termini</Text>
+            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+          </TouchableOpacity>
+          <View style={styles.divider} />
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="information-circle-outline" size={20} color="#6B7280" />

@@ -219,6 +219,18 @@ frontend:
         agent: "main"
         comment: "Added Anagrafica quick action button to dashboard grid. Verified via screenshot."
 
+  - task: "Privacy Policy & Terms Acceptance Screen"
+    implemented: true
+    working: true
+    file: "app/privacy-terms.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Fullscreen privacy/terms acceptance screen with complete legal text (Parte I Privacy + Parte II Termini). 3 checkboxes as per document. Accept button disabled until all checked. AsyncStorage persistence verified - skips on subsequent launches. Read-only mode accessible from Profile. Verified via screenshots."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"

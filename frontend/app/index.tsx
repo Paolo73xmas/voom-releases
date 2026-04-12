@@ -1,28 +1,40 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const PRIVACY_ACCEPTED_KEY = '@privacy_terms_accepted';
 
 export default function Index() {
   const router = useRouter();
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  const [privacyChecked, setPrivacyChecked] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const init = async () => {
+      // Check privacy acceptance
+      const accepted = await AsyncStorage.getItem(PRIVACY_ACCEPTED_KEY);
+      setPrivacyAccepted(accepted === 'true');
+      setPrivacyChecked(true);
+      // Initialize auth
       await initialize();
     };
-    checkAuth();
+    init();
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        router.replace('/(tabs)');
-      } else {
-        router.replace('/login');
-      }
+    if (!privacyChecked || isLoading) return;
+
+    if (!privacyAccepted) {
+      router.replace('/privacy-terms');
+    } else if (isAuthenticated) {
+      router.replace('/(tabs)');
+    } else {
+      router.replace('/login');
     }
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, privacyChecked, privacyAccepted]);
 
   return (
     <View style={styles.container}>

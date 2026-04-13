@@ -1167,8 +1167,22 @@ export default function OrderCollectionV2() {
                       }}
                       placeholder="0,00"
                       placeholderTextColor="#9CA3AF"
+                      returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
                     />
+                    <TouchableOpacity
+                      style={{ backgroundColor: '#059669', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 12 }}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        if (cashBackToUse > maxCashBack) {
+                          setCashBackToUse(maxCashBack);
+                        }
+                      }}
+                    >
+                      <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 13 }}>OK</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity style={s.maxBtn} onPress={() => {
+                      Keyboard.dismiss();
                       setCashBackToUse(maxCashBack);
                       if (maxCashBack < customerCashBackBalance && cashBackMaxPercentage < 100) {
                         Alert.alert('Limite CashBack', `Il CashBack è limitato al ${cashBackMaxPercentage}% del valore dei prodotti idonei (${formatCurrency(eligibleSubtotal)}).\n\nMassimo utilizzabile: ${formatCurrency(maxCashBack)}`);

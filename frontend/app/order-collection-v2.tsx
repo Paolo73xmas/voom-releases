@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { fetchCustomers } from '../lib/api/customers';
+import { fetchProducts, fetchPaymentMethods, fetchShippingMethods } from '../lib/api/order-collection';
 import { createReservation, getAvailableStock } from '../lib/api/stock-reservation';
 import { processCashBackUsage, processCashBackAccumulation } from '../lib/api/cashback';
 import type { AvailableStockMap } from '../types/reservation';
@@ -174,6 +175,7 @@ export default function OrderCollectionV2() {
   // ── Loading ──
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
   // ── Step 1: Customer ──
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -238,33 +240,78 @@ export default function OrderCollectionV2() {
     loadRottamazioneConfig();
   }, []);
 
+  // When isForeignOrder changes, re-fetch products and shipping (matching old Raccolta Ordine)
+  const isForeignInitialMount = React.useRef(true);
+  useEffect(() => {
+    if (isForeignInitialMount.current) {
+      isForeignInitialMount.current = false;
+      return;
+    }
+    reloadForForeignToggle();
+  }, [isForeignOrder]);
+
+  const reloadForForeignToggle = async () => {
+    setLoadingProducts(true);
+    try {
+      const [productsData, shippingsData] = await Promise.all([
+        fetchProducts(isForeignOrder),
+        fetchShippingMethods(isForeignOrder),
+      ]);
+      setProducts(productsData);
+      setShippingMethods(shippingsData);
+
+      // Reload available stock for new product set
+      if (productsData.length > 0) {
+        try {
+          const ids = productsData.map((p: Product) => p.id);
+          const stockMap = await getAvailableStock(ids);
+          setAvailableStockMap(stockMap);
+        } catch (e) { /* fallback */ }
+      }
+
+      // Check for incompatible cart items
+      if (isForeignOrder && cart.length > 0) {
+        const eligibleIds = new Set(productsData.map((p: Product) => p.id));
+        const incompatible = cart.filter(item => !eligibleIds.has(item.product.id));
+        if (incompatible.length > 0) {
+          const nomi = incompatible.map(i => i.product.short_description || i.product.name).join(', ');
+          Alert.alert('Conflitto Ordine Estero', `${incompatible.length} prodotto/i non abilitati per ordini esteri:\n\n${nomi}\n\nRimuovili dal carrello.`);
+        }
+      }
+    } catch (e) {
+      console.error('[V2] Error reloading for foreign toggle:', e);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
       console.log('[V2] Starting data load...');
-      const [custData, prodRes, payRes, shipRes] = await Promise.all([
+      const [custData, productsData, paymentsData, shippingsData] = await Promise.all([
         fetchCustomers(user?.id || '', user?.role || 'agent'),
-        supabase.from('products').select('*').eq('is_active', true).order('name'),
-        supabase.from('payment_methods').select('*').eq('is_active', true).order('name'),
-        supabase.from('shipping_methods').select('*').eq('is_active', true).order('name'),
+        fetchProducts(isForeignOrder),
+        fetchPaymentMethods(),
+        fetchShippingMethods(isForeignOrder),
       ]);
 
       console.log('[V2] Data loaded:', {
         customers: custData?.length || 0,
-        products: prodRes.data?.length || 0,
-        payments: payRes.data?.length || 0,
-        shipping: shipRes.data?.length || 0,
+        products: productsData?.length || 0,
+        payments: paymentsData?.length || 0,
+        shipping: shippingsData?.length || 0,
       });
 
       setCustomers(custData || []);
-      setProducts(prodRes.data || []);
-      setPaymentMethods(payRes.data || []);
-      setShippingMethods(shipRes.data || []);
+      setProducts(productsData || []);
+      setPaymentMethods(paymentsData || []);
+      setShippingMethods(shippingsData || []);
 
       // Load available stock
-      if (prodRes.data && prodRes.data.length > 0) {
+      if (productsData && productsData.length > 0) {
         try {
-          const ids = prodRes.data.map((p: Product) => p.id);
+          const ids = productsData.map((p: Product) => p.id);
           const stockMap = await getAvailableStock(ids);
           setAvailableStockMap(stockMap);
           console.log(`[V2] Stock loaded for ${stockMap.size} products`);
@@ -285,7 +332,14 @@ export default function OrderCollectionV2() {
     try {
       const { data } = await supabase.from('rottamazione_config').select('*').single();
       if (data) {
-        if (data.lots) setRottamazioneLots(data.lots);
+        if (data.lots) {
+          const parsedLots = Array.isArray(data.lots)
+            ? data.lots
+            : typeof data.lots === 'string'
+              ? JSON.parse(data.lots)
+              : DEFAULT_ROTTAMAZIONE_LOTS;
+          setRottamazioneLots(parsedLots);
+        }
         if (data.multiplier) setRottamazioneMultiplier(data.multiplier);
         if (data.iva_rate) setRottamazioneIvaRate(data.iva_rate);
       }
@@ -318,17 +372,23 @@ export default function OrderCollectionV2() {
 
   const loadCashBackBalance = async (customerId: string) => {
     try {
-      const { data } = await supabase
+      // Get latest cashback transaction to get current balance (matching old version)
+      const { data, error } = await supabase
         .from('cashback_transactions')
-        .select('type, amount')
-        .eq('customer_id', customerId);
-      let accumulated = 0, used = 0;
-      for (const tx of data || []) {
-        if (tx.type === 'accumulo') accumulated += tx.amount;
-        else if (tx.type === 'utilizzo') used += tx.amount;
+        .select('balance_after')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (data && !error) {
+        setCustomerCashBackBalance(data.balance_after || 0);
+        console.log(`[V2] CashBack balance for customer: €${data.balance_after}`);
+      } else {
+        setCustomerCashBackBalance(0);
       }
-      setCustomerCashBackBalance(Math.max(0, Math.round((accumulated - used) * 100) / 100));
     } catch {
+      console.log('[V2] No cashback balance found');
       setCustomerCashBackBalance(0);
     }
   };
@@ -345,17 +405,16 @@ export default function OrderCollectionV2() {
 
   const filteredProducts = useMemo(() => {
     let list = products;
-    // Filter EST- products for non-foreign orders (matching web app)
+    // When Italia mode, hide products with short_description starting with "EST-" (matching old version)
     if (!isForeignOrder) {
-      list = list.filter(p => !(p.short_description?.toUpperCase().startsWith('EST') || p.estero === true));
-    } else {
-      list = list.filter(p => p.estero === true);
+      list = list.filter(p => !(p.short_description && p.short_description.toUpperCase().startsWith('EST-')));
     }
+    // Search filter
     if (productSearch.trim()) {
       const q = productSearch.toLowerCase();
       list = list.filter(p => (p.short_description || p.name).toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q));
     }
-    return list;
+    return list.slice(0, 50);
   }, [products, productSearch, isForeignOrder]);
 
   const filteredShippingMethods = useMemo(() => {
@@ -406,7 +465,8 @@ export default function OrderCollectionV2() {
     if (isForeignOrder) return [0];
     const hasRottamazioneNoProducts = cart.some(i => i.product.rottamazione_no === true);
     if (hasRottamazioneNoProducts) return [0];
-    return rottamazioneLots.filter(lot => {
+    const lots = Array.isArray(rottamazioneLots) ? rottamazioneLots : DEFAULT_ROTTAMAZIONE_LOTS;
+    return lots.filter(lot => {
       if (lot === 0) return true;
       const netAmount = getRottamazioneNetAmount(lot);
       return cartTotals.imponibile >= netAmount * rottamazioneMultiplier;

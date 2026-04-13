@@ -231,6 +231,18 @@ frontend:
         agent: "main"
         comment: "Integrated stock reservation system: (1) New service lib/api/stock-reservation.ts with createReservation, releaseReservation, getAvailableStock RPCs. (2) Products now show available_quantity (physical - reserved) instead of raw stock_quantity. (3) After order creation, createReservation RPC is called (non-blocking with warnings). (4) Stock badges color-coded: green >10, amber 1-10, red 0. (5) Verified via screenshot: 244 products loaded with available stock from RPC."
 
+  - task: "Rac. Ordine 2 (Order Collection V2) - Complete 5-Step Wizard"
+    implemented: true
+    working: true
+    file: "app/order-collection-v2.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Full 5-step order wizard verified via screenshots: Step 1 (customer selection with search), Step 2 (products with Italia/Estero toggle, stock badges, cart management, packages), Step 3 (8 payment methods), Step 4 (4 shipping methods with IVA calc + custom address), Step 5 (full summary with rottamazione lots, cashback, notes, Crea Ordine). Fixed rottamazioneLots.filter crash by adding Array.isArray guard and JSON.parse fallback for rottamazione_config data."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
@@ -248,3 +260,5 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Completed Anagrafica (First Visit) feature. 3-step wizard with photo/GPS, full form with search modal, and summary/review. All steps verified via screenshots. Dashboard quick action added. Fixed customer-tabaccheria bidirectional linking on new tabaccheria creation."
+  - agent: "main"
+    message: "Verified Rac. Ordine 2 (V2) complete 5-step wizard. Fixed rottamazioneLots crash in Step 5 (rottamazione_config.lots returned as non-array). All 5 steps confirmed working: customer selection, product loading (Italia/Estero toggle), payment, shipping, and summary with rottamazione/cashback. Added Array.isArray guard for safety."

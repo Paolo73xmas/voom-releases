@@ -33,6 +33,10 @@ import {
   createReservation,
   getAvailableStock,
 } from '../lib/api/stock-reservation';
+import {
+  processCashBackUsage,
+  processCashBackAccumulation,
+} from '../lib/api/cashback';
 import type { AvailableStockMap } from '../types/reservation';
 import {
   CartItem,
@@ -697,21 +701,25 @@ export default function OrderCollectionScreen() {
 
     setIsSubmitting(true);
     try {
-      // Build items array with modified prices based on rottamazione/cashback
+      // ── Build items array with modified prices based on rottamazione/cashback ──
       let orderItems: { product_id: string; quantity: number; unit_price: number; discount_percent: number }[];
+      const isRottamazione = rottamazioneAmount > 0;
+      const isUsingCashBack = !isRottamazione && cashBackToUse > 0;
 
-      if (rottamazioneAmount > 0) {
-        // Apply rottamazione: use spreaded prices
+      // Keep original prices for notes
+      const originalPriceMap = new Map<string, number>();
+      cart.forEach(item => originalPriceMap.set(item.product.id, item.unit_price));
+
+      if (isRottamazione) {
         const spreadedPrices = getSpreadedPrices();
         if (spreadedPrices.length > 0) {
           orderItems = spreadedPrices.map(sp => ({
             product_id: sp.product.id,
             quantity: sp.quantity,
-            unit_price: sp.newPrice,  // Spreaded price (reduced for eligible, original for excluded)
+            unit_price: sp.newPrice,
             discount_percent: 0,
           }));
         } else {
-          // Fallback: no eligible products, use original prices
           orderItems = cart.map(item => ({
             product_id: item.product.id,
             quantity: item.quantity,
@@ -719,8 +727,7 @@ export default function OrderCollectionScreen() {
             discount_percent: 0,
           }));
         }
-      } else if (cashBackToUse > 0) {
-        // Apply cashback: spread proportionally on eligible products
+      } else if (isUsingCashBack) {
         const eligibleItems = cart.filter(item => item.product.cashback_eligible === true);
         const eligibleSubtotal = eligibleItems.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
 
@@ -746,7 +753,6 @@ export default function OrderCollectionScreen() {
           };
         });
       } else {
-        // No discount: use original prices
         orderItems = cart.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -755,6 +761,55 @@ export default function OrderCollectionScreen() {
         }));
       }
 
+      // ── Calculate total_amount matching web app logic (with IVA + Accisa) ──
+      const SHIPPING_VAT_RATE = 0.22;
+      let itemsTotal = 0;
+
+      for (const oi of orderItems) {
+        const product = cart.find(c => c.product.id === oi.product_id)?.product;
+        const accisa = product?.accisa || 0;
+        const ivaPercentage = product?.iva_percentage || 0;
+
+        if (isForeignOrder) {
+          // Foreign: no IVA
+          itemsTotal += (oi.unit_price + accisa) * oi.quantity;
+        } else {
+          // Italy: with IVA
+          itemsTotal += (oi.unit_price + accisa) * oi.quantity * (1 + ivaPercentage / 100);
+        }
+      }
+
+      // Get shipping base cost
+      const shippingMethod = shippingMethods.find(s => s.id === selectedShipping);
+      const shippingBaseCost = shippingMethod?.cost || 0;
+      const shippingCostWithVAT = isForeignOrder ? shippingBaseCost : shippingBaseCost * (1 + SHIPPING_VAT_RATE);
+
+      const finalTotalAmount = Math.round((itemsTotal + shippingCostWithVAT) * 100) / 100;
+
+      // ── Build detailed notes (matching web app format) ──
+      const notesParts: string[] = [];
+
+      if (isRottamazione) {
+        const netAmount = getRottamazioneNetAmount(rottamazioneAmount);
+        const spreadedPrices = getSpreadedPrices();
+        const priceDetails = spreadedPrices
+          .filter(sp => !sp.excluded)
+          .map(sp => `${sp.product.short_description || sp.product.name}: ${formatCurrency(sp.originalPrice)} → ${formatCurrency(sp.newPrice)}`)
+          .join(', ');
+        notesParts.push(
+          `[Rottamazione €${rottamazioneAmount.toFixed(2)} (lordo IVA incl.) - netto spalmato: €${netAmount.toFixed(2)} - ${rottamazioneDescription}${priceDetails ? ` - dettaglio: ${priceDetails}` : ''}]`
+        );
+      } else if (isUsingCashBack) {
+        notesParts.push(`[CashBack €${cashBackToUse.toFixed(2)} utilizzato]`);
+      }
+
+      if (notes.trim()) {
+        notesParts.push(notes.trim());
+      }
+
+      const finalNotes = notesParts.length > 0 ? notesParts.join('\n') : undefined;
+
+      // ── Create order with proper fields ──
       const result = await createOrder({
         customer_id: selectedCustomer.id,
         agent_id: user.id,
@@ -762,20 +817,18 @@ export default function OrderCollectionScreen() {
         shipping_method_id: selectedShipping,
         is_foreign: isForeignOrder,
         shipping_address: shippingAddress || undefined,
-        notes: notes || undefined,
+        notes: finalNotes,
         latitude: location?.latitude,
         longitude: location?.longitude,
         items: orderItems,
-        ...(rottamazioneAmount > 0 ? {
-          rottamazione_amount: rottamazioneAmount,
-          rottamazione_description: rottamazioneDescription,
-        } : {}),
-        ...(cashBackToUse > 0 ? {
-          cashback_amount: cashBackToUse,
-        } : {}),
+        total_amount: finalTotalAmount,
+        shipping_cost: shippingBaseCost,
+        cashback_used: isUsingCashBack ? cashBackToUse : 0,
+        generates_cashback: !isRottamazione && cashBackToUse <= 0,
+        rottamazione_amount: isRottamazione ? rottamazioneAmount : 0,
       });
 
-      // ── Stock Reservation: create reservation for the draft order ──
+      // ── Stock Reservation ──
       let reservationWarnings: string[] = [];
       try {
         const reservationItems = cart.map(item => ({
@@ -798,6 +851,40 @@ export default function OrderCollectionScreen() {
         console.log('[stock-reservation] Non-blocking error:', resErr);
       }
 
+      // ── CashBack Processing ──
+      try {
+        if (isUsingCashBack) {
+          // Debit CashBack from customer balance
+          const usageResult = await processCashBackUsage(
+            selectedCustomer.id,
+            result.orderId,
+            cashBackToUse,
+          );
+          if (!usageResult.success) {
+            console.warn('[CashBack] Usage warning:', usageResult.error);
+          }
+        } else if (!isRottamazione) {
+          // Accumulate CashBack for eligible products
+          const accItems = orderItems.map(oi => ({
+            product_id: oi.product_id,
+            quantity: oi.quantity,
+            unit_price: oi.unit_price,
+            cashback_eligible: cart.find(c => c.product.id === oi.product_id)?.product.cashback_eligible,
+          }));
+          const accResult = await processCashBackAccumulation(
+            selectedCustomer.id,
+            result.orderId,
+            accItems,
+          );
+          if (accResult.amount > 0) {
+            console.log(`[CashBack] Accumulated €${accResult.amount.toFixed(2)}`);
+          }
+        }
+      } catch (cbErr) {
+        console.log('[CashBack] Non-blocking error:', cbErr);
+      }
+
+      // ── Success ──
       const warningText = reservationWarnings.length > 0
         ? `\n\nAttenzione disponibilità:\n${reservationWarnings.join('\n')}`
         : '';

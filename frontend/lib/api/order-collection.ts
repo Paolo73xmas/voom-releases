@@ -113,9 +113,14 @@ export interface CreateOrderData {
   latitude?: number;
   longitude?: number;
   items: OrderItem[];
+  // Pre-calculated totals (matching web app logic)
+  total_amount: number;
+  shipping_cost: number;
+  // CashBack fields
+  cashback_used?: number;
+  generates_cashback?: boolean;
+  // Rottamazione as proper field
   rottamazione_amount?: number;
-  rottamazione_description?: string;
-  cashback_amount?: number;
 }
 
 function generateOrderNumber(): string {
@@ -128,21 +133,6 @@ function generateOrderNumber(): string {
 
 export async function createOrder(data: CreateOrderData): Promise<{ orderId: string; orderNumber: string }> {
   try {
-    // Calculate total
-    const subtotal = data.items.reduce((sum, item) => {
-      return sum + (item.unit_price * item.quantity * (1 - item.discount_percent / 100));
-    }, 0);
-
-    // Get shipping cost
-    const { data: shippingMethod } = await supabase
-      .from('shipping_methods')
-      .select('cost')
-      .eq('id', data.shipping_method_id)
-      .single();
-
-    const shippingCost = shippingMethod?.cost || 0;
-    const totalAmount = subtotal + shippingCost;
-
     // Get customer info
     const { data: customer } = await supabase
       .from('customers')
@@ -159,7 +149,7 @@ export async function createOrder(data: CreateOrderData): Promise<{ orderId: str
 
     const orderNumber = generateOrderNumber();
 
-    // Create order
+    // Create order - using pre-calculated values matching web app logic
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -170,14 +160,10 @@ export async function createOrder(data: CreateOrderData): Promise<{ orderId: str
         shipping_method_id: data.shipping_method_id,
         status: 'draft',
         order_date: new Date().toISOString(),
-        total_amount: totalAmount,
-        shipping_cost: shippingCost,
+        total_amount: data.total_amount,
+        shipping_cost: data.shipping_cost,
         is_foreign: data.is_foreign,
-        notes: [
-          data.notes,
-          data.rottamazione_amount ? `[ROTTAMAZIONE: ${data.rottamazione_amount}€ - ${data.rottamazione_description || ''}]` : null,
-          data.cashback_amount ? `[CASHBACK: ${data.cashback_amount}€]` : null,
-        ].filter(Boolean).join('\n') || null,
+        notes: data.notes || null,
         shipping_address: data.shipping_address,
         latitude: data.latitude,
         longitude: data.longitude,
@@ -192,6 +178,9 @@ export async function createOrder(data: CreateOrderData): Promise<{ orderId: str
         agent_full_name: agent?.full_name,
         agent_email: agent?.email,
         codice_agente_prestashop: agent?.codice_agente_prestashop,
+        cashback_used: data.cashback_used ?? 0,
+        generates_cashback: data.generates_cashback ?? true,
+        rottamazione_amount: data.rottamazione_amount ?? 0,
       })
       .select()
       .single();

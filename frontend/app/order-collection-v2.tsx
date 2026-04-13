@@ -940,6 +940,14 @@ export default function OrderCollectionV2() {
         </View>
       </View>
 
+      {/* CashBack badge */}
+      {!isForeignOrder && customerCashBackBalance > 0 && (
+        <View style={s.cashbackBadge}>
+          <Ionicons name="wallet-outline" size={14} color="#059669" />
+          <Text style={s.cashbackBadgeText}>CashBack disponibile: {formatCurrency(customerCashBackBalance)}</Text>
+        </View>
+      )}
+
       <View style={s.searchBar}>
         <Ionicons name="search" size={18} color="#9CA3AF" />
         <TextInput style={s.searchInput} placeholder="Cerca prodotto..." value={productSearch} onChangeText={setProductSearch} placeholderTextColor="#9CA3AF" />
@@ -1012,7 +1020,13 @@ export default function OrderCollectionV2() {
 
   const renderStep5 = () => {
     const availableLots = getAvailableRottamazioneLots();
-    const eligibleSubtotal = cart.filter(c => c.product.cashback_eligible).reduce((s, c) => s + c.unit_price * c.quantity, 0);
+    // Eligibility counts
+    const cashbackEligibleItems = cart.filter(c => c.product.cashback_eligible === true);
+    const cashbackNonEligibleItems = cart.filter(c => c.product.cashback_eligible !== true);
+    const eligibleSubtotal = cashbackEligibleItems.reduce((s, c) => s + c.unit_price * c.quantity, 0);
+    const rottamazioneEligibleItems = cart.filter(c => c.product.rottamazione_no !== true);
+    const rottamazioneExcludedItems = cart.filter(c => c.product.rottamazione_no === true);
+    const rottamazioneEligibleSubtotal = rottamazioneEligibleItems.reduce((s, c) => s + c.unit_price * c.quantity, 0);
 
     return (
       <ScrollView style={s.stepContent}>
@@ -1052,25 +1066,41 @@ export default function OrderCollectionV2() {
         {!isForeignOrder && (
           <View style={s.summaryCard}>
             <Text style={s.summaryLabel}>Rottamazione (lordo IVA)</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
-              {availableLots.map(lot => (
-                <TouchableOpacity
-                  key={lot}
-                  style={[s.lotChip, rottamazioneAmount === lot && s.lotChipActive]}
-                  onPress={() => { setRottamazioneAmount(lot); if (lot === 0) setRottamazioneDescription(''); if (lot > 0) setCashBackToUse(0); }}
-                >
-                  <Text style={[s.lotChipText, rottamazioneAmount === lot && s.lotChipTextActive]}>{lot === 0 ? 'Nessuna' : `€${lot}`}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            {availableLots.length <= 1 && (
-              <Text style={s.summarySubLabel}>Importo ordine insufficiente per la rottamazione</Text>
-            )}
-            {rottamazioneAmount > 0 && (
+            {rottamazioneEligibleItems.length > 0 ? (
               <>
-                <Text style={s.rottamazioneNet}>Netto spalmato: {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
-                <TextInput style={s.textInput} placeholder="Descrizione merce rottamata..." value={rottamazioneDescription} onChangeText={setRottamazioneDescription} placeholderTextColor="#9CA3AF" />
+                <Text style={s.summarySubLabel}>
+                  Prodotti idonei: {rottamazioneEligibleItems.length}/{cart.length} · Imponibile idoneo: {formatCurrency(rottamazioneEligibleSubtotal)}
+                </Text>
+                {rottamazioneExcludedItems.length > 0 && (
+                  <Text style={[s.summarySubLabel, { color: '#DC2626' }]}>
+                    Esclusi ({rottamazioneExcludedItems.length}): {rottamazioneExcludedItems.map(c => c.product.short_description || c.product.name).join(', ')}
+                  </Text>
+                )}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
+                  {availableLots.map(lot => (
+                    <TouchableOpacity
+                      key={lot}
+                      style={[s.lotChip, rottamazioneAmount === lot && s.lotChipActive]}
+                      onPress={() => { setRottamazioneAmount(lot); if (lot === 0) setRottamazioneDescription(''); if (lot > 0) setCashBackToUse(0); }}
+                    >
+                      <Text style={[s.lotChipText, rottamazioneAmount === lot && s.lotChipTextActive]}>{lot === 0 ? 'Nessuna' : `€${lot}`}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                {availableLots.length <= 1 && (
+                  <Text style={s.summarySubLabel}>Importo ordine insufficiente per la rottamazione</Text>
+                )}
+                {rottamazioneAmount > 0 && (
+                  <>
+                    <Text style={s.rottamazioneNet}>Netto spalmato: {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
+                    <TextInput style={s.textInput} placeholder="Descrizione merce rottamata..." value={rottamazioneDescription} onChangeText={setRottamazioneDescription} placeholderTextColor="#9CA3AF" />
+                  </>
+                )}
               </>
+            ) : (
+              <Text style={[s.summarySubLabel, { color: '#DC2626', marginTop: 4 }]}>
+                Nessun prodotto idoneo alla rottamazione nel carrello
+              </Text>
             )}
           </View>
         )}
@@ -1081,23 +1111,38 @@ export default function OrderCollectionV2() {
             <Text style={s.summaryLabel}>CashBack Disponibile: {formatCurrency(customerCashBackBalance)}</Text>
             {customerCashBackBalance > 0 ? (
               <>
-                <Text style={s.summarySubLabel}>Applicabile su prodotti eligible: {formatCurrency(eligibleSubtotal)}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                  <TextInput
-                    style={[s.textInput, { flex: 1 }]}
-                    placeholder="Importo CashBack"
-                    keyboardType="numeric"
-                    value={cashBackToUse > 0 ? cashBackToUse.toString() : ''}
-                    onChangeText={t => {
-                      const v = parseFloat(t) || 0;
-                      setCashBackToUse(Math.min(v, Math.min(customerCashBackBalance, eligibleSubtotal)));
-                    }}
-                    placeholderTextColor="#9CA3AF"
-                  />
-                  <TouchableOpacity style={s.maxBtn} onPress={() => setCashBackToUse(Math.min(customerCashBackBalance, eligibleSubtotal))}>
-                    <Text style={s.maxBtnText}>MAX</Text>
-                  </TouchableOpacity>
-                </View>
+                {cashbackEligibleItems.length > 0 ? (
+                  <>
+                    <Text style={s.summarySubLabel}>
+                      Prodotti idonei: {cashbackEligibleItems.length}/{cart.length} · Imponibile idoneo: {formatCurrency(eligibleSubtotal)}
+                    </Text>
+                    {cashbackNonEligibleItems.length > 0 && (
+                      <Text style={[s.summarySubLabel, { color: '#B45309' }]}>
+                        Non idonei ({cashbackNonEligibleItems.length}): {cashbackNonEligibleItems.map(c => c.product.short_description || c.product.name).join(', ')}
+                      </Text>
+                    )}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                      <TextInput
+                        style={[s.textInput, { flex: 1 }]}
+                        placeholder="Importo CashBack"
+                        keyboardType="numeric"
+                        value={cashBackToUse > 0 ? cashBackToUse.toString() : ''}
+                        onChangeText={t => {
+                          const v = parseFloat(t) || 0;
+                          setCashBackToUse(Math.min(v, Math.min(customerCashBackBalance, eligibleSubtotal)));
+                        }}
+                        placeholderTextColor="#9CA3AF"
+                      />
+                      <TouchableOpacity style={s.maxBtn} onPress={() => setCashBackToUse(Math.min(customerCashBackBalance, eligibleSubtotal))}>
+                        <Text style={s.maxBtnText}>MAX</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                ) : (
+                  <Text style={[s.summarySubLabel, { color: '#DC2626' }]}>
+                    Nessun prodotto idoneo al CashBack nel carrello
+                  </Text>
+                )}
               </>
             ) : (
               <Text style={s.summarySubLabel}>Nessun CashBack disponibile per questo cliente</Text>
@@ -1154,26 +1199,58 @@ export default function OrderCollectionV2() {
   const renderEditPriceModal = () => (
     <Modal visible={!!editCartItem} animationType="fade" transparent>
       <View style={s.modalOverlay}>
-        <View style={[s.modalContent, { maxHeight: 300 }]}>
+        <View style={[s.modalContent, { maxHeight: 380 }]}>
           <View style={s.modalHeader}>
             <Text style={s.modalTitle}>Modifica Prezzo</Text>
             <TouchableOpacity onPress={() => setEditCartItem(null)}><Ionicons name="close" size={24} color="#374151" /></TouchableOpacity>
           </View>
           <View style={{ padding: 16, gap: 12 }}>
             <Text style={s.summaryLabel}>{editCartItem?.product.short_description || editCartItem?.product.name}</Text>
-            <TextInput style={s.textInput} keyboardType="numeric" value={editPrice} onChangeText={setEditPrice} placeholder="Nuovo prezzo" placeholderTextColor="#9CA3AF" />
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity style={[s.headerBtn, { flex: 1, backgroundColor: '#FEE2E2' }]} onPress={() => { if (editCartItem) removeFromCart(editCartItem.product.id); setEditCartItem(null); }}>
-                <Ionicons name="trash" size={16} color="#DC2626" /><Text style={{ color: '#DC2626', fontWeight: '600' }}>Rimuovi</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.headerBtn, { flex: 1, backgroundColor: '#DBEAFE' }]} onPress={() => {
+            <Text style={s.summarySubLabel}>Prezzo originale: {formatCurrency(editCartItem?.product.unit_price || 0)}</Text>
+            <TextInput
+              style={[s.textInput, { fontSize: 18, fontWeight: '700', textAlign: 'center' }]}
+              keyboardType="numeric"
+              value={editPrice}
+              onChangeText={setEditPrice}
+              placeholder="Nuovo prezzo (anche 0)"
+              placeholderTextColor="#9CA3AF"
+              selectTextOnFocus
+            />
+            {/* OK / Conferma button - prominent */}
+            <TouchableOpacity
+              style={s.confirmPriceBtn}
+              onPress={() => {
                 if (editCartItem) {
-                  const p = parseFloat(editPrice);
-                  if (!isNaN(p) && p >= 0) updateCartPrice(editCartItem.product.id, p);
+                  const p = editPrice.trim() === '' ? 0 : parseFloat(editPrice);
+                  if (!isNaN(p) && p >= 0) {
+                    updateCartPrice(editCartItem.product.id, p);
+                  }
                 }
                 setEditCartItem(null);
-              }}>
-                <Ionicons name="checkmark" size={16} color="#1E40AF" /><Text style={{ color: '#1E40AF', fontWeight: '600' }}>Salva</Text>
+              }}
+            >
+              <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+              <Text style={s.confirmPriceBtnText}>OK - Conferma Prezzo</Text>
+            </TouchableOpacity>
+            {/* Remove and Reset row */}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                style={[s.headerBtn, { flex: 1, backgroundColor: '#F3F4F6', justifyContent: 'center' }]}
+                onPress={() => {
+                  if (editCartItem) {
+                    setEditPrice(editCartItem.product.unit_price.toString());
+                  }
+                }}
+              >
+                <Ionicons name="refresh" size={14} color="#6B7280" />
+                <Text style={{ color: '#6B7280', fontWeight: '600', fontSize: 12 }}>Ripristina</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.headerBtn, { flex: 1, backgroundColor: '#FEE2E2', justifyContent: 'center' }]}
+                onPress={() => { if (editCartItem) removeFromCart(editCartItem.product.id); setEditCartItem(null); }}
+              >
+                <Ionicons name="trash" size={14} color="#DC2626" />
+                <Text style={{ color: '#DC2626', fontWeight: '600', fontSize: 12 }}>Rimuovi</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1351,6 +1428,10 @@ const s = StyleSheet.create({
   rottamazioneNet: { fontSize: 12, color: '#059669', fontWeight: '600', marginBottom: 8 },
   maxBtn: { backgroundColor: '#1E40AF', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12 },
   maxBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  cashbackBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#ECFDF5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 8, borderWidth: 1, borderColor: '#A7F3D0' },
+  cashbackBadgeText: { fontSize: 12, fontWeight: '600', color: '#059669' },
+  confirmPriceBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#1E40AF', borderRadius: 10, paddingVertical: 14 },
+  confirmPriceBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   bottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#F3F4F6' },
   backBtnText: { fontSize: 14, fontWeight: '600', color: '#374151' },

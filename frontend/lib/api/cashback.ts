@@ -33,7 +33,7 @@ interface CashBackBalance {
 
 async function getCashBackConfig(customerId: string): Promise<CashBackConfig | null> {
   const { data, error } = await supabase
-    .from('cashback_configs')
+    .from('cashback_config')
     .select('*')
     .eq('customer_id', customerId)
     .eq('is_active', true)

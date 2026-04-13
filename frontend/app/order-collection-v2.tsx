@@ -193,6 +193,7 @@ export default function OrderCollectionV2() {
   // Edit price modal
   const [editCartItem, setEditCartItem] = useState<CartItem | null>(null);
   const [editPrice, setEditPrice] = useState('');
+  const [editQty, setEditQty] = useState(1);
 
   // Product detail/image modal
   const [selectedProductDetail, setSelectedProductDetail] = useState<Product | null>(null);
@@ -905,7 +906,7 @@ export default function OrderCollectionV2() {
           {inCart && <View style={s.cartBadge}><Text style={s.cartBadgeText}>{inCart.quantity}</Text></View>}
         </TouchableOpacity>
 
-        <TouchableOpacity style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { setEditCartItem(inCart); setEditPrice(inCart.unit_price.toString()); } }}>
+        <TouchableOpacity style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { setEditCartItem(inCart); setEditPrice(inCart.unit_price.toString()); setEditQty(inCart.quantity); } }}>
           <Text style={[s.prodName, inCart && { color: '#1E40AF' }]} numberOfLines={1}>{item.short_description || item.name}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Text style={s.prodPrice}>{formatCurrency(inCart ? inCart.unit_price : item.unit_price)}</Text>
@@ -1207,68 +1208,139 @@ export default function OrderCollectionV2() {
     </Modal>
   );
 
-  const renderEditPriceModal = () => (
-    <Modal visible={!!editCartItem} animationType="fade" transparent>
-      <View style={s.modalOverlay}>
-        <View style={[s.modalContent, { maxHeight: 380 }]}>
-          <View style={s.modalHeader}>
-            <Text style={s.modalTitle}>Modifica Prezzo</Text>
-            <TouchableOpacity onPress={() => setEditCartItem(null)}><Ionicons name="close" size={24} color="#374151" /></TouchableOpacity>
-          </View>
-          <View style={{ padding: 16, gap: 12 }}>
-            <Text style={s.summaryLabel}>{editCartItem?.product.short_description || editCartItem?.product.name}</Text>
-            <Text style={s.summarySubLabel}>Prezzo originale: {formatCurrency(editCartItem?.product.unit_price || 0)}</Text>
-            <TextInput
-              style={[s.textInput, { fontSize: 18, fontWeight: '700', textAlign: 'center' }]}
-              keyboardType="numeric"
-              value={editPrice}
-              onChangeText={setEditPrice}
-              placeholder="Nuovo prezzo (anche 0)"
-              placeholderTextColor="#9CA3AF"
-              selectTextOnFocus
-            />
-            {/* OK / Conferma button - prominent */}
-            <TouchableOpacity
-              style={s.confirmPriceBtn}
-              onPress={() => {
-                if (editCartItem) {
-                  const p = editPrice.trim() === '' ? 0 : parseFloat(editPrice);
-                  if (!isNaN(p) && p >= 0) {
-                    updateCartPrice(editCartItem.product.id, p);
-                  }
-                }
-                setEditCartItem(null);
-              }}
-            >
-              <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
-              <Text style={s.confirmPriceBtnText}>OK - Conferma Prezzo</Text>
-            </TouchableOpacity>
-            {/* Remove and Reset row */}
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity
-                style={[s.headerBtn, { flex: 1, backgroundColor: '#F3F4F6', justifyContent: 'center' }]}
-                onPress={() => {
-                  if (editCartItem) {
-                    setEditPrice(editCartItem.product.unit_price.toString());
-                  }
-                }}
-              >
-                <Ionicons name="refresh" size={14} color="#6B7280" />
-                <Text style={{ color: '#6B7280', fontWeight: '600', fontSize: 12 }}>Ripristina</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.headerBtn, { flex: 1, backgroundColor: '#FEE2E2', justifyContent: 'center' }]}
-                onPress={() => { if (editCartItem) removeFromCart(editCartItem.product.id); setEditCartItem(null); }}
-              >
-                <Ionicons name="trash" size={14} color="#DC2626" />
-                <Text style={{ color: '#DC2626', fontWeight: '600', fontSize: 12 }}>Rimuovi</Text>
+  const renderEditPriceModal = () => {
+    if (!editCartItem) return null;
+    const stock = getEffectiveStock(editCartItem.product.id, editCartItem.product.stock_quantity || 0);
+
+    const handleConfirmEdit = () => {
+      Keyboard.dismiss();
+      if (editCartItem) {
+        // Apply price
+        const p = editPrice.trim() === '' ? 0 : parseFloat(editPrice);
+        if (!isNaN(p) && p >= 0) {
+          updateCartPrice(editCartItem.product.id, p);
+        }
+        // Apply quantity
+        if (editQty <= 0) {
+          removeFromCart(editCartItem.product.id);
+        } else {
+          updateCartQty(editCartItem.product.id, editQty);
+        }
+      }
+      setEditCartItem(null);
+    };
+
+    const handleRemoveItem = () => {
+      Keyboard.dismiss();
+      if (editCartItem) removeFromCart(editCartItem.product.id);
+      setEditCartItem(null);
+    };
+
+    return (
+      <Modal visible={!!editCartItem} animationType="slide" transparent onRequestClose={() => { Keyboard.dismiss(); setEditCartItem(null); }}>
+        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => Keyboard.dismiss()}>
+          <TouchableOpacity activeOpacity={1} style={s.modalContent}>
+            {/* Header */}
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle} numberOfLines={1}>Modifica Prodotto</Text>
+              <TouchableOpacity onPress={() => { Keyboard.dismiss(); setEditCartItem(null); }}>
+                <Ionicons name="close" size={24} color="#374151" />
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
+
+            <ScrollView style={{ padding: 16 }} keyboardShouldPersistTaps="handled">
+              {/* Product name */}
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#1F2937', marginBottom: 4 }}>
+                {editCartItem.product.short_description || editCartItem.product.name}
+              </Text>
+              <Text style={s.summarySubLabel}>
+                Prezzo originale: {formatCurrency(editCartItem.product.unit_price)} · Stock: {stock}
+              </Text>
+
+              {/* ── Quantity control ── */}
+              <Text style={[s.summaryLabel, { marginTop: 16, marginBottom: 8 }]}>Quantità</Text>
+              <View style={s.qtyRow}>
+                <TouchableOpacity
+                  style={[s.qtyBtn, editQty <= 1 && s.qtyBtnDisabled]}
+                  onPress={() => { Keyboard.dismiss(); setEditQty(Math.max(1, editQty - 1)); }}
+                  disabled={editQty <= 1}
+                >
+                  <Ionicons name="remove" size={22} color={editQty <= 1 ? '#D1D5DB' : '#1E40AF'} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.qtyBtn, editQty <= 1 && s.qtyBtnDisabled]}
+                  onPress={() => { Keyboard.dismiss(); setEditQty(Math.max(1, editQty - 10)); }}
+                  disabled={editQty <= 1}
+                >
+                  <Text style={[s.qtyBtnLabel, editQty <= 1 && { color: '#D1D5DB' }]}>-10</Text>
+                </TouchableOpacity>
+
+                <View style={s.qtyDisplay}>
+                  <Text style={s.qtyDisplayText}>{editQty}</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[s.qtyBtn, editQty >= stock && s.qtyBtnDisabled]}
+                  onPress={() => { Keyboard.dismiss(); setEditQty(Math.min(stock, editQty + 10)); }}
+                  disabled={editQty >= stock}
+                >
+                  <Text style={[s.qtyBtnLabel, editQty >= stock && { color: '#D1D5DB' }]}>+10</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.qtyBtn, editQty >= stock && s.qtyBtnDisabled]}
+                  onPress={() => { Keyboard.dismiss(); setEditQty(Math.min(stock, editQty + 1)); }}
+                  disabled={editQty >= stock}
+                >
+                  <Ionicons name="add" size={22} color={editQty >= stock ? '#D1D5DB' : '#1E40AF'} />
+                </TouchableOpacity>
+              </View>
+
+              {/* ── Price input ── */}
+              <Text style={[s.summaryLabel, { marginTop: 16, marginBottom: 8 }]}>Prezzo unitario</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <TextInput
+                  style={[s.textInput, { flex: 1, fontSize: 18, fontWeight: '700', textAlign: 'center' }]}
+                  keyboardType="numeric"
+                  value={editPrice}
+                  onChangeText={setEditPrice}
+                  placeholder="0"
+                  placeholderTextColor="#9CA3AF"
+                  selectTextOnFocus
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                />
+                <TouchableOpacity
+                  style={[s.headerBtn, { backgroundColor: '#F3F4F6', paddingVertical: 12 }]}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setEditPrice(editCartItem.product.unit_price.toString());
+                  }}
+                >
+                  <Ionicons name="refresh" size={16} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+
+              {/* ── Action buttons ── */}
+              <TouchableOpacity style={[s.confirmPriceBtn, { marginTop: 20 }]} onPress={handleConfirmEdit}>
+                <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                <Text style={s.confirmPriceBtnText}>OK - Conferma</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[s.confirmPriceBtn, { marginTop: 8, backgroundColor: '#DC2626' }]}
+                onPress={handleRemoveItem}
+              >
+                <Ionicons name="trash" size={18} color="#FFFFFF" />
+                <Text style={s.confirmPriceBtnText}>Rimuovi dal carrello</Text>
+              </TouchableOpacity>
+
+              <View style={{ height: 20 }} />
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+    );
+  };
 
   const renderProductDetailModal = () => (
     <Modal visible={!!selectedProductDetail} animationType="fade" transparent>
@@ -1443,6 +1515,12 @@ const s = StyleSheet.create({
   cashbackBadgeText: { fontSize: 12, fontWeight: '600', color: '#059669' },
   confirmPriceBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#1E40AF', borderRadius: 10, paddingVertical: 14 },
   confirmPriceBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  qtyBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#BFDBFE' },
+  qtyBtnDisabled: { backgroundColor: '#F9FAFB', borderColor: '#E5E7EB' },
+  qtyBtnLabel: { fontSize: 13, fontWeight: '700', color: '#1E40AF' },
+  qtyDisplay: { minWidth: 56, height: 48, borderRadius: 12, backgroundColor: '#1E40AF', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  qtyDisplayText: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
   bottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#F3F4F6' },
   backBtnText: { fontSize: 14, fontWeight: '600', color: '#374151' },

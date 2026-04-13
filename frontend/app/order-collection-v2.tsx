@@ -211,6 +211,8 @@ export default function OrderCollectionV2() {
   const [rottamazioneDescription, setRottamazioneDescription] = useState('');
   const [cashBackToUse, setCashBackToUse] = useState(0);
   const [customerCashBackBalance, setCustomerCashBackBalance] = useState(0);
+  const [cashBackMaxPercentage, setCashBackMaxPercentage] = useState(100);
+  const [cashBackMinThreshold, setCashBackMinThreshold] = useState(0);
 
   // Rottamazione config
   const [rottamazioneLots, setRottamazioneLots] = useState<number[]>(DEFAULT_ROTTAMAZIONE_LOTS);
@@ -374,7 +376,7 @@ export default function OrderCollectionV2() {
 
   const loadCashBackBalance = async (customerId: string) => {
     try {
-      // Get latest cashback transaction to get current balance (matching old version)
+      // Get latest cashback transaction to get current balance
       const { data, error } = await supabase
         .from('cashback_transactions')
         .select('balance_after')
@@ -392,6 +394,28 @@ export default function OrderCollectionV2() {
     } catch {
       console.log('[V2] No cashback balance found');
       setCustomerCashBackBalance(0);
+    }
+
+    // Load cashback config (max_order_percentage, min_usage_threshold)
+    try {
+      const { data: config, error: configErr } = await supabase
+        .from('cashback_config')
+        .select('max_order_percentage, min_usage_threshold, is_active')
+        .eq('customer_id', customerId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (config && !configErr) {
+        setCashBackMaxPercentage(config.max_order_percentage ?? 100);
+        setCashBackMinThreshold(config.min_usage_threshold ?? 0);
+        console.log(`[V2] CashBack config: max ${config.max_order_percentage}%, min threshold €${config.min_usage_threshold}`);
+      } else {
+        setCashBackMaxPercentage(100);
+        setCashBackMinThreshold(0);
+      }
+    } catch {
+      setCashBackMaxPercentage(100);
+      setCashBackMinThreshold(0);
     }
   };
 
@@ -598,6 +622,10 @@ export default function OrderCollectionV2() {
     if (!selectedShipping) { Alert.alert('Errore', 'Seleziona un metodo di spedizione'); return; }
     if (rottamazioneAmount > 0 && !rottamazioneDescription.trim()) {
       Alert.alert('Errore', 'Inserisci la descrizione della merce da rottamare'); return;
+    }
+    // Validate CashBack min threshold
+    if (cashBackToUse > 0 && cashBackMinThreshold > 0 && cashBackToUse < cashBackMinThreshold) {
+      Alert.alert('Errore CashBack', `L'importo minimo di utilizzo CashBack è ${formatCurrency(cashBackMinThreshold)}`); return;
     }
 
     setIsSubmitting(true);
@@ -1124,33 +1152,65 @@ export default function OrderCollectionV2() {
             {customerCashBackBalance > 0 ? (
               <>
                 {cashbackEligibleItems.length > 0 ? (
-                  <>
-                    <Text style={s.summarySubLabel}>
-                      Prodotti idonei: {cashbackEligibleItems.length}/{cart.length} · Imponibile idoneo: {formatCurrency(eligibleSubtotal)}
-                    </Text>
-                    {cashbackNonEligibleItems.length > 0 && (
-                      <Text style={[s.summarySubLabel, { color: '#B45309' }]}>
-                        Non idonei ({cashbackNonEligibleItems.length}): {cashbackNonEligibleItems.map(c => c.product.short_description || c.product.name).join(', ')}
-                      </Text>
-                    )}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                      <TextInput
-                        style={[s.textInput, { flex: 1 }]}
-                        placeholder="Importo CashBack"
-                        keyboardType="numeric"
-                        value={cashBackToUse > 0 ? cashBackToUse.toString() : ''}
-                        onChangeText={t => {
-                          const v = parseFloat(t) || 0;
-                          setCashBackToUse(Math.min(v, Math.min(customerCashBackBalance, eligibleSubtotal)));
-                        }}
-                        placeholderTextColor="#9CA3AF"
-                      />
-                      <TouchableOpacity style={s.maxBtn} onPress={() => setCashBackToUse(Math.min(customerCashBackBalance, eligibleSubtotal))}>
-                        <Text style={s.maxBtnText}>MAX</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                ) : (
+                  () => {
+                    // Calculate max usable CashBack considering max_order_percentage
+                    const maxByPercentage = Math.round((eligibleSubtotal * cashBackMaxPercentage / 100) * 100) / 100;
+                    const maxUsable = Math.min(customerCashBackBalance, eligibleSubtotal, maxByPercentage);
+
+                    return (
+                      <>
+                        <Text style={s.summarySubLabel}>
+                          Prodotti idonei: {cashbackEligibleItems.length}/{cart.length} · Imponibile idoneo: {formatCurrency(eligibleSubtotal)}
+                        </Text>
+                        {cashBackMaxPercentage < 100 && (
+                          <Text style={[s.summarySubLabel, { color: '#1E40AF', fontWeight: '600' }]}>
+                            Limite utilizzo: {cashBackMaxPercentage}% del valore eligible = max {formatCurrency(maxByPercentage)}
+                          </Text>
+                        )}
+                        {cashBackMinThreshold > 0 && (
+                          <Text style={[s.summarySubLabel, { color: '#6B7280' }]}>
+                            Soglia minima di utilizzo: {formatCurrency(cashBackMinThreshold)}
+                          </Text>
+                        )}
+                        {cashbackNonEligibleItems.length > 0 && (
+                          <Text style={[s.summarySubLabel, { color: '#B45309' }]}>
+                            Non idonei ({cashbackNonEligibleItems.length}): {cashbackNonEligibleItems.map(c => c.product.short_description || c.product.name).join(', ')}
+                          </Text>
+                        )}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                          <TextInput
+                            style={[s.textInput, { flex: 1 }]}
+                            placeholder="Importo CashBack"
+                            keyboardType="numeric"
+                            value={cashBackToUse > 0 ? cashBackToUse.toString() : ''}
+                            onChangeText={t => {
+                              const v = parseFloat(t) || 0;
+                              const capped = Math.min(v, maxUsable);
+                              setCashBackToUse(capped);
+                            }}
+                            placeholderTextColor="#9CA3AF"
+                          />
+                          <TouchableOpacity style={s.maxBtn} onPress={() => {
+                            setCashBackToUse(maxUsable);
+                            if (maxUsable < customerCashBackBalance && cashBackMaxPercentage < 100) {
+                              Alert.alert(
+                                'Limite CashBack',
+                                `Il CashBack è limitato al ${cashBackMaxPercentage}% del valore dei prodotti idonei (${formatCurrency(eligibleSubtotal)}).\n\nMassimo utilizzabile: ${formatCurrency(maxUsable)}`
+                              );
+                            }
+                          }}>
+                            <Text style={s.maxBtnText}>MAX</Text>
+                          </TouchableOpacity>
+                        </View>
+                        {cashBackToUse > 0 && cashBackMinThreshold > 0 && cashBackToUse < cashBackMinThreshold && (
+                          <Text style={[s.summarySubLabel, { color: '#DC2626', marginTop: 4 }]}>
+                            Importo minimo richiesto: {formatCurrency(cashBackMinThreshold)}
+                          </Text>
+                        )}
+                      </>
+                    );
+                  }
+                )() : (
                   <Text style={[s.summarySubLabel, { color: '#DC2626' }]}>
                     Nessun prodotto idoneo al CashBack nel carrello
                   </Text>

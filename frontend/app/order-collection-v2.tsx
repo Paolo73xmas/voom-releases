@@ -1174,8 +1174,14 @@ export default function OrderCollectionV2() {
                       style={{ backgroundColor: '#059669', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 12 }}
                       onPress={() => {
                         Keyboard.dismiss();
-                        if (cashBackToUse > maxCashBack) {
+                        const val = cashBackToUse;
+                        if (val > maxCashBack) {
                           setCashBackToUse(maxCashBack);
+                          Alert.alert('Limite CashBack', `Importo ridotto al massimo consentito: ${formatCurrency(maxCashBack)}`);
+                        } else if (val > 0 && cashBackMinThreshold > 0 && val < cashBackMinThreshold) {
+                          Alert.alert('Soglia minima', `L'importo minimo di utilizzo è ${formatCurrency(cashBackMinThreshold)}`);
+                        } else if (val > 0) {
+                          Alert.alert('CashBack Confermato', `CashBack di ${formatCurrency(val)} verrà applicato all'ordine.\n\nLo sconto sarà spalmato sui prodotti eligible.`);
                         }
                       }}
                     >

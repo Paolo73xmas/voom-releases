@@ -1068,8 +1068,31 @@ export default function OrderCollectionV2() {
     const rottamazioneExcludedItems = cart.filter(c => c.product.rottamazione_no === true);
     const rottamazioneEligibleSubtotal = rottamazioneEligibleItems.reduce((s, c) => s + c.unit_price * c.quantity, 0);
 
+    // CashBack max calculation
+    const maxByPercentage = Math.round((eligibleSubtotal * cashBackMaxPercentage / 100) * 100) / 100;
+    const maxCashBack = Math.min(customerCashBackBalance, eligibleSubtotal, maxByPercentage);
+
+    // Spreaded prices preview for rottamazione
+    const getSpreadedPrices = () => {
+      if (rottamazioneAmount <= 0) return [];
+      const netAmount = getRottamazioneNetAmount(rottamazioneAmount);
+      const eligible = rottamazioneEligibleItems.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
+      const distributed = eligible.length > 0 ? distributeDiscountToItems(eligible, netAmount) : [];
+      return cart.map(c => {
+        const isExcluded = c.product.rottamazione_no === true;
+        const dist = distributed.find(d => d.product_id === c.product.id);
+        return {
+          product: c.product,
+          quantity: c.quantity,
+          originalPrice: c.unit_price,
+          newPrice: dist ? dist.unit_price : c.unit_price,
+          excluded: isExcluded,
+        };
+      });
+    };
+
     return (
-      <ScrollView style={s.stepContent}>
+      <ScrollView style={s.stepContent} keyboardShouldPersistTaps="handled">
         <Text style={s.stepTitle}>Riepilogo Ordine</Text>
 
         {/* Customer */}
@@ -1102,123 +1125,196 @@ export default function OrderCollectionV2() {
           </View>
         </View>
 
-        {/* Rottamazione — only for Italian orders */}
-        {!isForeignOrder && (
-          <View style={s.summaryCard}>
-            <Text style={s.summaryLabel}>Rottamazione (lordo IVA)</Text>
-            {rottamazioneEligibleItems.length > 0 ? (
-              <>
-                <Text style={s.summarySubLabel}>
-                  Prodotti idonei: {rottamazioneEligibleItems.length}/{cart.length} · Imponibile idoneo: {formatCurrency(rottamazioneEligibleSubtotal)}
-                </Text>
-                {rottamazioneExcludedItems.length > 0 && (
-                  <Text style={[s.summarySubLabel, { color: '#DC2626' }]}>
-                    Esclusi ({rottamazioneExcludedItems.length}): {rottamazioneExcludedItems.map(c => c.product.short_description || c.product.name).join(', ')}
-                  </Text>
-                )}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
-                  {availableLots.map(lot => (
-                    <TouchableOpacity
-                      key={lot}
-                      style={[s.lotChip, rottamazioneAmount === lot && s.lotChipActive]}
-                      onPress={() => { setRottamazioneAmount(lot); if (lot === 0) setRottamazioneDescription(''); if (lot > 0) setCashBackToUse(0); }}
-                    >
-                      <Text style={[s.lotChipText, rottamazioneAmount === lot && s.lotChipTextActive]}>{lot === 0 ? 'Nessuna' : `€${lot}`}</Text>
+        {/* ═══ CashBack Section (matching old Raccolta Ordine) ═══ */}
+        {!isForeignOrder && rottamazioneAmount === 0 && (
+          <View style={{ marginBottom: 10 }}>
+            {/* Header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="gift" size={18} color="#10B981" />
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#065F46' }}>Utilizza CashBack</Text>
+              </View>
+              <View style={{ backgroundColor: '#10B981', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFF' }}>Saldo: {formatCurrency(customerCashBackBalance)}</Text>
+              </View>
+            </View>
+            <View style={[s.summaryCard, { borderWidth: 1, borderColor: '#A7F3D0' }]}>
+              {customerCashBackBalance > 0 && cashbackEligibleItems.length > 0 ? (
+                <>
+                  {/* Eligible info box */}
+                  <View style={{ flexDirection: 'row', backgroundColor: '#EFF6FF', borderRadius: 8, padding: 10, gap: 8, marginBottom: 10 }}>
+                    <Ionicons name="information-circle" size={16} color="#1E40AF" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#1E40AF' }}>
+                        Subtotale prodotti eligible: {formatCurrency(eligibleSubtotal)}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: '#3B82F6', marginTop: 2 }}>
+                        Prodotti: {cashbackEligibleItems.map(c => c.product.short_description || c.product.name).join(', ')}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Input */}
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#065F46', marginBottom: 4 }}>Importo CashBack da utilizzare (€)</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <TextInput
+                      style={[s.textInput, { flex: 1 }]}
+                      keyboardType="numeric"
+                      value={cashBackToUse > 0 ? cashBackToUse.toString() : ''}
+                      onChangeText={t => {
+                        const v = parseFloat(t) || 0;
+                        setCashBackToUse(Math.min(v, maxCashBack));
+                      }}
+                      placeholder="0,00"
+                      placeholderTextColor="#9CA3AF"
+                    />
+                    <TouchableOpacity style={s.maxBtn} onPress={() => {
+                      setCashBackToUse(maxCashBack);
+                      if (maxCashBack < customerCashBackBalance && cashBackMaxPercentage < 100) {
+                        Alert.alert('Limite CashBack', `Il CashBack è limitato al ${cashBackMaxPercentage}% del valore dei prodotti idonei (${formatCurrency(eligibleSubtotal)}).\n\nMassimo utilizzabile: ${formatCurrency(maxCashBack)}`);
+                      }
+                    }}>
+                      <Text style={s.maxBtnText}>MAX</Text>
                     </TouchableOpacity>
-                  ))}
-                </ScrollView>
-                {availableLots.length <= 1 && (
-                  <Text style={s.summarySubLabel}>Importo ordine insufficiente per la rottamazione</Text>
-                )}
-                {rottamazioneAmount > 0 && (
-                  <>
-                    <Text style={s.rottamazioneNet}>Netto spalmato: {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
-                    <TextInput style={s.textInput} placeholder="Descrizione merce rottamata..." value={rottamazioneDescription} onChangeText={setRottamazioneDescription} placeholderTextColor="#9CA3AF" />
-                  </>
-                )}
-              </>
-            ) : (
-              <Text style={[s.summarySubLabel, { color: '#DC2626', marginTop: 4 }]}>
-                Nessun prodotto idoneo alla rottamazione nel carrello
-              </Text>
-            )}
+                  </View>
+
+                  {/* Rules box */}
+                  <View style={{ flexDirection: 'row', backgroundColor: '#FFFBEB', borderRadius: 8, padding: 10, gap: 6, marginTop: 10 }}>
+                    <Ionicons name="alert-circle-outline" size={14} color="#92400E" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 10, color: '#92400E', fontStyle: 'italic', marginBottom: 6 }}>
+                        Lo sconto CashBack verrà spalmato proporzionalmente sui prezzi unitari dei prodotti eligible.
+                      </Text>
+                      <Text style={{ fontSize: 10, color: '#92400E', marginBottom: 2 }}>• Max utilizzabile (saldo): {formatCurrency(customerCashBackBalance)}</Text>
+                      <Text style={{ fontSize: 10, color: '#92400E', marginBottom: 2 }}>• Subtotale prodotti eligible: {formatCurrency(eligibleSubtotal)}</Text>
+                      {cashBackMinThreshold > 0 && (
+                        <Text style={{ fontSize: 10, color: '#92400E', marginBottom: 2 }}>• Soglia minima: {formatCurrency(cashBackMinThreshold)}</Text>
+                      )}
+                      <Text style={{ fontSize: 10, color: '#92400E', fontWeight: '700' }}>• Limite: {cashBackMaxPercentage}% del valore eligible = {formatCurrency(maxByPercentage)}</Text>
+                    </View>
+                  </View>
+
+                  {cashBackToUse > 0 && cashBackMinThreshold > 0 && cashBackToUse < cashBackMinThreshold && (
+                    <View style={{ flexDirection: 'row', backgroundColor: '#FEE2E2', borderRadius: 8, padding: 8, gap: 6, marginTop: 6 }}>
+                      <Ionicons name="warning" size={14} color="#DC2626" />
+                      <Text style={{ fontSize: 11, color: '#DC2626', flex: 1 }}>Importo minimo richiesto: {formatCurrency(cashBackMinThreshold)}</Text>
+                    </View>
+                  )}
+                </>
+              ) : customerCashBackBalance > 0 ? (
+                <Text style={{ fontSize: 12, color: '#DC2626' }}>Nessun prodotto idoneo al CashBack nel carrello</Text>
+              ) : (
+                <Text style={s.summarySubLabel}>Nessun CashBack disponibile per questo cliente</Text>
+              )}
+            </View>
           </View>
         )}
 
-        {/* CashBack — always visible for Italian orders */}
-        {!isForeignOrder && rottamazioneAmount === 0 && (
-          <View style={s.summaryCard}>
-            <Text style={s.summaryLabel}>CashBack Disponibile: {formatCurrency(customerCashBackBalance)}</Text>
-            {customerCashBackBalance > 0 ? (
-              <>
-                {cashbackEligibleItems.length > 0 ? (
-                  () => {
-                    // Calculate max usable CashBack considering max_order_percentage
-                    const maxByPercentage = Math.round((eligibleSubtotal * cashBackMaxPercentage / 100) * 100) / 100;
-                    const maxUsable = Math.min(customerCashBackBalance, eligibleSubtotal, maxByPercentage);
-
-                    return (
-                      <>
-                        <Text style={s.summarySubLabel}>
-                          Prodotti idonei: {cashbackEligibleItems.length}/{cart.length} · Imponibile idoneo: {formatCurrency(eligibleSubtotal)}
+        {/* ═══ Rottamazione Section (matching old Raccolta Ordine) ═══ */}
+        {!isForeignOrder && cashBackToUse === 0 && (
+          <View style={{ marginBottom: 10 }}>
+            {/* Header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <Ionicons name="refresh" size={18} color="#8B5CF6" />
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#5B21B6' }}>Rottamazione</Text>
+              {rottamazioneAmount > 0 && (
+                <View style={{ backgroundColor: '#F97316', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3, marginLeft: 'auto' }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFF' }}>{formatCurrency(rottamazioneAmount)}</Text>
+                </View>
+              )}
+            </View>
+            <View style={[s.summaryCard, { borderWidth: 1, borderColor: '#C4B5FD' }]}>
+              {rottamazioneEligibleItems.length > 0 ? (
+                <>
+                  <Text style={{ fontSize: 12, color: '#5B21B6', marginBottom: 8 }}>Seleziona importo rottamazione</Text>
+                  {/* Lots */}
+                  <View style={{ flexWrap: 'wrap', flexDirection: 'row', gap: 6 }}>
+                    {availableLots.map(lot => (
+                      <TouchableOpacity
+                        key={lot}
+                        style={[s.lotChip, rottamazioneAmount === lot && s.lotChipActive, { minWidth: 'auto' }]}
+                        onPress={() => { setRottamazioneAmount(lot); if (lot === 0) setRottamazioneDescription(''); }}
+                      >
+                        <Text style={[s.lotChipText, rottamazioneAmount === lot && s.lotChipTextActive]}>
+                          {lot === 0 ? 'Nessuna' : `${formatCurrency(lot)} (min: ${formatCurrency(lot * rottamazioneMultiplier)})`}
                         </Text>
-                        {cashBackMaxPercentage < 100 && (
-                          <Text style={[s.summarySubLabel, { color: '#1E40AF', fontWeight: '600' }]}>
-                            Limite utilizzo: {cashBackMaxPercentage}% del valore eligible = max {formatCurrency(maxByPercentage)}
-                          </Text>
-                        )}
-                        {cashBackMinThreshold > 0 && (
-                          <Text style={[s.summarySubLabel, { color: '#6B7280' }]}>
-                            Soglia minima di utilizzo: {formatCurrency(cashBackMinThreshold)}
-                          </Text>
-                        )}
-                        {cashbackNonEligibleItems.length > 0 && (
-                          <Text style={[s.summarySubLabel, { color: '#B45309' }]}>
-                            Non idonei ({cashbackNonEligibleItems.length}): {cashbackNonEligibleItems.map(c => c.product.short_description || c.product.name).join(', ')}
-                          </Text>
-                        )}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                          <TextInput
-                            style={[s.textInput, { flex: 1 }]}
-                            placeholder="Importo CashBack"
-                            keyboardType="numeric"
-                            value={cashBackToUse > 0 ? cashBackToUse.toString() : ''}
-                            onChangeText={t => {
-                              const v = parseFloat(t) || 0;
-                              const capped = Math.min(v, maxUsable);
-                              setCashBackToUse(capped);
-                            }}
-                            placeholderTextColor="#9CA3AF"
-                          />
-                          <TouchableOpacity style={s.maxBtn} onPress={() => {
-                            setCashBackToUse(maxUsable);
-                            if (maxUsable < customerCashBackBalance && cashBackMaxPercentage < 100) {
-                              Alert.alert(
-                                'Limite CashBack',
-                                `Il CashBack è limitato al ${cashBackMaxPercentage}% del valore dei prodotti idonei (${formatCurrency(eligibleSubtotal)}).\n\nMassimo utilizzabile: ${formatCurrency(maxUsable)}`
-                              );
-                            }
-                          }}>
-                            <Text style={s.maxBtnText}>MAX</Text>
-                          </TouchableOpacity>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {rottamazioneAmount > 0 && (
+                    <>
+                      <TextInput
+                        style={[s.textInput, { marginTop: 10, minHeight: 60, textAlignVertical: 'top' }]}
+                        placeholder="Descrivi la merce da rottamare... *"
+                        value={rottamazioneDescription}
+                        onChangeText={setRottamazioneDescription}
+                        multiline
+                        placeholderTextColor="#9CA3AF"
+                      />
+                      {!rottamazioneDescription.trim() && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FCD34D', borderRadius: 8, padding: 8, gap: 6, marginTop: 6 }}>
+                          <Ionicons name="warning" size={14} color="#92400E" />
+                          <Text style={{ fontSize: 11, color: '#92400E', flex: 1 }}>La descrizione della merce da rottamare è obbligatoria</Text>
                         </View>
-                        {cashBackToUse > 0 && cashBackMinThreshold > 0 && cashBackToUse < cashBackMinThreshold && (
-                          <Text style={[s.summarySubLabel, { color: '#DC2626', marginTop: 4 }]}>
-                            Importo minimo richiesto: {formatCurrency(cashBackMinThreshold)}
-                          </Text>
-                        )}
+                      )}
+                    </>
+                  )}
+
+                  {/* Rules box */}
+                  <View style={{ backgroundColor: '#F5F3FF', borderRadius: 8, padding: 10, marginTop: 10 }}>
+                    <Text style={{ fontSize: 11, color: '#5B21B6', marginBottom: 2 }}>• Imponibile attuale: {formatCurrency(cartTotals.imponibile)}</Text>
+                    {rottamazioneEligibleSubtotal < cartTotals.imponibile && (
+                      <Text style={{ fontSize: 11, color: '#5B21B6', fontWeight: '700', marginBottom: 2 }}>• Imponibile eligible (esclusi "Rott. No"): {formatCurrency(rottamazioneEligibleSubtotal)}</Text>
+                    )}
+                    <Text style={{ fontSize: 11, color: '#5B21B6', marginBottom: 2 }}>• Formula: imponibile minimo = rottamazione × {rottamazioneMultiplier}</Text>
+                    {rottamazioneAmount > 0 && (
+                      <>
+                        <Text style={{ fontSize: 11, color: '#5B21B6', marginBottom: 2 }}>• Importo lordo (IVA incl.): {formatCurrency(rottamazioneAmount)}</Text>
+                        <Text style={{ fontSize: 11, color: '#5B21B6', fontWeight: '700', marginBottom: 2 }}>• Netto da spalmare (scorporo IVA {Math.round((rottamazioneIvaRate - 1) * 100)}%): {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
+                        <Text style={{ fontSize: 10, color: '#7C3AED', fontStyle: 'italic', marginTop: 4 }}>Lo sconto netto verrà spalmato solo sui prodotti eligible alla rottamazione</Text>
                       </>
-                    );
-                  }
-                )() : (
-                  <Text style={[s.summarySubLabel, { color: '#DC2626' }]}>
-                    Nessun prodotto idoneo al CashBack nel carrello
-                  </Text>
-                )}
-              </>
-            ) : (
-              <Text style={s.summarySubLabel}>Nessun CashBack disponibile per questo cliente</Text>
-            )}
+                    )}
+                  </View>
+
+                  {/* Summary box */}
+                  {rottamazioneAmount > 0 && (
+                    <View style={{ backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#FB923C', borderRadius: 10, padding: 12, marginTop: 8 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <Text style={{ fontSize: 12, color: '#9A3412', flex: 1 }}>Rottamazione (lordo IVA incl.):</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#EA580C' }}>{formatCurrency(rottamazioneAmount)}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <Text style={{ fontSize: 12, color: '#9A3412', flex: 1 }}>Sconto netto spalmato (scorporo IVA {Math.round((rottamazioneIvaRate - 1) * 100)}%):</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#DC2626' }}>-{formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Preview prezzi spalmati */}
+                  {rottamazioneAmount > 0 && (
+                    <View style={{ backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#93C5FD', borderRadius: 10, padding: 12, marginTop: 8 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#1E40AF', marginBottom: 6 }}>
+                        Preview prezzi con Rottamazione (netto {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}):
+                      </Text>
+                      {getSpreadedPrices().map((item) => (
+                        <Text
+                          key={item.product.id}
+                          style={{ fontSize: 11, color: item.excluded ? '#9CA3AF' : '#1F2937', marginBottom: 2 }}
+                        >
+                          {item.excluded
+                            ? `✗ ${item.product.short_description || item.product.name}: ${formatCurrency(item.originalPrice)} (${item.quantity} pz) — Escluso`
+                            : `${item.product.short_description || item.product.name}: ${formatCurrency(item.originalPrice)} → ${formatCurrency(item.newPrice)} (${item.quantity} pz)`
+                          }
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                </>
+              ) : (
+                <Text style={{ fontSize: 12, color: '#DC2626' }}>Nessun prodotto idoneo alla rottamazione nel carrello</Text>
+              )}
+            </View>
           </View>
         )}
 

@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase';
 import { fetchCustomers } from '../lib/api/customers';
 import { fetchProducts, fetchPaymentMethods, fetchShippingMethods } from '../lib/api/order-collection';
 import { createReservation, getAvailableStock } from '../lib/api/stock-reservation';
+import { subtractStockForOrder, verifyAndSetStockSubtracted } from '../lib/api/stock-management';
 import { processCashBackUsage, processCashBackAccumulation } from '../lib/api/cashback';
 import type { AvailableStockMap } from '../types/reservation';
 
@@ -754,6 +755,16 @@ export default function OrderCollectionV2() {
           });
         }
       } catch (e) { console.log('[reservation] non-blocking:', e); }
+
+      // ── STOCK SUBTRACTION (non-blocking, matching web app) ──
+      try {
+        const stockItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity }));
+        console.log('[STOCK-AUDIT] 📦 handleSubmitOrder — Stock subtraction starting');
+        await subtractStockForOrder(stockItems, user.id, order.id);
+        await verifyAndSetStockSubtracted(order.id, stockItems);
+      } catch (stockError) {
+        console.error('[STOCK-AUDIT] ❌ Stock subtraction error (non-blocking):', stockError);
+      }
 
       // ── CASHBACK PROCESSING (non-blocking) ──
       try {

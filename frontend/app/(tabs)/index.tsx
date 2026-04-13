@@ -118,12 +118,6 @@ export default function Dashboard() {
       onPress: () => router.push('/order-collection-v2'),
     },
     {
-      title: 'Raccolta Ordine',
-      icon: 'cart-outline',
-      color: '#1E40AF',
-      onPress: () => router.push('/order-collection'),
-    },
-    {
       title: 'Nuova Ispezione',
       icon: 'camera',
       color: '#8B5CF6',

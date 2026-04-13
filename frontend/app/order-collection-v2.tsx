@@ -414,6 +414,12 @@ export default function OrderCollectionV2() {
       const q = productSearch.toLowerCase();
       list = list.filter(p => (p.short_description || p.name).toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q));
     }
+    // Sort alphabetically by short_description (then name as fallback)
+    list = [...list].sort((a, b) => {
+      const nameA = (a.short_description || a.name || '').toLowerCase();
+      const nameB = (b.short_description || b.name || '').toLowerCase();
+      return nameA.localeCompare(nameB, 'it');
+    });
     return list.slice(0, 50);
   }, [products, productSearch, isForeignOrder]);
 
@@ -1042,49 +1048,60 @@ export default function OrderCollectionV2() {
           </View>
         </View>
 
-        {/* Rottamazione */}
-        <View style={s.summaryCard}>
-          <Text style={s.summaryLabel}>Rottamazione (lordo IVA)</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
-            {availableLots.map(lot => (
-              <TouchableOpacity
-                key={lot}
-                style={[s.lotChip, rottamazioneAmount === lot && s.lotChipActive]}
-                onPress={() => { setRottamazioneAmount(lot); if (lot === 0) setRottamazioneDescription(''); if (lot > 0) setCashBackToUse(0); }}
-              >
-                <Text style={[s.lotChipText, rottamazioneAmount === lot && s.lotChipTextActive]}>{lot === 0 ? 'Nessuna' : `€${lot}`}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          {rottamazioneAmount > 0 && (
-            <>
-              <Text style={s.rottamazioneNet}>Netto spalmato: {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
-              <TextInput style={s.textInput} placeholder="Descrizione merce rottamata..." value={rottamazioneDescription} onChangeText={setRottamazioneDescription} placeholderTextColor="#9CA3AF" />
-            </>
-          )}
-        </View>
+        {/* Rottamazione — only for Italian orders */}
+        {!isForeignOrder && (
+          <View style={s.summaryCard}>
+            <Text style={s.summaryLabel}>Rottamazione (lordo IVA)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
+              {availableLots.map(lot => (
+                <TouchableOpacity
+                  key={lot}
+                  style={[s.lotChip, rottamazioneAmount === lot && s.lotChipActive]}
+                  onPress={() => { setRottamazioneAmount(lot); if (lot === 0) setRottamazioneDescription(''); if (lot > 0) setCashBackToUse(0); }}
+                >
+                  <Text style={[s.lotChipText, rottamazioneAmount === lot && s.lotChipTextActive]}>{lot === 0 ? 'Nessuna' : `€${lot}`}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            {availableLots.length <= 1 && (
+              <Text style={s.summarySubLabel}>Importo ordine insufficiente per la rottamazione</Text>
+            )}
+            {rottamazioneAmount > 0 && (
+              <>
+                <Text style={s.rottamazioneNet}>Netto spalmato: {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
+                <TextInput style={s.textInput} placeholder="Descrizione merce rottamata..." value={rottamazioneDescription} onChangeText={setRottamazioneDescription} placeholderTextColor="#9CA3AF" />
+              </>
+            )}
+          </View>
+        )}
 
-        {/* CashBack */}
-        {!isForeignOrder && rottamazioneAmount === 0 && customerCashBackBalance > 0 && (
+        {/* CashBack — always visible for Italian orders */}
+        {!isForeignOrder && rottamazioneAmount === 0 && (
           <View style={s.summaryCard}>
             <Text style={s.summaryLabel}>CashBack Disponibile: {formatCurrency(customerCashBackBalance)}</Text>
-            <Text style={s.summarySubLabel}>Applicabile su prodotti eligible: {formatCurrency(eligibleSubtotal)}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-              <TextInput
-                style={[s.textInput, { flex: 1 }]}
-                placeholder="Importo CashBack"
-                keyboardType="numeric"
-                value={cashBackToUse > 0 ? cashBackToUse.toString() : ''}
-                onChangeText={t => {
-                  const v = parseFloat(t) || 0;
-                  setCashBackToUse(Math.min(v, Math.min(customerCashBackBalance, eligibleSubtotal)));
-                }}
-                placeholderTextColor="#9CA3AF"
-              />
-              <TouchableOpacity style={s.maxBtn} onPress={() => setCashBackToUse(Math.min(customerCashBackBalance, eligibleSubtotal))}>
-                <Text style={s.maxBtnText}>MAX</Text>
-              </TouchableOpacity>
-            </View>
+            {customerCashBackBalance > 0 ? (
+              <>
+                <Text style={s.summarySubLabel}>Applicabile su prodotti eligible: {formatCurrency(eligibleSubtotal)}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <TextInput
+                    style={[s.textInput, { flex: 1 }]}
+                    placeholder="Importo CashBack"
+                    keyboardType="numeric"
+                    value={cashBackToUse > 0 ? cashBackToUse.toString() : ''}
+                    onChangeText={t => {
+                      const v = parseFloat(t) || 0;
+                      setCashBackToUse(Math.min(v, Math.min(customerCashBackBalance, eligibleSubtotal)));
+                    }}
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity style={s.maxBtn} onPress={() => setCashBackToUse(Math.min(customerCashBackBalance, eligibleSubtotal))}>
+                    <Text style={s.maxBtnText}>MAX</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <Text style={s.summarySubLabel}>Nessun CashBack disponibile per questo cliente</Text>
+            )}
           </View>
         )}
 

@@ -219,17 +219,17 @@ frontend:
         agent: "main"
         comment: "Added Anagrafica quick action button to dashboard grid. Verified via screenshot."
 
-  - task: "Privacy Policy & Terms Acceptance Screen"
+  - task: "Stock Reservation System Integration"
     implemented: true
     working: true
-    file: "app/privacy-terms.tsx"
+    file: "app/order-collection.tsx, lib/api/stock-reservation.ts, types/reservation.ts"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: true
         agent: "main"
-        comment: "Fullscreen privacy/terms acceptance screen with complete legal text (Parte I Privacy + Parte II Termini). 3 checkboxes as per document. Accept button disabled until all checked. AsyncStorage persistence verified - skips on subsequent launches. Read-only mode accessible from Profile. Verified via screenshots."
+        comment: "Integrated stock reservation system: (1) New service lib/api/stock-reservation.ts with createReservation, releaseReservation, getAvailableStock RPCs. (2) Products now show available_quantity (physical - reserved) instead of raw stock_quantity. (3) After order creation, createReservation RPC is called (non-blocking with warnings). (4) Stock badges color-coded: green >10, amber 1-10, red 0. (5) Verified via screenshot: 244 products loaded with available stock from RPC."
 
 metadata:
   created_by: "main_agent"

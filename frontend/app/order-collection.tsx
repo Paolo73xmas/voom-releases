@@ -30,6 +30,11 @@ import {
 import { Customer } from '../types';
 import { supabase } from '../lib/supabase';
 import {
+  createReservation,
+  getAvailableStock,
+} from '../lib/api/stock-reservation';
+import type { AvailableStockMap } from '../types/reservation';
+import {
   CartItem,
   RottamazioneConfig,
   DEFAULT_ROTTAMAZIONE_LOTS,
@@ -101,6 +106,16 @@ export default function OrderCollectionScreen() {
 
   // Location
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  // Available stock map (from reservation system)
+  const [availableStockMap, setAvailableStockMap] = useState<AvailableStockMap>(new Map());
+
+  // Helper: get available quantity for a product (uses reservation system, falls back to stock_quantity)
+  const getEffectiveStock = (productId: string, fallbackStockQty: number): number => {
+    const info = availableStockMap.get(productId);
+    if (info) return info.available_quantity;
+    return fallbackStockQty;
+  };
 
   useEffect(() => {
     loadInitialData();
@@ -306,7 +321,7 @@ export default function OrderCollectionScreen() {
       const product = item.products;
       if (!product) continue;
 
-      const stock = product.stock_quantity ?? 0;
+      const stock = getEffectiveStock(product.id || item.product_id, product.stock_quantity ?? 0);
       const productLabel = product.short_description || product.name;
 
       // Check if product is active
@@ -417,6 +432,18 @@ export default function OrderCollectionScreen() {
       setProducts(productsData);
       setPaymentMethods(paymentsData);
       setShippingMethods(shippingsData);
+
+      // Load available stock (reservation system) for all products
+      if (productsData.length > 0) {
+        try {
+          const productIds = productsData.map((p: Product) => p.id);
+          const stockMap = await getAvailableStock(productIds);
+          setAvailableStockMap(stockMap);
+          console.log(`[stock] Loaded available stock for ${stockMap.size} products`);
+        } catch (stockErr) {
+          console.log('[stock] Failed to load available stock, falling back to stock_quantity:', stockErr);
+        }
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       Alert.alert('Errore', 'Impossibile caricare i dati');
@@ -460,19 +487,19 @@ export default function OrderCollectionScreen() {
 
   // Cart functions
   const addMultipleToCart = (product: Product, count: number) => {
-    const stock = product.stock_quantity || 0;
+    const stock = getEffectiveStock(product.id, product.stock_quantity || 0);
     const existing = cart.find(item => item.product.id === product.id);
     const currentQty = existing ? existing.quantity : 0;
     const maxAddable = stock - currentQty;
     
     if (maxAddable <= 0) {
-      Alert.alert('Stock esaurito', `Nessun pezzo disponibile per "${product.short_description || product.name}" (magazzino: ${stock})`);
+      Alert.alert('Stock esaurito', `Nessun pezzo disponibile per "${product.short_description || product.name}" (disponibili: ${stock})`);
       return;
     }
     
     const actualCount = Math.min(count, maxAddable);
     if (actualCount < count) {
-      Alert.alert('Limite magazzino', `Aggiunti ${actualCount} pz invece di ${count} (max disponibile: ${stock})`);
+      Alert.alert('Limite disponibilità', `Aggiunti ${actualCount} pz invece di ${count} (disponibili: ${stock})`);
     }
 
     if (existing) {
@@ -748,9 +775,36 @@ export default function OrderCollectionScreen() {
         } : {}),
       });
 
+      // ── Stock Reservation: create reservation for the draft order ──
+      let reservationWarnings: string[] = [];
+      try {
+        const reservationItems = cart.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+        }));
+        const reservationResult = await createReservation(
+          result.orderId,
+          reservationItems,
+          user.id,
+        );
+        if (reservationResult.warnings && reservationResult.warnings.length > 0) {
+          reservationWarnings = reservationResult.warnings.map(w => {
+            const prod = cart.find(c => c.product.id === w.product_id);
+            const name = prod?.product.short_description || prod?.product.name || w.product_id;
+            return `${name}: richiesti ${w.requested}, disponibili ${w.available}`;
+          });
+        }
+      } catch (resErr) {
+        console.log('[stock-reservation] Non-blocking error:', resErr);
+      }
+
+      const warningText = reservationWarnings.length > 0
+        ? `\n\nAttenzione disponibilità:\n${reservationWarnings.join('\n')}`
+        : '';
+
       Alert.alert(
         'Ordine Creato!',
-        `Ordine ${result.orderNumber} creato con successo`,
+        `Ordine ${result.orderNumber} creato con successo${warningText}`,
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error: any) {
@@ -790,7 +844,9 @@ export default function OrderCollectionScreen() {
   const renderProductRow = ({ item }: { item: Product }) => {
     const inCart = cart.find(c => c.product.id === item.id);
     const hasImage = item.image_url && item.image_url.trim() !== '';
-    const stock = item.stock_quantity || 0;
+    const stockInfo = availableStockMap.get(item.id);
+    const stock = stockInfo ? stockInfo.available_quantity : (item.stock_quantity || 0);
+    const reserved = stockInfo ? stockInfo.reserved_quantity : 0;
     const cartQty = inCart ? inCart.quantity : 0;
     const canAdd1 = cartQty + 1 <= stock;
     const canAdd10 = cartQty + 10 <= stock;
@@ -842,9 +898,17 @@ export default function OrderCollectionScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Stock Quantity (where accisa was) */}
-        <View style={[styles.stockBadge, stock <= 0 && styles.stockBadgeEmpty, stock > 0 && stock <= 20 && styles.stockBadgeLow]}>
+        {/* Stock Badge with available quantity */}
+        <View style={[
+          styles.stockBadge, 
+          stock <= 0 && styles.stockBadgeEmpty, 
+          stock > 0 && stock <= 10 && styles.stockBadgeLow,
+          stock > 10 && styles.stockBadgeOk,
+        ]}>
           <Text style={[styles.stockBadgeText, stock <= 0 && styles.stockBadgeTextEmpty]}>{stock}</Text>
+          {reserved > 0 && (
+            <Text style={styles.stockReservedText}>({reserved})</Text>
+          )}
         </View>
 
         {/* +1 Button */}
@@ -866,9 +930,9 @@ export default function OrderCollectionScreen() {
               const remaining = stock - cartQty;
               if (remaining > 0) {
                 addMultipleToCart(item, remaining);
-                Alert.alert('Limite raggiunto', `Aggiunti ${remaining} pz (max disponibile: ${stock})`);
+                Alert.alert('Limite raggiunto', `Aggiunti ${remaining} pz (disponibili: ${stock})`);
               } else {
-                Alert.alert('Stock esaurito', `Non ci sono più pezzi disponibili (${stock} in magazzino)`);
+                Alert.alert('Stock esaurito', `Non ci sono più pezzi disponibili (${stock} disponibili)`);
               }
             }
           }}

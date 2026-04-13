@@ -181,6 +181,9 @@ export const styles = StyleSheet.create({
   stockBadgeEmpty: {
     backgroundColor: '#FEE2E2',
   },
+  stockBadgeOk: {
+    backgroundColor: '#ECFDF5',
+  },
   stockBadgeText: {
     fontSize: 11,
     fontWeight: '700',
@@ -188,6 +191,11 @@ export const styles = StyleSheet.create({
   },
   stockBadgeTextEmpty: {
     color: '#DC2626',
+  },
+  stockReservedText: {
+    fontSize: 9,
+    color: '#9CA3AF',
+    marginTop: 1,
   },
   addOneBtn: {
     backgroundColor: '#1E40AF',

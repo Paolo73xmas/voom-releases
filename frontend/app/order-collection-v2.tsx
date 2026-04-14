@@ -1651,7 +1651,23 @@ export default function OrderCollectionV2() {
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={s.headerTitle}>Raccolta Ordine</Text>
-          <View style={{ width: 32 }} />
+          {/* Save draft & exit button */}
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
+            onPress={async () => {
+              if (selectedCustomer && cart.length > 0) {
+                await autoSaveDraft();
+                Alert.alert('Bozza Salvata', `Ordine per "${selectedCustomer.business_name}" salvato come bozza.\n\nPuoi riprenderlo da "Bozze Ordine".`, [
+                  { text: 'OK', onPress: () => router.back() },
+                ]);
+              } else {
+                router.back();
+              }
+            }}
+          >
+            <Ionicons name="save-outline" size={18} color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>Bozza</Text>
+          </TouchableOpacity>
         </View>
 
         {renderStepper()}

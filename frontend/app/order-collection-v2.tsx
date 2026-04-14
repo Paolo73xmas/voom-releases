@@ -9,7 +9,7 @@ import {
   Keyboard, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
@@ -18,6 +18,7 @@ import { fetchProducts, fetchPaymentMethods, fetchShippingMethods } from '../lib
 import { createReservation, getAvailableStock } from '../lib/api/stock-reservation';
 import { subtractStockForOrder, verifyAndSetStockSubtracted } from '../lib/api/stock-management';
 import { processCashBackUsage, processCashBackAccumulation } from '../lib/api/cashback';
+import { saveDraft, deleteDraft, getDrafts, generateDraftId, OrderDraft } from '../lib/drafts';
 import type { AvailableStockMap } from '../types/reservation';
 
 // ═══════════════════════════════════════════════════════
@@ -162,6 +163,7 @@ const STEPS = ['Cliente', 'Prodotti', 'Pagamento', 'Spedizione', 'Riepilogo'];
 // ═══════════════════════════════════════════════════════
 export default function OrderCollectionV2() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ draftId?: string }>();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
 
@@ -224,6 +226,34 @@ export default function OrderCollectionV2() {
   // Location
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
+  // ── Draft system ──
+  const [draftId, setDraftId] = useState<string>(generateDraftId());
+  const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // Auto-save draft when step changes or cart changes (only from step 1 onward with a customer)
+  const autoSaveDraft = useCallback(async () => {
+    if (!selectedCustomer || cart.length === 0) return;
+    const draft: OrderDraft = {
+      id: draftId,
+      customerId: selectedCustomer.id,
+      customerName: selectedCustomer.business_name,
+      cart: cart.map(c => ({ product: c.product, quantity: c.quantity, unit_price: c.unit_price })),
+      currentStep,
+      isForeignOrder,
+      selectedPaymentId: selectedPayment || null,
+      selectedShippingId: selectedShipping || null,
+      customShippingAddress: shippingAddress,
+      notes,
+      rottamazioneAmount,
+      rottamazioneDescription,
+      cashBackToUse,
+      totalAmount: cartTotals.grandTotal,
+      productCount: cartTotals.totalProducts,
+      savedAt: new Date().toISOString(),
+    };
+    await saveDraft(draft);
+  }, [draftId, selectedCustomer, cart, currentStep, isForeignOrder, selectedPayment, selectedShipping, shippingAddress, notes, rottamazioneAmount, rottamazioneDescription, cashBackToUse]);
+
   // ═══════════════════════════════════════════════════
   // HELPERS: Stock
   // ═══════════════════════════════════════════════════
@@ -245,6 +275,52 @@ export default function OrderCollectionV2() {
     loadLocation();
     loadRottamazioneConfig();
   }, []);
+
+  // Restore draft after data is loaded
+  useEffect(() => {
+    if (!isLoading && !draftLoaded && params.draftId && customers.length > 0) {
+      restoreDraft(params.draftId);
+    }
+  }, [isLoading, customers, params.draftId, draftLoaded]);
+
+  const restoreDraft = async (incomingDraftId: string) => {
+    try {
+      const allDrafts = await getDrafts();
+      const draft = allDrafts.find(d => d.id === incomingDraftId);
+      if (!draft) { console.log('[drafts] Draft not found:', incomingDraftId); return; }
+
+      console.log(`[drafts] Restoring draft: ${draft.customerName} (step ${draft.currentStep + 1})`);
+
+      // Restore customer
+      const customer = customers.find(c => c.id === draft.customerId);
+      if (customer) setSelectedCustomer(customer);
+
+      // Restore cart
+      setCart(draft.cart);
+      setIsForeignOrder(draft.isForeignOrder);
+      setCurrentStep(draft.currentStep);
+
+      // Restore selections
+      if (draft.selectedPaymentId) setSelectedPayment(draft.selectedPaymentId);
+      if (draft.selectedShippingId) setSelectedShipping(draft.selectedShippingId);
+      if (draft.customShippingAddress) setShippingAddress(draft.customShippingAddress);
+      if (draft.notes) setNotes(draft.notes);
+      if (draft.rottamazioneAmount) setRottamazioneAmount(draft.rottamazioneAmount);
+      if (draft.rottamazioneDescription) setRottamazioneDescription(draft.rottamazioneDescription);
+      if (draft.cashBackToUse) setCashBackToUse(draft.cashBackToUse);
+
+      // Use the same draft ID for updates
+      setDraftId(incomingDraftId);
+      setDraftLoaded(true);
+
+      // Load cashback balance for the customer
+      if (customer) loadCashBackBalance(customer.id);
+
+      Alert.alert('Bozza Ripristinata', `Ordine per "${draft.customerName}" ripristinato allo Step ${draft.currentStep + 1}`);
+    } catch (e) {
+      console.error('[drafts] Error restoring draft:', e);
+    }
+  };
 
   // When isForeignOrder changes, re-fetch products and shipping (matching old Raccolta Ordine)
   const isForeignInitialMount = React.useRef(true);
@@ -819,6 +895,8 @@ export default function OrderCollectionV2() {
       }
 
       // ── SUCCESS ──
+      // Delete the draft since order was submitted
+      await deleteDraft(draftId);
       const warnText = reservationWarnings.length ? `\n\nAttenzione disponibilità:\n${reservationWarnings.join('\n')}` : '';
       Alert.alert('Ordine Creato!', `Ordine ${order.order_number} creato con successo\nTotale: ${formatCurrency(finalTotalAmount)}${warnText}`, [
         { text: 'OK', onPress: () => router.back() },
@@ -852,6 +930,8 @@ export default function OrderCollectionV2() {
         loadPackages();
       }
       setCurrentStep(currentStep + 1);
+      // Auto-save draft on every step advance
+      setTimeout(() => autoSaveDraft(), 100);
     }
   };
 

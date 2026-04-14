@@ -927,14 +927,20 @@ export default function OrderCollectionV2() {
 
     return (
       <View style={[s.prodRow, inCart && s.prodRowInCart]}>
-        <TouchableOpacity style={s.prodIcon} onPress={() => setSelectedProductDetail(item)}>
-          {item.image_url ? (
-            <Image source={{ uri: item.image_url }} style={s.prodImg} resizeMode="cover" />
-          ) : (
-            <View style={s.prodImgPlaceholder}><Ionicons name="cube-outline" size={16} color="#9CA3AF" /></View>
+        <View style={{ position: 'relative' }}>
+          <TouchableOpacity style={s.prodIcon} onPress={() => setSelectedProductDetail(item)}>
+            {item.image_url ? (
+              <Image source={{ uri: item.image_url }} style={s.prodImg} resizeMode="cover" />
+            ) : (
+              <View style={s.prodImgPlaceholder}><Ionicons name="cube-outline" size={16} color="#9CA3AF" /></View>
+            )}
+          </TouchableOpacity>
+          {inCart && (
+            <View style={s.cartBadge}>
+              <Text style={s.cartBadgeText}>{inCart.quantity}</Text>
+            </View>
           )}
-          {inCart && <View style={s.cartBadge}><Text style={s.cartBadgeText}>{inCart.quantity}</Text></View>}
-        </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { setEditCartItem(inCart); setEditPrice(inCart.unit_price.toString()); setEditQty(inCart.quantity); } }}>
           <Text style={[s.prodName, inCart && { color: '#1E40AF' }]} numberOfLines={1}>{item.short_description || item.name}</Text>
@@ -1643,8 +1649,8 @@ const s = StyleSheet.create({
   prodIcon: { width: 40, height: 40, borderRadius: 6, overflow: 'hidden' },
   prodImg: { width: 40, height: 40, borderRadius: 6 },
   prodImgPlaceholder: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  cartBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#1E40AF', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  cartBadgeText: { fontSize: 9, fontWeight: '700', color: '#FFFFFF' },
+  cartBadge: { position: 'absolute', top: -6, right: -6, backgroundColor: '#DC2626', borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: '#FFFFFF', zIndex: 10 },
+  cartBadgeText: { fontSize: 10, fontWeight: '800', color: '#FFFFFF' },
   prodInfo: { flex: 1 },
   prodName: { fontSize: 13, fontWeight: '500', color: '#1F2937' },
   prodPrice: { fontSize: 12, fontWeight: '600', color: '#059669' },

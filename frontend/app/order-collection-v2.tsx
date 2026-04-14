@@ -1251,7 +1251,7 @@ export default function OrderCollectionV2() {
         </View>
 
         {/* ═══ CashBack Section (matching old Raccolta Ordine) ═══ */}
-        {!isForeignOrder && rottamazioneAmount === 0 && (
+        {!isForeignOrder && rottamazioneAmount === 0 && !scontoBenvenuto && (
           <View style={{ marginBottom: 10 }}>
             {/* Header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -1356,7 +1356,7 @@ export default function OrderCollectionV2() {
         )}
 
         {/* ═══ Rottamazione Section (matching old Raccolta Ordine) ═══ */}
-        {!isForeignOrder && cashBackToUse === 0 && (
+        {!isForeignOrder && cashBackToUse === 0 && !scontoBenvenuto && (
           <View style={{ marginBottom: 10 }}>
             {/* Header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>

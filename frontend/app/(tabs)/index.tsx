@@ -112,7 +112,7 @@ export default function Dashboard() {
 
   const quickActions = [
     {
-      title: 'Rac. Ordine 2',
+      title: 'Raccolta Ordine',
       icon: 'cart',
       color: '#059669',
       onPress: () => router.push('/order-collection-v2'),

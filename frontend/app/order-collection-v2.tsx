@@ -6,8 +6,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, FlatList, TouchableOpacity, TextInput,
   Alert, ActivityIndicator, Image, Modal, KeyboardAvoidingView, Platform,
-  SafeAreaView, Keyboard,
+  Keyboard, Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
@@ -162,6 +163,7 @@ const STEPS = ['Cliente', 'Prodotti', 'Pagamento', 'Spedizione', 'Riepilogo'];
 export default function OrderCollectionV2() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   // ── Navigation ──
   const [currentStep, setCurrentStep] = useState(0);
@@ -1545,24 +1547,24 @@ export default function OrderCollectionV2() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={s.container}>
+      <View style={[s.container, { paddingTop: insets.top }]}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#1E40AF" />
           <Text style={{ marginTop: 12, color: '#6B7280' }}>Caricamento...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={s.container}>
+    <View style={s.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={s.header}>
+        {/* Header — dynamic safe area */}
+        <View style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
           <TouchableOpacity onPress={handleBack} style={{ padding: 4 }}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={s.headerTitle}>Rac. Ordine 2</Text>
+          <Text style={s.headerTitle}>Raccolta Ordine</Text>
           <View style={{ width: 32 }} />
         </View>
 
@@ -1577,8 +1579,8 @@ export default function OrderCollectionV2() {
           {currentStep === 4 && renderStep5()}
         </View>
 
-        {/* Bottom Navigation */}
-        <View style={s.bottomBar}>
+        {/* Bottom Navigation — with safe area inset */}
+        <View style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {currentStep > 0 && (
             <TouchableOpacity style={s.backBtn} onPress={handleBack}>
               <Ionicons name="arrow-back" size={18} color="#374151" />
@@ -1607,7 +1609,7 @@ export default function OrderCollectionV2() {
         {renderEditPriceModal()}
         {renderProductDetailModal()}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -1616,7 +1618,7 @@ export default function OrderCollectionV2() {
 // ═══════════════════════════════════════════════════════
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1E40AF', paddingHorizontal: 16, paddingVertical: 12, paddingTop: Platform.OS === 'android' ? 40 : 12 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1E40AF', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#FFFFFF' },
   stepDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },

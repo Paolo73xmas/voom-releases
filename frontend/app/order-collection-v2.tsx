@@ -217,6 +217,8 @@ export default function OrderCollectionV2() {
   const [customerCashBackBalance, setCustomerCashBackBalance] = useState(0);
   const [cashBackMaxPercentage, setCashBackMaxPercentage] = useState(100);
   const [cashBackMinThreshold, setCashBackMinThreshold] = useState(0);
+  const [scontoBenvenuto, setScontoBenvenuto] = useState(false);
+  const [isFirstOrder, setIsFirstOrder] = useState(false);
 
   // Rottamazione config
   const [rottamazioneLots, setRottamazioneLots] = useState<number[]>(DEFAULT_ROTTAMAZIONE_LOTS);
@@ -741,6 +743,21 @@ export default function OrderCollectionV2() {
         } else {
           finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
         }
+      } else if (scontoBenvenuto && isFirstOrder) {
+        // Sconto Benvenuto: 25% on rottamazione-eligible products
+        const eligible = cart.filter(c => c.product.rottamazione_no !== true);
+        const excluded = cart.filter(c => c.product.rottamazione_no === true);
+        const discountAmount = eligible.reduce((s, c) => s + c.unit_price * c.quantity, 0) * 0.25;
+        if (eligible.length > 0 && discountAmount > 0) {
+          const eligibleMapped = eligible.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
+          const distributed = distributeDiscountToItems(eligibleMapped, discountAmount);
+          finalItems = [
+            ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 25, original_unit_price: d.original_unit_price })),
+            ...excluded.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 })),
+          ];
+        } else {
+          finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
+        }
       } else {
         finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
       }
@@ -773,6 +790,9 @@ export default function OrderCollectionV2() {
         notesParts.push(`[Rottamazione €${rottamazioneAmount.toFixed(2)} (lordo IVA incl.) - netto spalmato: €${netAmt.toFixed(2)} - ${rottamazioneDescription}${priceDetails ? ` - dettaglio: ${priceDetails}` : ''}]`);
       } else if (isUsingCashBack) {
         notesParts.push(`[CashBack €${cashBackToUse.toFixed(2)} utilizzato]`);
+      } else if (scontoBenvenuto && isFirstOrder) {
+        const discountAmt = cart.filter(c => c.product.rottamazione_no !== true).reduce((s, c) => s + c.unit_price * c.quantity, 0) * 0.25;
+        notesParts.push(`[Sconto Benvenuto 25% - €${discountAmt.toFixed(2)} su prodotti eligible]`);
       }
       if (notes.trim()) notesParts.push(notes.trim());
       const finalNotes = notesParts.length > 0 ? notesParts.join('\n') : undefined;
@@ -928,10 +948,27 @@ export default function OrderCollectionV2() {
       if (currentStep === 0 && selectedCustomer) {
         loadCashBackBalance(selectedCustomer.id);
         loadPackages();
+        checkFirstOrder(selectedCustomer.id);
       }
       setCurrentStep(currentStep + 1);
       // Auto-save draft on every step advance
       setTimeout(() => autoSaveDraft(), 100);
+    }
+  };
+
+  const checkFirstOrder = async (customerId: string) => {
+    try {
+      const { count, error } = await supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('customer_id', customerId);
+      if (!error) {
+        const first = (count || 0) === 0;
+        setIsFirstOrder(first);
+        console.log(`[V2] First order check for customer: ${first ? 'YES (primo ordine)' : `NO (${count} ordini esistenti)`}`);
+      }
+    } catch {
+      setIsFirstOrder(false);
     }
   };
 
@@ -1426,6 +1463,56 @@ export default function OrderCollectionV2() {
           </View>
         )}
 
+        {/* ═══ Sconto Benvenuto Section — only for first order, Italian, no other discounts ═══ */}
+        {!isForeignOrder && isFirstOrder && rottamazioneAmount === 0 && cashBackToUse === 0 && (
+          <View style={{ marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <Ionicons name="star" size={18} color="#D97706" />
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#92400E' }}>Sconto Benvenuto (25%)</Text>
+              <View style={{ backgroundColor: '#FEF3C7', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 'auto' }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#92400E' }}>Primo Ordine</Text>
+              </View>
+            </View>
+            <View style={[s.summaryCard, { borderWidth: 1, borderColor: '#FCD34D' }]}>
+              {rottamazioneEligibleItems.length > 0 ? (
+                <>
+                  <Text style={{ fontSize: 12, color: '#92400E', marginBottom: 8 }}>
+                    Sconto del 25% sull'imponibile dei prodotti eligible alla rottamazione
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>
+                    Prodotti eligible: {rottamazioneEligibleItems.length}/{cart.length} · Imponibile: {formatCurrency(rottamazioneEligibleSubtotal)}
+                  </Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#D97706', marginBottom: 8 }}>
+                    Sconto: -{formatCurrency(rottamazioneEligibleSubtotal * 0.25)}
+                  </Text>
+
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: scontoBenvenuto ? '#FEF3C7' : '#F9FAFB', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: scontoBenvenuto ? '#F59E0B' : '#E5E7EB' }}
+                    onPress={() => setScontoBenvenuto(!scontoBenvenuto)}
+                  >
+                    <View style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: scontoBenvenuto ? '#F59E0B' : '#D1D5DB', backgroundColor: scontoBenvenuto ? '#F59E0B' : '#FFF', alignItems: 'center', justifyContent: 'center' }}>
+                      {scontoBenvenuto && <Ionicons name="checkmark" size={14} color="#FFF" />}
+                    </View>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: scontoBenvenuto ? '#92400E' : '#6B7280' }}>
+                      {scontoBenvenuto ? 'Sconto Benvenuto applicato' : 'Applica Sconto Benvenuto'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {scontoBenvenuto && (
+                    <View style={{ backgroundColor: '#FFFBEB', borderRadius: 8, padding: 10, marginTop: 8 }}>
+                      <Text style={{ fontSize: 10, color: '#92400E', fontStyle: 'italic' }}>
+                        Lo sconto del 25% verrà spalmato proporzionalmente sui prezzi unitari dei prodotti eligible alla rottamazione.
+                      </Text>
+                    </View>
+                  )}
+                </>
+              ) : (
+                <Text style={{ fontSize: 12, color: '#DC2626' }}>Nessun prodotto eligible per lo Sconto Benvenuto</Text>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Notes */}
         <View style={s.summaryCard}>
           <Text style={s.summaryLabel}>Note</Text>
@@ -1479,8 +1566,9 @@ export default function OrderCollectionV2() {
     const handleConfirmEdit = () => {
       Keyboard.dismiss();
       if (editCartItem) {
-        // Apply price
-        const p = editPrice.trim() === '' ? 0 : parseFloat(editPrice);
+        // Apply price — normalize comma to dot for decimal
+        const normalized = editPrice.trim().replace(',', '.');
+        const p = normalized === '' ? 0 : parseFloat(normalized);
         if (!isNaN(p) && p >= 0) {
           updateCartPrice(editCartItem.product.id, p);
         }

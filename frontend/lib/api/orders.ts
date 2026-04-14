@@ -12,11 +12,20 @@ export async function fetchOrders(userId: string, userRole: string): Promise<Ord
           business_name,
           city,
           province,
-          address
+          address,
+          postal_code,
+          contact_name,
+          contact_surname,
+          contact_phone,
+          contact_email,
+          vat_number,
+          fiscal_code,
+          pec,
+          sdi
         )
       `)
       .order('order_date', { ascending: false })
-      .limit(100);
+      .limit(200);
 
     if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
       query = query.eq('agent_id', userId);

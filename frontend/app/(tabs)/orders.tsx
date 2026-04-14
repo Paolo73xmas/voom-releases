@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +23,7 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchText, setSearchText] = useState('');
 
   const loadOrders = async () => {
     if (!user) return;
@@ -44,6 +46,36 @@ export default function OrdersScreen() {
     await loadOrders();
     setRefreshing(false);
   };
+
+  // Filter orders by searching across all customer fields (min 3 chars)
+  const filteredOrders = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    if (q.length < 3) return orders;
+
+    return orders.filter(order => {
+      const c = order.customer;
+      if (!c) return false;
+
+      const fields = [
+        c.business_name,
+        c.address,
+        c.city,
+        c.province,
+        c.postal_code,
+        c.contact_name,
+        c.contact_surname,
+        c.contact_phone,
+        c.contact_email,
+        c.vat_number,
+        c.fiscal_code,
+        c.pec,
+        c.sdi,
+        order.order_number,
+      ];
+
+      return fields.some(f => f && f.toLowerCase().includes(q));
+    });
+  }, [orders, searchText]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -118,23 +150,51 @@ export default function OrdersScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color="#9CA3AF" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Cerca per cliente (min. 3 caratteri)..."
+            placeholderTextColor="#9CA3AF"
+            value={searchText}
+            onChangeText={setSearchText}
+            autoCorrect={false}
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchText('')}>
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
+        {searchText.length > 0 && searchText.length < 3 && (
+          <Text style={styles.searchHint}>Inserisci almeno 3 caratteri per cercare</Text>
+        )}
+        {searchText.length >= 3 && (
+          <Text style={styles.searchResult}>
+            {filteredOrders.length} {filteredOrders.length === 1 ? 'ordine trovato' : 'ordini trovati'} per "{searchText}"
+          </Text>
+        )}
+      </View>
+
       {/* Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{orders.length}</Text>
+          <Text style={styles.statNumber}>{filteredOrders.length}</Text>
           <Text style={styles.statLabel}>Totali</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>
-            {orders.filter(o => o.status === 'delivered').length}
+            {filteredOrders.filter(o => o.status === 'delivered').length}
           </Text>
           <Text style={styles.statLabel}>Consegnati</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>
-            {orders.filter(o => ['confirmed', 'processing', 'shipped'].includes(o.status)).length}
+            {filteredOrders.filter(o => ['confirmed', 'processing', 'shipped'].includes(o.status)).length}
           </Text>
           <Text style={styles.statLabel}>In Corso</Text>
         </View>
@@ -142,7 +202,7 @@ export default function OrdersScreen() {
 
       {/* Orders List */}
       <FlatList
-        data={orders}
+        data={filteredOrders}
         renderItem={renderOrder}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
@@ -169,6 +229,40 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1F2937',
+  },
+  searchHint: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  searchResult: {
+    fontSize: 12,
+    color: '#1E40AF',
+    fontWeight: '600',
+    marginTop: 4,
+    marginLeft: 4,
   },
   statsContainer: {
     flexDirection: 'row',

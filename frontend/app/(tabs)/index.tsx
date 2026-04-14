@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { fetchCustomers } from '../../lib/api/customers';
 import { fetchOrders } from '../../lib/api/orders';
 import { fetchVisits } from '../../lib/api/visits';
 import { supabase } from '../../lib/supabase';
+import { getDraftCount } from '../../lib/drafts';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -33,6 +35,7 @@ export default function Dashboard() {
     orderCount: 0,
     monthLabel: '',
   });
+  const [draftCount, setDraftCount] = useState(0);
 
   const loadStats = async () => {
     if (!user) return;
@@ -104,9 +107,18 @@ export default function Dashboard() {
     loadStats();
   }, [user]);
 
+  // Refresh draft count every time Dashboard gets focus
+  useFocusEffect(
+    useCallback(() => {
+      getDraftCount().then(setDraftCount);
+    }, [])
+  );
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadStats();
+    const dc = await getDraftCount();
+    setDraftCount(dc);
     setRefreshing(false);
   };
 
@@ -121,6 +133,7 @@ export default function Dashboard() {
       title: 'Bozze Ordine',
       icon: 'document-text-outline',
       color: '#F59E0B',
+      badge: draftCount,
       onPress: () => router.push('/drafts'),
     },
     {
@@ -210,8 +223,15 @@ export default function Dashboard() {
             style={styles.actionCard}
             onPress={action.onPress}
           >
-            <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
-              <Ionicons name={action.icon as any} size={24} color={action.color} />
+            <View style={{ position: 'relative' }}>
+              <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
+                <Ionicons name={action.icon as any} size={24} color={action.color} />
+              </View>
+              {(action as any).badge > 0 && (
+                <View style={styles.draftBadge}>
+                  <Text style={styles.draftBadgeText}>{(action as any).badge}</Text>
+                </View>
+              )}
             </View>
             <Text style={styles.actionTitle}>{action.title}</Text>
           </TouchableOpacity>
@@ -350,6 +370,26 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#1F2937',
     textAlign: 'center',
+  },
+  draftBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#DC2626',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    zIndex: 10,
+  },
+  draftBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   salesCard: {
     backgroundColor: '#FFFFFF',

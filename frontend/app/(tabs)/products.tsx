@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, RefreshControl, ActivityIndicator, Image, ScrollView,
+  TextInput, RefreshControl, ActivityIndicator, Image, ScrollView, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
@@ -57,6 +57,7 @@ export default function ProductsScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [innerLoading, setInnerLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Load root categories and stats
   const loadData = useCallback(async () => {
@@ -339,7 +340,7 @@ export default function ProductsScreen() {
     : products;
 
   const renderProductItem = ({ item }: { item: Product }) => (
-    <View style={styles.productCard}>
+    <TouchableOpacity style={styles.productCard} onPress={() => setSelectedProduct(item)} activeOpacity={0.7}>
       {item.image_url ? (
         <Image source={{ uri: item.image_url }} style={styles.productImage} resizeMode="contain" />
       ) : (
@@ -368,8 +369,118 @@ export default function ProductsScreen() {
           </View>
         ) : null}
       </View>
-    </View>
+    </TouchableOpacity>
   );
+
+  const renderProductDetailModal = () => {
+    if (!selectedProduct) return null;
+    const p = selectedProduct;
+    return (
+      <Modal visible={!!selectedProduct} animationType="slide" transparent onRequestClose={() => setSelectedProduct(null)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setSelectedProduct(null)}>
+          <View style={styles.modalContent}>
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle} numberOfLines={2}>{p.short_description || p.name}</Text>
+              <TouchableOpacity onPress={() => setSelectedProduct(null)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ paddingHorizontal: 16, paddingBottom: 20 }}>
+              {/* Image */}
+              {p.image_url ? (
+                <Image source={{ uri: p.image_url }} style={styles.modalImage} resizeMode="contain" />
+              ) : (
+                <View style={styles.modalImagePlaceholder}>
+                  <Ionicons name="cube-outline" size={48} color="#D1D5DB" />
+                  <Text style={{ color: '#9CA3AF', marginTop: 8 }}>Nessuna immagine</Text>
+                </View>
+              )}
+
+              {/* Data rows */}
+              <View style={styles.detailSection}>
+                <Text style={styles.detailSectionTitle}>Informazioni Prodotto</Text>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Nome completo</Text>
+                  <Text style={styles.detailValue}>{p.name}</Text>
+                </View>
+
+                {p.short_description && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Descrizione breve</Text>
+                    <Text style={styles.detailValue}>{p.short_description}</Text>
+                  </View>
+                )}
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>SKU</Text>
+                  <Text style={[styles.detailValue, { fontFamily: 'monospace' }]}>{p.sku}</Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Stato</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: p.is_active ? '#10B981' : '#EF4444' }} />
+                    <Text style={[styles.detailValue, { color: p.is_active ? '#10B981' : '#EF4444' }]}>{p.is_active ? 'Attivo' : 'Non attivo'}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.detailSection}>
+                <Text style={styles.detailSectionTitle}>Prezzi e Tasse</Text>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Prezzo unitario</Text>
+                  <Text style={[styles.detailValue, { fontSize: 18, fontWeight: '800', color: '#1E40AF' }]}>{formatPrice(p.unit_price)}</Text>
+                </View>
+
+                {p.accisa != null && p.accisa > 0 && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Accisa</Text>
+                    <Text style={styles.detailValue}>{formatPrice(p.accisa)}</Text>
+                  </View>
+                )}
+
+                {p.iva_percentage != null && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>IVA</Text>
+                    <Text style={styles.detailValue}>{p.iva_percentage}%</Text>
+                  </View>
+                )}
+
+                {p.unit_of_measure && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Unità di misura</Text>
+                    <Text style={styles.detailValue}>{p.unit_of_measure}</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.detailSection}>
+                <Text style={styles.detailSectionTitle}>Magazzino</Text>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Quantità in stock</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={[styles.detailValue, { fontWeight: '700', color: (p.stock_quantity || 0) > 0 ? '#059669' : '#DC2626' }]}>
+                      {p.stock_quantity ?? 0}
+                    </Text>
+                    {(p.stock_quantity || 0) <= 0 && (
+                      <Text style={{ fontSize: 11, color: '#DC2626', fontWeight: '600' }}>Esaurito</Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+
+              <View style={{ height: 30 }} />
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    );
+  };
 
   const renderProductView = () => (
     <View style={styles.innerContent}>
@@ -431,6 +542,7 @@ export default function ProductsScreen() {
       {viewLevel === 'categories' && renderCategoryView()}
       {viewLevel === 'subcategories' && renderSubCategoryView()}
       {viewLevel === 'products' && renderProductView()}
+      {renderProductDetailModal()}
     </View>
   );
 }
@@ -514,4 +626,17 @@ const styles = StyleSheet.create({
   // Empty
   emptyWrap: { alignItems: 'center', marginTop: 60 },
   emptyText: { fontSize: 14, color: '#9CA3AF', marginTop: 12 },
+
+  // Product Detail Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '85%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', flex: 1, marginRight: 12 },
+  modalImage: { width: '100%', height: 220, borderRadius: 12, marginTop: 12, backgroundColor: '#F9FAFB' },
+  modalImagePlaceholder: { width: '100%', height: 160, borderRadius: 12, marginTop: 12, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  detailSection: { marginTop: 16, backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14 },
+  detailSectionTitle: { fontSize: 13, fontWeight: '700', color: '#6B7280', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  detailLabel: { fontSize: 13, color: '#6B7280', flex: 1 },
+  detailValue: { fontSize: 14, fontWeight: '600', color: '#1F2937', textAlign: 'right', flex: 1 },
 });

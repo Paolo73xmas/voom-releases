@@ -791,8 +791,10 @@ export default function OrderCollectionV2() {
       } else if (isUsingCashBack) {
         notesParts.push(`[CashBack €${cashBackToUse.toFixed(2)} utilizzato]`);
       } else if (scontoBenvenuto && isFirstOrder) {
-        const discountAmt = cart.filter(c => c.product.rottamazione_no !== true).reduce((s, c) => s + c.unit_price * c.quantity, 0) * 0.25;
-        notesParts.push(`[Sconto Benvenuto 25% - €${discountAmt.toFixed(2)} su prodotti eligible]`);
+        const eligibleItems = cart.filter(c => c.product.rottamazione_no !== true);
+        const eligibleSubt = eligibleItems.reduce((s, c) => s + c.unit_price * c.quantity, 0);
+        const discountAmt = Math.round(eligibleSubt * 0.25 * 100) / 100;
+        notesParts.push(`[Sconto Benvenuto 25% applicato - Imponibile eligible: €${eligibleSubt.toFixed(2)} - Sconto: €${discountAmt.toFixed(2)}]`);
       }
       if (notes.trim()) notesParts.push(notes.trim());
       const finalNotes = notesParts.length > 0 ? notesParts.join('\n') : undefined;

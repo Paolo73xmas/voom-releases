@@ -110,7 +110,16 @@ L'utente si impegna a tenere indenne e manlevare il titolare da contestazioni, p
 I presenti termini sono regolati dalla legge italiana, salvo l'eventuale applicazione di norme inderogabili diverse. Per ogni controversia relativa all'interpretazione, validità, efficacia o esecuzione del presente documento è competente in via esclusiva il Foro di Milano, salvo diverso foro inderogabile previsto dalla legge.
 
 22. Clausole finali
-L'eventuale nullità o inefficacia di una o più clausole non comporta l'invalidità delle restanti disposizioni, che rimarranno pienamente efficaci. Il mancato esercizio di un diritto da parte del titolare non costituisce rinuncia. I titoli degli articoli hanno mera funzione espositiva e non incidono sull'interpretazione del documento.`;
+L'eventuale nullità o inefficacia di una o più clausole non comporta l'invalidità delle restanti disposizioni, che rimarranno pienamente efficaci. Il mancato esercizio di un diritto da parte del titolare non costituisce rinuncia. I titoli degli articoli hanno mera funzione espositiva e non incidono sull'interpretazione del documento.
+
+23. Monitoraggio della posizione GPS
+L'utente prende atto e acconsente espressamente che Jivea S.r.l., in qualità di titolare del trattamento, potrà raccogliere, registrare e trattare i dati di geolocalizzazione (posizione GPS) del dispositivo mobile dell'utente durante il periodo in cui l'applicazione è attiva (in primo piano) sul dispositivo stesso.
+Tale trattamento è finalizzato a:
+• ottimizzare l'organizzazione dell'attività commerciale e la gestione delle visite ai punti vendita;
+• verificare la corretta esecuzione delle attività sul territorio;
+• migliorare la qualità del servizio e la pianificazione operativa.
+I dati di geolocalizzazione saranno trattati nel rispetto della normativa vigente in materia di protezione dei dati personali (Regolamento UE 2016/679 – GDPR e D.Lgs. 196/2003 e ss.mm.ii.) e conservati per il periodo strettamente necessario al perseguimento delle finalità sopra indicate, salvo diversi obblighi di legge.
+L'utente potrà in qualsiasi momento revocare il consenso alla geolocalizzazione disattivando i permessi di localizzazione dalle impostazioni del proprio dispositivo; tale revoca non pregiudica la liceità del trattamento effettuato prima della revoca, ma potrebbe limitare alcune funzionalità dell'applicazione.`;
 
 export default function PrivacyTermsScreen() {
   const router = useRouter();

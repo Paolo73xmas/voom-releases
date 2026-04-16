@@ -1,7 +1,7 @@
 import { supabase } from '../supabase';
 import { Order } from '../../types';
 
-export async function fetchOrders(userId: string, userRole: string): Promise<Order[]> {
+export async function fetchOrders(userId: string, userRole: string, branchId?: string | null): Promise<Order[]> {
   try {
     let query = supabase
       .from('orders')
@@ -27,7 +27,10 @@ export async function fetchOrders(userId: string, userRole: string): Promise<Ord
       .order('order_date', { ascending: false })
       .limit(200);
 
-    if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
+    if (userRole === 'branch_admin' && branchId) {
+      // Branch admin: see orders from all agents in the branch
+      query = query.eq('branch_id', branchId);
+    } else if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
       query = query.eq('agent_id', userId);
     }
 

@@ -15,8 +15,8 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { fetchCustomers } from '../lib/api/customers';
 import { fetchProducts, fetchPaymentMethods, fetchShippingMethods } from '../lib/api/order-collection';
-import { createReservation, getAvailableStock } from '../lib/api/stock-reservation';
-import { subtractStockForOrder, verifyAndSetStockSubtracted } from '../lib/api/stock-management';
+import { createReservation, getAvailableStock, getBranchAvailableStock } from '../lib/api/stock-reservation';
+import { subtractStockForOrder, verifyAndSetStockSubtracted, subtractBranchStockForOrder, isBranchVirtual } from '../lib/api/stock-management';
 import { processCashBackUsage, processCashBackAccumulation } from '../lib/api/cashback';
 import { saveDraft, deleteDraft, getDrafts, generateDraftId, OrderDraft } from '../lib/drafts';
 import type { AvailableStockMap } from '../types/reservation';
@@ -344,11 +344,13 @@ export default function OrderCollectionV2() {
       setProducts(productsData);
       setShippingMethods(shippingsData);
 
-      // Reload available stock for new product set
+      // Reload available stock for new product set (branch-aware)
       if (productsData.length > 0) {
         try {
           const ids = productsData.map((p: Product) => p.id);
-          const stockMap = await getAvailableStock(ids);
+          const stockMap = user?.branchId
+            ? await getBranchAvailableStock(user.branchId, ids)
+            : await getAvailableStock(ids);
           setAvailableStockMap(stockMap);
         } catch (e) { /* fallback */ }
       }
@@ -392,13 +394,15 @@ export default function OrderCollectionV2() {
       setPaymentMethods(paymentsData || []);
       setShippingMethods(shippingsData || []);
 
-      // Load available stock
+      // Load available stock (branch-aware)
       if (productsData && productsData.length > 0) {
         try {
           const ids = productsData.map((p: Product) => p.id);
-          const stockMap = await getAvailableStock(ids);
+          const stockMap = user?.branchId
+            ? await getBranchAvailableStock(user.branchId, ids)
+            : await getAvailableStock(ids);
           setAvailableStockMap(stockMap);
-          console.log(`[V2] Stock loaded for ${stockMap.size} products`);
+          console.log(`[V2] Stock loaded for ${stockMap.size} products${user?.branchId ? ` (branch: ${user.branchId})` : ' (global)'}`);
         } catch (e) {
           console.log('[V2] Stock fallback:', e);
         }
@@ -820,6 +824,7 @@ export default function OrderCollectionV2() {
           order_number: orderNumber,
           customer_id: selectedCustomer.id,
           agent_id: user.id,
+          branch_id: user.branchId || null,
           order_date: new Date().toISOString(),
           status: 'draft',
           total_amount: finalTotalAmount,
@@ -876,7 +881,7 @@ export default function OrderCollectionV2() {
       let reservationWarnings: string[] = [];
       try {
         const resItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity }));
-        const resResult = await createReservation(order.id, resItems, user.id);
+        const resResult = await createReservation(order.id, resItems, user.id, user.branchId || undefined);
         if (resResult.warnings?.length) {
           reservationWarnings = resResult.warnings.map(w => {
             const p = cart.find(c => c.product.id === w.product_id)?.product;
@@ -885,12 +890,31 @@ export default function OrderCollectionV2() {
         }
       } catch (e) { console.log('[reservation] non-blocking:', e); }
 
-      // ── STOCK SUBTRACTION (non-blocking, matching web app) ──
+      // ── STOCK SUBTRACTION (non-blocking, matching web app — branch aware) ──
       try {
         const stockItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity }));
-        console.log('[STOCK-AUDIT] 📦 handleSubmitOrder — Stock subtraction starting');
-        await subtractStockForOrder(stockItems, user.id, order.id);
-        await verifyAndSetStockSubtracted(order.id, stockItems);
+        const orderBranchId = user.branchId || null;
+
+        if (orderBranchId) {
+          // Check if branch is virtual
+          const isVirtual = await isBranchVirtual(orderBranchId);
+          if (!isVirtual) {
+            // Non-virtual branch: subtract ONLY branch stock
+            console.log('[STOCK-AUDIT] 📦 Non-virtual branch → subtractBranchStockForOrder');
+            await subtractBranchStockForOrder(orderBranchId, stockItems, user.id);
+            await supabase.from('orders').update({ stock_subtracted: true }).eq('id', order.id);
+          } else {
+            // Virtual branch: subtract global stock (like HQ)
+            console.log('[STOCK-AUDIT] 📦 Virtual branch → subtractStockForOrder (global)');
+            await subtractStockForOrder(stockItems, user.id, order.id);
+            await verifyAndSetStockSubtracted(order.id, stockItems);
+          }
+        } else {
+          // HQ agent (no branch): subtract global stock
+          console.log('[STOCK-AUDIT] 📦 HQ agent → subtractStockForOrder (global)');
+          await subtractStockForOrder(stockItems, user.id, order.id);
+          await verifyAndSetStockSubtracted(order.id, stockItems);
+        }
       } catch (stockError) {
         console.error('[STOCK-AUDIT] ❌ Stock subtraction error (non-blocking):', stockError);
       }

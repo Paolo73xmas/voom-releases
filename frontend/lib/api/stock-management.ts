@@ -164,3 +164,65 @@ export async function verifyAndSetStockSubtracted(
     // Non-blocking — don't throw
   }
 }
+
+
+// ==================== BRANCH STOCK SUBTRACTION ====================
+
+/**
+ * Subtract stock from a specific branch (non-virtual branch flow).
+ * Uses the RPC `subtract_branch_stock_for_order`.
+ * NON-BLOCKING.
+ */
+export async function subtractBranchStockForOrder(
+  branchId: string,
+  items: Array<{ product_id: string; quantity: number }>,
+  userId: string
+): Promise<void> {
+  console.log('[STOCK-AUDIT] ════════════════════════════════════════════════════');
+  console.log('[STOCK-AUDIT] 📦 subtractBranchStockForOrder CALLED');
+  console.log('[STOCK-AUDIT] branchId:', branchId);
+  console.log('[STOCK-AUDIT] itemCount:', items.length);
+
+  if (items.length === 0) {
+    console.log('[STOCK-AUDIT] ⚠️ No items, returning');
+    return;
+  }
+
+  const { data, error } = await supabase.rpc('subtract_branch_stock_for_order', {
+    p_branch_id: branchId,
+    p_items: items.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
+    p_user_id: userId,
+  });
+
+  if (error) {
+    console.error('[STOCK-AUDIT] ❌ RPC subtract_branch_stock_for_order ERROR:', error.message);
+    return;
+  }
+
+  const result = data as { status: string; processed?: number; errors?: string[] } | null;
+  if (result?.status === 'ok') {
+    console.log(`[STOCK-AUDIT] ✅ Branch stock subtracted: ${result.processed} items`);
+  } else {
+    console.warn('[STOCK-AUDIT] ⚠️ Branch RPC result:', JSON.stringify(result));
+  }
+  console.log('[STOCK-AUDIT] ════════════════════════════════════════════════════');
+}
+
+// ==================== BRANCH VIRTUAL CHECK ====================
+
+/**
+ * Check if a branch is virtual.
+ */
+export async function isBranchVirtual(branchId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('branches')
+      .select('is_virtual')
+      .eq('id', branchId)
+      .single();
+    if (error || !data) return true; // Default to virtual (global stock) on error
+    return data.is_virtual === true;
+  } catch {
+    return true;
+  }
+}

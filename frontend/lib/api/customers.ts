@@ -1,7 +1,7 @@
 import { supabase } from '../supabase';
 import { Customer } from '../../types';
 
-export async function fetchCustomers(userId: string, userRole: string): Promise<Customer[]> {
+export async function fetchCustomers(userId: string, userRole: string, branchId?: string | null): Promise<Customer[]> {
   try {
     const allCustomers: Customer[] = [];
     const pageSize = 1000;
@@ -18,8 +18,18 @@ export async function fetchCustomers(userId: string, userRole: string): Promise<
         .order('business_name', { ascending: true })
         .range(from, to);
 
-      // Role-based filtering - agents see only their customers
-      if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
+      // Role-based filtering
+      if (userRole === 'branch_admin' && branchId) {
+        // Branch admin: see customers of all agents in the branch
+        const { data: branchAgents } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('branch_id', branchId);
+        if (branchAgents && branchAgents.length > 0) {
+          const agentIds = branchAgents.map(a => a.id);
+          query = query.in('agent_id', agentIds);
+        }
+      } else if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
         query = query.eq('agent_id', userId);
       }
 
@@ -67,7 +77,8 @@ export async function fetchCustomerById(id: string): Promise<Customer | null> {
 export async function searchCustomers(
   userId: string,
   userRole: string,
-  searchTerm: string
+  searchTerm: string,
+  branchId?: string | null
 ): Promise<Customer[]> {
   try {
     let query = supabase
@@ -76,7 +87,15 @@ export async function searchCustomers(
       .order('business_name', { ascending: true })
       .limit(50);
 
-    if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
+    if (userRole === 'branch_admin' && branchId) {
+      const { data: branchAgents } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('branch_id', branchId);
+      if (branchAgents && branchAgents.length > 0) {
+        query = query.in('agent_id', branchAgents.map(a => a.id));
+      }
+    } else if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
       query = query.eq('agent_id', userId);
     }
 

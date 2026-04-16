@@ -28,7 +28,7 @@ export default function OrdersScreen() {
   const loadOrders = async () => {
     if (!user) return;
     try {
-      const data = await fetchOrders(user.id, user.role);
+      const data = await fetchOrders(user.id, user.role, user.branchId);
       setOrders(data);
     } catch (error) {
       console.error('Error loading orders:', error);

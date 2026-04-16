@@ -36,6 +36,7 @@ export default function Dashboard() {
     monthLabel: '',
   });
   const [draftCount, setDraftCount] = useState(0);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
 
   const loadStats = async () => {
     if (!user) return;
@@ -107,18 +108,49 @@ export default function Dashboard() {
     loadStats();
   }, [user]);
 
-  // Refresh draft count every time Dashboard gets focus
+  // Refresh draft count + upcoming appointments every time Dashboard gets focus
   useFocusEffect(
     useCallback(() => {
       getDraftCount().then(setDraftCount);
+      loadUpcomingAppointments();
     }, [])
   );
+
+  const loadUpcomingAppointments = async () => {
+    if (!user) return;
+    try {
+      const now = new Date().toISOString();
+      const sevenDaysLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      let query = supabase
+        .from('appointments')
+        .select('id, title, start_time, end_time, customer_id, notes, status, customers:customer_id (business_name, city)')
+        .gte('start_time', now)
+        .lte('start_time', sevenDaysLater)
+        .neq('status', 'cancelled')
+        .order('start_time', { ascending: true })
+        .limit(5);
+
+      // Agent sees only their appointments
+      if (user.role !== 'admin' && user.role !== 'supervisor' && user.role !== 'admincustom') {
+        query = query.eq('created_by_id', user.id);
+      }
+
+      const { data, error } = await query;
+      if (!error && data) {
+        setUpcomingAppointments(data);
+      }
+    } catch (e) {
+      console.error('[Dashboard] Error loading appointments:', e);
+    }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadStats();
     const dc = await getDraftCount();
     setDraftCount(dc);
+    await loadUpcomingAppointments();
     setRefreshing(false);
   };
 
@@ -237,6 +269,49 @@ export default function Dashboard() {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Prossimi Appuntamenti */}
+      <Text style={styles.sectionTitle}>Prossimi Appuntamenti</Text>
+      {upcomingAppointments.length > 0 ? (
+        <View style={{ marginBottom: 16 }}>
+          {upcomingAppointments.map((apt) => {
+            const startDate = new Date(apt.start_time);
+            const dayStr = startDate.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' });
+            const timeStr = startDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            const customerName = (apt.customers as any)?.business_name || 'Cliente';
+            const customerCity = (apt.customers as any)?.city || '';
+            const isToday = startDate.toDateString() === new Date().toDateString();
+            const isTomorrow = startDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+
+            return (
+              <TouchableOpacity
+                key={apt.id}
+                style={styles.appointmentCard}
+                onPress={() => router.push('/(tabs)/calendar')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.appointmentDateBadge, isToday && { backgroundColor: '#DC2626' }, isTomorrow && { backgroundColor: '#F59E0B' }]}>
+                  <Text style={styles.appointmentDateText}>{isToday ? 'OGGI' : isTomorrow ? 'DOMANI' : dayStr.toUpperCase()}</Text>
+                  <Text style={styles.appointmentTimeText}>{timeStr}</Text>
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.appointmentTitle} numberOfLines={1}>{apt.title || customerName}</Text>
+                  <Text style={styles.appointmentSub} numberOfLines={1}>
+                    {customerName}{customerCity ? ` · ${customerCity}` : ''}
+                  </Text>
+                  {apt.notes ? <Text style={styles.appointmentNotes} numberOfLines={1}>{apt.notes}</Text> : null}
+                </View>
+                <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={styles.emptyAppointments}>
+          <Ionicons name="calendar-outline" size={28} color="#D1D5DB" />
+          <Text style={styles.emptyAppointmentsText}>Nessun appuntamento nei prossimi 7 giorni</Text>
+        </View>
+      )}
 
       {/* Venduto del Mese Corrente */}
       <Text style={styles.sectionTitle}>
@@ -390,6 +465,68 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     color: '#FFFFFF',
+  },
+  appointmentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  appointmentDateBadge: {
+    backgroundColor: '#1E40AF',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignItems: 'center',
+    minWidth: 56,
+  },
+  appointmentDateText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  appointmentTimeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginTop: 2,
+  },
+  appointmentTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  appointmentSub: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  appointmentNotes: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  emptyAppointments: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  emptyAppointmentsText: {
+    fontSize: 13,
+    color: '#9CA3AF',
   },
   salesCard: {
     backgroundColor: '#FFFFFF',

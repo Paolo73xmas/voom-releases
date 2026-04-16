@@ -53,6 +53,7 @@ export default function RivenditeNoMappaScreen() {
     fiscalCode: '',
     pec: '',
     sdi: '',
+    numOrdinale: '',
     customerType: 'retail' as 'retail' | 'horeca' | 'industry' | 'other',
     notes: '',
   });
@@ -256,6 +257,7 @@ export default function RivenditeNoMappaScreen() {
         stato_visita: 'visitato',
         agente_id: user.id,
         customer_id: customer.id,
+        ...(form.numOrdinale.trim() ? { 'Num_Ordinale': parseInt(form.numOrdinale) } : {}),
       }).select().single();
 
       if (tabErr) {
@@ -373,6 +375,10 @@ export default function RivenditeNoMappaScreen() {
         <Text style={styles.inputLabel}>Ragione Sociale *</Text>
         <TextInput style={styles.input} value={form.businessName} onChangeText={v => updateForm('businessName', v)}
           placeholder="Ragione Sociale" placeholderTextColor="#9CA3AF" autoCapitalize="words" />
+
+        <Text style={styles.inputLabel}>N. Ordinale</Text>
+        <TextInput style={styles.input} value={form.numOrdinale} onChangeText={v => updateForm('numOrdinale', v)}
+          placeholder="Numero Ordinale (opzionale)" placeholderTextColor="#9CA3AF" keyboardType="numeric" />
 
         <Text style={styles.inputLabel}>P.IVA * (11 cifre)</Text>
         <TextInput style={styles.input} value={form.vatNumber} onChangeText={v => updateForm('vatNumber', v)}
@@ -522,6 +528,7 @@ export default function RivenditeNoMappaScreen() {
         <Text style={styles.sectionTitle}>Riepilogo</Text>
         <View style={styles.summaryCard}>
           <SummaryRow label="Ragione Sociale" value={form.businessName} />
+          {form.numOrdinale.trim() ? <SummaryRow label="N. Ordinale" value={form.numOrdinale} /> : null}
           <SummaryRow label="Indirizzo" value={`${form.address}, ${form.city} (${form.province})`} />
           <SummaryRow label="P.IVA" value={form.vatNumber} />
           <SummaryRow label="Contatto" value={`${form.contactName} ${form.contactSurname}`.trim() || '-'} />

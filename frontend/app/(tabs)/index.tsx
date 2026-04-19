@@ -169,6 +169,12 @@ export default function Dashboard() {
       onPress: () => router.push('/drafts'),
     },
     {
+      title: 'Sostituzioni',
+      icon: 'swap-horizontal-outline',
+      color: '#8B5CF6',
+      onPress: () => router.push('/substitutions'),
+    },
+    {
       title: 'Nuova Ispezione',
       icon: 'camera',
       color: '#8B5CF6',

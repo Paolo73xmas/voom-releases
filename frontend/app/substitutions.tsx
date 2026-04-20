@@ -351,6 +351,24 @@ export default function SubstitutionsScreen() {
             ))}
           </View>
 
+          {/* Value badges — visible from step 1 */}
+          {createStep >= 1 && (() => {
+            const totalRetire = items.reduce((sum, it) => sum + getProductPrice(it.original_product_id) * (it.original_quantity || 1), 0);
+            const totalSend = items.reduce((sum, it) => sum + getProductPrice(it.replacement_product_id) * (it.replacement_quantity || 1), 0);
+            return (
+              <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#FEE2E2', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10 }}>
+                  <Ionicons name="arrow-up-circle" size={16} color="#DC2626" />
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>Ritiro: {formatCurrency(totalRetire)}</Text>
+                </View>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#D1FAE5', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10 }}>
+                  <Ionicons name="arrow-down-circle" size={16} color="#059669" />
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#065F46' }}>Invio: {formatCurrency(totalSend)}</Text>
+                </View>
+              </View>
+            );
+          })()}
+
           <ScrollView style={{ flex: 1, padding: 16 }} keyboardShouldPersistTaps="handled">
             {/* Step 0: Cliente */}
             {createStep === 0 && (

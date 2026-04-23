@@ -79,6 +79,7 @@ interface PackageData {
   id: string; name: string; is_active: boolean;
   items: Array<{
     id: string; product_id: string; quantity: number;
+    unit_price?: number | null;
     products: Product | null;
   }>;
 }
@@ -451,7 +452,7 @@ export default function OrderCollectionV2() {
     try {
       const { data } = await supabase
         .from('packages')
-        .select('id, name, is_active, package_items(id, product_id, quantity, products(id, name, short_description, sku, unit_price, supplier_id, unit_of_measure, accisa, iva_percentage, image_url, is_active, cashback_eligible, estero, rottamazione_no, stock_quantity))')
+        .select('id, name, is_active, package_items(id, product_id, quantity, unit_price, products(id, name, short_description, sku, unit_price, supplier_id, unit_of_measure, accisa, iva_percentage, image_url, is_active, cashback_eligible, estero, rottamazione_no, stock_quantity))')
         .eq('is_active', true)
         .order('name');
       setPackages((data || []).map((p: any) => ({ ...p, items: p.package_items || [] })));
@@ -679,16 +680,18 @@ export default function OrderCollectionV2() {
       return;
     }
 
-    // Apply package items to cart
+    // Apply package items to cart — use package item price (unit_price) if available, otherwise product price
     const newCart = [...cart];
     for (const item of pkg.items) {
       const p = item.products;
       if (!p) continue;
+      // Package item unit_price overrides product unit_price (e.g., 0 for gifts/omaggi)
+      const itemPrice = (item.unit_price != null) ? item.unit_price : p.unit_price;
       const existingIdx = newCart.findIndex(c => c.product.id === (p.id || item.product_id));
       if (existingIdx >= 0) {
-        newCart[existingIdx] = { ...newCart[existingIdx], quantity: newCart[existingIdx].quantity + item.quantity };
+        newCart[existingIdx] = { ...newCart[existingIdx], quantity: newCart[existingIdx].quantity + item.quantity, unit_price: itemPrice };
       } else {
-        newCart.push({ product: { ...p, id: p.id || item.product_id }, quantity: item.quantity, unit_price: p.unit_price });
+        newCart.push({ product: { ...p, id: p.id || item.product_id }, quantity: item.quantity, unit_price: itemPrice });
       }
     }
     setCart(newCart);

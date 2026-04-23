@@ -59,14 +59,6 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
-          name="order-collection" 
-          options={{ 
-            title: 'Raccolta Ordine',
-            headerBackTitle: 'Indietro',
-            presentation: 'card',
-          }} 
-        />
-        <Stack.Screen 
           name="anagrafica" 
           options={{ 
             headerShown: false,

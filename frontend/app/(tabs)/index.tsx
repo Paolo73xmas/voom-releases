@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
@@ -19,7 +20,7 @@ import { getDraftCount } from '../../lib/drafts';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, profile } = useAuthStore();
+  const { user, profile, logout } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     customers: 0,
@@ -211,8 +212,22 @@ export default function Dashboard() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>{getGreeting()}, {profile?.full_name || 'Utente'}!</Text>
-        <Text style={styles.subtitle}>Ecco il tuo riepilogo giornaliero</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>{getGreeting()}, {profile?.full_name || 'Utente'}!</Text>
+            <Text style={styles.subtitle}>Ecco il tuo riepilogo giornaliero</Text>
+          </View>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(239,68,68,0.15)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}
+            onPress={() => Alert.alert('Logout', 'Sei sicuro di voler uscire?', [
+              { text: 'Annulla', style: 'cancel' },
+              { text: 'Esci', style: 'destructive', onPress: async () => { await logout(); router.replace('/login'); } },
+            ])}
+          >
+            <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#EF4444' }}>Esci</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Stats Cards */}

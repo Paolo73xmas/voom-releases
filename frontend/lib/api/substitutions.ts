@@ -1,19 +1,20 @@
 /**
- * Substitutions API — Mobile
- * Mirrors the web app's substitutions.ts
+ * Substitutions API — Mobile (aligned with web app v2)
+ * Supports separate retrieve/send product lists with nullable product_ids
  */
 import { supabase } from '../supabase';
 
 export interface SubstitutionItem {
   id: string;
-  original_product_id: string;
-  replacement_product_id: string;
+  substitution_id: string;
+  original_product_id: string | null;
+  replacement_product_id: string | null;
   quantity: number;
-  original_quantity: number;
-  replacement_quantity: number;
+  original_quantity: number | null;
+  replacement_quantity: number | null;
   notes: string | null;
-  original_product?: { id: string; name: string; sku: string | null; short_description?: string; unit_price?: number | null };
-  replacement_product?: { id: string; name: string; sku: string | null; short_description?: string; unit_price?: number | null };
+  original_product?: { id: string; name: string; sku: string | null; short_description?: string; unit_price?: number | null; stock_quantity?: number | null };
+  replacement_product?: { id: string; name: string; sku: string | null; short_description?: string; unit_price?: number | null; stock_quantity?: number | null };
 }
 
 export interface SubstitutionWithDetails {
@@ -31,20 +32,22 @@ export interface SubstitutionWithDetails {
   is_returned: boolean;
   is_rejected: boolean;
   is_modified: boolean;
+  sent_at: string | null;
+  returned_at: string | null;
   created_at: string;
   customers?: { business_name: string; city?: string; province?: string };
   profiles?: { full_name: string };
   substitution_items?: SubstitutionItem[];
 }
 
-export async function fetchSubstitutions(agentId: string): Promise<SubstitutionWithDetails[]> {
-  const { data, error } = await supabase
+export async function fetchSubstitutions(agentId: string, statusFilter?: string): Promise<SubstitutionWithDetails[]> {
+  let query = supabase
     .from('substitutions')
     .select(`
       *,
       customers (business_name, city, province),
       substitution_items (
-        id, original_product_id, replacement_product_id,
+        id, substitution_id, original_product_id, replacement_product_id,
         quantity, original_quantity, replacement_quantity, notes
       )
     `)
@@ -52,15 +55,19 @@ export async function fetchSubstitutions(agentId: string): Promise<SubstitutionW
     .order('created_at', { ascending: false })
     .limit(100);
 
+  if (statusFilter && statusFilter !== 'all') {
+    query = query.eq('status', statusFilter);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   if (!data || data.length === 0) return [];
 
-  // Fetch product details
   const productIds = new Set<string>();
   for (const sub of data) {
     for (const item of (sub.substitution_items || [])) {
-      productIds.add(item.original_product_id);
-      productIds.add(item.replacement_product_id);
+      if (item.original_product_id) productIds.add(item.original_product_id);
+      if (item.replacement_product_id) productIds.add(item.replacement_product_id);
     }
   }
 
@@ -68,30 +75,36 @@ export async function fetchSubstitutions(agentId: string): Promise<SubstitutionW
   if (productIds.size > 0) {
     const { data: products } = await supabase
       .from('products')
-      .select('id, name, sku, short_description, unit_price')
+      .select('id, name, sku, short_description, unit_price, stock_quantity')
       .in('id', Array.from(productIds));
     productMap = new Map((products || []).map(p => [p.id, p]));
   }
 
-  // Attach products to items
   for (const sub of data) {
     for (const item of (sub.substitution_items || [])) {
-      (item as SubstitutionItem).original_product = productMap.get(item.original_product_id);
-      (item as SubstitutionItem).replacement_product = productMap.get(item.replacement_product_id);
+      (item as SubstitutionItem).original_product = item.original_product_id ? productMap.get(item.original_product_id) : undefined;
+      (item as SubstitutionItem).replacement_product = item.replacement_product_id ? productMap.get(item.replacement_product_id) : undefined;
     }
   }
 
   return data as SubstitutionWithDetails[];
 }
 
-export async function createSubstitution(input: {
+export interface CreateSubstitutionInput {
   customer_id: string;
   agent_id: string;
   reason: string;
   notes?: string;
-  items: { original_product_id: string; replacement_product_id: string; original_quantity: number; replacement_quantity: number; notes?: string }[];
-}): Promise<void> {
-  // Generate number
+  items: {
+    original_product_id: string | null;
+    replacement_product_id: string | null;
+    quantity: number;
+    original_quantity: number | null;
+    replacement_quantity: number | null;
+  }[];
+}
+
+export async function createSubstitution(input: CreateSubstitutionInput): Promise<void> {
   const year = new Date().getFullYear();
   const { count } = await supabase.from('substitutions').select('id', { count: 'exact', head: true });
   const num = (count || 0) + 1;
@@ -106,11 +119,7 @@ export async function createSubstitution(input: {
       reason: input.reason,
       notes: input.notes || null,
       status: 'pending',
-      is_approved: false,
-      is_sent: false,
-      is_returned: false,
-      is_rejected: false,
-      is_modified: false,
+      is_approved: false, is_sent: false, is_returned: false, is_rejected: false, is_modified: false,
     })
     .select('id')
     .single();
@@ -119,12 +128,12 @@ export async function createSubstitution(input: {
 
   const itemsToInsert = input.items.map(i => ({
     substitution_id: sub.id,
-    original_product_id: i.original_product_id,
-    replacement_product_id: i.replacement_product_id,
-    quantity: i.original_quantity,
-    original_quantity: i.original_quantity,
-    replacement_quantity: i.replacement_quantity,
-    notes: i.notes || null,
+    original_product_id: i.original_product_id || null,
+    replacement_product_id: i.replacement_product_id || null,
+    quantity: i.quantity || 0,
+    original_quantity: i.original_product_id ? (i.original_quantity || 1) : null,
+    replacement_quantity: i.replacement_product_id ? (i.replacement_quantity || 1) : null,
+    notes: null,
   }));
 
   const { error: itemErr } = await supabase.from('substitution_items').insert(itemsToInsert);

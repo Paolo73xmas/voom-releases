@@ -26,7 +26,7 @@ export default function CustomersScreen() {
   const loadCustomers = async () => {
     if (!user) return;
     try {
-      const data = await fetchCustomers(user.id, user.role);
+      const data = await fetchCustomers(user.id, user.role, user.branchId);
       setCustomers(data);
     } catch (error) {
       console.error('Error loading customers:', error);

@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Linking,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,6 +42,7 @@ export default function ProfileScreen() {
       supervisor: 'Supervisore',
       agent: 'Agente',
       agentcustom: 'Agente Personalizzato',
+      branch_admin: 'Admin Filiale',
       warehouse: 'Magazzino',
       supplier: 'Fornitore',
     };
@@ -66,7 +69,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         <View style={styles.card}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Modifica Profilo', 'Per modificare il profilo contatta l\'amministratore')}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="person-outline" size={20} color="#3B82F6" />
             </View>
@@ -74,7 +77,7 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Notifiche', 'Le notifiche push saranno disponibili nella prossima versione')}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="notifications-outline" size={20} color="#F59E0B" />
             </View>
@@ -82,7 +85,7 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Cambia Password', 'Per cambiare la password contatta l\'amministratore o usa la funzione "Password dimenticata" dal login')}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="lock-closed-outline" size={20} color="#10B981" />
             </View>
@@ -96,7 +99,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Supporto</Text>
         <View style={styles.card}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('mailto:supporto@voomweb.it?subject=Assistenza App VOOM')}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="help-circle-outline" size={20} color="#8B5CF6" />
             </View>
@@ -112,7 +115,7 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('VOOM Sales', `Versione: 1.0.0\nPiattaforma: ${Platform.OS}\n\nSviluppato da Jivea S.r.l.\n© ${new Date().getFullYear()} Tutti i diritti riservati`)}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="information-circle-outline" size={20} color="#6B7280" />
             </View>

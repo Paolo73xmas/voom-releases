@@ -154,6 +154,13 @@ export default function Dashboard() {
     setRefreshing(false);
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buongiorno';
+    if (hour < 18) return 'Buon pomeriggio';
+    return 'Buonasera';
+  };
+
   const quickActions = [
     {
       title: 'Raccolta Ordine',
@@ -177,32 +184,20 @@ export default function Dashboard() {
     {
       title: 'Nuova Ispezione',
       icon: 'camera',
-      color: '#8B5CF6',
+      color: '#0EA5E9',
       onPress: () => router.push('/inspection/new'),
     },
     {
       title: 'Anagrafica',
       icon: 'document-text',
-      color: '#F59E0B',
+      color: '#DC2626',
       onPress: () => router.push('/anagrafica'),
     },
     {
       title: 'Rivendite No Mappa',
       icon: 'globe',
-      color: '#EF4444',
+      color: '#6366F1',
       onPress: () => router.push('/rivendite-no-mappa'),
-    },
-    {
-      title: 'Vedi Mappa',
-      icon: 'map',
-      color: '#3B82F6',
-      onPress: () => router.push('/(tabs)/map'),
-    },
-    {
-      title: 'Profilo',
-      icon: 'person-circle',
-      color: '#6B7280',
-      onPress: () => router.push('/(tabs)/profile'),
     },
   ];
 
@@ -216,7 +211,7 @@ export default function Dashboard() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>Ciao, {profile?.full_name || 'Utente'}!</Text>
+        <Text style={styles.greeting}>{getGreeting()}, {profile?.full_name || 'Utente'}!</Text>
         <Text style={styles.subtitle}>Ecco il tuo riepilogo giornaliero</Text>
       </View>
 

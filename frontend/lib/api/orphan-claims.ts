@@ -111,15 +111,70 @@ export async function getOrphanConfig(): Promise<{ orphan_a_days: number; orphan
 
 export async function fetchOrphanMap(): Promise<Map<string, 'orphan_a' | 'orphan_b'>> {
   const map = new Map<string, 'orphan_a' | 'orphan_b'>();
+  
+  // Try RPC first
   try {
     const { data, error } = await supabase.rpc('get_orphan_tabaccherie');
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       for (const row of data) {
         map.set(row.tabaccheria_id, row.orphan_type);
       }
+      console.log(`[orphan-map] RPC returned ${map.size} orphans`);
+      return map;
     }
   } catch (e) {
-    console.warn('[orphan-map] RPC not available, falling back');
+    console.warn('[orphan-map] RPC not available, using fallback');
   }
+
+  // Fallback: client-side calculation
+  try {
+    const config = await getOrphanConfig();
+    const now = new Date();
+    const orphanADate = new Date(now.getTime() - config.orphan_a_days * 24 * 60 * 60 * 1000).toISOString();
+
+    // Get all tabaccherie with customer_id
+    const { data: tabs } = await supabase
+      .from('tabaccherie')
+      .select('id, customer_id')
+      .not('customer_id', 'is', null);
+
+    if (!tabs || tabs.length === 0) return map;
+
+    const customerIds = [...new Set(tabs.filter(t => t.customer_id).map(t => t.customer_id!))];
+    if (customerIds.length === 0) return map;
+
+    // Get last order date for each customer (batch)
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('customer_id, order_date')
+      .in('customer_id', customerIds)
+      .order('order_date', { ascending: false });
+
+    // Build map of customer_id -> last_order_date
+    const lastOrderMap = new Map<string, string>();
+    for (const order of (orders || [])) {
+      if (!lastOrderMap.has(order.customer_id)) {
+        lastOrderMap.set(order.customer_id, order.order_date);
+      }
+    }
+
+    // Classify each tabaccheria
+    for (const tab of tabs) {
+      if (!tab.customer_id) continue;
+      const lastOrder = lastOrderMap.get(tab.customer_id);
+      if (!lastOrder) {
+        // Never ordered → orphan_b
+        map.set(tab.id, 'orphan_b');
+      } else if (lastOrder < orphanADate) {
+        // No recent orders → orphan_a
+        map.set(tab.id, 'orphan_a');
+      }
+    }
+
+    console.log(`[orphan-map] Fallback calculated ${map.size} orphans (A_days=${config.orphan_a_days})`);
+  } catch (e) {
+    console.error('[orphan-map] Fallback error:', e);
+  }
+
   return map;
 }

@@ -107,6 +107,23 @@ export default function MapScreen() {
     })();
   }, []);
 
+  // Load orphan map independently (always, regardless of bounds/filter)
+  useEffect(() => {
+    if (!user) return;
+    fetchOrphanMap().then(oMap => {
+      console.log(`[Map] Orphan map loaded: ${oMap.size} orphans`);
+      setOrphanMap(oMap);
+    });
+  }, [user]);
+
+  // Re-render markers when orphanMap changes
+  useEffect(() => {
+    if (orphanMap.size > 0 && tabaccherie.length > 0) {
+      updateLeafletMarkers(tabaccherie);
+      sendMarkersToWebView(tabaccherie);
+    }
+  }, [orphanMap]);
+
   // Load data when filter changes
   useEffect(() => {
     if (!userLocation) return;
@@ -267,7 +284,7 @@ export default function MapScreen() {
     leafletClusterRef.current.clearLayers();
     leafletMarkersRef.current = [];
 
-    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d' };
+    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', gold: '#D97706' };
 
     tabaccherie.forEach(t => {
       if (!t.latitude || !t.longitude) return;
@@ -320,7 +337,7 @@ export default function MapScreen() {
     leafletClusterRef.current.clearLayers();
     leafletMarkersRef.current = [];
 
-    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d' };
+    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', gold: '#D97706' };
 
     data.forEach(t => {
       if (!t.latitude || !t.longitude) return;

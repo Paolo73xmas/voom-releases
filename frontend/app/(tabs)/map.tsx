@@ -46,6 +46,7 @@ export default function MapScreen() {
   const [tabaccherie, setTabaccherie] = useState<Tabaccheria[]>([]);
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [orphanMap, setOrphanMap] = useState<Map<string, string>>(new Map());
+  const orphanMapRef = useRef<Map<string, string>>(new Map());
 
   // Selected marker
   const [selectedTab, setSelectedTab] = useState<Tabaccheria | null>(null);
@@ -113,12 +114,14 @@ export default function MapScreen() {
     fetchOrphanMap().then(oMap => {
       console.log(`[Map] Orphan map loaded: ${oMap.size} orphans`);
       setOrphanMap(oMap);
+      orphanMapRef.current = oMap;
     });
   }, [user]);
 
   // Re-render markers when orphanMap changes
   useEffect(() => {
     if (orphanMap.size > 0 && tabaccherie.length > 0) {
+      orphanMapRef.current = orphanMap;
       updateLeafletMarkers(tabaccherie);
       sendMarkersToWebView(tabaccherie);
     }
@@ -288,7 +291,7 @@ export default function MapScreen() {
 
     tabaccherie.forEach(t => {
       if (!t.latitude || !t.longitude) return;
-      const color = getMarkerColor(t, user?.id, userRole, orphanMap);
+      const color = getMarkerColor(t, user?.id, userRole, orphanMapRef.current);
       const opacity = color === 'gray' ? '0.6' : '1';
       const icon = L.divIcon({
         className: 'custom-marker',
@@ -341,7 +344,7 @@ export default function MapScreen() {
 
     data.forEach(t => {
       if (!t.latitude || !t.longitude) return;
-      const color = getMarkerColor(t, user?.id, userRole, orphanMap);
+      const color = getMarkerColor(t, user?.id, userRole, orphanMapRef.current);
       const opacity = color === 'gray' ? '0.6' : '1';
       const icon = L.divIcon({
         className: 'custom-marker',
@@ -377,7 +380,7 @@ export default function MapScreen() {
       id: t.id,
       lat: t.latitude,
       lng: t.longitude,
-      color: getMarkerColor(t, user?.id, userRole, orphanMap),
+      color: getMarkerColor(t, user?.id, userRole, orphanMapRef.current),
     }));
     sendToMap({ type: 'updateMarkers', data: markers });
   }, [user?.id, userRole, sendToMap]);
@@ -538,7 +541,7 @@ export default function MapScreen() {
     );
   }
 
-  const selectedColor = selectedTab ? getMarkerColor(selectedTab, user?.id, userRole, orphanMap) : 'red';
+  const selectedColor = selectedTab ? getMarkerColor(selectedTab, user?.id, userRole, orphanMapRef.current) : 'red';
   const isOwnedByOther = selectedColor === 'gray';
 
   return (
@@ -654,6 +657,8 @@ export default function MapScreen() {
             { color: '#DC2626', label: 'Non visitato' },
             { color: '#F97316', label: 'Visitato' },
             { color: '#15803D', label: 'Ordinato' },
+            { color: '#7C3AED', label: 'Orfano A (no ordini recenti)' },
+            { color: '#D97706', label: 'Orfano B (mai ordinato)' },
             { color: '#475569', label: 'Altro agente' },
           ].map((item, i) => (
             <View key={i} style={styles.legendItem}>

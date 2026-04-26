@@ -26,6 +26,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { Tabaccheria } from '../../types';
 import { getMarkerColor, getDisplayName, getStatusLabel, getStatusEmoji } from '../../components/map/utils';
+import { fetchOrphanMap, claimOrphanCustomer } from '../../lib/api/orphan-claims';
 import { LEAFLET_HTML } from '../../components/map/leafletHtml';
 import { styles } from '../../components/map/styles';
 
@@ -44,6 +45,7 @@ export default function MapScreen() {
   const [loadingPoints, setLoadingPoints] = useState(false);
   const [tabaccherie, setTabaccherie] = useState<Tabaccheria[]>([]);
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [orphanMap, setOrphanMap] = useState<Map<string, string>>(new Map());
 
   // Selected marker
   const [selectedTab, setSelectedTab] = useState<Tabaccheria | null>(null);
@@ -269,7 +271,7 @@ export default function MapScreen() {
 
     tabaccherie.forEach(t => {
       if (!t.latitude || !t.longitude) return;
-      const color = getMarkerColor(t, user?.id, userRole);
+      const color = getMarkerColor(t, user?.id, userRole, orphanMap);
       const opacity = color === 'gray' ? '0.6' : '1';
       const icon = L.divIcon({
         className: 'custom-marker',
@@ -322,7 +324,7 @@ export default function MapScreen() {
 
     data.forEach(t => {
       if (!t.latitude || !t.longitude) return;
-      const color = getMarkerColor(t, user?.id, userRole);
+      const color = getMarkerColor(t, user?.id, userRole, orphanMap);
       const opacity = color === 'gray' ? '0.6' : '1';
       const icon = L.divIcon({
         className: 'custom-marker',
@@ -358,7 +360,7 @@ export default function MapScreen() {
       id: t.id,
       lat: t.latitude,
       lng: t.longitude,
-      color: getMarkerColor(t, user?.id, userRole),
+      color: getMarkerColor(t, user?.id, userRole, orphanMap),
     }));
     sendToMap({ type: 'updateMarkers', data: markers });
   }, [user?.id, userRole, sendToMap]);
@@ -387,8 +389,12 @@ export default function MapScreen() {
     }
     try {
       setLoadingPoints(true);
-      const data = await fetchAllTabaccherie(user?.id, 'agent', filterMode);
+      const [data, oMap] = await Promise.all([
+        fetchAllTabaccherie(user?.id, 'agent', filterMode),
+        fetchOrphanMap(),
+      ]);
       setTabaccherie(data);
+      setOrphanMap(oMap);
       updateLeafletMarkers(data);
       sendMarkersToWebView(data);
     } catch (e) {
@@ -515,7 +521,7 @@ export default function MapScreen() {
     );
   }
 
-  const selectedColor = selectedTab ? getMarkerColor(selectedTab, user?.id, userRole) : 'red';
+  const selectedColor = selectedTab ? getMarkerColor(selectedTab, user?.id, userRole, orphanMap) : 'red';
   const isOwnedByOther = selectedColor === 'gray';
 
   return (
@@ -798,10 +804,59 @@ export default function MapScreen() {
               )}
 
               {/* Gray: info message */}
-              {isOwnedByOther && (
+              {isOwnedByOther && selectedColor !== 'purple' && selectedColor !== 'gold' && (
                 <View style={styles.grayInfoBox}>
                   <Ionicons name="information-circle" size={18} color="#9CA3AF" />
                   <Text style={styles.grayInfoText}>Cliente di altro agente</Text>
+                </View>
+              )}
+
+              {/* Orphan: Reclama button */}
+              {(selectedColor === 'purple' || selectedColor === 'gold') && selectedTab.agente_id !== user?.id && (
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
+                  onPress={async () => {
+                    if (!user || !selectedTab.customer_id) {
+                      Alert.alert('Errore', 'Questo punto vendita non ha un cliente associato');
+                      return;
+                    }
+                    Alert.alert(
+                      'Reclama Cliente',
+                      `Vuoi reclamare "${getDisplayName(selectedTab)}" come tuo cliente?\n\nLa richiesta verrà inviata all'amministratore per approvazione.`,
+                      [
+                        { text: 'Annulla', style: 'cancel' },
+                        {
+                          text: 'Reclama',
+                          onPress: async () => {
+                            const result = await claimOrphanCustomer(selectedTab.customer_id!, selectedTab.id, user.id);
+                            if (result.success) {
+                              Alert.alert('Richiesta Inviata', 'La tua richiesta di reclamo è stata inviata. Attendi l\'approvazione dell\'amministratore.');
+                              setShowPopup(false);
+                            } else {
+                              Alert.alert('Errore', result.error || 'Impossibile inviare la richiesta');
+                            }
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <Ionicons name="flag" size={18} color="#FFF" />
+                  <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Reclama</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Orphan info */}
+              {selectedColor === 'purple' && (
+                <View style={[styles.grayInfoBox, { backgroundColor: '#F3E8FF', borderColor: '#C4B5FD' }]}>
+                  <Ionicons name="alert-circle" size={16} color="#7C3AED" />
+                  <Text style={[styles.grayInfoText, { color: '#7C3AED' }]}>Orfano A: nessun ordine recente</Text>
+                </View>
+              )}
+              {selectedColor === 'gold' && (
+                <View style={[styles.grayInfoBox, { backgroundColor: '#FEF9C3', borderColor: '#FDE68A' }]}>
+                  <Ionicons name="alert-circle" size={16} color="#A16207" />
+                  <Text style={[styles.grayInfoText, { color: '#A16207' }]}>Orfano B: mai ordinato</Text>
                 </View>
               )}
             </View>

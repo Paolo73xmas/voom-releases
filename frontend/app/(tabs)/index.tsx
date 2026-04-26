@@ -200,6 +200,12 @@ export default function Dashboard() {
       color: '#6366F1',
       onPress: () => router.push('/rivendite-no-mappa'),
     },
+    {
+      title: 'I Miei Reclami',
+      icon: 'flag-outline',
+      color: '#7C3AED',
+      onPress: () => router.push('/orphan-claims'),
+    },
   ];
 
   return (

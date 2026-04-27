@@ -13,7 +13,6 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar } from 'react-native-big-calendar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -303,7 +302,7 @@ export default function CalendarScreen() {
   }), []);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       {/* Toolbar */}
       <View style={styles.toolbar}>
         <TouchableOpacity
@@ -533,7 +532,7 @@ export default function CalendarScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

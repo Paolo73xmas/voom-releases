@@ -57,7 +57,8 @@
           "photosPermission": "Per allegare foto alle ispezioni",
           "cameraPermission": "Per scattare foto durante le visite"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

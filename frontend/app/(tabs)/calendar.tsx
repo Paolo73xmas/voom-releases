@@ -64,6 +64,7 @@ export default function CalendarScreen() {
 
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [mode, setMode] = useState<CalendarMode>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -74,11 +75,28 @@ export default function CalendarScreen() {
     try {
       setLoading(true);
 
-      // Calculate date range
+      // Dynamic date range based on view mode (less data fetched for narrower views)
       const rangeStart = new Date(currentDate);
-      rangeStart.setMonth(rangeStart.getMonth() - 1);
       const rangeEnd = new Date(currentDate);
-      rangeEnd.setMonth(rangeEnd.getMonth() + 1);
+      switch (mode) {
+        case 'day':
+          rangeStart.setDate(rangeStart.getDate() - 7);
+          rangeEnd.setDate(rangeEnd.getDate() + 7);
+          break;
+        case '3days':
+          rangeStart.setDate(rangeStart.getDate() - 14);
+          rangeEnd.setDate(rangeEnd.getDate() + 14);
+          break;
+        case 'week':
+          rangeStart.setDate(rangeStart.getDate() - 21);
+          rangeEnd.setDate(rangeEnd.getDate() + 21);
+          break;
+        case 'month':
+        default:
+          rangeStart.setMonth(rangeStart.getMonth() - 1);
+          rangeEnd.setMonth(rangeEnd.getMonth() + 1);
+          break;
+      }
 
       const allEvents: CalendarEvent[] = [];
 
@@ -221,7 +239,13 @@ export default function CalendarScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, isAdmin, currentDate]);
+  }, [user?.id, isAdmin, currentDate, mode]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadEvents();
+    setRefreshing(false);
+  }, [loadEvents]);
 
   useEffect(() => {
     loadEvents();
@@ -307,6 +331,18 @@ export default function CalendarScreen() {
 
           <TouchableOpacity onPress={() => setCurrentDate(new Date())}>
             <Text style={styles.todayBtn}>Oggi</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={onRefresh}
+            disabled={refreshing}
+            style={{ marginLeft: 8, padding: 4 }}
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color="#1E40AF" />
+            ) : (
+              <Ionicons name="refresh" size={18} color="#1E40AF" />
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity

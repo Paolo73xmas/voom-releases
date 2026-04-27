@@ -290,18 +290,27 @@ export default function MapScreen() {
     const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', yellow: '#FFD600', purple_own: '#7C3AED', yellow_own: '#FFD600' };
     const isOwnOrphan = (c: string) => c === 'purple_own' || c === 'yellow_own';
 
-    tabaccherie.forEach(t => {
-      if (!t.latitude || !t.longitude) return;
-      const color = getMarkerColor(t, user?.id, userRole, orphanMapRef.current);
-      const opacity = color === 'gray' ? '0.6' : '1';
+    // Icon cache — reuse divIcon instances per color to avoid GC churn
+    const iconCache: Record<string, any> = {};
+    const getIcon = (color: string, opacity: string) => {
+      const key = `${color}:${opacity}`;
+      if (iconCache[key]) return iconCache[key];
       const own = isOwnOrphan(color);
       const size = own ? 16 : 14;
       const border = own ? '3px solid #15803d' : '2px solid white';
-      const icon = L.divIcon({
+      iconCache[key] = L.divIcon({
         className: 'custom-marker',
         html: `<div style="background:${COLORS[color] || COLORS.red};width:${size}px;height:${size}px;border-radius:50%;border:${border};box-shadow:0 1px 4px rgba(0,0,0,${own ? '0.4' : '0.3'});opacity:${opacity};"></div>`,
         iconSize: [size, size], iconAnchor: [size / 2, size / 2],
       });
+      return iconCache[key];
+    };
+
+    tabaccherie.forEach(t => {
+      if (!t.latitude || !t.longitude) return;
+      const color = getMarkerColor(t, user?.id, userRole, orphanMapRef.current);
+      const opacity = color === 'gray' ? '0.6' : '1';
+      const icon = getIcon(color, opacity);
       const marker = L.marker([t.latitude, t.longitude], { icon });
       marker.on('click', () => {
         setSelectedTab(t);
@@ -347,18 +356,27 @@ export default function MapScreen() {
     const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', yellow: '#FFD600', purple_own: '#7C3AED', yellow_own: '#FFD600' };
     const isOwnOrphan = (c: string) => c === 'purple_own' || c === 'yellow_own';
 
-    data.forEach(t => {
-      if (!t.latitude || !t.longitude) return;
-      const color = getMarkerColor(t, user?.id, userRole, orphanMapRef.current);
-      const opacity = color === 'gray' ? '0.6' : '1';
+    // Icon cache — reuse divIcon instances per color
+    const iconCache: Record<string, any> = {};
+    const getIcon = (color: string, opacity: string) => {
+      const key = `${color}:${opacity}`;
+      if (iconCache[key]) return iconCache[key];
       const own = isOwnOrphan(color);
       const size = own ? 16 : 14;
       const border = own ? '3px solid #15803d' : '2px solid white';
-      const icon = L.divIcon({
+      iconCache[key] = L.divIcon({
         className: 'custom-marker',
         html: `<div style="background:${COLORS[color] || COLORS.red};width:${size}px;height:${size}px;border-radius:50%;border:${border};box-shadow:0 1px 4px rgba(0,0,0,${own ? '0.4' : '0.3'});opacity:${opacity};"></div>`,
         iconSize: [size, size], iconAnchor: [size / 2, size / 2],
       });
+      return iconCache[key];
+    };
+
+    data.forEach(t => {
+      if (!t.latitude || !t.longitude) return;
+      const color = getMarkerColor(t, user?.id, userRole, orphanMapRef.current);
+      const opacity = color === 'gray' ? '0.6' : '1';
+      const icon = getIcon(color, opacity);
       const marker = L.marker([t.latitude, t.longitude], { icon });
       marker.on('click', () => {
         setSelectedTab(t);

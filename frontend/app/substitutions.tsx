@@ -8,6 +8,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert,
   ActivityIndicator, Modal, ScrollView, KeyboardAvoidingView, Platform, Keyboard,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -420,7 +421,7 @@ export default function SubstitutionsScreen() {
       </View>
 
       {loading ? <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#1E40AF" /></View> : (
-        <FlatList data={filtered} renderItem={renderSubCard} keyExtractor={s => s.id} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} refreshing={refreshing} onRefresh={onRefresh}
+        <FlashList data={filtered} renderItem={renderSubCard} keyExtractor={s => s.id} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} refreshing={refreshing} onRefresh={onRefresh}
           ListEmptyComponent={<View style={{ alignItems: 'center', marginTop: 60 }}><Ionicons name="swap-horizontal-outline" size={48} color="#D1D5DB" /><Text style={{ fontSize: 16, fontWeight: '600', color: '#6B7280', marginTop: 12 }}>Nessuna sostituzione</Text></View>} />
       )}
 

@@ -1,7 +1,13 @@
 import { supabase } from '../supabase';
 import { Visit } from '../../types';
+import { getCache, setCache } from '../memory-cache';
 
-export async function fetchVisits(userId: string, userRole: string, branchId?: string | null): Promise<Visit[]> {
+export async function fetchVisits(userId: string, userRole: string, branchId?: string | null, opts?: { force?: boolean }): Promise<Visit[]> {
+  const cacheKey = `visits:${userRole}:${userId}:${branchId || ''}`;
+  if (!opts?.force) {
+    const cached = getCache<Visit[]>(cacheKey);
+    if (cached) return cached;
+  }
   try {
     let query = supabase
       .from('visits')
@@ -35,7 +41,9 @@ export async function fetchVisits(userId: string, userRole: string, branchId?: s
     const { data, error } = await query;
 
     if (error) throw error;
-    return data || [];
+    const result = data || [];
+    setCache(cacheKey, result, 60_000);
+    return result;
   } catch (error) {
     console.error('[fetchVisits] Error:', error);
     throw error;

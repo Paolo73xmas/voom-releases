@@ -17,6 +17,7 @@ import { fetchOrders } from '../../lib/api/orders';
 import { fetchVisits } from '../../lib/api/visits';
 import { supabase } from '../../lib/supabase';
 import { getDraftCount } from '../../lib/drafts';
+import { getCache, setCache, clearCache } from '../../lib/memory-cache';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -39,9 +40,25 @@ export default function Dashboard() {
   const [draftCount, setDraftCount] = useState(0);
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
 
-  const loadStats = async () => {
+  const loadStats = async (force: boolean = false) => {
     if (!user) return;
-    
+
+    // Cache hit (TTL 60s) — instant load, no flicker
+    const cacheKey = `dashboard:stats:${user.id}`;
+    if (!force) {
+      const cached = getCache<typeof stats & { monthlySales: typeof monthlySales }>(cacheKey);
+      if (cached) {
+        setStats({
+          customers: cached.customers,
+          orders: cached.orders,
+          visits: cached.visits,
+          pendingOrders: cached.pendingOrders,
+        });
+        if (cached.monthlySales) setMonthlySales(cached.monthlySales);
+        return;
+      }
+    }
+
     try {
       const [customers, orders, visits] = await Promise.all([
         fetchCustomers(user.id, user.role, user.branchId),
@@ -49,22 +66,26 @@ export default function Dashboard() {
         fetchVisits(user.id, user.role, user.branchId),
       ]);
 
-      setStats({
+      const newStats = {
         customers: customers.length,
         orders: orders.length,
         visits: visits.length,
         pendingOrders: orders.filter(o => o.status === 'confirmed' || o.status === 'processing').length,
-      });
+      };
+      setStats(newStats);
 
       // Load monthly sales (net of IVA and Accisa)
-      await loadMonthlySales();
+      const ms = await loadMonthlySales();
+
+      // Cache for 60 seconds
+      setCache(cacheKey, { ...newStats, monthlySales: ms }, 60_000);
     } catch (error) {
       console.error('Error loading stats:', error);
     }
   };
 
   const loadMonthlySales = async () => {
-    if (!user) return;
+    if (!user) return null;
     try {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -92,29 +113,36 @@ export default function Dashboard() {
         }
       }
 
-      setMonthlySales({
+      const ms = {
         netto,
         accisa,
         iva,
         lordo: netto + accisa + iva,
         orderCount: monthOrders?.length || 0,
         monthLabel,
-      });
+      };
+      setMonthlySales(ms);
+      return ms;
     } catch (error) {
       console.error('Error loading monthly sales:', error);
+      return null;
     }
   };
 
   useEffect(() => {
     loadStats();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
-  // Refresh draft count + upcoming appointments every time Dashboard gets focus
+  // Refresh on focus: drafts + appointments always (cheap), stats from cache (60s TTL)
   useFocusEffect(
     useCallback(() => {
       getDraftCount().then(setDraftCount);
       loadUpcomingAppointments();
-    }, [])
+      // Stats: respects 60s cache, only refetches if expired
+      loadStats(false);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id])
   );
 
   const loadUpcomingAppointments = async () => {
@@ -150,7 +178,8 @@ export default function Dashboard() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadStats();
+    if (user?.id) clearCache(`dashboard:stats:${user.id}`);
+    await loadStats(true);
     const dc = await getDraftCount();
     setDraftCount(dc);
     await loadUpcomingAppointments();

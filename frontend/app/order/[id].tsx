@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
   Alert,
   Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchOrderById, getOrderStatusLabel, getOrderStatusColor } from '../../lib/api/orders';
@@ -136,7 +136,7 @@ export default function OrderDetailScreen() {
                     {/* Product image */}
                     {product?.image_url ? (
                       <View style={styles.itemImage}>
-                        <Image source={{ uri: product.image_url }} style={styles.itemImageImg} />
+                        <Image source={{ uri: product.image_url }} style={styles.itemImageImg} cachePolicy="memory-disk" transition={150} />
                       </View>
                     ) : (
                       <View style={[styles.itemImage, styles.itemImagePlaceholder]}>

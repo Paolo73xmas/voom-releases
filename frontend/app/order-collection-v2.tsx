@@ -5,9 +5,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, FlatList, TouchableOpacity, TextInput,
-  Alert, ActivityIndicator, Image, Modal, KeyboardAvoidingView, Platform,
+  Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform,
   Keyboard, Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -1076,7 +1077,7 @@ export default function OrderCollectionV2() {
         <View style={{ position: 'relative' }}>
           <TouchableOpacity style={s.prodIcon} onPress={() => setSelectedProductDetail(item)}>
             {item.image_url ? (
-              <Image source={{ uri: item.image_url }} style={s.prodImg} resizeMode="cover" />
+              <Image source={{ uri: item.image_url }} style={s.prodImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
             ) : (
               <View style={s.prodImgPlaceholder}><Ionicons name="cube-outline" size={16} color="#9CA3AF" /></View>
             )}
@@ -1732,7 +1733,7 @@ export default function OrderCollectionV2() {
             <TouchableOpacity onPress={() => setSelectedProductDetail(null)}><Ionicons name="close" size={24} color="#374151" /></TouchableOpacity>
           </View>
           {selectedProductDetail?.image_url && (
-            <Image source={{ uri: selectedProductDetail.image_url }} style={{ width: '100%', height: 250 }} resizeMode="contain" />
+            <Image source={{ uri: selectedProductDetail.image_url }} style={{ width: '100%', height: 250 }} contentFit="contain" cachePolicy="memory-disk" transition={200} />
           )}
           <View style={{ padding: 16 }}>
             <Text style={s.summaryValue}>Prezzo: {formatCurrency(selectedProductDetail?.unit_price || 0)}</Text>

@@ -1,7 +1,13 @@
 import { supabase } from '../supabase';
 import { Customer } from '../../types';
+import { getCache, setCache } from '../memory-cache';
 
-export async function fetchCustomers(userId: string, userRole: string, branchId?: string | null): Promise<Customer[]> {
+export async function fetchCustomers(userId: string, userRole: string, branchId?: string | null, opts?: { force?: boolean }): Promise<Customer[]> {
+  const cacheKey = `customers:${userRole}:${userId}:${branchId || ''}`;
+  if (!opts?.force) {
+    const cached = getCache<Customer[]>(cacheKey);
+    if (cached) return cached;
+  }
   try {
     const allCustomers: Customer[] = [];
     const pageSize = 1000;
@@ -51,6 +57,7 @@ export async function fetchCustomers(userId: string, userRole: string, branchId?
       }
     }
 
+    setCache(cacheKey, allCustomers, 60_000);
     return allCustomers;
   } catch (error) {
     console.error('[fetchCustomers] Error:', error);

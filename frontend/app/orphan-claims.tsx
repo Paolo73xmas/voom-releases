@@ -3,9 +3,10 @@
  */
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -108,7 +109,7 @@ export default function OrphanClaimsScreen() {
           <ActivityIndicator size="large" color="#1E40AF" />
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={claims}
           renderItem={renderClaim}
           keyExtractor={c => c.id}

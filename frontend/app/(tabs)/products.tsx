@@ -1,11 +1,14 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, RefreshControl, ActivityIndicator, Image, ScrollView, Modal,
+  View, Text, StyleSheet, TouchableOpacity,
+  TextInput, RefreshControl, ActivityIndicator, ScrollView, Modal,
 } from 'react-native';
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
+import { useDebounce } from '../../hooks/useDebounce';
 
 interface Category {
   id: string;
@@ -57,6 +60,7 @@ export default function ProductsScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [innerLoading, setInnerLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Load root categories and stats
@@ -154,7 +158,7 @@ export default function ProductsScreen() {
     try {
       const { data } = await supabase
         .from('products')
-        .select('*')
+        .select('id, name, sku, short_description, unit_price, unit_of_measure, image_url, is_active, category_id, accisa, iva_percentage, stock_quantity')
         .eq('category_id', categoryId)
         .eq('is_active', true)
         .not('short_description', 'like', 'EST-%')
@@ -263,9 +267,9 @@ export default function ProductsScreen() {
   );
 
   // ===== LEVEL 2: SUB-CATEGORIES =====
-  const filteredSubs = searchQuery.trim()
-    ? subCategories.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : subCategories;
+  const filteredSubs = useMemo(() => debouncedSearch.trim()
+    ? subCategories.filter(s => s.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
+    : subCategories, [debouncedSearch, subCategories]);
 
   const renderSubCategoryView = () => (
     <View style={styles.innerContent}>
@@ -297,11 +301,10 @@ export default function ProductsScreen() {
       {innerLoading ? (
         <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 40 }} />
       ) : (
-        <FlatList
+        <FlashList
           data={filteredSubs}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          columnWrapperStyle={styles.gridRow}
           contentContainerStyle={{ paddingBottom: 20 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           renderItem={({ item }) => (
@@ -332,17 +335,17 @@ export default function ProductsScreen() {
   );
 
   // ===== LEVEL 3: PRODUCTS =====
-  const filteredProducts = searchQuery.trim()
+  const filteredProducts = useMemo(() => debouncedSearch.trim()
     ? products.filter(p =>
-        (p.short_description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.sku.toLowerCase().includes(searchQuery.toLowerCase())
+        (p.short_description || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        p.sku.toLowerCase().includes(debouncedSearch.toLowerCase())
       )
-    : products;
+    : products, [debouncedSearch, products]);
 
   const renderProductItem = ({ item }: { item: Product }) => (
     <TouchableOpacity style={styles.productCard} onPress={() => setSelectedProduct(item)} activeOpacity={0.7}>
       {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.productImage} resizeMode="contain" />
+        <Image source={{ uri: item.image_url }} style={styles.productImage} contentFit="contain" cachePolicy="memory-disk" transition={150} />
       ) : (
         <View style={styles.productImagePlaceholder}>
           <Ionicons name="cube-outline" size={20} color="#9CA3AF" />
@@ -390,7 +393,7 @@ export default function ProductsScreen() {
             <ScrollView style={{ paddingHorizontal: 16, paddingBottom: 20 }}>
               {/* Image */}
               {p.image_url ? (
-                <Image source={{ uri: p.image_url }} style={styles.modalImage} resizeMode="contain" />
+                <Image source={{ uri: p.image_url }} style={styles.modalImage} contentFit="contain" cachePolicy="memory-disk" transition={200} />
               ) : (
                 <View style={styles.modalImagePlaceholder}>
                   <Ionicons name="cube-outline" size={48} color="#D1D5DB" />
@@ -512,7 +515,7 @@ export default function ProductsScreen() {
       {innerLoading ? (
         <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 40 }} />
       ) : (
-        <FlatList
+        <FlashList
           data={filteredProducts}
           renderItem={renderProductItem}
           keyExtractor={(item) => item.id}

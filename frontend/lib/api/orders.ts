@@ -1,12 +1,18 @@
 import { supabase } from '../supabase';
 import { Order } from '../../types';
+import { getCache, setCache } from '../memory-cache';
 
-export async function fetchOrders(userId: string, userRole: string, branchId?: string | null): Promise<Order[]> {
+export async function fetchOrders(userId: string, userRole: string, branchId?: string | null, opts?: { force?: boolean }): Promise<Order[]> {
+  const cacheKey = `orders:${userRole}:${userId}:${branchId || ''}`;
+  if (!opts?.force) {
+    const cached = getCache<Order[]>(cacheKey);
+    if (cached) return cached;
+  }
   try {
     let query = supabase
       .from('orders')
       .select(`
-        *,
+        id, order_number, order_date, status, total_amount, customer_id, agent_id, branch_id,
         customer:customers (
           id,
           business_name,
@@ -37,7 +43,9 @@ export async function fetchOrders(userId: string, userRole: string, branchId?: s
     const { data, error } = await query;
 
     if (error) throw error;
-    return data || [];
+    const result = (data || []) as unknown as Order[];
+    setCache(cacheKey, result, 60_000);
+    return result;
   } catch (error) {
     console.error('[fetchOrders] Error:', error);
     throw error;

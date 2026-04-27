@@ -1,14 +1,14 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   TextInput,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
@@ -16,86 +16,35 @@ import { fetchOrders, getOrderStatusLabel, getOrderStatusColor } from '../../lib
 import { Order } from '../../types';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { useDebounce } from '../../hooks/useDebounce';
 
-export default function OrdersScreen() {
-  const router = useRouter();
-  const { user } = useAuthStore();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [searchText, setSearchText] = useState('');
+const formatDate = (dateString: string) => {
+  try {
+    return format(new Date(dateString), 'dd MMM yyyy', { locale: it });
+  } catch {
+    return dateString;
+  }
+};
 
-  const loadOrders = async () => {
-    if (!user) return;
-    try {
-      const data = await fetchOrders(user.id, user.role, user.branchId);
-      setOrders(data);
-    } catch (error) {
-      console.error('Error loading orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('it-IT', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(amount);
+};
 
-  useEffect(() => {
-    loadOrders();
-  }, [user]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadOrders();
-    setRefreshing(false);
-  };
-
-  // Filter orders by searching across all customer fields (min 3 chars)
-  const filteredOrders = useMemo(() => {
-    const q = searchText.trim().toLowerCase();
-    if (q.length < 3) return orders;
-
-    return orders.filter(order => {
-      const c = order.customer;
-      if (!c) return false;
-
-      const fields = [
-        c.business_name,
-        c.address,
-        c.city,
-        c.province,
-        c.postal_code,
-        c.contact_name,
-        c.contact_surname,
-        c.contact_phone,
-        c.contact_email,
-        c.vat_number,
-        c.fiscal_code,
-        c.pec,
-        c.sdi,
-        order.order_number,
-      ];
-
-      return fields.some(f => f && f.toLowerCase().includes(q));
-    });
-  }, [orders, searchText]);
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'dd MMM yyyy', { locale: it });
-    } catch {
-      return dateString;
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('it-IT', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(amount);
-  };
-
-  const renderOrder = ({ item }: { item: Order }) => (
+// Memoized row
+const OrderCard = memo(function OrderCard({
+  item,
+  onPress,
+}: {
+  item: Order;
+  onPress: (id: string) => void;
+}) {
+  return (
     <TouchableOpacity
       style={styles.orderCard}
-      onPress={() => router.push(`/order/${item.id}`)}
+      onPress={() => onPress(item.id)}
     >
       <View style={styles.orderHeader}>
         <View>
@@ -139,6 +88,73 @@ export default function OrdersScreen() {
       />
     </TouchableOpacity>
   );
+});
+
+export default function OrdersScreen() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const debouncedSearch = useDebounce(searchText, 300);
+
+  const loadOrders = useCallback(async (force: boolean = false) => {
+    if (!user) return;
+    try {
+      const data = await fetchOrders(user.id, user.role, user.branchId, { force });
+      setOrders(data);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadOrders(true);
+    setRefreshing(false);
+  }, [loadOrders]);
+
+  // Filter orders by searching across all customer fields (min 3 chars)
+  const filteredOrders = useMemo(() => {
+    const q = debouncedSearch.trim().toLowerCase();
+    if (q.length < 3) return orders;
+
+    return orders.filter(order => {
+      const c = order.customer;
+      if (!c) return false;
+
+      const fields = [
+        c.business_name, c.address, c.city, c.province, c.postal_code,
+        c.contact_name, c.contact_surname, c.contact_phone, c.contact_email,
+        c.vat_number, c.fiscal_code, c.pec, c.sdi, order.order_number,
+      ];
+
+      return fields.some(f => f && f.toLowerCase().includes(q));
+    });
+  }, [orders, debouncedSearch]);
+
+  const handlePressOrder = useCallback((id: string) => {
+    router.push(`/order/${id}`);
+  }, [router]);
+
+  const renderOrder = useCallback(({ item }: { item: Order }) => (
+    <OrderCard item={item} onPress={handlePressOrder} />
+  ), [handlePressOrder]);
+
+  const keyExtractor = useCallback((item: Order) => item.id, []);
+
+  const stats = useMemo(() => ({
+    total: filteredOrders.length,
+    delivered: filteredOrders.filter(o => o.status === 'delivered').length,
+    inProgress: filteredOrders.filter(o => ['confirmed', 'processing', 'shipped'].includes(o.status)).length,
+  }), [filteredOrders]);
 
   if (loading) {
     return (
@@ -161,6 +177,7 @@ export default function OrdersScreen() {
             value={searchText}
             onChangeText={setSearchText}
             autoCorrect={false}
+            autoCapitalize="none"
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText('')}>
@@ -171,9 +188,9 @@ export default function OrdersScreen() {
         {searchText.length > 0 && searchText.length < 3 && (
           <Text style={styles.searchHint}>Inserisci almeno 3 caratteri per cercare</Text>
         )}
-        {searchText.length >= 3 && (
+        {debouncedSearch.length >= 3 && (
           <Text style={styles.searchResult}>
-            {filteredOrders.length} {filteredOrders.length === 1 ? 'ordine trovato' : 'ordini trovati'} per "{searchText}"
+            {filteredOrders.length} {filteredOrders.length === 1 ? 'ordine trovato' : 'ordini trovati'} per "{debouncedSearch}"
           </Text>
         )}
       </View>
@@ -181,30 +198,26 @@ export default function OrdersScreen() {
       {/* Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{filteredOrders.length}</Text>
+          <Text style={styles.statNumber}>{stats.total}</Text>
           <Text style={styles.statLabel}>Totali</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>
-            {filteredOrders.filter(o => o.status === 'delivered').length}
-          </Text>
+          <Text style={styles.statNumber}>{stats.delivered}</Text>
           <Text style={styles.statLabel}>Consegnati</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>
-            {filteredOrders.filter(o => ['confirmed', 'processing', 'shipped'].includes(o.status)).length}
-          </Text>
+          <Text style={styles.statNumber}>{stats.inProgress}</Text>
           <Text style={styles.statLabel}>In Corso</Text>
         </View>
       </View>
 
-      {/* Orders List */}
-      <FlatList
+      {/* Orders List - FlashList */}
+      <FlashList
         data={filteredOrders}
         renderItem={renderOrder}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

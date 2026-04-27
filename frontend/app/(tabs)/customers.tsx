@@ -1,66 +1,33 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   TextInput,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { fetchCustomers } from '../../lib/api/customers';
 import { Customer } from '../../types';
+import { useDebounce } from '../../hooks/useDebounce';
 
-export default function CustomersScreen() {
-  const router = useRouter();
-  const { user } = useAuthStore();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const loadCustomers = async () => {
-    if (!user) return;
-    try {
-      const data = await fetchCustomers(user.id, user.role, user.branchId);
-      setCustomers(data);
-    } catch (error) {
-      console.error('Error loading customers:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadCustomers();
-  }, [user]);
-
-  // Derived filtered list using useMemo - no extra state/effect needed
-  const filteredCustomers = useMemo(() => {
-    if (!searchQuery.trim()) return customers;
-    const term = searchQuery.toLowerCase();
-    return customers.filter(c =>
-      c.business_name.toLowerCase().includes(term) ||
-      c.city.toLowerCase().includes(term) ||
-      c.contact_name.toLowerCase().includes(term) ||
-      c.contact_phone.includes(term)
-    );
-  }, [searchQuery, customers]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadCustomers();
-    setRefreshing(false);
-  };
-
-  const renderCustomer = ({ item }: { item: Customer }) => (
+// Memoized card — re-renders only when props change
+const CustomerCard = memo(function CustomerCard({
+  item,
+  onPress,
+}: {
+  item: Customer;
+  onPress: (id: string) => void;
+}) {
+  return (
     <TouchableOpacity
       style={styles.customerCard}
-      onPress={() => router.push(`/customer/${item.id}`)}
+      onPress={() => onPress(item.id)}
     >
       <View style={styles.customerHeader}>
         <View style={styles.customerAvatar}>
@@ -107,6 +74,59 @@ export default function CustomersScreen() {
       />
     </TouchableOpacity>
   );
+});
+
+export default function CustomersScreen() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 250);
+
+  const loadCustomers = useCallback(async (force: boolean = false) => {
+    if (!user) return;
+    try {
+      const data = await fetchCustomers(user.id, user.role, user.branchId, { force });
+      setCustomers(data);
+    } catch (error) {
+      console.error('Error loading customers:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadCustomers();
+  }, [loadCustomers]);
+
+  const filteredCustomers = useMemo(() => {
+    if (!debouncedSearch.trim()) return customers;
+    const term = debouncedSearch.toLowerCase();
+    return customers.filter(c =>
+      c.business_name.toLowerCase().includes(term) ||
+      c.city.toLowerCase().includes(term) ||
+      c.contact_name.toLowerCase().includes(term) ||
+      c.contact_phone.includes(term)
+    );
+  }, [debouncedSearch, customers]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadCustomers(true);
+    setRefreshing(false);
+  }, [loadCustomers]);
+
+  const handlePressCustomer = useCallback((id: string) => {
+    router.push(`/customer/${id}`);
+  }, [router]);
+
+  const renderCustomer = useCallback(({ item }: { item: Customer }) => (
+    <CustomerCard item={item} onPress={handlePressCustomer} />
+  ), [handlePressCustomer]);
+
+  const keyExtractor = useCallback((item: Customer) => item.id, []);
 
   if (loading) {
     return (
@@ -128,6 +148,8 @@ export default function CustomersScreen() {
             placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
+            autoCorrect={false}
+            autoCapitalize="none"
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
@@ -148,11 +170,11 @@ export default function CustomersScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Customer List */}
-      <FlatList
+      {/* Customer List — FlashList for performance */}
+      <FlashList
         data={filteredCustomers}
         renderItem={renderCustomer}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

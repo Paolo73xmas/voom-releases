@@ -15,7 +15,8 @@
         "NSLocationWhenInUseUsageDescription": "Per registrare visite e ispezioni",
         "NSLocationAlwaysUsageDescription": "Per il tracking GPS sul campo",
         "NSCameraUsageDescription": "Per scattare foto durante le ispezioni",
-        "NSPhotoLibraryUsageDescription": "Per selezionare foto dalla galleria"
+        "NSPhotoLibraryUsageDescription": "Per selezionare foto dalla galleria",
+        "NSFaceIDUsageDescription": "Per accesso rapido sicuro all'app"
       }
     },
     "android": {

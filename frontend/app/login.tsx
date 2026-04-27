@@ -13,11 +13,15 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const REMEMBER_KEY = '@remember_me';
-const SAVED_EMAIL_KEY = '@saved_email';
-const SAVED_PASSWORD_KEY = '@saved_password';
+import * as LocalAuthentication from 'expo-local-authentication';
+import {
+  loadSavedCredentials,
+  saveCredentials,
+  clearCredentials,
+  migrateLegacyCredentialsIfAny,
+  isBiometricEnabled,
+  setBiometricEnabled,
+} from '../lib/secure-credentials';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -27,28 +31,79 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [credentialsLoaded, setCredentialsLoaded] = useState(false);
 
-  // Load saved credentials on mount
+  // Biometrics state
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricType, setBiometricType] = useState<'face' | 'fingerprint' | 'iris' | 'generic'>('generic');
+  const [biometricEnabled, setBiometricEnabledLocal] = useState(false);
+  const [savedEmail, setSavedEmail] = useState<string | null>(null);
+
+  // 1) Load saved credentials (with one-time migration from legacy AsyncStorage)
   useEffect(() => {
-    const loadSavedCredentials = async () => {
+    (async () => {
       try {
-        const remembered = await AsyncStorage.getItem(REMEMBER_KEY);
-        if (remembered === 'true') {
-          const savedEmail = await AsyncStorage.getItem(SAVED_EMAIL_KEY);
-          const savedPassword = await AsyncStorage.getItem(SAVED_PASSWORD_KEY);
-          if (savedEmail) setEmail(savedEmail);
-          if (savedPassword) setPassword(savedPassword);
+        await migrateLegacyCredentialsIfAny();
+        const creds = await loadSavedCredentials();
+        if (creds) {
+          setEmail(creds.email);
+          setPassword(creds.password);
           setRememberMe(true);
+          setSavedEmail(creds.email);
+        }
+
+        // Check biometric capability (native only)
+        if (Platform.OS !== 'web') {
+          const hasHardware = await LocalAuthentication.hasHardwareAsync();
+          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+          if (hasHardware && isEnrolled) {
+            setBiometricSupported(true);
+            const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+            if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+              setBiometricType('face');
+            } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+              setBiometricType('fingerprint');
+            } else if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
+              setBiometricType('iris');
+            }
+            const enabled = await isBiometricEnabled();
+            setBiometricEnabledLocal(enabled);
+
+            // Auto-prompt biometric login if enabled and credentials are saved
+            if (enabled && creds) {
+              promptBiometricLogin(creds.email, creds.password);
+            }
+          }
         }
       } catch (e) {
-        console.log('Error loading saved credentials:', e);
-      } finally {
-        setCredentialsLoaded(true);
+        console.log('[Login] init error:', e);
       }
-    };
-    loadSavedCredentials();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const promptBiometricLogin = async (storedEmail: string, storedPassword: string) => {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Sblocca VOOM Sales',
+        fallbackLabel: 'Usa password',
+        cancelLabel: 'Annulla',
+        disableDeviceFallback: false,
+      });
+      if (result.success) {
+        setLoading(true);
+        try {
+          await login(storedEmail, storedPassword);
+          router.replace('/(tabs)');
+        } catch (e: any) {
+          Alert.alert('Errore di Login', e?.message || 'Credenziali non valide. Inseriscile manualmente.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      console.log('[Login] biometric error:', e);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -60,22 +115,53 @@ export default function LoginScreen() {
     try {
       await login(email.trim(), password);
 
-      // Save or clear credentials based on rememberMe
+      // Persist credentials securely if "Ricordami" is checked
       if (rememberMe) {
-        await AsyncStorage.setItem(REMEMBER_KEY, 'true');
-        await AsyncStorage.setItem(SAVED_EMAIL_KEY, email.trim());
-        await AsyncStorage.setItem(SAVED_PASSWORD_KEY, password);
+        await saveCredentials(email.trim(), password);
       } else {
-        await AsyncStorage.multiRemove([REMEMBER_KEY, SAVED_EMAIL_KEY, SAVED_PASSWORD_KEY]);
+        await clearCredentials();
       }
 
-      router.replace('/(tabs)');
+      // Offer biometric enable on first successful login (native only)
+      if (biometricSupported && rememberMe && !biometricEnabled && Platform.OS !== 'web') {
+        const typeName = biometricType === 'face' ? 'Face ID'
+          : biometricType === 'fingerprint' ? 'l\'impronta digitale'
+          : biometricType === 'iris' ? 'l\'iride'
+          : 'la biometria';
+        Alert.alert(
+          'Login rapido',
+          `Vuoi abilitare ${typeName} per i prossimi accessi?`,
+          [
+            { text: 'No, grazie', style: 'cancel', onPress: () => router.replace('/(tabs)') },
+            {
+              text: 'Abilita',
+              onPress: async () => {
+                await setBiometricEnabled(true);
+                router.replace('/(tabs)');
+              },
+            },
+          ]
+        );
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error: any) {
       Alert.alert('Errore di Login', error.message || 'Errore durante il login');
     } finally {
       setLoading(false);
     }
   };
+
+  const biometricIcon =
+    biometricType === 'face' ? 'scan-outline' :
+    biometricType === 'fingerprint' ? 'finger-print-outline' :
+    biometricType === 'iris' ? 'eye-outline' :
+    'lock-open-outline';
+  const biometricLabel =
+    biometricType === 'face' ? 'Accedi con Face ID' :
+    biometricType === 'fingerprint' ? 'Accedi con impronta' :
+    biometricType === 'iris' ? 'Accedi con iride' :
+    'Accedi con biometria';
 
   return (
     <KeyboardAvoidingView
@@ -138,6 +224,13 @@ export default function LoginScreen() {
               {rememberMe && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
             </View>
             <Text style={styles.rememberLabel}>Ricordami</Text>
+            <View style={{ flex: 1 }} />
+            {rememberMe && (
+              <View style={styles.secureBadge}>
+                <Ionicons name="shield-checkmark" size={12} color="#059669" />
+                <Text style={styles.secureBadgeText}>Cifrato</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -151,6 +244,21 @@ export default function LoginScreen() {
               <Text style={styles.buttonText}>Accedi</Text>
             )}
           </TouchableOpacity>
+
+          {/* Biometric quick-login (only if enabled & saved credentials) */}
+          {biometricSupported && biometricEnabled && savedEmail && Platform.OS !== 'web' && (
+            <TouchableOpacity
+              style={styles.bioButton}
+              onPress={async () => {
+                const creds = await loadSavedCredentials();
+                if (creds) promptBiometricLogin(creds.email, creds.password);
+              }}
+              disabled={loading || isLoading}
+            >
+              <Ionicons name={biometricIcon as any} size={22} color="#1E40AF" />
+              <Text style={styles.bioButtonText}>{biometricLabel}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Text style={styles.footer}>VOOM Sales v1.0</Text>
@@ -251,6 +359,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
   },
+  secureBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  secureBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+  },
   button: {
     backgroundColor: '#1E40AF',
     borderRadius: 12,
@@ -266,6 +388,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  bioButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    height: 48,
+    marginTop: 12,
+  },
+  bioButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1E40AF',
   },
   footer: {
     textAlign: 'center',

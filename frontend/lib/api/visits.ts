@@ -1,7 +1,7 @@
 import { supabase } from '../supabase';
 import { Visit } from '../../types';
 
-export async function fetchVisits(userId: string, userRole: string): Promise<Visit[]> {
+export async function fetchVisits(userId: string, userRole: string, branchId?: string | null): Promise<Visit[]> {
   try {
     let query = supabase
       .from('visits')
@@ -19,7 +19,16 @@ export async function fetchVisits(userId: string, userRole: string): Promise<Vis
       .order('visit_date', { ascending: false })
       .limit(100);
 
-    if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
+    if (userRole === 'branch_admin' && branchId) {
+      // Branch admin: see visits from all agents in the branch
+      const { data: branchAgents } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('branch_id', branchId);
+      if (branchAgents && branchAgents.length > 0) {
+        query = query.in('agent_id', branchAgents.map(a => a.id));
+      }
+    } else if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
       query = query.eq('agent_id', userId);
     }
 

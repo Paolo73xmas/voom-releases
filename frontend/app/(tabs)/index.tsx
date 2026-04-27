@@ -44,9 +44,9 @@ export default function Dashboard() {
     
     try {
       const [customers, orders, visits] = await Promise.all([
-        fetchCustomers(user.id, user.role),
-        fetchOrders(user.id, user.role),
-        fetchVisits(user.id, user.role),
+        fetchCustomers(user.id, user.role, user.branchId),
+        fetchOrders(user.id, user.role, user.branchId),
+        fetchVisits(user.id, user.role, user.branchId),
       ]);
 
       setStats({
@@ -125,21 +125,23 @@ export default function Dashboard() {
 
       let query = supabase
         .from('appointments')
-        .select('id, title, start_time, end_time, customer_id, notes, status, customers:customer_id (business_name, city)')
-        .gte('start_time', now)
-        .lte('start_time', sevenDaysLater)
-        .neq('status', 'cancelled')
-        .order('start_time', { ascending: true })
+        .select('id, appointment_date, duration_minutes, customer_id, notes, status, appointment_type, quick_customer_name, quick_customer_city, customers:customer_id (business_name, city)')
+        .gte('appointment_date', now)
+        .lte('appointment_date', sevenDaysLater)
+        .not('status', 'in', '("cancelled","completed")')
+        .order('appointment_date', { ascending: true })
         .limit(5);
 
       // Agent sees only their appointments
       if (user.role !== 'admin' && user.role !== 'supervisor' && user.role !== 'admincustom') {
-        query = query.eq('created_by_id', user.id);
+        query = query.eq('agent_id', user.id);
       }
 
       const { data, error } = await query;
       if (!error && data) {
         setUpcomingAppointments(data);
+      } else if (error) {
+        console.error('[Dashboard] Appointments error:', error);
       }
     } catch (e) {
       console.error('[Dashboard] Error loading appointments:', e);
@@ -297,13 +299,20 @@ export default function Dashboard() {
       {upcomingAppointments.length > 0 ? (
         <View style={{ marginBottom: 16 }}>
           {upcomingAppointments.map((apt) => {
-            const startDate = new Date(apt.start_time);
+            const startDate = new Date(apt.appointment_date);
             const dayStr = startDate.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' });
             const timeStr = startDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-            const customerName = (apt.customers as any)?.business_name || 'Cliente';
-            const customerCity = (apt.customers as any)?.city || '';
+            const customerName = (apt.customers as any)?.business_name || apt.quick_customer_name || 'Cliente';
+            const customerCity = (apt.customers as any)?.city || apt.quick_customer_city || '';
             const isToday = startDate.toDateString() === new Date().toDateString();
             const isTomorrow = startDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+            const typeLabels: Record<string, string> = {
+              first_visit: 'Prima visita',
+              follow_up: 'Follow-up',
+              delivery: 'Consegna',
+              other: 'Altro',
+            };
+            const typeLabel = apt.appointment_type ? typeLabels[apt.appointment_type] : null;
 
             return (
               <TouchableOpacity
@@ -317,9 +326,9 @@ export default function Dashboard() {
                   <Text style={styles.appointmentTimeText}>{timeStr}</Text>
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.appointmentTitle} numberOfLines={1}>{apt.title || customerName}</Text>
+                  <Text style={styles.appointmentTitle} numberOfLines={1}>{customerName}</Text>
                   <Text style={styles.appointmentSub} numberOfLines={1}>
-                    {customerName}{customerCity ? ` · ${customerCity}` : ''}
+                    {typeLabel ? `${typeLabel}` : ''}{typeLabel && customerCity ? ' · ' : ''}{customerCity}
                   </Text>
                   {apt.notes ? <Text style={styles.appointmentNotes} numberOfLines={1}>{apt.notes}</Text> : null}
                 </View>

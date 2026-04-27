@@ -129,49 +129,75 @@ export async function fetchOrphanMap(): Promise<Map<string, 'orphan_a' | 'orphan
   // Fallback: client-side calculation
   try {
     const config = await getOrphanConfig();
+    console.log(`[orphan-map] Fallback using config: A=${config.orphan_a_days}d, B=${config.orphan_b_days}d`);
     const now = new Date();
     const orphanADate = new Date(now.getTime() - config.orphan_a_days * 24 * 60 * 60 * 1000).toISOString();
 
     // Get all tabaccherie with customer_id
-    const { data: tabs } = await supabase
+    const { data: tabs, error: tabsErr } = await supabase
       .from('tabaccherie')
-      .select('id, customer_id')
+      .select('id, customer_id, stato_visita, agente_id, created_at')
       .not('customer_id', 'is', null);
 
-    if (!tabs || tabs.length === 0) return map;
+    if (tabsErr) {
+      console.error('[orphan-map] Error querying tabaccherie:', tabsErr.message);
+      return map;
+    }
+    if (!tabs || tabs.length === 0) {
+      console.log('[orphan-map] No tabaccherie with customer_id found');
+      return map;
+    }
+    console.log(`[orphan-map] Found ${tabs.length} tabaccherie with customers`);
 
     const customerIds = [...new Set(tabs.filter(t => t.customer_id).map(t => t.customer_id!))];
-    if (customerIds.length === 0) return map;
 
-    // Get last order date for each customer (batch)
-    const { data: orders } = await supabase
-      .from('orders')
-      .select('customer_id, order_date')
-      .in('customer_id', customerIds)
-      .order('order_date', { ascending: false });
+    // Try to get last order dates — this may be limited by RLS
+    // Use a broad query without agent filter to maximize visibility
+    let lastOrderMap = new Map<string, string>();
+    try {
+      const { data: orders, error: ordErr } = await supabase
+        .from('orders')
+        .select('customer_id, order_date')
+        .in('customer_id', customerIds.slice(0, 500))
+        .order('order_date', { ascending: false });
 
-    // Build map of customer_id -> last_order_date
-    const lastOrderMap = new Map<string, string>();
-    for (const order of (orders || [])) {
-      if (!lastOrderMap.has(order.customer_id)) {
-        lastOrderMap.set(order.customer_id, order.order_date);
+      if (!ordErr && orders) {
+        for (const order of orders) {
+          if (!lastOrderMap.has(order.customer_id)) {
+            lastOrderMap.set(order.customer_id, order.order_date);
+          }
+        }
       }
+      console.log(`[orphan-map] Found orders for ${lastOrderMap.size}/${customerIds.length} customers`);
+    } catch (e) {
+      console.warn('[orphan-map] Orders query failed (RLS?), using stato_visita only');
     }
 
     // Classify each tabaccheria
     for (const tab of tabs) {
       if (!tab.customer_id) continue;
       const lastOrder = lastOrderMap.get(tab.customer_id);
-      if (!lastOrder) {
-        // Never ordered → orphan_b
-        map.set(tab.id, 'orphan_b');
-      } else if (lastOrder < orphanADate) {
-        // No recent orders → orphan_a
-        map.set(tab.id, 'orphan_a');
+
+      if (lastOrder) {
+        // Has orders — check if recent enough
+        if (lastOrder < orphanADate) {
+          map.set(tab.id, 'orphan_a');
+        }
+        // else: recent order → not orphan
+      } else {
+        // No orders found (could be RLS or truly never ordered)
+        // Use stato_visita as secondary signal
+        if (tab.stato_visita === 'non_visitato' || !tab.stato_visita) {
+          map.set(tab.id, 'orphan_b');
+        } else if (tab.stato_visita === 'visitato') {
+          // Visited but no order visible — likely orphan_a
+          map.set(tab.id, 'orphan_a');
+        }
+        // stato_visita === 'ordinato' but no order visible → RLS hiding it, skip
       }
     }
 
-    console.log(`[orphan-map] Fallback calculated ${map.size} orphans (A_days=${config.orphan_a_days})`);
+    console.log(`[orphan-map] Fallback result: ${map.size} orphans (A: ${[...map.values()].filter(v => v === 'orphan_a').length}, B: ${[...map.values()].filter(v => v === 'orphan_b').length})`);
   } catch (e) {
     console.error('[orphan-map] Fallback error:', e);
   }

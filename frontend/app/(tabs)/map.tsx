@@ -287,16 +287,20 @@ export default function MapScreen() {
     leafletClusterRef.current.clearLayers();
     leafletMarkersRef.current = [];
 
-    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', gold: '#D97706' };
+    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', gold: '#D97706', purple_own: '#7C3AED', gold_own: '#D97706' };
+    const isOwnOrphan = (c: string) => c === 'purple_own' || c === 'gold_own';
 
     tabaccherie.forEach(t => {
       if (!t.latitude || !t.longitude) return;
       const color = getMarkerColor(t, user?.id, userRole, orphanMapRef.current);
       const opacity = color === 'gray' ? '0.6' : '1';
+      const own = isOwnOrphan(color);
+      const size = own ? 16 : 14;
+      const border = own ? '3px solid #15803d' : '2px solid white';
       const icon = L.divIcon({
         className: 'custom-marker',
-        html: `<div style="background:${COLORS[color] || COLORS.red};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);opacity:${opacity};"></div>`,
-        iconSize: [14, 14], iconAnchor: [7, 7],
+        html: `<div style="background:${COLORS[color] || COLORS.red};width:${size}px;height:${size}px;border-radius:50%;border:${border};box-shadow:0 1px 4px rgba(0,0,0,${own ? '0.4' : '0.3'});opacity:${opacity};"></div>`,
+        iconSize: [size, size], iconAnchor: [size / 2, size / 2],
       });
       const marker = L.marker([t.latitude, t.longitude], { icon });
       marker.on('click', () => {
@@ -340,16 +344,20 @@ export default function MapScreen() {
     leafletClusterRef.current.clearLayers();
     leafletMarkersRef.current = [];
 
-    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', gold: '#D97706' };
+    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', gold: '#D97706', purple_own: '#7C3AED', gold_own: '#D97706' };
+    const isOwnOrphan = (c: string) => c === 'purple_own' || c === 'gold_own';
 
     data.forEach(t => {
       if (!t.latitude || !t.longitude) return;
       const color = getMarkerColor(t, user?.id, userRole, orphanMapRef.current);
       const opacity = color === 'gray' ? '0.6' : '1';
+      const own = isOwnOrphan(color);
+      const size = own ? 16 : 14;
+      const border = own ? '3px solid #15803d' : '2px solid white';
       const icon = L.divIcon({
         className: 'custom-marker',
-        html: `<div style="background:${COLORS[color] || COLORS.red};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);opacity:${opacity};"></div>`,
-        iconSize: [14, 14], iconAnchor: [7, 7],
+        html: `<div style="background:${COLORS[color] || COLORS.red};width:${size}px;height:${size}px;border-radius:50%;border:${border};box-shadow:0 1px 4px rgba(0,0,0,${own ? '0.4' : '0.3'});opacity:${opacity};"></div>`,
+        iconSize: [size, size], iconAnchor: [size / 2, size / 2],
       });
       const marker = L.marker([t.latitude, t.longitude], { icon });
       marker.on('click', () => {
@@ -543,6 +551,8 @@ export default function MapScreen() {
 
   const selectedColor = selectedTab ? getMarkerColor(selectedTab, user?.id, userRole, orphanMapRef.current) : 'red';
   const isOwnedByOther = selectedColor === 'gray';
+  const isOrphanColor = selectedColor === 'purple' || selectedColor === 'gold' || selectedColor === 'purple_own' || selectedColor === 'gold_own';
+  const isOwnOrphan = selectedColor === 'purple_own' || selectedColor === 'gold_own';
 
   return (
     <View style={styles.container}>
@@ -659,13 +669,25 @@ export default function MapScreen() {
             { color: '#15803D', label: 'Ordinato' },
             { color: '#7C3AED', label: 'Orfano A (no ordini recenti)' },
             { color: '#D97706', label: 'Orfano B (mai ordinato)' },
+            { color: '#7C3AED', borderColor: '#15803D', label: 'Tuo cliente Orfano A' },
+            { color: '#D97706', borderColor: '#15803D', label: 'Tuo cliente Orfano B' },
             { color: '#475569', label: 'Altro agente' },
-          ].map((item, i) => (
-            <View key={i} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-              <Text style={styles.legendLabel}>{item.label}</Text>
-            </View>
-          ))}
+          ].map((item, i) => {
+            const own = !!item.borderColor;
+            const size = own ? 14 : 10;
+            return (
+              <View key={i} style={styles.legendItem}>
+                <View style={{
+                  width: size,
+                  height: size,
+                  borderRadius: size / 2,
+                  backgroundColor: item.color,
+                  ...(own ? { borderWidth: 2, borderColor: item.borderColor } : {}),
+                }} />
+                <Text style={styles.legendLabel}>{item.label}</Text>
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -724,7 +746,10 @@ export default function MapScreen() {
                   backgroundColor: selectedColor === 'gray' ? '#475569' :
                     selectedColor === 'red' ? '#DC2626' :
                     selectedColor === 'orange' ? '#F97316' :
-                    selectedColor === 'green' ? '#15803D' : '#DC2626'
+                    selectedColor === 'green' ? '#15803D' :
+                    selectedColor === 'purple' || selectedColor === 'purple_own' ? '#7C3AED' :
+                    selectedColor === 'gold' || selectedColor === 'gold_own' ? '#D97706' : '#DC2626',
+                  ...(isOwnOrphan ? { borderWidth: 2, borderColor: '#15803D' } : {}),
                 }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.popupName} numberOfLines={2}>{getDisplayName(selectedTab)}</Text>
@@ -788,8 +813,8 @@ export default function MapScreen() {
                 </TouchableOpacity>
               )}
 
-              {/* Orange/Green: Order + Data + Inspection */}
-              {(selectedColor === 'orange' || selectedColor === 'green') && (
+              {/* Orange/Green/Own-Orphan: Order + Data + Inspection */}
+              {(selectedColor === 'orange' || selectedColor === 'green' || isOwnOrphan) && (
                 <>
                   <TouchableOpacity
                     style={[styles.actionBtn, styles.actionBtnPrimary]}
@@ -826,14 +851,14 @@ export default function MapScreen() {
               )}
 
               {/* Gray: info message */}
-              {isOwnedByOther && selectedColor !== 'purple' && selectedColor !== 'gold' && (
+              {isOwnedByOther && !isOrphanColor && (
                 <View style={styles.grayInfoBox}>
                   <Ionicons name="information-circle" size={18} color="#9CA3AF" />
                   <Text style={styles.grayInfoText}>Cliente di altro agente</Text>
                 </View>
               )}
 
-              {/* Orphan: Reclama button */}
+              {/* Orphan (NOT owned by current agent): Reclama button */}
               {(selectedColor === 'purple' || selectedColor === 'gold') && selectedTab.agente_id !== user?.id && (
                 <TouchableOpacity
                   style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
@@ -868,17 +893,21 @@ export default function MapScreen() {
                 </TouchableOpacity>
               )}
 
-              {/* Orphan info */}
-              {selectedColor === 'purple' && (
+              {/* Orphan info banners */}
+              {(selectedColor === 'purple' || selectedColor === 'purple_own') && (
                 <View style={[styles.grayInfoBox, { backgroundColor: '#F3E8FF', borderColor: '#C4B5FD' }]}>
                   <Ionicons name="alert-circle" size={16} color="#7C3AED" />
-                  <Text style={[styles.grayInfoText, { color: '#7C3AED' }]}>Orfano A: nessun ordine recente</Text>
+                  <Text style={[styles.grayInfoText, { color: '#7C3AED' }]}>
+                    {isOwnOrphan ? 'Tuo cliente — Orfano A: contattalo per un nuovo ordine' : 'Orfano A: nessun ordine recente'}
+                  </Text>
                 </View>
               )}
-              {selectedColor === 'gold' && (
+              {(selectedColor === 'gold' || selectedColor === 'gold_own') && (
                 <View style={[styles.grayInfoBox, { backgroundColor: '#FEF9C3', borderColor: '#FDE68A' }]}>
                   <Ionicons name="alert-circle" size={16} color="#A16207" />
-                  <Text style={[styles.grayInfoText, { color: '#A16207' }]}>Orfano B: mai ordinato</Text>
+                  <Text style={[styles.grayInfoText, { color: '#A16207' }]}>
+                    {isOwnOrphan ? 'Tuo cliente — Orfano B: mai ordinato, va visitato' : 'Orfano B: mai ordinato'}
+                  </Text>
                 </View>
               )}
             </View>

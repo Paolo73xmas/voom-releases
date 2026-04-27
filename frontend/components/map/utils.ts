@@ -3,10 +3,13 @@ import { Tabaccheria } from '../../types';
 export function getMarkerColor(tab: Tabaccheria, userId?: string, userRole?: string, orphanMap?: Map<string, string>): string {
   const isAdmin = userRole === 'admin' || userRole === 'admincustom' || userRole === 'supervisor' || userRole === 'branch_admin';
 
-  // Orphan check (purple/yellow)
+  // Orphan check (purple/gold) — takes precedence over any other status
+  // If the customer is owned by the current agent, use *_own variants (green border)
   if (orphanMap && orphanMap.has(tab.id)) {
     const type = orphanMap.get(tab.id);
-    return type === 'orphan_a' ? 'purple' : 'gold';
+    const isOwn = !!userId && tab.agente_id === userId;
+    if (type === 'orphan_a') return isOwn ? 'purple_own' : 'purple';
+    return isOwn ? 'gold_own' : 'gold';
   }
 
   // Gray: belongs to another agent (only for non-admin users)
@@ -38,7 +41,9 @@ export function getStatusLabel(color: string): string {
     case 'orange': return 'Visitato';
     case 'green': return 'Ordinato';
     case 'purple': return 'Orfano A (no ordini recenti)';
+    case 'purple_own': return 'Orfano A — Tuo cliente';
     case 'gold': return 'Orfano B (mai ordinato)';
+    case 'gold_own': return 'Orfano B — Tuo cliente';
     default: return '';
   }
 }
@@ -49,8 +54,10 @@ export function getStatusEmoji(color: string): string {
     case 'red': return '\uD83D\uDD34';
     case 'orange': return '\uD83D\uDFE0';
     case 'green': return '\uD83D\uDFE2';
-    case 'purple': return '\uD83D\uDFE3';
-    case 'gold': return '\uD83D\uDFE1';
+    case 'purple':
+    case 'purple_own': return '\uD83D\uDFE3';
+    case 'gold':
+    case 'gold_own': return '\uD83D\uDFE1';
     default: return '';
   }
 }

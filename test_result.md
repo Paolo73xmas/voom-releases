@@ -251,8 +251,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Anagrafica (First Visit)"
-    - "Map to Anagrafica navigation"
+    - "Map orphan markers visual differentiation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -262,3 +261,6 @@ agent_communication:
     message: "Completed Anagrafica (First Visit) feature. 3-step wizard with photo/GPS, full form with search modal, and summary/review. All steps verified via screenshots. Dashboard quick action added. Fixed customer-tabaccheria bidirectional linking on new tabaccheria creation."
   - agent: "main"
     message: "Verified Rac. Ordine 2 (V2) complete 5-step wizard. Fixed rottamazioneLots crash in Step 5 (rottamazione_config.lots returned as non-array). All 5 steps confirmed working: customer selection, product loading (Italia/Estero toggle), payment, shipping, and summary with rottamazione/cashback. Added Array.isArray guard for safety."
+  - agent: "main"
+    message: "Map orphan markers: Added own-orphan visual differentiation. New colors purple_own and gold_own (purple/gold filled marker with green 3px border) for the agent's own customers that meet orphan criteria. Updated getMarkerColor (utils.ts), Leaflet WebView icons (leafletHtml.ts), web Leaflet renderer in map.tsx, popup color dot, legend (now shows 2 new entries 'Tuo cliente Orfano A/B'), and popup actions (own orphans get Naviga + Ordine + Dati + Ispezione, NO Reclama button since the agent already owns them). Verified via web screenshot at zoom level showing 1 purple marker visible plus 4 green/3 gray for agent's own customers (none currently meet the >120-day orphan threshold for this user)."
+

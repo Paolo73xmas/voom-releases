@@ -1,30 +1,37 @@
 import { Tabaccheria } from '../../types';
 
+/**
+ * getMarkerColor — aligned with web app MPV2.tsx
+ *
+ * Web behavior:
+ *  - Orphan check is GATED by stato_visita IN ('visitato', 'ordinato')
+ *  - Orphan markers are visible to ALL agents (RPC bypasses RLS)
+ *  - Gray for customers owned by other agents (non-admin only)
+ *  - Mobile addition: own-orphan variants (purple_own / yellow_own) with green border
+ */
 export function getMarkerColor(tab: Tabaccheria, userId?: string, userRole?: string, orphanMap?: Map<string, string>): string {
   const isAdmin = userRole === 'admin' || userRole === 'admincustom' || userRole === 'supervisor' || userRole === 'branch_admin';
 
-  // Orphan check (purple/gold) — takes precedence over any other status
-  // If the customer is owned by the current agent, use *_own variants (green border)
-  if (orphanMap && orphanMap.has(tab.id)) {
-    const type = orphanMap.get(tab.id);
-    const isOwn = !!userId && tab.agente_id === userId;
-    if (type === 'orphan_a') return isOwn ? 'purple_own' : 'purple';
-    return isOwn ? 'gold_own' : 'gold';
+  // Orphan check ONLY for visitato/ordinato (web parity)
+  if (tab.stato_visita === 'visitato' || tab.stato_visita === 'ordinato') {
+    const orphanStatus = orphanMap?.get(tab.id);
+    if (orphanStatus === 'orphan_a' || orphanStatus === 'orphan_b') {
+      const isOwn = !!userId && tab.agente_id === userId;
+      if (orphanStatus === 'orphan_a') return isOwn ? 'purple_own' : 'purple';
+      return isOwn ? 'yellow_own' : 'yellow';
+    }
   }
 
-  // Gray: belongs to another agent (only for non-admin users)
+  // Gray: belongs to another agent (non-admin only)
   if (!isAdmin && tab.agente_id && tab.agente_id !== userId) {
     return 'gray';
   }
+
   if (!tab.stato_visita || tab.stato_visita === 'non_visitato') {
     return 'red';
   }
-  if (tab.stato_visita === 'visitato') {
-    return 'orange';
-  }
-  if (tab.stato_visita === 'ordinato') {
-    return 'green';
-  }
+  if (tab.stato_visita === 'visitato') return 'orange';
+  if (tab.stato_visita === 'ordinato') return 'green';
   return 'red';
 }
 
@@ -42,8 +49,8 @@ export function getStatusLabel(color: string): string {
     case 'green': return 'Ordinato';
     case 'purple': return 'Orfano A (no ordini recenti)';
     case 'purple_own': return 'Orfano A — Tuo cliente';
-    case 'gold': return 'Orfano B (mai ordinato)';
-    case 'gold_own': return 'Orfano B — Tuo cliente';
+    case 'yellow': return 'Orfano B (mai ordinato)';
+    case 'yellow_own': return 'Orfano B — Tuo cliente';
     default: return '';
   }
 }
@@ -56,8 +63,8 @@ export function getStatusEmoji(color: string): string {
     case 'green': return '\uD83D\uDFE2';
     case 'purple':
     case 'purple_own': return '\uD83D\uDFE3';
-    case 'gold':
-    case 'gold_own': return '\uD83D\uDFE1';
+    case 'yellow':
+    case 'yellow_own': return '\uD83D\uDFE1';
     default: return '';
   }
 }

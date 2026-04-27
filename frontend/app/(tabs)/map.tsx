@@ -287,8 +287,8 @@ export default function MapScreen() {
     leafletClusterRef.current.clearLayers();
     leafletMarkersRef.current = [];
 
-    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', gold: '#D97706', purple_own: '#7C3AED', gold_own: '#D97706' };
-    const isOwnOrphan = (c: string) => c === 'purple_own' || c === 'gold_own';
+    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', yellow: '#FFD600', purple_own: '#7C3AED', yellow_own: '#FFD600' };
+    const isOwnOrphan = (c: string) => c === 'purple_own' || c === 'yellow_own';
 
     tabaccherie.forEach(t => {
       if (!t.latitude || !t.longitude) return;
@@ -344,8 +344,8 @@ export default function MapScreen() {
     leafletClusterRef.current.clearLayers();
     leafletMarkersRef.current = [];
 
-    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', gold: '#D97706', purple_own: '#7C3AED', gold_own: '#D97706' };
-    const isOwnOrphan = (c: string) => c === 'purple_own' || c === 'gold_own';
+    const COLORS: Record<string, string> = { gray: '#475569', red: '#dc2626', orange: '#f97316', green: '#15803d', purple: '#7C3AED', yellow: '#FFD600', purple_own: '#7C3AED', yellow_own: '#FFD600' };
+    const isOwnOrphan = (c: string) => c === 'purple_own' || c === 'yellow_own';
 
     data.forEach(t => {
       if (!t.latitude || !t.longitude) return;
@@ -551,8 +551,8 @@ export default function MapScreen() {
 
   const selectedColor = selectedTab ? getMarkerColor(selectedTab, user?.id, userRole, orphanMapRef.current) : 'red';
   const isOwnedByOther = selectedColor === 'gray';
-  const isOrphanColor = selectedColor === 'purple' || selectedColor === 'gold' || selectedColor === 'purple_own' || selectedColor === 'gold_own';
-  const isOwnOrphan = selectedColor === 'purple_own' || selectedColor === 'gold_own';
+  const isOrphanColor = selectedColor === 'purple' || selectedColor === 'yellow' || selectedColor === 'purple_own' || selectedColor === 'yellow_own';
+  const isOwnOrphan = selectedColor === 'purple_own' || selectedColor === 'yellow_own';
 
   return (
     <View style={styles.container}>
@@ -668,9 +668,9 @@ export default function MapScreen() {
             { color: '#F97316', label: 'Visitato' },
             { color: '#15803D', label: 'Ordinato' },
             { color: '#7C3AED', label: 'Orfano A (no ordini recenti)' },
-            { color: '#D97706', label: 'Orfano B (mai ordinato)' },
+            { color: '#FFD600', label: 'Orfano B (mai ordinato)' },
             { color: '#7C3AED', borderColor: '#15803D', label: 'Tuo cliente Orfano A' },
-            { color: '#D97706', borderColor: '#15803D', label: 'Tuo cliente Orfano B' },
+            { color: '#FFD600', borderColor: '#15803D', label: 'Tuo cliente Orfano B' },
             { color: '#475569', label: 'Altro agente' },
           ].map((item, i) => {
             const own = !!item.borderColor;
@@ -748,7 +748,7 @@ export default function MapScreen() {
                     selectedColor === 'orange' ? '#F97316' :
                     selectedColor === 'green' ? '#15803D' :
                     selectedColor === 'purple' || selectedColor === 'purple_own' ? '#7C3AED' :
-                    selectedColor === 'gold' || selectedColor === 'gold_own' ? '#D97706' : '#DC2626',
+                    selectedColor === 'yellow' || selectedColor === 'yellow_own' ? '#FFD600' : '#DC2626',
                   ...(isOwnOrphan ? { borderWidth: 2, borderColor: '#15803D' } : {}),
                 }]} />
                 <View style={{ flex: 1 }}>
@@ -794,7 +794,7 @@ export default function MapScreen() {
                 </TouchableOpacity>
               )}
 
-              {/* Red: Visit → Anagrafica */}
+              {/* Red: Visit (web app says "Visita") */}
               {selectedColor === 'red' && !isOwnedByOther && (
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.actionBtnPrimary]}
@@ -809,12 +809,12 @@ export default function MapScreen() {
                   }}
                 >
                   <Ionicons name="document-text" size={18} color="#FFF" />
-                  <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Anagrafica</Text>
+                  <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Visita</Text>
                 </TouchableOpacity>
               )}
 
-              {/* Orange/Green/Own-Orphan: Order + Data + Inspection */}
-              {(selectedColor === 'orange' || selectedColor === 'green' || isOwnOrphan) && (
+              {/* Orange/Green/Orphan (any): Order + Data + Inspection (web parity) */}
+              {(selectedColor === 'orange' || selectedColor === 'green' || isOrphanColor) && (
                 <>
                   <TouchableOpacity
                     style={[styles.actionBtn, styles.actionBtnPrimary]}
@@ -858,10 +858,10 @@ export default function MapScreen() {
                 </View>
               )}
 
-              {/* Orphan (NOT owned by current agent): Reclama button */}
-              {(selectedColor === 'purple' || selectedColor === 'gold') && selectedTab.agente_id !== user?.id && (
+              {/* Orphan (NOT owned by current agent): Reclama button — RED rose (web parity) */}
+              {(selectedColor === 'purple' || selectedColor === 'yellow') && selectedTab.agente_id !== user?.id && (
                 <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
+                  style={[styles.actionBtn, { backgroundColor: '#E11D48' }]}
                   onPress={async () => {
                     if (!user || !selectedTab.customer_id) {
                       Alert.alert('Errore', 'Questo punto vendita non ha un cliente associato');
@@ -902,7 +902,7 @@ export default function MapScreen() {
                   </Text>
                 </View>
               )}
-              {(selectedColor === 'gold' || selectedColor === 'gold_own') && (
+              {(selectedColor === 'yellow' || selectedColor === 'yellow_own') && (
                 <View style={[styles.grayInfoBox, { backgroundColor: '#FEF9C3', borderColor: '#FDE68A' }]}>
                   <Ionicons name="alert-circle" size={16} color="#A16207" />
                   <Text style={[styles.grayInfoText, { color: '#A16207' }]}>

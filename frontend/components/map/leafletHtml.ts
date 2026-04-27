@@ -111,9 +111,9 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
       orange: L.divIcon({ className:'custom-marker', html:'<div style="background:#f97316;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize:[14,14], iconAnchor:[7,7] }),
       green: L.divIcon({ className:'custom-marker', html:'<div style="background:#15803d;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize:[14,14], iconAnchor:[7,7] }),
       purple: L.divIcon({ className:'custom-marker', html:'<div style="background:#7C3AED;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize:[14,14], iconAnchor:[7,7] }),
-      gold: L.divIcon({ className:'custom-marker', html:'<div style="background:#D97706;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize:[14,14], iconAnchor:[7,7] }),
+      yellow: L.divIcon({ className:'custom-marker', html:'<div style="background:#FFD600;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize:[14,14], iconAnchor:[7,7] }),
       purple_own: L.divIcon({ className:'custom-marker', html:'<div style="background:#7C3AED;width:16px;height:16px;border-radius:50%;border:3px solid #15803d;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>', iconSize:[16,16], iconAnchor:[8,8] }),
-      gold_own: L.divIcon({ className:'custom-marker', html:'<div style="background:#D97706;width:16px;height:16px;border-radius:50%;border:3px solid #15803d;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>', iconSize:[16,16], iconAnchor:[8,8] }),
+      yellow_own: L.divIcon({ className:'custom-marker', html:'<div style="background:#FFD600;width:16px;height:16px;border-radius:50%;border:3px solid #15803d;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>', iconSize:[16,16], iconAnchor:[8,8] }),
     };
 
     var debounceTimer = null;

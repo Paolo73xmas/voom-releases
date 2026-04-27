@@ -57,8 +57,8 @@ export default function OrphanClaimsScreen() {
         <Text style={s.cardAddress} numberOfLines={1}>{item.tabaccheria_indirizzo}, {item.tabaccheria_comune}</Text>
         <View style={s.cardFooter}>
           <Text style={s.cardDate}>{new Date(item.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
-          {item.current_agent_name && item.current_agent_name !== 'Nessuno' && (
-            <Text style={s.cardAgent}>Titolare: {item.current_agent_name}</Text>
+          {item.customer_agent_name && item.customer_agent_name !== 'Nessuno' && (
+            <Text style={s.cardAgent}>Titolare: {item.customer_agent_name}</Text>
           )}
         </View>
         {item.status === 'approved' && item.customer_id && (

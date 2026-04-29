@@ -853,13 +853,17 @@ export default function MapScreen() {
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
                     onPress={() => {
-                      setShowPopup(false);
                       const custId = selectedTab?.customer_id;
-                      if (custId) {
-                        router.push({ pathname: '/inspection/new', params: { customerId: custId } });
-                      } else {
+                      if (!custId) {
                         Alert.alert('Errore', 'Nessun cliente associato a questa tabaccheria');
+                        return;
                       }
+                      // Close popup first, then navigate AFTER modal has dismissed
+                      // (avoids race condition on Android where Modal blocks navigation)
+                      setShowPopup(false);
+                      setTimeout(() => {
+                        router.push(`/inspection/new?customerId=${encodeURIComponent(custId)}`);
+                      }, 250);
                     }}
                   >
                     <Ionicons name="camera" size={18} color="#FFF" />

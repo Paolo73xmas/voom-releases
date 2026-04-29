@@ -204,11 +204,11 @@ export default function CustomerDetailScreen() {
             <Ionicons name="navigate" size={20} color="#8B5CF6" />
             <Text style={styles.actionCircleLabel}>Naviga</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCircle} onPress={() => router.push({ pathname: '/order-collection', params: { customerId: customer.id } })}>
+          <TouchableOpacity style={styles.actionCircle} onPress={() => router.push(`/order-collection-v2?customerId=${encodeURIComponent(customer.id)}`)}>
             <Ionicons name="cart" size={20} color="#F59E0B" />
             <Text style={styles.actionCircleLabel}>Ordine</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCircle} onPress={() => router.push({ pathname: '/inspection/new', params: { customerId: customer.id } })}>
+          <TouchableOpacity style={styles.actionCircle} onPress={() => router.push(`/inspection/new?customerId=${encodeURIComponent(customer.id)}`)}>
             <Ionicons name="camera" size={20} color="#EF4444" />
             <Text style={styles.actionCircleLabel}>Ispezione</Text>
           </TouchableOpacity>

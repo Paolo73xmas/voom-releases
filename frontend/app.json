@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "VOOM Sales",
-    "slug": "voom-sales",
+    "name": "VOOM Crm",
+    "slug": "voom-crm",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "voom-sales",
+    "scheme": "voom-crm",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.voom.sales",
+      "bundleIdentifier": "com.voom.crm",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Per registrare visite e ispezioni",
         "NSLocationAlwaysUsageDescription": "Per il tracking GPS sul campo",
@@ -25,7 +25,7 @@
         "backgroundColor": "#1E40AF"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.voom.sales",
+      "package": "com.voom.crm",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",

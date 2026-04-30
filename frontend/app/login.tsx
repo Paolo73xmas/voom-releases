@@ -84,7 +84,7 @@ export default function LoginScreen() {
   const promptBiometricLogin = async (storedEmail: string, storedPassword: string) => {
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Sblocca VOOM Sales',
+        promptMessage: 'Sblocca VOOM Crm',
         fallbackLabel: 'Usa password',
         cancelLabel: 'Annulla',
         disableDeviceFallback: false,
@@ -171,7 +171,7 @@ export default function LoginScreen() {
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Text style={styles.logo}>VOOM</Text>
-          <Text style={styles.subtitle}>Sales Management</Text>
+          <Text style={styles.subtitle}>Crm</Text>
         </View>
 
         <View style={styles.form}>
@@ -261,7 +261,7 @@ export default function LoginScreen() {
           )}
         </View>
 
-        <Text style={styles.footer}>VOOM Sales v1.0</Text>
+        <Text style={styles.footer}>VOOM Crm v1.0</Text>
       </View>
     </KeyboardAvoidingView>
   );

@@ -99,7 +99,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Supporto</Text>
         <View style={styles.card}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('mailto:supporto@voomweb.it?subject=Assistenza App VOOM')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('mailto:supporto@voomweb.it?subject=Assistenza App VOOM Crm')}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="help-circle-outline" size={20} color="#8B5CF6" />
             </View>
@@ -115,7 +115,7 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('VOOM Sales', `Versione: 1.0.0\nPiattaforma: ${Platform.OS}\n\nSviluppato da Jivea S.r.l.\n© ${new Date().getFullYear()} Tutti i diritti riservati`)}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('VOOM Crm', `Versione: 1.0.0\nPiattaforma: ${Platform.OS}\n\nSviluppato da Jivea S.r.l.\n© ${new Date().getFullYear()} Tutti i diritti riservati`)}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="information-circle-outline" size={20} color="#6B7280" />
             </View>
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       {/* Version */}
-      <Text style={styles.version}>VOOM Sales v1.0.0</Text>
+      <Text style={styles.version}>VOOM Crm v1.0.0</Text>
     </ScrollView>
   );
 }

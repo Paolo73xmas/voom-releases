@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.voom.crm",
+      "buildNumber": "1",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Per registrare visite e ispezioni",
         "NSLocationAlwaysUsageDescription": "Per il tracking GPS sul campo",

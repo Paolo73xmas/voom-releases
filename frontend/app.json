@@ -14,10 +14,11 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Per registrare visite e ispezioni",
-        "NSLocationAlwaysUsageDescription": "Per il tracking GPS sul campo",
+        "NSLocationAlwaysUsageDescription": "Per rilevare la posizione durante le visite commerciali",
         "NSCameraUsageDescription": "Per scattare foto durante le ispezioni",
         "NSPhotoLibraryUsageDescription": "Per selezionare foto dalla galleria",
-        "NSFaceIDUsageDescription": "Per accesso rapido sicuro all'app"
+        "NSFaceIDUsageDescription": "Per accesso rapido sicuro all'app",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

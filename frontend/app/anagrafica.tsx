@@ -45,6 +45,8 @@ interface TabSearchResult {
   cf_iva?: string;
   partita_iva?: string;
   codice_fiscale?: string;
+  gps_lat?: string | number;
+  gps_lng?: string | number;
   customer_id?: string;
   agente_id?: string;
   Num_Ordinale?: number | string;
@@ -125,6 +127,8 @@ export default function AnagraficaScreen() {
   const [gpsLoading, setGpsLoading] = useState(false);
   const [proximityVerified, setProximityVerified] = useState<boolean | null>(null);
   const [distanceMeters, setDistanceMeters] = useState<number | null>(null);
+  // ✅ Web parity: tabaccheria GPS coordinates (preferred over agent device GPS when registering from map)
+  const [tabaccheriaGps, setTabaccheriaGps] = useState<{ lat: number; lng: number } | null>(null);
 
   // Step 2: Form
   const [form, setForm] = useState({
@@ -173,6 +177,14 @@ export default function AnagraficaScreen() {
         vatNumber, fiscalCode,
         tabaccheriaId: data.id,
       }));
+      // ✅ Web parity: store tabaccheria GPS coords for use during customer save
+      if (data.gps_lat && data.gps_lng) {
+        const lat = parseFloat(data.gps_lat);
+        const lng = parseFloat(data.gps_lng);
+        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+          setTabaccheriaGps({ lat, lng });
+        }
+      }
     } catch {}
   };
 
@@ -266,7 +278,7 @@ export default function AnagraficaScreen() {
     const timer = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        let query = supabase.from('tabaccherie').select('id, denominazione, indirizzo, comune, provincia, cap, telefono_mobile, email, cf_iva, partita_iva, codice_fiscale, customer_id, agente_id, "Num_Ordinale"')
+        let query = supabase.from('tabaccherie').select('id, denominazione, indirizzo, comune, provincia, cap, telefono_mobile, email, cf_iva, partita_iva, codice_fiscale, gps_lat, gps_lng, customer_id, agente_id, "Num_Ordinale"')
           .ilike('comune', `%${searchCity}%`).order('denominazione').limit(50);
         if (searchAddress.length >= 1) query = query.ilike('indirizzo', `%${searchAddress}%`);
         if (searchNumOrdinale.length >= 1) {
@@ -306,6 +318,18 @@ export default function AnagraficaScreen() {
       vatNumber, fiscalCode,
       tabaccheriaId: tab.id,
     }));
+    // ✅ Web parity: store tabaccheria GPS coords from search result
+    if (tab.gps_lat && tab.gps_lng) {
+      const lat = parseFloat(String(tab.gps_lat));
+      const lng = parseFloat(String(tab.gps_lng));
+      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        setTabaccheriaGps({ lat, lng });
+      } else {
+        setTabaccheriaGps(null);
+      }
+    } else {
+      setTabaccheriaGps(null);
+    }
     setShowSearch(false);
     setSearchCity(''); setSearchAddress(''); setSearchNumOrdinale('');
     Alert.alert('Dati caricati', 'Completa i campi mancanti per procedere.');
@@ -348,8 +372,17 @@ export default function AnagraficaScreen() {
         customerNotes += '\n\n[PRIMA VISITA TELEFONICA] Ordine ricevuto telefonicamente.';
       }
 
-      const latitude = gpsPosition?.lat || 0;
-      const longitude = gpsPosition?.lng || 0;
+      // ✅ Web parity (FirstVisit.tsx): Use tabaccheria GPS coords if registering from map, else agent device GPS
+      // Priority: tabaccheriaGps > agentGps (gpsPosition) > 0
+      const latitude = tabaccheriaGps?.lat ?? gpsPosition?.lat ?? 0;
+      const longitude = tabaccheriaGps?.lng ?? gpsPosition?.lng ?? 0;
+
+      console.log('[Anagrafica] 📍 GPS Resolution:', {
+        tabaccheriaGps,
+        agentGps: gpsPosition,
+        finalUsed: { latitude, longitude },
+        source: tabaccheriaGps ? 'tabaccheria' : (gpsPosition ? 'agent_device' : 'none'),
+      });
 
       // Create customer
       const { data: customer, error: custErr } = await supabase

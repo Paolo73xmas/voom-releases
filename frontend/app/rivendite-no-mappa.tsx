@@ -251,6 +251,8 @@ export default function RivenditeNoMappaScreen() {
         provincia: form.province,
         telefono_mobile: form.contactPhone || null,
         email: emailValue,
+        partita_iva: form.vatNumber || null,
+        codice_fiscale: form.fiscalCode ? form.fiscalCode.toUpperCase() : null,
         cf_iva: cfIva,
         gps_lat: finalLat.toString(),
         gps_lng: finalLng.toString(),

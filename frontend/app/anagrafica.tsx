@@ -43,16 +43,43 @@ interface TabSearchResult {
   telefono_mobile?: string;
   email?: string;
   cf_iva?: string;
+  partita_iva?: string;
+  codice_fiscale?: string;
   customer_id?: string;
   agente_id?: string;
   Num_Ordinale?: number | string;
 }
 
-function parseCfIva(cfIva?: string | null): { vatNumber: string; fiscalCode: string } {
+/**
+ * Web app parity (FirstVisit.tsx → parseCfIva):
+ * Priority 1: dedicated `partita_iva` / `codice_fiscale` columns
+ * Priority 2: legacy `cf_iva` column (auto-detect P.IVA vs Codice Fiscale)
+ */
+function parseCfIva(
+  cfIva?: string | null,
+  partitaIva?: string | null,
+  codiceFiscale?: string | null
+): { vatNumber: string; fiscalCode: string } {
+  let vatNumber = '';
+  let fiscalCode = '';
+
+  // Priority 1: dedicated columns
+  if (partitaIva && partitaIva.trim() !== '') {
+    const numericValue = partitaIva.trim().replace(/\D/g, '');
+    vatNumber = numericValue.padStart(11, '0');
+  }
+  if (codiceFiscale && codiceFiscale.trim() !== '') {
+    fiscalCode = codiceFiscale.trim().toUpperCase();
+  }
+  if (vatNumber || fiscalCode) {
+    return { vatNumber, fiscalCode };
+  }
+
+  // Priority 2: legacy cf_iva fallback
   if (!cfIva || !cfIva.trim()) return { vatNumber: '', fiscalCode: '' };
   const trimmed = cfIva.trim();
   if (/[a-zA-Z]/.test(trimmed)) {
-    return { vatNumber: '', fiscalCode: trimmed };
+    return { vatNumber: '', fiscalCode: trimmed.toUpperCase() };
   }
   return { vatNumber: trimmed.replace(/\D/g, '').padStart(11, '0'), fiscalCode: '' };
 }
@@ -133,7 +160,7 @@ export default function AnagraficaScreen() {
       const { data, error } = await supabase
         .from('tabaccherie').select('*').eq('id', tabId).single();
       if (error || !data) return;
-      const { vatNumber, fiscalCode } = parseCfIva(data.cf_iva);
+      const { vatNumber, fiscalCode } = parseCfIva(data.cf_iva, data.partita_iva, data.codice_fiscale);
       setForm(prev => ({
         ...prev,
         businessName: data.denominazione || '',
@@ -239,7 +266,7 @@ export default function AnagraficaScreen() {
     const timer = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        let query = supabase.from('tabaccherie').select('id, denominazione, indirizzo, comune, provincia, cap, telefono_mobile, email, cf_iva, customer_id, agente_id, "Num_Ordinale"')
+        let query = supabase.from('tabaccherie').select('id, denominazione, indirizzo, comune, provincia, cap, telefono_mobile, email, cf_iva, partita_iva, codice_fiscale, customer_id, agente_id, "Num_Ordinale"')
           .ilike('comune', `%${searchCity}%`).order('denominazione').limit(50);
         if (searchAddress.length >= 1) query = query.ilike('indirizzo', `%${searchAddress}%`);
         if (searchNumOrdinale.length >= 1) {
@@ -266,7 +293,7 @@ export default function AnagraficaScreen() {
       Alert.alert('Non consentito', 'Questa tabaccheria è assegnata ad un altro agente.');
       return;
     }
-    const { vatNumber, fiscalCode } = parseCfIva(tab.cf_iva);
+    const { vatNumber, fiscalCode } = parseCfIva(tab.cf_iva, tab.partita_iva, tab.codice_fiscale);
     setForm(prev => ({
       ...prev,
       businessName: tab.denominazione || '',
@@ -388,6 +415,10 @@ export default function AnagraficaScreen() {
           stato_visita: 'visitato',
           agente_id: user.id,
           customer_id: customer.id,
+          // Sync dedicated columns + legacy cf_iva
+          partita_iva: form.vatNumber || null,
+          codice_fiscale: form.fiscalCode || null,
+          cf_iva: form.vatNumber || form.fiscalCode || null,
         }).eq('id', form.tabaccheriaId);
       } else {
         const codice = await generateUniqueCodiceRivendita();
@@ -400,6 +431,8 @@ export default function AnagraficaScreen() {
           provincia: form.province,
           telefono_mobile: form.contactPhone || null,
           email: emailValue,
+          partita_iva: form.vatNumber || null,
+          codice_fiscale: form.fiscalCode || null,
           cf_iva: form.vatNumber || form.fiscalCode || null,
           gps_lat: latitude.toString(),
           gps_lng: longitude.toString(),

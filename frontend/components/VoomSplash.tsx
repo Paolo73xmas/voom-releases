@@ -202,14 +202,9 @@ export default function VoomSplash({ onFinish }: SplashProps) {
           <Image source={LOGO} style={styles.logo} resizeMode="contain" />
         </Animated.View>
 
-        {/* Text VOOM */}
-        <Animated.View style={[styles.textWrap, textStyle]}>
-          <Text style={styles.voomText}>V O O M</Text>
-        </Animated.View>
-
         {/* Subtitle */}
         <Animated.View style={subtitleStyle}>
-          <Text style={styles.subtitle}>Sales Management Platform</Text>
+          <Text style={styles.subtitle}>Crm</Text>
         </Animated.View>
       </View>
 

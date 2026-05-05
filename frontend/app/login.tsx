@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
@@ -170,7 +171,7 @@ export default function LoginScreen() {
     >
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>VOOM</Text>
+          <Image source={require('../assets/voom-logo.jpg')} style={styles.logoImage} resizeMode="contain" />
           <Text style={styles.subtitle}>Crm</Text>
         </View>
 
@@ -280,6 +281,12 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
+  },
+  logoImage: {
+    width: 200,
+    height: 100,
+    marginBottom: 12,
+    borderRadius: 16,
   },
   logo: {
     fontSize: 48,

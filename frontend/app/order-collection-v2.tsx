@@ -170,7 +170,7 @@ export default function OrderCollectionV2() {
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
   // ✅ Web parity: Virtual branches use central warehouse stock (no branch overlay)
-  const { isVirtualBranch } = useVirtualBranch();
+  const { isVirtualBranch, isLoading: vbLoading } = useVirtualBranch();
 
   // ── Navigation ──
   const [currentStep, setCurrentStep] = useState(0);
@@ -278,10 +278,13 @@ export default function OrderCollectionV2() {
   // DATA LOADING
   // ═══════════════════════════════════════════════════
   useEffect(() => {
+    // Wait for virtual branch detection to complete BEFORE loading products/stock
+    // (otherwise virtual branches load with branch_stock=0 instead of central warehouse)
+    if (vbLoading) return;
     loadInitialData();
     loadLocation();
     loadRottamazioneConfig();
-  }, []);
+  }, [vbLoading]);
 
   // Restore draft after data is loaded
   useEffect(() => {

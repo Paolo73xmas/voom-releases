@@ -954,11 +954,14 @@ export default function OrderCollectionV2() {
       // Delete the draft since order was submitted
       await deleteDraft(draftId);
       const warnText = reservationWarnings.length ? `\n\nAttenzione disponibilità:\n${reservationWarnings.join('\n')}` : '';
+      // Haptic success feedback
+      try { const { hap } = await import('../lib/haptics'); hap.success(); } catch {}
       Alert.alert('Ordine Creato!', `Ordine ${order.order_number} creato con successo\nTotale: ${formatCurrency(finalTotalAmount)}${warnText}`, [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (error: any) {
       console.error('Error creating order:', error);
+      try { const { hap } = await import('../lib/haptics'); hap.error(); } catch {}
       Alert.alert('Errore', error.message || "Impossibile creare l'ordine");
     } finally {
       setIsSubmitting(false);

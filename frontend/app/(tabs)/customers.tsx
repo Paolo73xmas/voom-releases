@@ -15,6 +15,9 @@ import { useAuthStore } from '../../store/authStore';
 import { fetchCustomers } from '../../lib/api/customers';
 import { Customer } from '../../types';
 import { useDebounce } from '../../hooks/useDebounce';
+import { SkeletonList } from '../../components/Skeleton';
+import { EmptyState } from '../../components/EmptyState';
+import { hap } from '../../lib/haptics';
 
 // Memoized card — re-renders only when props change
 const CustomerCard = memo(function CustomerCard({
@@ -119,6 +122,7 @@ export default function CustomersScreen() {
   }, [loadCustomers]);
 
   const handlePressCustomer = useCallback((id: string) => {
+    hap.light();
     router.push(`/customer/${id}`);
   }, [router]);
 
@@ -130,8 +134,14 @@ export default function CustomersScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1E40AF" />
+      <View style={styles.container}>
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color="#6B7280" />
+            <View style={{ flex: 1, marginLeft: 12, height: 16, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+          </View>
+        </View>
+        <SkeletonList count={6} height={96} />
       </View>
     );
   }
@@ -180,10 +190,14 @@ export default function CustomersScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="people-outline" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyText}>Nessun cliente trovato</Text>
-          </View>
+          <EmptyState
+            icon="people-outline"
+            title="Nessun cliente trovato"
+            message={searchQuery ? 'Modifica la ricerca o crea un nuovo cliente' : 'Inizia aggiungendo il tuo primo cliente'}
+            ctaLabel={searchQuery ? undefined : 'Nuovo Cliente'}
+            onCtaPress={searchQuery ? undefined : () => router.push('/anagrafica')}
+            iconGradient="primary"
+          />
         }
       />
     </View>

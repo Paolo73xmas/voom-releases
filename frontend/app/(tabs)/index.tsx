@@ -7,10 +7,14 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Pressable,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useAuthStore } from '../../store/authStore';
 import { fetchCustomers } from '../../lib/api/customers';
 import { fetchOrders } from '../../lib/api/orders';
@@ -19,6 +23,11 @@ import { supabase } from '../../lib/supabase';
 import { getDraftCount } from '../../lib/drafts';
 import { getCache, setCache, clearCache } from '../../lib/memory-cache';
 import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
+import { Avatar } from '../../components/Avatar';
+import { AnimatedNumber } from '../../components/AnimatedNumber';
+import { EmptyState } from '../../components/EmptyState';
+import { COLORS, GRADIENTS, FONTS, FONT_SIZE, SPACING, RADIUS, SHADOWS, getTimeGreeting } from '../../lib/theme';
+import { hap } from '../../lib/haptics';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -187,66 +196,28 @@ export default function Dashboard() {
     setRefreshing(false);
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Buongiorno';
-    if (hour < 18) return 'Buon pomeriggio';
-    return 'Buonasera';
-  };
-
   const { hasAccess: hasRimborsiAccess } = useRimborsiAccess();
 
-  const quickActions = [
+  // Quick actions grouped by section, with gradient colors per action
+  const actionGroups = [
     {
-      title: 'Raccolta Ordine',
-      icon: 'cart',
-      color: '#059669',
-      onPress: () => router.push('/order-collection-v2'),
+      title: 'Vendite',
+      actions: [
+        { title: 'Raccolta Ordine', icon: 'cart' as const, gradient: GRADIENTS.success, onPress: () => router.push('/order-collection-v2') },
+        { title: 'Bozze Ordine', icon: 'document-text-outline' as const, gradient: GRADIENTS.warning, badge: draftCount, onPress: () => router.push('/drafts') },
+        { title: 'Sostituzioni', icon: 'swap-horizontal-outline' as const, gradient: GRADIENTS.purple, onPress: () => router.push('/substitutions') },
+        ...(hasRimborsiAccess ? [{ title: 'Rimborsi', icon: 'receipt-outline' as const, gradient: GRADIENTS.teal, onPress: () => router.push('/rimborsi') }] : []),
+      ],
     },
     {
-      title: 'Bozze Ordine',
-      icon: 'document-text-outline',
-      color: '#F59E0B',
-      badge: draftCount,
-      onPress: () => router.push('/drafts'),
+      title: 'Punti Vendita',
+      actions: [
+        { title: 'Nuova Ispezione', icon: 'camera' as const, gradient: GRADIENTS.ocean, onPress: () => router.push('/inspection/new') },
+        { title: 'Anagrafica', icon: 'document-text' as const, gradient: GRADIENTS.danger, onPress: () => router.push('/anagrafica') },
+        { title: 'No Mappa', icon: 'globe' as const, gradient: GRADIENTS.primary, onPress: () => router.push('/rivendite-no-mappa') },
+        { title: 'Reclami', icon: 'flag-outline' as const, gradient: GRADIENTS.pink, onPress: () => router.push('/orphan-claims') },
+      ],
     },
-    {
-      title: 'Sostituzioni',
-      icon: 'swap-horizontal-outline',
-      color: '#8B5CF6',
-      onPress: () => router.push('/substitutions'),
-    },
-    {
-      title: 'Nuova Ispezione',
-      icon: 'camera',
-      color: '#0EA5E9',
-      onPress: () => router.push('/inspection/new'),
-    },
-    {
-      title: 'Anagrafica',
-      icon: 'document-text',
-      color: '#DC2626',
-      onPress: () => router.push('/anagrafica'),
-    },
-    {
-      title: 'Rivendite No Mappa',
-      icon: 'globe',
-      color: '#6366F1',
-      onPress: () => router.push('/rivendite-no-mappa'),
-    },
-    {
-      title: 'I Miei Reclami',
-      icon: 'flag-outline',
-      color: '#7C3AED',
-      onPress: () => router.push('/orphan-claims'),
-    },
-    // Rimborsi (visible only for enabled agents/admins)
-    ...(hasRimborsiAccess ? [{
-      title: 'Rimborsi',
-      icon: 'receipt-outline' as const,
-      color: '#10B981',
-      onPress: () => router.push('/rimborsi'),
-    }] : []),
   ];
 
   return (
@@ -257,81 +228,90 @@ export default function Dashboard() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>{getGreeting()}, {profile?.full_name || 'Utente'}!</Text>
-            <Text style={styles.subtitle}>Ecco il tuo riepilogo giornaliero</Text>
-          </View>
-          <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(239,68,68,0.15)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}
-            onPress={() => Alert.alert('Logout', 'Sei sicuro di voler uscire?', [
+      {/* Header — Avatar + greeting + logout */}
+      <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
+        <Avatar name={profile?.full_name} email={profile?.email} size={48} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.greeting}>{getTimeGreeting()}</Text>
+          <Text style={styles.userName} numberOfLines={1}>{profile?.full_name || 'Utente'}</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => {
+            hap.light();
+            Alert.alert('Logout', 'Sei sicuro di voler uscire?', [
               { text: 'Annulla', style: 'cancel' },
               { text: 'Esci', style: 'destructive', onPress: async () => { await logout(); router.replace('/login'); } },
-            ])}
-          >
-            <Ionicons name="log-out-outline" size={18} color="#EF4444" />
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#EF4444' }}>Esci</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            ]);
+          }}
+        >
+          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+        </TouchableOpacity>
+      </Animated.View>
 
-      {/* Stats Cards */}
-      <View style={styles.statsGrid}>
-        <View style={[styles.statCard, { backgroundColor: '#EEF2FF' }]}>
-          <View style={styles.statRow}>
-            <Ionicons name="people" size={18} color="#3B82F6" />
-            <Text style={styles.statNumber}>{stats.customers}</Text>
-          </View>
-          <Text style={styles.statLabel}>Clienti</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: '#ECFDF5' }]}>
-          <View style={styles.statRow}>
-            <Ionicons name="cart" size={18} color="#10B981" />
-            <Text style={styles.statNumber}>{stats.orders}</Text>
-          </View>
-          <Text style={styles.statLabel}>Ordini</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: '#FEF3C7' }]}>
-          <View style={styles.statRow}>
-            <Ionicons name="location" size={18} color="#F59E0B" />
-            <Text style={styles.statNumber}>{stats.visits}</Text>
-          </View>
-          <Text style={styles.statLabel}>Visite</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: '#FEE2E2' }]}>
-          <View style={styles.statRow}>
-            <Ionicons name="time" size={18} color="#EF4444" />
-            <Text style={styles.statNumber}>{stats.pendingOrders}</Text>
-          </View>
-          <Text style={styles.statLabel}>In Attesa</Text>
-        </View>
-      </View>
-
-      {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>Azioni Rapide</Text>
-      <View style={styles.actionsGrid}>
-        {quickActions.map((action, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.actionCard}
-            onPress={action.onPress}
+      {/* Stats Cards — gradient + count-up animation */}
+      <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.statsGrid}>
+        {[
+          { label: 'Clienti', value: stats.customers, icon: 'people', gradient: GRADIENTS.primary as [string, string] },
+          { label: 'Ordini', value: stats.orders, icon: 'cart', gradient: GRADIENTS.success as [string, string] },
+          { label: 'Visite', value: stats.visits, icon: 'location', gradient: GRADIENTS.warning as [string, string] },
+          { label: 'In Attesa', value: stats.pendingOrders, icon: 'time', gradient: GRADIENTS.danger as [string, string] },
+        ].map((s, i) => (
+          <LinearGradient
+            key={s.label}
+            colors={s.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.statCard}
           >
-            <View style={{ position: 'relative' }}>
-              <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
-                <Ionicons name={action.icon as any} size={24} color={action.color} />
-              </View>
-              {(action as any).badge > 0 && (
-                <View style={styles.draftBadge}>
-                  <Text style={styles.draftBadgeText}>{(action as any).badge}</Text>
-                </View>
-              )}
+            <View style={styles.statIconCircle}>
+              <Ionicons name={s.icon as any} size={16} color="#FFF" />
             </View>
-            <Text style={styles.actionTitle}>{action.title}</Text>
-          </TouchableOpacity>
+            <AnimatedNumber
+              value={s.value}
+              duration={700 + i * 100}
+              style={styles.statNumberGrad}
+            />
+            <Text style={styles.statLabelGrad}>{s.label}</Text>
+          </LinearGradient>
         ))}
-      </View>
+      </Animated.View>
+
+      {/* Quick Actions — grouped by section, with gradient icons */}
+      {actionGroups.map((group, gIdx) => (
+        <Animated.View key={group.title} entering={FadeInDown.delay(200 + gIdx * 80).duration(400)}>
+          <Text style={styles.sectionTitle}>{group.title}</Text>
+          <View style={styles.actionsGrid}>
+            {group.actions.map((action, idx) => (
+              <Pressable
+                key={action.title}
+                style={({ pressed }) => [
+                  styles.actionCard,
+                  pressed && { transform: [{ scale: 0.96 }], opacity: 0.85 },
+                ]}
+                onPress={() => { hap.light(); action.onPress(); }}
+              >
+                <View style={{ position: 'relative' }}>
+                  <LinearGradient
+                    colors={action.gradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.actionIconGrad}
+                  >
+                    <Ionicons name={action.icon} size={22} color="#FFF" />
+                  </LinearGradient>
+                  {(action as any).badge > 0 && (
+                    <View style={styles.draftBadge}>
+                      <Text style={styles.draftBadgeText}>{(action as any).badge}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.actionTitle}>{action.title}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Animated.View>
+      ))}
 
       {/* Prossimi Appuntamenti */}
       <Text style={styles.sectionTitle}>Prossimi Appuntamenti</Text>
@@ -429,37 +409,74 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   content: {
-    padding: 16,
+    padding: SPACING.lg,
+    paddingTop: Platform.OS === 'ios' ? 60 : 28,
+    paddingBottom: 120, // space for floating tab bar
   },
   header: {
-    marginBottom: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.xl,
   },
   greeting: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1F2937',
+    fontSize: FONT_SIZE.md,
+    fontFamily: FONTS.regular,
+    color: COLORS.textMuted,
+  },
+  userName: {
+    fontSize: FONT_SIZE.xxl,
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    marginTop: 2,
+  },
+  logoutBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(239,68,68,0.1)',
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
+    fontSize: FONT_SIZE.lg,
+    fontFamily: FONTS.regular,
+    color: COLORS.textMuted,
     marginTop: 4,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 24,
+    gap: 10,
+    marginBottom: SPACING.xl,
   },
   statCard: {
     flex: 1,
     minWidth: '22%',
-    paddingVertical: 10,
+    paddingVertical: 14,
     paddingHorizontal: 10,
-    borderRadius: 12,
+    borderRadius: RADIUS.lg,
     alignItems: 'center',
+    ...SHADOWS.md,
+  },
+  statIconCircle: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 6,
+  },
+  statNumberGrad: {
+    fontSize: 22,
+    fontFamily: FONTS.bold,
+    color: '#FFF',
+    letterSpacing: -0.3,
+  },
+  statLabelGrad: {
+    fontSize: 11,
+    fontFamily: FONTS.medium,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   statRow: {
     flexDirection: 'row',
@@ -478,29 +495,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontSize: 12,
+    fontFamily: FONTS.semibold,
+    color: COLORS.textMuted,
     marginBottom: 12,
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -6,
-    marginBottom: 24,
+    gap: 10,
+    marginBottom: SPACING.lg,
   },
   actionCard: {
-    width: '47%',
-    margin: '1.5%',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
+    flexBasis: '23%',
+    flexGrow: 1,
+    backgroundColor: COLORS.surface,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderRadius: RADIUS.lg,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...SHADOWS.sm,
   },
   actionIcon: {
     width: 48,
@@ -510,11 +527,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
+  actionIconGrad: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    ...SHADOWS.sm,
+  },
   actionTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1F2937',
+    fontSize: 11.5,
+    fontFamily: FONTS.semibold,
+    color: COLORS.text,
     textAlign: 'center',
+    lineHeight: 14,
   },
   draftBadge: {
     position: 'absolute',

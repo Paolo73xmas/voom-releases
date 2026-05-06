@@ -17,6 +17,9 @@ import { Order } from '../../types';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useDebounce } from '../../hooks/useDebounce';
+import { SkeletonList } from '../../components/Skeleton';
+import { EmptyState } from '../../components/EmptyState';
+import { hap } from '../../lib/haptics';
 
 const formatDate = (dateString: string) => {
   try {
@@ -141,6 +144,7 @@ export default function OrdersScreen() {
   }, [orders, debouncedSearch]);
 
   const handlePressOrder = useCallback((id: string) => {
+    hap.light();
     router.push(`/order/${id}`);
   }, [router]);
 
@@ -158,8 +162,14 @@ export default function OrdersScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1E40AF" />
+      <View style={styles.container}>
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={18} color="#9CA3AF" />
+            <View style={{ flex: 1, marginLeft: 8, height: 14, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+          </View>
+        </View>
+        <SkeletonList count={6} height={130} />
       </View>
     );
   }
@@ -223,10 +233,12 @@ export default function OrdersScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="cart-outline" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyText}>Nessun ordine trovato</Text>
-          </View>
+          <EmptyState
+            icon="cart-outline"
+            title="Nessun ordine trovato"
+            message={debouncedSearch ? 'Modifica la ricerca per trovare ordini' : 'Crea il tuo primo ordine dal Dashboard'}
+            iconGradient="success"
+          />
         }
       />
     </View>

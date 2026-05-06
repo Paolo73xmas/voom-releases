@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
+  View, Text, StyleSheet, TouchableOpacity, FlatList, Platform,
   TextInput, RefreshControl, ActivityIndicator, ScrollView, Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -304,25 +304,45 @@ export default function ProductsScreen() {
           data={filteredSubs}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          columnWrapperStyle={styles.gridRow}
+          columnWrapperStyle={styles.subCatRow}
           contentContainerStyle={{ paddingBottom: 20 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.subCatCard}
-              onPress={() => handleSelectSubCategory(item)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.gridIconWrap, { backgroundColor: '#F5F3FF' }]}>
-                <Ionicons name="folder-outline" size={18} color="#8B5CF6" />
-              </View>
-              <Text style={styles.gridCardTitle} numberOfLines={2}>{item.name}</Text>
-              {item.description ? (
-                <Text style={styles.gridCardDesc} numberOfLines={1}>{item.description}</Text>
-              ) : null}
-              <Text style={styles.gridCardCount}>{item.productCount} prodotti</Text>
-            </TouchableOpacity>
-          )}
+          renderItem={({ item }) => {
+            const count = item.productCount ?? 0;
+            const hasProducts = count > 0;
+            return (
+              <TouchableOpacity
+                style={styles.subCatCard}
+                onPress={() => handleSelectSubCategory(item)}
+                activeOpacity={0.75}
+              >
+                <View style={styles.subCatCardTop}>
+                  <View style={styles.subCatIconWrap}>
+                    <Ionicons name="folder" size={18} color="#8B5CF6" />
+                  </View>
+                  <View style={[styles.subCatBadge, !hasProducts && styles.subCatBadgeEmpty]}>
+                    <Text style={[styles.subCatBadgeText, !hasProducts && styles.subCatBadgeTextEmpty]}>
+                      {count}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text
+                  style={styles.subCatTitle}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  {item.name}
+                </Text>
+
+                <Text style={styles.subCatProductCount}>
+                  {count === 1 ? '1 prodotto' : `${count} prodotti`}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Ionicons name="folder-open-outline" size={48} color="#D1D5DB" />
@@ -584,9 +604,62 @@ const styles = StyleSheet.create({
   gridCardCount: { fontSize: 11, color: '#3B82F6', fontWeight: '500', marginTop: 4 },
 
   // Sub-category card
+  subCatRow: { justifyContent: 'space-between', marginBottom: 12 },
   subCatCard: {
-    width: '48%', backgroundColor: '#FFF', borderRadius: 10, padding: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
+    width: '48.5%',
+    backgroundColor: '#FFF',
+    borderRadius: 14,
+    padding: 14,
+    minHeight: 120,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 3,
+  },
+  subCatCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  subCatIconWrap: {
+    width: 38, height: 38, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#F5F3FF',
+  },
+  subCatBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 9, paddingVertical: 3,
+    borderRadius: 10,
+    minWidth: 28,
+    alignItems: 'center',
+  },
+  subCatBadgeEmpty: {
+    backgroundColor: '#F3F4F6',
+  },
+  subCatBadgeText: {
+    fontSize: 12, fontWeight: '800', color: '#1E40AF',
+  },
+  subCatBadgeTextEmpty: {
+    color: '#9CA3AF',
+  },
+  subCatTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+    lineHeight: 18,
+    marginTop: 2,
+    ...Platform.select({
+      web: { wordBreak: 'normal' as any, overflowWrap: 'normal' as any },
+      default: {},
+    }),
+  },
+  subCatProductCount: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 4,
+    fontWeight: '500',
+    ...Platform.select({
+      web: { wordBreak: 'normal' as any, overflowWrap: 'normal' as any, whiteSpace: 'nowrap' as any },
+      default: {},
+    }),
   },
 
   // Nav header

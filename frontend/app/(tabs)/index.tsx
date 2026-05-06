@@ -18,6 +18,7 @@ import { fetchVisits } from '../../lib/api/visits';
 import { supabase } from '../../lib/supabase';
 import { getDraftCount } from '../../lib/drafts';
 import { getCache, setCache, clearCache } from '../../lib/memory-cache';
+import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -193,6 +194,8 @@ export default function Dashboard() {
     return 'Buonasera';
   };
 
+  const { hasAccess: hasRimborsiAccess } = useRimborsiAccess();
+
   const quickActions = [
     {
       title: 'Raccolta Ordine',
@@ -237,6 +240,13 @@ export default function Dashboard() {
       color: '#7C3AED',
       onPress: () => router.push('/orphan-claims'),
     },
+    // Rimborsi (visible only for enabled agents/admins)
+    ...(hasRimborsiAccess ? [{
+      title: 'Rimborsi',
+      icon: 'receipt-outline' as const,
+      color: '#10B981',
+      onPress: () => router.push('/rimborsi'),
+    }] : []),
   ];
 
   return (

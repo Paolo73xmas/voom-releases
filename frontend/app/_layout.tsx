@@ -73,6 +73,14 @@ export default function RootLayout() {
             presentation: 'card',
           }} 
         />
+        <Stack.Screen 
+          name="rimborsi" 
+          options={{ 
+            title: 'Rimborsi',
+            headerBackTitle: 'Indietro',
+            presentation: 'card',
+          }} 
+        />
       </Stack>
     </>
   );

@@ -20,6 +20,7 @@ import { createReservation, getAvailableStock, getBranchAvailableStock } from '.
 import { subtractStockForOrder, verifyAndSetStockSubtracted, subtractBranchStockForOrder, isBranchVirtual } from '../lib/api/stock-management';
 import { processCashBackUsage, processCashBackAccumulation } from '../lib/api/cashback';
 import { saveDraft, deleteDraft, getDrafts, generateDraftId, OrderDraft } from '../lib/drafts';
+import { useVirtualBranch } from '../hooks/useVirtualBranch';
 import type { AvailableStockMap } from '../types/reservation';
 
 // ═══════════════════════════════════════════════════════
@@ -168,6 +169,8 @@ export default function OrderCollectionV2() {
   const params = useLocalSearchParams<{ draftId?: string }>();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
+  // ✅ Web parity: Virtual branches use central warehouse stock (no branch overlay)
+  const { isVirtualBranch } = useVirtualBranch();
 
   // ── Navigation ──
   const [currentStep, setCurrentStep] = useState(0);
@@ -346,11 +349,11 @@ export default function OrderCollectionV2() {
       setProducts(productsData);
       setShippingMethods(shippingsData);
 
-      // Reload available stock for new product set (branch-aware)
+      // Reload available stock for new product set (branch-aware, virtual branches use central stock)
       if (productsData.length > 0) {
         try {
           const ids = productsData.map((p: Product) => p.id);
-          const stockMap = user?.branchId
+          const stockMap = (user?.branchId && !isVirtualBranch)
             ? await getBranchAvailableStock(user.branchId, ids)
             : await getAvailableStock(ids);
           setAvailableStockMap(stockMap);
@@ -396,15 +399,15 @@ export default function OrderCollectionV2() {
       setPaymentMethods(paymentsData || []);
       setShippingMethods(shippingsData || []);
 
-      // Load available stock (branch-aware)
+      // Load available stock (branch-aware, virtual branches use central stock)
       if (productsData && productsData.length > 0) {
         try {
           const ids = productsData.map((p: Product) => p.id);
-          const stockMap = user?.branchId
+          const stockMap = (user?.branchId && !isVirtualBranch)
             ? await getBranchAvailableStock(user.branchId, ids)
             : await getAvailableStock(ids);
           setAvailableStockMap(stockMap);
-          console.log(`[V2] Stock loaded for ${stockMap.size} products${user?.branchId ? ` (branch: ${user.branchId})` : ' (global)'}`);
+          console.log(`[V2] Stock loaded for ${stockMap.size} products${user?.branchId && !isVirtualBranch ? ` (branch: ${user.branchId})` : ' (central warehouse)'}`);
         } catch (e) {
           console.log('[V2] Stock fallback:', e);
         }

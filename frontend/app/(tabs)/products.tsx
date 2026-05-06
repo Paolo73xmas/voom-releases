@@ -342,8 +342,10 @@ export default function ProductsScreen() {
       )
     : products, [debouncedSearch, products]);
 
-  const renderProductItem = ({ item }: { item: Product }) => (
-    <TouchableOpacity style={styles.productCard} onPress={() => setSelectedProduct(item)} activeOpacity={0.7}>
+  const handleSelectProduct = useCallback((p: Product) => setSelectedProduct(p), []);
+
+  const renderProductItem = useCallback(({ item }: { item: Product }) => (
+    <TouchableOpacity style={styles.productCard} onPress={() => handleSelectProduct(item)} activeOpacity={0.7}>
       {item.image_url ? (
         <Image source={{ uri: item.image_url }} style={styles.productImage} contentFit="contain" cachePolicy="memory-disk" transition={150} />
       ) : (
@@ -373,7 +375,7 @@ export default function ProductsScreen() {
         ) : null}
       </View>
     </TouchableOpacity>
-  );
+  ), [handleSelectProduct]);
 
   const renderProductDetailModal = () => {
     if (!selectedProduct) return null;

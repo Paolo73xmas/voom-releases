@@ -40,7 +40,11 @@ export interface SubstitutionWithDetails {
   substitution_items?: SubstitutionItem[];
 }
 
-export async function fetchSubstitutions(agentId: string, statusFilter?: string): Promise<SubstitutionWithDetails[]> {
+export async function fetchSubstitutions(
+  agentId: string,
+  statusFilter?: string,
+  opts?: { userRole?: string; branchId?: string | null }
+): Promise<SubstitutionWithDetails[]> {
   let query = supabase
     .from('substitutions')
     .select(`
@@ -51,9 +55,27 @@ export async function fetchSubstitutions(agentId: string, statusFilter?: string)
         quantity, original_quantity, replacement_quantity, notes
       )
     `)
-    .eq('agent_id', agentId)
     .order('created_at', { ascending: false })
     .limit(100);
+
+  // Role-based filtering (admin/supervisor see all, branch_admin sees branch agents, agent only own)
+  const role = opts?.userRole;
+  const isAdmin = role === 'admin' || role === 'admincustom' || role === 'supervisor';
+  if (!isAdmin) {
+    if (role === 'branch_admin' && opts?.branchId) {
+      const { data: branchAgents } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('branch_id', opts.branchId);
+      if (branchAgents && branchAgents.length > 0) {
+        query = query.in('agent_id', branchAgents.map(a => a.id));
+      } else {
+        return [];
+      }
+    } else {
+      query = query.eq('agent_id', agentId);
+    }
+  }
 
   if (statusFilter && statusFilter !== 'all') {
     query = query.eq('status', statusFilter);

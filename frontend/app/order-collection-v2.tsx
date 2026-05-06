@@ -384,7 +384,7 @@ export default function OrderCollectionV2() {
     try {
       console.log('[V2] Starting data load...');
       const [custData, productsData, paymentsData, shippingsData] = await Promise.all([
-        fetchCustomers(user?.id || '', user?.role || 'agent'),
+        fetchCustomers(user?.id || '', user?.role || 'agent', user?.branchId),
         fetchProducts(isForeignOrder),
         fetchPaymentMethods(),
         fetchShippingMethods(isForeignOrder),

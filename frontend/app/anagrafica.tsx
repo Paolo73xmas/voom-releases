@@ -14,8 +14,8 @@ import {
   Keyboard,
   Switch,
   FlatList,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -560,7 +560,7 @@ export default function AnagraficaScreen() {
           <View style={styles.photoGrid}>
             {photos.map((p, i) => (
               <View key={i} style={styles.photoItem}>
-                <Image source={{ uri: p.uri }} style={styles.photoThumb} />
+                <Image source={{ uri: p.uri }} style={styles.photoThumb} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                 <TouchableOpacity style={styles.photoRemove} onPress={() => setPhotos(prev => prev.filter((_,idx) => idx !== i))}>
                   <Ionicons name="close-circle" size={22} color="#EF4444" />
                 </TouchableOpacity>

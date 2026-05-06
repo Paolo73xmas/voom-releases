@@ -10,8 +10,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -48,7 +48,7 @@ export default function NewInspectionScreen() {
   const loadData = async () => {
     if (!user) return;
     try {
-      const data = await fetchCustomers(user.id, user.role);
+      const data = await fetchCustomers(user.id, user.role, user.branchId);
       setCustomers(data);
       
       if (params.customerId) {
@@ -290,7 +290,7 @@ export default function NewInspectionScreen() {
           <View style={styles.photoGrid}>
             {photos.map((photo, index) => (
               <View key={index} style={styles.photoContainer}>
-                <Image source={{ uri: photo }} style={styles.photoPreview} />
+                <Image source={{ uri: photo }} style={styles.photoPreview} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                 <TouchableOpacity
                   style={styles.removePhotoButton}
                   onPress={() => removePhoto(index)}

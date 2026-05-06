@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  Alert, ActivityIndicator, Image, Switch, Platform, KeyboardAvoidingView,
+  Alert, ActivityIndicator, Switch, Platform, KeyboardAvoidingView,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -498,7 +499,7 @@ export default function RivenditeNoMappaScreen() {
         <View style={styles.photoGrid}>
           {photos.map((photo, idx) => (
             <View key={idx} style={styles.photoCard}>
-              <Image source={{ uri: photo.uri }} style={styles.photoImg} />
+              <Image source={{ uri: photo.uri }} style={styles.photoImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
               <TouchableOpacity style={styles.photoRemoveBtn} onPress={() => removePhoto(idx)}>
                 <Ionicons name="close-circle" size={24} color="#EF4444" />
               </TouchableOpacity>

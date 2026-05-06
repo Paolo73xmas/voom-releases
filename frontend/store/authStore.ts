@@ -104,6 +104,11 @@ export const useAuthStore = create<AuthState>()((set) => ({
   logout: async () => {
     try {
       await supabase.auth.signOut();
+      // Security: clear in-memory cache to avoid leaking previous user's data
+      try {
+        const { clearCache } = await import('../lib/memory-cache');
+        clearCache();
+      } catch (e) { console.warn('[authStore] clearCache:', e); }
       set({ user: null, profile: null, isAuthenticated: false });
     } catch (error) {
       set({ user: null, profile: null, isAuthenticated: false });

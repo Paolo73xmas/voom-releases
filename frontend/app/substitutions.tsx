@@ -14,6 +14,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
+import { fetchCustomers } from '../lib/api/customers';
 import { fetchSubstitutions, createSubstitution, deleteSubstitution, SubstitutionWithDetails } from '../lib/api/substitutions';
 
 const STATUS_OPTS = [
@@ -76,7 +77,11 @@ export default function SubstitutionsScreen() {
     if (!user) return;
     try {
       setLoading(true);
-      const data = await fetchSubstitutions(user.id, statusFilter !== 'all' ? statusFilter : undefined);
+      const data = await fetchSubstitutions(
+        user.id,
+        statusFilter !== 'all' ? statusFilter : undefined,
+        { userRole: user.role, branchId: user.branchId }
+      );
       setSubstitutions(data);
     } catch (e) { console.error('[Substitutions] Error:', e); }
     finally { setLoading(false); }
@@ -86,8 +91,21 @@ export default function SubstitutionsScreen() {
 
   const loadCustomers = async () => {
     if (!user) return;
-    const { data } = await supabase.from('customers').select('id, business_name, city, province').eq('agent_id', user.id).order('business_name').limit(500);
-    setCustomers(data || []);
+    // Use shared fetchCustomers helper for branch-aware filtering (admin/supervisor/branch_admin support)
+    try {
+      const data = await fetchCustomers(user.id, user.role, user.branchId);
+      setCustomers(
+        data.slice(0, 500).map((c: any) => ({
+          id: c.id,
+          business_name: c.business_name,
+          city: c.city,
+          province: c.province,
+        }))
+      );
+    } catch (e) {
+      console.error('[Substitutions] loadCustomers:', e);
+      setCustomers([]);
+    }
   };
   const loadProducts = async () => {
     const { data } = await supabase.from('products').select('id, name, sku, short_description, unit_price, stock_quantity').eq('is_active', true).order('name').limit(2000);

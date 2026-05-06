@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity, FlatList,
   TextInput, RefreshControl, ActivityIndicator, ScrollView, Modal,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
@@ -301,10 +300,11 @@ export default function ProductsScreen() {
       {innerLoading ? (
         <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 40 }} />
       ) : (
-        <FlashList
+        <FlatList
           data={filteredSubs}
           keyExtractor={(item) => item.id}
           numColumns={2}
+          columnWrapperStyle={styles.gridRow}
           contentContainerStyle={{ paddingBottom: 20 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           renderItem={({ item }) => (
@@ -517,7 +517,7 @@ export default function ProductsScreen() {
       {innerLoading ? (
         <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 40 }} />
       ) : (
-        <FlashList
+        <FlatList
           data={filteredProducts}
           renderItem={renderProductItem}
           keyExtractor={(item) => item.id}

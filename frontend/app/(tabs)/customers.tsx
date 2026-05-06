@@ -7,8 +7,8 @@ import {
   TextInput,
   RefreshControl,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
@@ -181,7 +181,7 @@ export default function CustomersScreen() {
       </View>
 
       {/* Customer List — FlashList for performance */}
-      <FlashList
+      <FlatList
         data={filteredCustomers}
         renderItem={renderCustomer}
         keyExtractor={keyExtractor}

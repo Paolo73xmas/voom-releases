@@ -7,8 +7,8 @@ import {
   RefreshControl,
   ActivityIndicator,
   TextInput,
+  FlatList,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
@@ -224,7 +224,7 @@ export default function OrdersScreen() {
       </View>
 
       {/* Orders List - FlashList */}
-      <FlashList
+      <FlatList
         data={filteredOrders}
         renderItem={renderOrder}
         keyExtractor={keyExtractor}

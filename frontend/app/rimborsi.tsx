@@ -12,7 +12,7 @@
 import React, { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert,
-  TextInput, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform,
+  TextInput, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform, Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
@@ -112,7 +112,56 @@ export default function RimborsiScreen() {
   const [formImporto, setFormImporto] = useState('');
   const [formDescrizione, setFormDescrizione] = useState('');
   const [formPhoto, setFormPhoto] = useState<string | null>(null);
-  const [formGps, setFormGps] = useState<{ lat: number; lng: number } | null>(null);
+  const [formGps, setFormGps] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+
+  // Permissions state — requested proactively at screen mount
+  const [permCamera, setPermCamera] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [permLocation, setPermLocation] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [gpsLoading, setGpsLoading] = useState(false);
+
+  // Proactively request permissions on mount (fotocamera + GPS) so receipts are georeferenced
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // Skip native permission prompts on web preview
+      setPermCamera('granted');
+      setPermLocation('granted');
+      return;
+    }
+    (async () => {
+      try {
+        const cam = await ImagePicker.requestCameraPermissionsAsync();
+        setPermCamera(cam.granted ? 'granted' : 'denied');
+      } catch { setPermCamera('denied'); }
+      try {
+        const loc = await Location.requestForegroundPermissionsAsync();
+        setPermLocation(loc.status === 'granted' ? 'granted' : 'denied');
+        // Pre-fetch current GPS so it's ready when user takes photo
+        if (loc.status === 'granted') {
+          try {
+            setGpsLoading(true);
+            const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+            setFormGps({
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              accuracy: pos.coords.accuracy ?? undefined,
+            });
+          } catch (e) { console.warn('[Rimborsi] GPS pre-fetch error:', e); }
+          finally { setGpsLoading(false); }
+        }
+      } catch { setPermLocation('denied'); }
+    })();
+  }, []);
+
+  const openSettings = () => {
+    Alert.alert(
+      'Permesso negato',
+      'Apri le impostazioni per concedere i permessi necessari (Fotocamera e Posizione).',
+      [
+        { text: 'Annulla', style: 'cancel' },
+        { text: 'Apri Impostazioni', onPress: () => Linking.openSettings() },
+      ]
+    );
+  };
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -177,20 +226,41 @@ export default function RimborsiScreen() {
 
   const takePhoto = async () => {
     try {
-      const camPerm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!camPerm.granted) {
-        Alert.alert('Permesso negato', 'Serve l\'accesso alla fotocamera');
-        return;
+      // Re-check camera permission (in case it was denied previously)
+      let camGranted = permCamera === 'granted';
+      if (!camGranted) {
+        const cam = await ImagePicker.requestCameraPermissionsAsync();
+        camGranted = cam.granted;
+        setPermCamera(cam.granted ? 'granted' : 'denied');
+        if (!cam.granted && !cam.canAskAgain) {
+          openSettings();
+          return;
+        }
+        if (!camGranted) {
+          Alert.alert('Permesso negato', 'Concedi l\'accesso alla fotocamera per scattare la foto della ricevuta');
+          return;
+        }
       }
 
-      // Get GPS
-      const locPerm = await Location.requestForegroundPermissionsAsync();
-      if (locPerm.status === 'granted') {
-        try {
-          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          setFormGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        } catch (e) { console.warn('GPS error', e); }
-      }
+      // Refresh GPS at capture time (so the photo is georeferenced with current location)
+      try {
+        let locStatus = permLocation;
+        if (locStatus !== 'granted') {
+          const loc = await Location.requestForegroundPermissionsAsync();
+          locStatus = loc.status === 'granted' ? 'granted' : 'denied';
+          setPermLocation(locStatus);
+        }
+        if (locStatus === 'granted') {
+          setGpsLoading(true);
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+          setFormGps({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy ?? undefined,
+          });
+        }
+      } catch (e) { console.warn('[Rimborsi] GPS error:', e); }
+      finally { setGpsLoading(false); }
 
       const res = await ImagePicker.launchCameraAsync({
         allowsEditing: false,
@@ -212,9 +282,24 @@ export default function RimborsiScreen() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Permesso negato', 'Serve l\'accesso alla galleria');
+        if (!perm.canAskAgain) { openSettings(); return; }
+        Alert.alert('Permesso negato', 'Concedi l\'accesso alla galleria per selezionare una foto');
         return;
       }
+      // Refresh GPS for gallery uploads too (camera might be invoked offline)
+      try {
+        if (permLocation === 'granted') {
+          setGpsLoading(true);
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+          setFormGps({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy ?? undefined,
+          });
+        }
+      } catch {}
+      finally { setGpsLoading(false); }
+
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
@@ -285,6 +370,34 @@ export default function RimborsiScreen() {
     <>
       <Stack.Screen options={{ title: 'Rimborsi' }} />
       <View style={s.container}>
+        {/* Permission status banner — informs user about camera/GPS access */}
+        {(permCamera === 'denied' || permLocation === 'denied') && (
+          <TouchableOpacity style={s.permBanner} onPress={openSettings} activeOpacity={0.85}>
+            <Ionicons name="warning" size={18} color="#92400E" />
+            <View style={{ flex: 1, marginLeft: 8 }}>
+              <Text style={s.permBannerTitle}>Permessi mancanti</Text>
+              <Text style={s.permBannerTxt}>
+                {permCamera === 'denied' && permLocation === 'denied'
+                  ? 'Concedi Fotocamera + Posizione per georeferenziare gli scontrini'
+                  : permCamera === 'denied'
+                  ? 'Concedi accesso Fotocamera per scattare foto degli scontrini'
+                  : 'Concedi Posizione per georeferenziare gli scontrini'}
+              </Text>
+            </View>
+            <Text style={s.permBannerCta}>Apri</Text>
+          </TouchableOpacity>
+        )}
+        {permCamera === 'granted' && permLocation === 'granted' && formGps && (
+          <View style={s.gpsActiveBanner}>
+            <Ionicons name="location" size={14} color="#059669" />
+            <Text style={s.gpsActiveTxt}>
+              GPS attivo · {formGps.lat.toFixed(4)}, {formGps.lng.toFixed(4)}
+              {formGps.accuracy && ` (±${Math.round(formGps.accuracy)}m)`}
+            </Text>
+            {gpsLoading && <ActivityIndicator size="small" color="#059669" style={{ marginLeft: 6 }} />}
+          </View>
+        )}
+
         {/* Stats banner */}
         <View style={s.statsBanner}>
           <View style={s.statBox}>
@@ -434,6 +547,20 @@ export default function RimborsiScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  permBanner: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7',
+    borderLeftWidth: 4, borderLeftColor: '#F59E0B',
+    paddingHorizontal: 14, paddingVertical: 10, marginHorizontal: 16, marginTop: 14, borderRadius: 10,
+  },
+  permBannerTitle: { fontSize: 13, fontWeight: '700', color: '#92400E' },
+  permBannerTxt: { fontSize: 11, color: '#92400E', marginTop: 2 },
+  permBannerCta: { fontSize: 13, fontWeight: '700', color: '#92400E', marginLeft: 8 },
+  gpsActiveBanner: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5',
+    borderLeftWidth: 3, borderLeftColor: '#059669',
+    paddingHorizontal: 12, paddingVertical: 6, marginHorizontal: 16, marginTop: 12, borderRadius: 8,
+  },
+  gpsActiveTxt: { fontSize: 11, color: '#065F46', marginLeft: 6, fontWeight: '600' },
   statsBanner: {
     flexDirection: 'row', backgroundColor: '#FFF', margin: 16, marginBottom: 8,
     borderRadius: 12, padding: 14,

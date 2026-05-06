@@ -13,9 +13,9 @@
       "bundleIdentifier": "com.voom.crm",
       "buildNumber": "1",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Per registrare visite e ispezioni",
-        "NSLocationAlwaysUsageDescription": "Per rilevare la posizione durante le visite commerciali",
-        "NSCameraUsageDescription": "Per scattare foto durante le ispezioni",
+        "NSLocationWhenInUseUsageDescription": "Per registrare visite, ispezioni e georeferenziare i rimborsi",
+        "NSLocationAlwaysUsageDescription": "Per rilevare la posizione durante le visite e i rimborsi",
+        "NSCameraUsageDescription": "Per scattare foto di ispezioni e scontrini di rimborso",
         "NSPhotoLibraryUsageDescription": "Per selezionare foto dalla galleria",
         "NSFaceIDUsageDescription": "Per accesso rapido sicuro all'app",
         "ITSAppUsesNonExemptEncryption": false

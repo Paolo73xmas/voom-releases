@@ -9,7 +9,7 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, initializeAuthListeners } from '../store/authStore';
 import { COLORS, FONTS } from '../lib/theme';
 
 export default function RootLayout() {
@@ -23,6 +23,9 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    // Registra listener globali (AppState + onAuthStateChange)
+    // PRIMA dell'initialize, così catturiamo tutti gli eventi di auth da subito
+    initializeAuthListeners();
     initialize();
   }, []);
 

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+import { AppState, AppStateStatus, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { loadSavedCredentials } from '../lib/secure-credentials';
 
 export type UserRole = 'admin' | 'admincustom' | 'warehouse' | 'supervisor' | 'agent' | 'customer' | 'branch_admin';
 
@@ -38,7 +40,99 @@ interface AuthState {
   initialize: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>()((set) => ({
+// =============================================================================
+// Helpers
+// =============================================================================
+
+function profileToUser(profile: Profile): User {
+  return {
+    id: profile.id,
+    email: profile.email,
+    fullName: profile.full_name,
+    role: profile.role as UserRole,
+    supervisorId: profile.supervisor_id,
+    branchId: profile.branch_id || null,
+    isActive: profile.is_active,
+    createdAt: new Date(profile.created_at),
+    updatedAt: new Date(profile.updated_at),
+  };
+}
+
+async function fetchProfileById(userId: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as Profile;
+}
+
+/**
+ * Tenta di recuperare/rinnovare la sessione in modo aggressivo:
+ * 1. getSession() -> sessione locale
+ * 2. Se assente o scaduta -> refreshSession()
+ * 3. Se anche refresh fallisce e abbiamo credenziali salvate -> re-login silente
+ */
+async function recoverSession(): Promise<{ userId: string } | null> {
+  try {
+    // 1. Sessione locale
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session?.user) {
+      // Controlla se l'access token è scaduto
+      const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+      const now = Date.now();
+      const expiringSoon = expiresAt - now < 60_000; // <60s alla scadenza
+
+      if (!expiringSoon) {
+        return { userId: session.user.id };
+      }
+
+      // 2. Token quasi/già scaduto -> tenta refresh
+      console.log('[Auth] Access token expired/expiring, attempting refresh...');
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (!refreshError && refreshed.session?.user) {
+        console.log('[Auth] Session refreshed successfully');
+        return { userId: refreshed.session.user.id };
+      }
+      console.warn('[Auth] Refresh failed:', refreshError?.message);
+    }
+
+    // 3. Refresh fallito o nessuna sessione -> tenta refresh comunque (potrebbe esserci un refresh token valido)
+    const { data: refreshed2, error: refreshError2 } = await supabase.auth.refreshSession();
+    if (!refreshError2 && refreshed2.session?.user) {
+      console.log('[Auth] Recovered via stand-alone refresh');
+      return { userId: refreshed2.session.user.id };
+    }
+
+    // 4. ULTIMA SPIAGGIA: re-login silente con credenziali SecureStore
+    const creds = await loadSavedCredentials();
+    if (creds) {
+      console.log('[Auth] Refresh exhausted, attempting silent re-login with saved credentials...');
+      const { data: signed, error: signError } = await supabase.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password,
+      });
+      if (!signError && signed.user) {
+        console.log('[Auth] Silent re-login successful');
+        return { userId: signed.user.id };
+      }
+      console.warn('[Auth] Silent re-login failed:', signError?.message);
+    }
+
+    return null;
+  } catch (e) {
+    console.error('[Auth] recoverSession error:', e);
+    return null;
+  }
+}
+
+// =============================================================================
+// Zustand store
+// =============================================================================
+
+export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   profile: null,
   isAuthenticated: false,
@@ -47,15 +141,15 @@ export const useAuthStore = create<AuthState>()((set) => ({
   login: async (email: string, password: string) => {
     try {
       set({ isLoading: true });
-      
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (authError) {
-        throw new Error(authError.message === 'Invalid login credentials' 
-          ? 'Email o password non corretti' 
+        throw new Error(authError.message === 'Invalid login credentials'
+          ? 'Email o password non corretti'
           : authError.message);
       }
 
@@ -63,15 +157,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         throw new Error('Autenticazione fallita');
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authData.user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        throw new Error(`Errore recupero profilo: ${profileError.message}`);
-      }
+      const profile = await fetchProfileById(authData.user.id);
 
       if (!profile) {
         throw new Error('Profilo non trovato. Contatta l\'amministratore.');
@@ -82,19 +168,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         throw new Error('Account disattivato. Contatta l\'amministratore.');
       }
 
-      const user: User = {
-        id: profile.id,
-        email: profile.email,
-        fullName: profile.full_name,
-        role: profile.role as UserRole,
-        supervisorId: profile.supervisor_id,
-        branchId: profile.branch_id || null,
-        isActive: profile.is_active,
-        createdAt: new Date(profile.created_at),
-        updatedAt: new Date(profile.updated_at),
-      };
-
-      set({ user, profile, isAuthenticated: true, isLoading: false });
+      set({ user: profileToUser(profile), profile, isAuthenticated: true, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;
@@ -104,7 +178,6 @@ export const useAuthStore = create<AuthState>()((set) => ({
   logout: async () => {
     try {
       await supabase.auth.signOut();
-      // Security: clear in-memory cache to avoid leaking previous user's data
       try {
         const { clearCache } = await import('../lib/memory-cache');
         clearCache();
@@ -119,21 +192,15 @@ export const useAuthStore = create<AuthState>()((set) => ({
   initialize: async () => {
     try {
       set({ isLoading: true });
-      
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session?.user) {
+
+      const recovered = await recoverSession();
+      if (!recovered) {
         set({ user: null, profile: null, isAuthenticated: false, isLoading: false });
         return;
       }
 
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (error || !profile) {
+      const profile = await fetchProfileById(recovered.userId);
+      if (!profile) {
         set({ user: null, profile: null, isAuthenticated: false, isLoading: false });
         return;
       }
@@ -144,22 +211,126 @@ export const useAuthStore = create<AuthState>()((set) => ({
         return;
       }
 
-      const user: User = {
-        id: profile.id,
-        email: profile.email,
-        fullName: profile.full_name,
-        role: profile.role as UserRole,
-        supervisorId: profile.supervisor_id,
-        branchId: profile.branch_id || null,
-        isActive: profile.is_active,
-        createdAt: new Date(profile.created_at),
-        updatedAt: new Date(profile.updated_at),
-      };
-
-      set({ user, profile, isAuthenticated: true, isLoading: false });
+      set({ user: profileToUser(profile), profile, isAuthenticated: true, isLoading: false });
     } catch (error) {
       console.error('Initialize error:', error);
       set({ user: null, profile: null, isAuthenticated: false, isLoading: false });
     }
   },
 }));
+
+// =============================================================================
+// LIVELLO 1 — AppState listener: pausa/riprende auto-refresh in background
+// LIVELLO 2 — onAuthStateChange globale (TOKEN_REFRESHED / SIGNED_OUT / SIGNED_IN)
+// LIVELLO 3 — Quando app torna in foreground, tenta recovery completo
+//             (refresh + re-login silente con SecureStore se necessario)
+// =============================================================================
+
+let authListenersInitialized = false;
+
+export function initializeAuthListeners() {
+  if (authListenersInitialized) return;
+  authListenersInitialized = true;
+
+  // --- LIVELLO 1: AppState ---
+  // Su web AppState non è significativo (non c'è "background" reale), skip.
+  if (Platform.OS !== 'web') {
+    const handleAppStateChange = async (state: AppStateStatus) => {
+      if (state === 'active') {
+        try {
+          supabase.auth.startAutoRefresh();
+        } catch (e) { console.warn('[Auth] startAutoRefresh:', e); }
+
+        // LIVELLO 3: quando l'app torna in foreground prova a recuperare la sessione
+        // (gestisce il caso "app aperta dopo 2 giorni in background")
+        const store = useAuthStore.getState();
+        if (store.isAuthenticated) {
+          try {
+            const recovered = await recoverSession();
+            if (!recovered) {
+              console.warn('[Auth] Foreground recovery failed, logging out');
+              await store.logout();
+            }
+          } catch (e) {
+            console.warn('[Auth] Foreground recovery error:', e);
+          }
+        }
+      } else if (state === 'background' || state === 'inactive') {
+        try {
+          supabase.auth.stopAutoRefresh();
+        } catch (e) { console.warn('[Auth] stopAutoRefresh:', e); }
+      }
+    };
+
+    AppState.addEventListener('change', handleAppStateChange);
+
+    // Avvia subito (l'app parte già in foreground)
+    try {
+      supabase.auth.startAutoRefresh();
+    } catch (e) { console.warn('[Auth] initial startAutoRefresh:', e); }
+  }
+
+  // --- LIVELLO 2: onAuthStateChange ---
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log('[Auth] event:', event, '| user:', session?.user?.email || 'none');
+
+    if (event === 'TOKEN_REFRESHED') {
+      // Token rinnovato con successo, niente da fare (la sessione è valida)
+      return;
+    }
+
+    if (event === 'SIGNED_OUT') {
+      // Sloggato esplicitamente o token irrecuperabile
+      // Tentiamo un ULTIMO recupero con SecureStore prima di accettare il logout
+      try {
+        const creds = await loadSavedCredentials();
+        if (creds) {
+          console.log('[Auth] SIGNED_OUT received, trying silent re-login...');
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: creds.email,
+            password: creds.password,
+          });
+          if (!error && data.user) {
+            const profile = await fetchProfileById(data.user.id);
+            if (profile && profile.is_active) {
+              useAuthStore.setState({
+                user: profileToUser(profile),
+                profile,
+                isAuthenticated: true,
+                isLoading: false,
+              });
+              console.log('[Auth] Resurrected session via SecureStore');
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[Auth] SIGNED_OUT recovery error:', e);
+      }
+      // Recovery fallito: accetta il logout
+      useAuthStore.setState({
+        user: null,
+        profile: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+      return;
+    }
+
+    if (event === 'SIGNED_IN' && session?.user) {
+      // Aggiorna lo store con il profilo aggiornato (solo se non già autenticato)
+      const current = useAuthStore.getState();
+      if (!current.isAuthenticated || current.user?.id !== session.user.id) {
+        const profile = await fetchProfileById(session.user.id);
+        if (profile && profile.is_active) {
+          useAuthStore.setState({
+            user: profileToUser(profile),
+            profile,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        }
+      }
+    }
+  });
+}

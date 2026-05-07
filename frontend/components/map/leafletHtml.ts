@@ -103,7 +103,9 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
       iconAnchor: [8, 8],
     });
 
-    userMarker = L.marker([${lat}, ${lng}], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+    // zIndexOffset negativo: marker agente SOTTO i marker cliente
+    // così quando coincidono il cliente resta cliccabile
+    userMarker = L.marker([${lat}, ${lng}], { icon: userIcon, zIndexOffset: -1000, interactive: false }).addTo(map);
 
     var ICONS = {
       gray: L.divIcon({ className:'custom-marker', html:'<div style="background:#475569;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);opacity:0.6;"></div>', iconSize:[14,14], iconAnchor:[7,7] }),

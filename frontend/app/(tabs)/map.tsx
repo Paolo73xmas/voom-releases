@@ -195,7 +195,9 @@ export default function MapScreen() {
         html: '<div style="background:#3b82f6;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);animation:pulse 2s infinite;"></div>',
         iconSize: [16, 16], iconAnchor: [8, 8],
       });
-      leafletUserMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+      // zIndexOffset negativo: il marker agente sta SOTTO i marker cliente
+      // così quando coincidono, il cliente resta cliccabile
+      leafletUserMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon, zIndexOffset: -1000, interactive: false }).addTo(map);
 
       leafletMapRef.current = map;
       leafletReadyRef.current = true;

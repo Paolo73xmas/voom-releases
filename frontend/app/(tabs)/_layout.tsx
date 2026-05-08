@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform, View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
 
@@ -19,6 +20,18 @@ function TabBarBackground() {
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
+  // Calcolo dinamico altezza/padding tab bar in base alla safe area del dispositivo:
+  // - Android con gesture bar: insets.bottom ≈ 16px → tab bar si solleva di 16px
+  // - Android con 3-button bar: insets.bottom ≈ 48px → tab bar si solleva di 48px
+  // - iOS notched: insets.bottom ≈ 34px
+  // - Dispositivi senza barra: insets.bottom = 0 → comportamento standard
+  const baseHeight = Platform.OS === 'ios' ? 60 : 58;
+  const basePadBottom = Platform.OS === 'ios' ? 8 : 8;
+  const tabBarHeight = baseHeight + insets.bottom;
+  const tabBarPadBottom = basePadBottom + insets.bottom;
+
   return (
     <Tabs
       screenOptions={{
@@ -30,9 +43,9 @@ export default function TabLayout() {
           backgroundColor: 'transparent',
           borderTopColor: 'rgba(0,0,0,0.06)',
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: Platform.OS === 'ios' ? 90 : 68,
-          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
-          paddingTop: 10,
+          height: tabBarHeight,
+          paddingBottom: tabBarPadBottom,
+          paddingTop: 8,
           elevation: 0,
         },
         tabBarLabelStyle: {

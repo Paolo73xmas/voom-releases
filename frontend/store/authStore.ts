@@ -44,6 +44,13 @@ interface AuthState {
 // Helpers
 // =============================================================================
 
+/**
+ * Flag che distingue un logout VOLONTARIO (utente preme "Esci") da un
+ * logout INVOLONTARIO (token scaduto / errore di rete).
+ * Solo il logout involontario attiva il re-login silente con SecureStore.
+ */
+let intentionalLogout = false;
+
 function profileToUser(profile: Profile): User {
   return {
     id: profile.id,
@@ -177,15 +184,27 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   logout: async () => {
     try {
+      // Segnala che è un logout VOLONTARIO: il listener onAuthStateChange
+      // NON deve tentare il re-login silente con SecureStore
+      intentionalLogout = true;
+
       await supabase.auth.signOut();
       try {
         const { clearCache } = await import('../lib/memory-cache');
         clearCache();
       } catch (e) { console.warn('[authStore] clearCache:', e); }
+
+      // Ferma anche l'auto-refresh per evitare race conditions
+      try { supabase.auth.stopAutoRefresh(); } catch {}
+
       set({ user: null, profile: null, isAuthenticated: false });
     } catch (error) {
       set({ user: null, profile: null, isAuthenticated: false });
       throw error;
+    } finally {
+      // Reset del flag dopo un breve delay (per dare tempo al SIGNED_OUT
+      // di essere processato dal listener)
+      setTimeout(() => { intentionalLogout = false; }, 1500);
     }
   },
 
@@ -280,12 +299,24 @@ export function initializeAuthListeners() {
     }
 
     if (event === 'SIGNED_OUT') {
-      // Sloggato esplicitamente o token irrecuperabile
-      // Tentiamo un ULTIMO recupero con SecureStore prima di accettare il logout
+      // Se l'utente ha premuto VOLONTARIAMENTE "Esci", non tentare il re-login
+      if (intentionalLogout) {
+        console.log('[Auth] Intentional logout detected, skipping silent re-login');
+        useAuthStore.setState({
+          user: null,
+          profile: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
+        return;
+      }
+
+      // Logout INVOLONTARIO (token irrecuperabile): tentiamo l'ultimo
+      // recupero con SecureStore prima di accettare il logout
       try {
         const creds = await loadSavedCredentials();
         if (creds) {
-          console.log('[Auth] SIGNED_OUT received, trying silent re-login...');
+          console.log('[Auth] Involuntary SIGNED_OUT, trying silent re-login...');
           const { data, error } = await supabase.auth.signInWithPassword({
             email: creds.email,
             password: creds.password,

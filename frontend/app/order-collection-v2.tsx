@@ -1080,9 +1080,16 @@ export default function OrderCollectionV2() {
     const stock = getEffectiveStock(item.id, item.stock_quantity || 0);
     const reserved = getReservedQty(item.id);
     const cartQty = inCart ? inCart.quantity : 0;
+    const isOutOfStock = stock <= 0;
+    const isMaxedOut = !isOutOfStock && cartQty >= stock;
+    const remaining = Math.max(0, stock - cartQty);
 
     return (
-      <View style={[s.prodRow, inCart && s.prodRowInCart]}>
+      <View style={[
+        s.prodRow,
+        inCart && s.prodRowInCart,
+        isOutOfStock && s.prodRowDisabled,
+      ]}>
         <View style={{ position: 'relative' }}>
           <TouchableOpacity style={s.prodIcon} onPress={() => setSelectedProductDetail(item)}>
             {item.image_url ? (
@@ -1099,24 +1106,43 @@ export default function OrderCollectionV2() {
         </View>
 
         <TouchableOpacity style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { setEditCartItem(inCart); setEditPrice(inCart.unit_price.toString()); setEditQty(inCart.quantity); } }}>
-          <Text style={[s.prodName, inCart && { color: '#1E40AF' }]} numberOfLines={1}>{item.short_description || item.name}</Text>
+          <Text style={[s.prodName, inCart && { color: '#1E40AF' }, isOutOfStock && { color: '#9CA3AF' }]} numberOfLines={1}>
+            {item.short_description || item.name}
+          </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={s.prodPrice}>{formatCurrency(inCart ? inCart.unit_price : item.unit_price)}</Text>
+            <Text style={[s.prodPrice, isOutOfStock && { color: '#9CA3AF' }]}>{formatCurrency(inCart ? inCart.unit_price : item.unit_price)}</Text>
             {(item.accisa || 0) > 0 && <Text style={s.prodAccisa}>+{formatCurrency(item.accisa || 0)} acc.</Text>}
+            {isOutOfStock && (
+              <View style={s.outOfStockBadge}>
+                <Text style={s.outOfStockText}>ESAURITO</Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
 
-        <View style={[s.stockBadge, stock <= 0 && s.stockRed, stock > 0 && stock <= 10 && s.stockAmber, stock > 10 && s.stockGreen]}>
-          <Text style={[s.stockText, stock <= 0 && { color: '#DC2626' }]}>{stock}</Text>
-          {reserved > 0 && <Text style={s.stockReserved}>({reserved})</Text>}
-        </View>
+        {!isOutOfStock && (
+          <View style={[s.stockBadge, stock <= 10 ? s.stockAmber : s.stockGreen]}>
+            <Text style={s.stockText}>{stock}</Text>
+            {reserved > 0 && <Text style={s.stockReserved}>({reserved})</Text>}
+          </View>
+        )}
 
         <View style={s.prodActions}>
-          <TouchableOpacity style={[s.addBtn, cartQty + 1 > stock && s.addBtnDisabled]} onPress={() => addToCart(item, 1)} disabled={cartQty + 1 > stock}>
-            <Text style={s.addBtnText}>+1</Text>
+          <TouchableOpacity
+            style={[s.addBtn, (isOutOfStock || isMaxedOut) && s.addBtnDisabled]}
+            onPress={() => addToCart(item, 1)}
+            disabled={isOutOfStock || isMaxedOut}
+          >
+            <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: '#9CA3AF' }]}>+1</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[s.addBtn, s.addBtn10, cartQty + 10 > stock && s.addBtnDisabled]} onPress={() => addToCart(item, 10)} disabled={cartQty >= stock}>
-            <Text style={s.addBtnText}>+10</Text>
+          <TouchableOpacity
+            style={[s.addBtn, s.addBtn10, (isOutOfStock || isMaxedOut) && s.addBtnDisabled]}
+            onPress={() => addToCart(item, 10)}
+            disabled={isOutOfStock || isMaxedOut}
+          >
+            <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: '#9CA3AF' }]}>
+              {!isOutOfStock && !isMaxedOut && remaining < 10 ? `+${remaining}` : '+10'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1869,6 +1895,7 @@ const s = StyleSheet.create({
   headerBtnText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
   prodRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 8, padding: 8, marginBottom: 4, gap: 8 },
   prodRowInCart: { backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' },
+  prodRowDisabled: { backgroundColor: '#F9FAFB', opacity: 0.7 },
   prodIcon: { width: 40, height: 40, borderRadius: 6, overflow: 'hidden' },
   prodImg: { width: 40, height: 40, borderRadius: 6 },
   prodImgPlaceholder: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
@@ -1882,6 +1909,8 @@ const s = StyleSheet.create({
   stockGreen: { backgroundColor: '#ECFDF5' },
   stockAmber: { backgroundColor: '#FEF3C7' },
   stockRed: { backgroundColor: '#FEE2E2' },
+  outOfStockBadge: { backgroundColor: '#FEE2E2', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  outOfStockText: { fontSize: 9, fontWeight: '800', color: '#DC2626', letterSpacing: 0.5 },
   stockText: { fontSize: 11, fontWeight: '700', color: '#059669' },
   stockReserved: { fontSize: 9, color: '#9CA3AF', marginTop: 1 },
   prodActions: { flexDirection: 'row', gap: 4 },

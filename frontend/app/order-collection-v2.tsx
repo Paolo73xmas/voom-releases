@@ -170,7 +170,13 @@ export default function OrderCollectionV2() {
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
   // ✅ Web parity: Virtual branches use central warehouse stock (no branch overlay)
-  const { isVirtualBranch, isLoading: vbLoading } = useVirtualBranch();
+  // ✅ Web parity: estero_orders_enabled flag controls visibility of "Italia/Estero" toggle
+  const { isVirtualBranch, esteroOrdersEnabled, isLoading: vbLoading } = useVirtualBranch();
+
+  // Toggle Italia/Estero visibile SOLO se:
+  // - branch NON virtuale (sempre visibile)
+  // - oppure branch virtuale CON estero_orders_enabled = true
+  const canToggleEstero = !isVirtualBranch || esteroOrdersEnabled;
 
   // ── Navigation ──
   const [currentStep, setCurrentStep] = useState(0);
@@ -341,6 +347,14 @@ export default function OrderCollectionV2() {
     }
     reloadForForeignToggle();
   }, [isForeignOrder]);
+
+  // ✅ Web parity: se branch virtuale NON abilitato all'estero → forza Italia
+  useEffect(() => {
+    if (!vbLoading && !canToggleEstero && isForeignOrder) {
+      console.log('[V2] Branch not authorized for foreign orders, forcing Italia');
+      setIsForeignOrder(false);
+    }
+  }, [vbLoading, canToggleEstero, isForeignOrder]);
 
   const reloadForForeignToggle = async () => {
     setLoadingProducts(true);
@@ -1154,10 +1168,12 @@ export default function OrderCollectionV2() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <Text style={s.stepTitle}>Prodotti</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity style={s.headerBtn} onPress={() => setIsForeignOrder(!isForeignOrder)}>
-            <Ionicons name={isForeignOrder ? 'airplane' : 'flag'} size={16} color={isForeignOrder ? '#DC2626' : '#6B7280'} />
-            <Text style={[s.headerBtnText, isForeignOrder && { color: '#DC2626' }]}>{isForeignOrder ? 'Estero' : 'Italia'}</Text>
-          </TouchableOpacity>
+          {canToggleEstero && (
+            <TouchableOpacity style={s.headerBtn} onPress={() => setIsForeignOrder(!isForeignOrder)}>
+              <Ionicons name={isForeignOrder ? 'airplane' : 'flag'} size={16} color={isForeignOrder ? '#DC2626' : '#6B7280'} />
+              <Text style={[s.headerBtnText, isForeignOrder && { color: '#DC2626' }]}>{isForeignOrder ? 'Estero' : 'Italia'}</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={s.headerBtn} onPress={() => { loadPackages(); setShowPackageModal(true); }}>
             <Ionicons name="cube" size={16} color="#1E40AF" />
             <Text style={[s.headerBtnText, { color: '#1E40AF' }]}>Pacchetto</Text>

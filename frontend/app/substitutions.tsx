@@ -391,6 +391,9 @@ export default function SubstitutionsScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Product Picker nested INSIDE wizard modal (RN limitation: two sibling modals don't stack reliably) */}
+        {renderProductPicker()}
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -445,7 +448,6 @@ export default function SubstitutionsScreen() {
 
       {renderDetail()}
       {renderCreateWizard()}
-      {renderProductPicker()}
     </View>
   );
 }

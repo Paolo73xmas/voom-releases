@@ -356,6 +356,44 @@ export default function OrderCollectionV2() {
     }
   }, [vbLoading, canToggleEstero, isForeignOrder]);
 
+  /**
+   * Refresh dello stock disponibile per i prodotti attualmente caricati.
+   * Chiamato:
+   *   - automaticamente ogni volta che si entra nello Step 2 (selezione prodotti)
+   *   - manualmente via pulsante "Aggiorna" nello Step 2
+   * Aggiorna SOLO lo stock, NON ricarica la lista prodotti (più veloce).
+   */
+  const [refreshingStock, setRefreshingStock] = useState(false);
+  const refreshStock = useCallback(async (silent = false) => {
+    if (products.length === 0) return;
+    if (!silent) setRefreshingStock(true);
+    try {
+      const ids = products.map((p) => p.id);
+      const stockMap = (user?.branchId && !isVirtualBranch)
+        ? await getBranchAvailableStock(user.branchId, ids)
+        : await getAvailableStock(ids);
+      setAvailableStockMap(stockMap);
+      console.log(`[V2] Stock refreshed for ${stockMap.size} products`);
+    } catch (e) {
+      console.warn('[V2] refreshStock failed:', e);
+    } finally {
+      if (!silent) setRefreshingStock(false);
+    }
+  }, [products, user?.branchId, isVirtualBranch]);
+
+  // ✅ Auto-refresh stock when entering Step 2 (product selection)
+  // Skip on the first mount (loadInitialData already loaded fresh stock)
+  const stepRefreshInitialMount = React.useRef(true);
+  useEffect(() => {
+    if (currentStep !== 1) return;
+    if (stepRefreshInitialMount.current) {
+      stepRefreshInitialMount.current = false;
+      return;
+    }
+    console.log('[V2] Entered Step 2, refreshing stock...');
+    refreshStock(true);
+  }, [currentStep, refreshStock]);
+
   const reloadForForeignToggle = async () => {
     setLoadingProducts(true);
     try {
@@ -1168,6 +1206,20 @@ export default function OrderCollectionV2() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <Text style={s.stepTitle}>Prodotti</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity
+            style={s.headerBtn}
+            onPress={() => refreshStock(false)}
+            disabled={refreshingStock}
+          >
+            {refreshingStock ? (
+              <ActivityIndicator size="small" color="#6B7280" />
+            ) : (
+              <Ionicons name="refresh" size={16} color="#10B981" />
+            )}
+            <Text style={[s.headerBtnText, { color: refreshingStock ? '#9CA3AF' : '#10B981' }]}>
+              Aggiorna
+            </Text>
+          </TouchableOpacity>
           {canToggleEstero && (
             <TouchableOpacity style={s.headerBtn} onPress={() => setIsForeignOrder(!isForeignOrder)}>
               <Ionicons name={isForeignOrder ? 'airplane' : 'flag'} size={16} color={isForeignOrder ? '#DC2626' : '#6B7280'} />

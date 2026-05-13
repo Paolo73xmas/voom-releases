@@ -105,7 +105,7 @@ async function recoverSession(): Promise<{ userId: string } | null> {
 
   try {
     // 1. Sessione locale (rapida, AsyncStorage)
-    const sessionRes = await withTimeout(supabase.auth.getSession(), 3000, 'getSession');
+    const sessionRes = await withTimeout(supabase.auth.getSession(), 5000, 'getSession');
     const session = sessionRes?.data?.session;
 
     if (session?.user) {

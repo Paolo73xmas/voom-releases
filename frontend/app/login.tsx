@@ -26,7 +26,7 @@ import {
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, justLoggedOut } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -69,9 +69,13 @@ export default function LoginScreen() {
             const enabled = await isBiometricEnabled();
             setBiometricEnabledLocal(enabled);
 
-            // Auto-prompt biometric login if enabled and credentials are saved
-            if (enabled && creds) {
+            // Auto-prompt biometric login SOLO se l'utente NON ha appena fatto logout volontario.
+            // Se justLoggedOut=true, l'utente vuole rimanere fuori: deve essere lui a premere
+            // esplicitamente il pulsante biometrico per rientrare.
+            if (enabled && creds && !justLoggedOut) {
               promptBiometricLogin(creds.email, creds.password);
+            } else if (justLoggedOut) {
+              console.log('[Login] Skipping auto-biometric: user just logged out');
             }
           }
         }

@@ -35,6 +35,11 @@ interface AuthState {
   profile: Profile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /**
+   * True per qualche secondo dopo che l'utente ha premuto "Esci".
+   * Impedisce al login screen di triggerare l'auto-biometric login subito dopo.
+   */
+  justLoggedOut: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
@@ -150,6 +155,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   profile: null,
   isAuthenticated: false,
   isLoading: true,
+  justLoggedOut: false,
 
   login: async (email: string, password: string) => {
     try {
@@ -181,7 +187,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         throw new Error('Account disattivato. Contatta l\'amministratore.');
       }
 
-      set({ user: profileToUser(profile), profile, isAuthenticated: true, isLoading: false });
+      set({ user: profileToUser(profile), profile, isAuthenticated: true, isLoading: false, justLoggedOut: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;
@@ -203,13 +209,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // Ferma anche l'auto-refresh per evitare race conditions
       try { supabase.auth.stopAutoRefresh(); } catch {}
 
-      set({ user: null, profile: null, isAuthenticated: false });
+      // justLoggedOut=true: impedisce al login screen di triggerare
+      // l'auto-biometric login subito dopo il logout volontario
+      set({ user: null, profile: null, isAuthenticated: false, justLoggedOut: true });
     } catch (error) {
-      set({ user: null, profile: null, isAuthenticated: false });
+      set({ user: null, profile: null, isAuthenticated: false, justLoggedOut: true });
       throw error;
     } finally {
-      // Reset del flag dopo un breve delay (per dare tempo al SIGNED_OUT
-      // di essere processato dal listener)
+      // Reset del flag dopo un breve delay
       setTimeout(() => { intentionalLogout = false; }, 1500);
     }
   },

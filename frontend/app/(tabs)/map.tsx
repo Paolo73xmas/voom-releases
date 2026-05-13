@@ -883,38 +883,53 @@ export default function MapScreen() {
               )}
 
               {/* Orphan (NOT owned by current agent): Reclama button — RED rose (web parity) */}
-              {(selectedColor === 'purple' || selectedColor === 'yellow') && selectedTab.agente_id !== user?.id && (
+              {/* HIDE if customer_id is null (cannot claim a customer that doesn't exist yet) */}
+              {(selectedColor === 'purple' || selectedColor === 'yellow') && selectedTab.agente_id !== user?.id && selectedTab.customer_id && (
                 <TouchableOpacity
                   style={[styles.actionBtn, { backgroundColor: '#E11D48' }]}
-                  onPress={async () => {
-                    if (!user || !selectedTab.customer_id) {
-                      Alert.alert('Errore', 'Questo punto vendita non ha un cliente associato');
-                      return;
-                    }
-                    Alert.alert(
-                      'Reclama Cliente',
-                      `Vuoi reclamare "${getDisplayName(selectedTab)}" come tuo cliente?\n\nLa richiesta verrà inviata all'amministratore per approvazione.`,
-                      [
-                        { text: 'Annulla', style: 'cancel' },
-                        {
-                          text: 'Reclama',
-                          onPress: async () => {
-                            const result = await claimOrphanCustomer(selectedTab.customer_id!, selectedTab.id, user.id);
-                            if (result.success) {
-                              Alert.alert('Richiesta Inviata', 'La tua richiesta di reclamo è stata inviata. Attendi l\'approvazione dell\'amministratore.');
-                              setShowPopup(false);
-                            } else {
-                              Alert.alert('Errore', result.error || 'Impossibile inviare la richiesta');
-                            }
+                  onPress={() => {
+                    if (!user || !selectedTab.customer_id) return;
+                    const customerId = selectedTab.customer_id;
+                    const tabaccheriaId = selectedTab.id;
+                    const customerName = getDisplayName(selectedTab);
+                    // Close popup BEFORE showing alert (web parity + Android Alert visibility fix)
+                    setShowPopup(false);
+                    // Small timeout so popup unmounts cleanly before Alert appears
+                    setTimeout(() => {
+                      Alert.alert(
+                        'Reclama Cliente',
+                        `Vuoi reclamare "${customerName}" come tuo cliente?\n\nLa richiesta verrà inviata all'amministratore per approvazione.`,
+                        [
+                          { text: 'Annulla', style: 'cancel' },
+                          {
+                            text: 'Reclama',
+                            onPress: async () => {
+                              const result = await claimOrphanCustomer(customerId, tabaccheriaId, user.id);
+                              if (result.success) {
+                                Alert.alert('Richiesta Inviata', 'La tua richiesta di reclamo è stata inviata. Attendi l\'approvazione dell\'amministratore.');
+                              } else {
+                                Alert.alert('Errore', result.error || 'Impossibile inviare la richiesta');
+                              }
+                            },
                           },
-                        },
-                      ]
-                    );
+                        ]
+                      );
+                    }, 200);
                   }}
                 >
                   <Ionicons name="flag" size={18} color="#FFF" />
                   <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Reclama</Text>
                 </TouchableOpacity>
+              )}
+
+              {/* Info banner: orphan marker without customer (cannot be claimed) */}
+              {(selectedColor === 'purple' || selectedColor === 'yellow') && selectedTab.agente_id !== user?.id && !selectedTab.customer_id && (
+                <View style={[styles.grayInfoBox, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+                  <Ionicons name="information-circle" size={16} color="#A16207" />
+                  <Text style={[styles.grayInfoText, { color: '#A16207' }]}>
+                    Cliente non ancora registrato — non reclamabile
+                  </Text>
+                </View>
               )}
 
               {/* Orphan info banners */}

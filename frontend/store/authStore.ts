@@ -51,6 +51,12 @@ interface AuthState {
  */
 let intentionalLogout = false;
 
+/**
+ * Flag che evita chiamate concorrenti di initialize() (es. _layout.tsx + index.tsx)
+ * che possono causare race conditions e stati inconsistenti.
+ */
+let initInProgress = false;
+
 function profileToUser(profile: Profile): User {
   return {
     id: profile.id,
@@ -209,16 +215,51 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   initialize: async () => {
+    // Guard against concurrent / duplicate init calls (e.g. _layout.tsx + index.tsx)
+    if (initInProgress) {
+      console.log('[Auth] initialize() already in progress, skipping duplicate call');
+      // Wait for ongoing init to complete (poll-style)
+      let attempts = 0;
+      while (initInProgress && attempts < 100) {
+        await new Promise(r => setTimeout(r, 100));
+        attempts++;
+      }
+      return;
+    }
+    initInProgress = true;
+
+    // Safety timeout: forza isLoading=false dopo 12s se qualcosa si blocca
+    const safetyTimer = setTimeout(() => {
+      const state = useAuthStore.getState();
+      if (state.isLoading) {
+        console.warn('[Auth] initialize() safety timeout, forcing isLoading=false');
+        useAuthStore.setState({ isLoading: false });
+      }
+      initInProgress = false;
+    }, 12000);
+
     try {
       set({ isLoading: true });
 
-      const recovered = await recoverSession();
+      // Wrap recoverSession in a 10s timeout
+      const recovered = await Promise.race([
+        recoverSession(),
+        new Promise<null>((resolve) => setTimeout(() => {
+          console.warn('[Auth] recoverSession timeout after 10s');
+          resolve(null);
+        }, 10000)),
+      ]);
+
       if (!recovered) {
         set({ user: null, profile: null, isAuthenticated: false, isLoading: false });
         return;
       }
 
-      const profile = await fetchProfileById(recovered.userId);
+      const profile = await Promise.race([
+        fetchProfileById(recovered.userId),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
+      ]);
+
       if (!profile) {
         set({ user: null, profile: null, isAuthenticated: false, isLoading: false });
         return;
@@ -234,6 +275,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     } catch (error) {
       console.error('Initialize error:', error);
       set({ user: null, profile: null, isAuthenticated: false, isLoading: false });
+    } finally {
+      clearTimeout(safetyTimer);
+      initInProgress = false;
     }
   },
 }));

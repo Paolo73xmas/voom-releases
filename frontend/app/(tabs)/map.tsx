@@ -489,7 +489,7 @@ export default function MapScreen() {
     setShowPopup(false);
     const customerName = tab.customer_business_name || tab.denominazione || '';
     router.push({
-      pathname: '/order-collection',
+      pathname: '/order-collection-v2',
       params: {
         ...(tab.customer_id ? { customerId: tab.customer_id } : {}),
         customerName: customerName,

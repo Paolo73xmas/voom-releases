@@ -93,20 +93,9 @@ async function fetchProfileById(userId: string): Promise<Profile | null> {
  * 3. Se anche refresh fallisce e abbiamo credenziali salvate -> re-login silente
  */
 async function recoverSession(): Promise<{ userId: string } | null> {
-  // Helper: timeout wrapper per ogni operazione async
-  const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T | null> =>
-    Promise.race([
-      promise,
-      new Promise<null>((resolve) => setTimeout(() => {
-        console.warn(`[Auth] ${label} timed out after ${ms}ms`);
-        resolve(null);
-      }, ms)),
-    ]);
-
   try {
-    // 1. Sessione locale (rapida, AsyncStorage)
-    const sessionRes = await withTimeout(supabase.auth.getSession(), 5000, 'getSession');
-    const session = sessionRes?.data?.session;
+    // 1. Sessione locale (non usare timeout: Supabase auth ha un lock interno)
+    const { data: { session } } = await supabase.auth.getSession();
 
     if (session?.user) {
       const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
@@ -117,34 +106,45 @@ async function recoverSession(): Promise<{ userId: string } | null> {
         return { userId: session.user.id };
       }
 
-      // 2. Token quasi/già scaduto -> tenta refresh (max 5s)
+      // 2. Token quasi/già scaduto -> tenta refresh
       console.log('[Auth] Access token expired/expiring, attempting refresh...');
-      const refreshRes = await withTimeout(supabase.auth.refreshSession(), 5000, 'refreshSession');
-      if (refreshRes?.data?.session?.user && !refreshRes?.error) {
-        console.log('[Auth] Session refreshed successfully');
-        return { userId: refreshRes.data.session.user.id };
+      try {
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError && refreshed?.session?.user) {
+          console.log('[Auth] Session refreshed successfully');
+          return { userId: refreshed.session.user.id };
+        }
+      } catch (e) {
+        console.warn('[Auth] refreshSession threw:', e);
       }
     }
 
     // 3. Refresh standalone (può funzionare se c'è refresh token valido in storage)
-    const refresh2Res = await withTimeout(supabase.auth.refreshSession(), 5000, 'refreshSession-fallback');
-    if (refresh2Res?.data?.session?.user && !refresh2Res?.error) {
-      console.log('[Auth] Recovered via stand-alone refresh');
-      return { userId: refresh2Res.data.session.user.id };
+    try {
+      const { data: refreshed2, error: refreshError2 } = await supabase.auth.refreshSession();
+      if (!refreshError2 && refreshed2?.session?.user) {
+        console.log('[Auth] Recovered via stand-alone refresh');
+        return { userId: refreshed2.session.user.id };
+      }
+    } catch (e) {
+      console.warn('[Auth] standalone refreshSession threw:', e);
     }
 
-    // 4. ULTIMA SPIAGGIA: re-login silente con SecureStore (max 6s)
+    // 4. ULTIMA SPIAGGIA: re-login silente con SecureStore
     const creds = await loadSavedCredentials();
     if (creds) {
       console.log('[Auth] Refresh exhausted, attempting silent re-login...');
-      const signRes = await withTimeout(
-        supabase.auth.signInWithPassword({ email: creds.email, password: creds.password }),
-        6000,
-        'silent re-login'
-      );
-      if (signRes?.data?.user && !signRes?.error) {
-        console.log('[Auth] Silent re-login successful');
-        return { userId: signRes.data.user.id };
+      try {
+        const { data: signed, error: signError } = await supabase.auth.signInWithPassword({
+          email: creds.email,
+          password: creds.password,
+        });
+        if (!signError && signed?.user) {
+          console.log('[Auth] Silent re-login successful');
+          return { userId: signed.user.id };
+        }
+      } catch (e) {
+        console.warn('[Auth] silent re-login threw:', e);
       }
     }
 
@@ -167,24 +167,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   justLoggedOut: false,
 
   login: async (email: string, password: string) => {
-    // Safety timeout: forza isLoading=false dopo 20s se il login si blocca
+    // Safety timeout: forza isLoading=false dopo 25s se il login si blocca
     const safetyTimer = setTimeout(() => {
       const state = useAuthStore.getState();
       if (state.isLoading) {
         console.warn('[Auth] login() safety timeout, forcing isLoading=false');
         useAuthStore.setState({ isLoading: false });
       }
-    }, 20000);
+    }, 25000);
 
     try {
       set({ isLoading: true });
 
-      // Race signInWithPassword contro un timeout di 15s
-      const result: any = await Promise.race([
-        supabase.auth.signInWithPassword({ email, password }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout: connessione lenta o assente. Riprova.')), 15000)),
-      ]);
-      const { data: authData, error: authError } = result;
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (authError) {
         throw new Error(authError.message === 'Invalid login credentials'
@@ -196,14 +194,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         throw new Error('Autenticazione fallita');
       }
 
-      // Race profile fetch contro timeout di 8s
-      const profile = await Promise.race([
-        fetchProfileById(authData.user.id),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
-      ]);
+      const profile = await fetchProfileById(authData.user.id);
 
       if (!profile) {
-        throw new Error('Profilo non trovato o connessione lenta. Riprova.');
+        throw new Error('Profilo non trovato. Contatta l\'amministratore.');
       }
 
       if (!profile.is_active) {
@@ -274,24 +268,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     try {
       set({ isLoading: true });
 
-      // Wrap recoverSession in a 10s timeout
-      const recovered = await Promise.race([
-        recoverSession(),
-        new Promise<null>((resolve) => setTimeout(() => {
-          console.warn('[Auth] recoverSession timeout after 10s');
-          resolve(null);
-        }, 10000)),
-      ]);
+      // Niente Promise.race qui: i timeout interferivano con il lock interno di Supabase auth
+      const recovered = await recoverSession();
 
       if (!recovered) {
         set({ user: null, profile: null, isAuthenticated: false, isLoading: false });
         return;
       }
 
-      const profile = await Promise.race([
-        fetchProfileById(recovered.userId),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
-      ]);
+      const profile = await fetchProfileById(recovered.userId);
 
       if (!profile) {
         set({ user: null, profile: null, isAuthenticated: false, isLoading: false });

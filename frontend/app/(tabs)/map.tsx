@@ -14,6 +14,7 @@ import {
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useRouter } from 'expo-router';
 
 // Conditionally import WebView for native platforms
@@ -35,6 +36,9 @@ type FilterMode = 'all' | 'active' | 'not_visited';
 export default function MapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Altezza dinamica della tab bar - serve a sollevare il popup sopra di essa
+  // (la tab bar è position:absolute e sovrappone il contenuto del tab)
+  const tabBarHeight = useBottomTabBarHeight();
   const { user, profile } = useAuthStore();
   const userRole = profile?.role || 'agent';
   const webViewRef = useRef<any>(null);
@@ -755,9 +759,9 @@ export default function MapScreen() {
 
       {/* Marker Popup (Bottom Sheet - NO Modal to avoid blocking Leaflet) */}
       {showPopup && selectedTab && (
-        <View style={styles.popupOverlayInline}>
+        <View style={[styles.popupOverlayInline, { bottom: tabBarHeight }]}>
           <TouchableOpacity style={styles.popupOverlayBg} activeOpacity={1} onPress={() => setShowPopup(false)} />
-          <View style={[styles.popupSheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={[styles.popupSheet, { paddingBottom: 16 }]}>
             {/* Header */}
             <View style={styles.popupHandle} />
             <View style={styles.popupHeader}>

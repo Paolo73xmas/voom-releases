@@ -345,10 +345,10 @@ export function initializeAuthListeners() {
 
     AppState.addEventListener('change', handleAppStateChange);
 
-    // Avvia subito (l'app parte già in foreground)
-    try {
-      supabase.auth.startAutoRefresh();
-    } catch (e) { console.warn('[Auth] initial startAutoRefresh:', e); }
+    // NON chiamiamo startAutoRefresh() qui all'avvio: autoRefreshToken=true in
+    // lib/supabase.ts lo gestisce già internamente. Una chiamata esplicita
+    // contemporaneamente a initialize() può causare deadlock del lock interno
+    // di Supabase Auth (visto in Android Expo Go con splash bloccato).
   }
 
   // --- LIVELLO 2: onAuthStateChange ---

@@ -118,6 +118,17 @@ export default function VoomSplash({ onFinish }: SplashProps) {
     }));
   }, []);
 
+  // FALLBACK: garantisce che onFinish sia chiamato anche se runOnJS dovesse
+  // fallire o tardare (problema noto di reanimated su alcuni Android Expo Go).
+  // Tempo totale animazione = 3200 + 600 = 3800ms, diamo qualche secondo extra.
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      console.log('[VoomSplash] Fallback timer triggered onFinish');
+      onFinish();
+    }, 5000);
+    return () => clearTimeout(fallbackTimer);
+  }, []);
+
   // Animated styles
   const containerStyle = useAnimatedStyle(() => ({
     opacity: bgOpacity.value,

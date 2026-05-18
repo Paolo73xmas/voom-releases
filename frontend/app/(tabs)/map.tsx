@@ -14,7 +14,6 @@ import {
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useRouter } from 'expo-router';
 
 // Conditionally import WebView for native platforms
@@ -38,7 +37,9 @@ export default function MapScreen() {
   const insets = useSafeAreaInsets();
   // Altezza dinamica della tab bar - serve a sollevare il popup sopra di essa
   // (la tab bar è position:absolute e sovrappone il contenuto del tab)
-  const tabBarHeight = useBottomTabBarHeight();
+  // Calcolo manuale (useBottomTabBarHeight fa render error su iOS con expo-router)
+  const tabBarBaseHeight = Platform.OS === 'ios' ? 60 : 58;
+  const tabBarHeight = tabBarBaseHeight + insets.bottom;
   const { user, profile } = useAuthStore();
   const userRole = profile?.role || 'agent';
   const webViewRef = useRef<any>(null);

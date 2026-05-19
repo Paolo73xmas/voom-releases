@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.voom.crm",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Per registrare visite, ispezioni e georeferenziare i rimborsi",
         "NSLocationAlwaysUsageDescription": "Per rilevare la posizione durante le visite e i rimborsi",

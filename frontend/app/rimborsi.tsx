@@ -19,6 +19,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as Location from 'expo-location';
 import { useAuthStore } from '../store/authStore';
 import {
@@ -224,6 +225,66 @@ export default function RimborsiScreen() {
     setFormGps(null);
   };
 
+  /**
+   * GPS fetch ottimizzato per i rimborsi:
+   * - Balanced accuracy (più veloce di High su rete scarsa, sufficiente per georefencing)
+   * - Timeout 6s: se il GPS non risponde, si prosegue comunque
+   * - Non blocca il flusso scatto foto se in errore
+   */
+  const fetchGpsFast = async () => {
+    try {
+      let locStatus = permLocation;
+      if (locStatus !== 'granted') {
+        const loc = await Location.requestForegroundPermissionsAsync();
+        locStatus = loc.status === 'granted' ? 'granted' : 'denied';
+        setPermLocation(locStatus);
+      }
+      if (locStatus !== 'granted') return;
+      setGpsLoading(true);
+      const pos = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 6000)),
+      ]);
+      if (pos && 'coords' in pos) {
+        setFormGps({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy ?? undefined,
+        });
+      }
+    } catch (e) { console.warn('[Rimborsi] GPS error:', e); }
+    finally { setGpsLoading(false); }
+  };
+
+  /**
+   * Comprime e ridimensiona la foto prima di convertirla in base64.
+   * Tipica riduzione: 2-5 MB → 100-300 KB (10-20× più piccolo).
+   * Risultato: upload molto più rapido su reti scarse.
+   */
+  const compressImage = async (uri: string): Promise<string | null> => {
+    try {
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        // Ridimensiona a max 1280px lato lungo (sufficiente per scontrini leggibili)
+        [{ resize: { width: 1280 } }],
+        {
+          compress: 0.6, // qualità 60% (buon trade-off)
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true,
+        }
+      );
+      if (result.base64) {
+        return `data:image/jpeg;base64,${result.base64}`;
+      }
+      return null;
+    } catch (e) {
+      console.warn('[Rimborsi] image compression error:', e);
+      return null;
+    }
+  };
+
+  const [processingPhoto, setProcessingPhoto] = useState(false);
+
   const takePhoto = async () => {
     try {
       // Re-check camera permission (in case it was denied previously)
@@ -242,38 +303,31 @@ export default function RimborsiScreen() {
         }
       }
 
-      // Refresh GPS at capture time (so the photo is georeferenced with current location)
-      try {
-        let locStatus = permLocation;
-        if (locStatus !== 'granted') {
-          const loc = await Location.requestForegroundPermissionsAsync();
-          locStatus = loc.status === 'granted' ? 'granted' : 'denied';
-          setPermLocation(locStatus);
-        }
-        if (locStatus === 'granted') {
-          setGpsLoading(true);
-          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-          setFormGps({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            accuracy: pos.coords.accuracy ?? undefined,
-          });
-        }
-      } catch (e) { console.warn('[Rimborsi] GPS error:', e); }
-      finally { setGpsLoading(false); }
+      // ✅ GPS in PARALLELO (non blocca la camera): l'utente può scattare subito,
+      //    il GPS si aggiorna in background mentre la camera è attiva
+      fetchGpsFast(); // intenzionalmente non awaited
 
+      // Lancia camera SENZA base64 (lo facciamo dopo, comprimendo)
       const res = await ImagePicker.launchCameraAsync({
         allowsEditing: false,
-        quality: 0.6,
-        base64: true,
+        quality: 0.8, // qualità camera raw alta (poi comprimiamo)
+        base64: false,
       });
-      if (!res.canceled && res.assets[0]) {
-        const asset = res.assets[0];
-        const dataUrl = `data:image/jpeg;base64,${asset.base64}`;
-        setFormPhoto(dataUrl);
+      if (res.canceled || !res.assets[0]) return;
+
+      // ✅ Comprimi + resize prima di salvare in stato (riduce 10-20x la dimensione)
+      setProcessingPhoto(true);
+      const compressed = await compressImage(res.assets[0].uri);
+      setProcessingPhoto(false);
+
+      if (compressed) {
+        setFormPhoto(compressed);
+      } else {
+        Alert.alert('Errore', 'Impossibile elaborare la foto. Riprova.');
       }
     } catch (e) {
       console.error(e);
+      setProcessingPhoto(false);
       Alert.alert('Errore', 'Impossibile scattare la foto');
     }
   };
@@ -286,33 +340,29 @@ export default function RimborsiScreen() {
         Alert.alert('Permesso negato', 'Concedi l\'accesso alla galleria per selezionare una foto');
         return;
       }
-      // Refresh GPS for gallery uploads too (camera might be invoked offline)
-      try {
-        if (permLocation === 'granted') {
-          setGpsLoading(true);
-          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-          setFormGps({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            accuracy: pos.coords.accuracy ?? undefined,
-          });
-        }
-      } catch {}
-      finally { setGpsLoading(false); }
+      // GPS in parallelo (non blocca)
+      fetchGpsFast();
 
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
-        quality: 0.6,
-        base64: true,
+        quality: 0.8,
+        base64: false,
       });
-      if (!res.canceled && res.assets[0]) {
-        const asset = res.assets[0];
-        const dataUrl = `data:image/jpeg;base64,${asset.base64}`;
-        setFormPhoto(dataUrl);
+      if (res.canceled || !res.assets[0]) return;
+
+      setProcessingPhoto(true);
+      const compressed = await compressImage(res.assets[0].uri);
+      setProcessingPhoto(false);
+
+      if (compressed) {
+        setFormPhoto(compressed);
+      } else {
+        Alert.alert('Errore', 'Impossibile elaborare la foto. Riprova.');
       }
     } catch (e) {
       console.error(e);
+      setProcessingPhoto(false);
     }
   };
 
@@ -511,13 +561,33 @@ export default function RimborsiScreen() {
                     </View>
                   ) : (
                     <View style={{ flexDirection: 'row', gap: 10 }}>
-                      <TouchableOpacity style={s.photoBtn} onPress={takePhoto}>
-                        <Ionicons name="camera" size={20} color="#1E40AF" />
-                        <Text style={s.photoBtnTxt}>Scatta Foto</Text>
+                      <TouchableOpacity
+                        style={[s.photoBtn, processingPhoto && s.photoBtnDisabled]}
+                        onPress={takePhoto}
+                        disabled={processingPhoto}
+                      >
+                        {processingPhoto ? (
+                          <ActivityIndicator size="small" color="#1E40AF" />
+                        ) : (
+                          <Ionicons name="camera" size={20} color="#1E40AF" />
+                        )}
+                        <Text style={s.photoBtnTxt}>
+                          {processingPhoto ? 'Elaborazione...' : 'Scatta Foto'}
+                        </Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={s.photoBtn} onPress={pickFromGallery}>
-                        <Ionicons name="images" size={20} color="#1E40AF" />
-                        <Text style={s.photoBtnTxt}>Galleria</Text>
+                      <TouchableOpacity
+                        style={[s.photoBtn, processingPhoto && s.photoBtnDisabled]}
+                        onPress={pickFromGallery}
+                        disabled={processingPhoto}
+                      >
+                        {processingPhoto ? (
+                          <ActivityIndicator size="small" color="#1E40AF" />
+                        ) : (
+                          <Ionicons name="images" size={20} color="#1E40AF" />
+                        )}
+                        <Text style={s.photoBtnTxt}>
+                          {processingPhoto ? 'Elaborazione...' : 'Galleria'}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -639,6 +709,7 @@ const s = StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     paddingVertical: 12, borderRadius: 10, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE',
   },
+  photoBtnDisabled: { opacity: 0.6, backgroundColor: '#F3F4F6', borderColor: '#D1D5DB' },
   photoBtnTxt: { fontSize: 14, fontWeight: '600', color: '#1E40AF' },
   submitBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,

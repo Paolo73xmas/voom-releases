@@ -125,6 +125,9 @@ export default function SubstitutionsScreen() {
   // Totals
   const totalRetrieve = retrieveCards.reduce((sum, c) => sum + (c.product_id ? getProductPrice(c.product_id) * c.quantity : 0), 0);
   const totalSend = sendCards.reduce((sum, c) => sum + (c.product_id ? getProductPrice(c.product_id) * c.quantity : 0), 0);
+  // Conteggio totale pezzi (somma quantità di tutte le card con prodotto selezionato)
+  const totalRetrievePieces = retrieveCards.reduce((sum, c) => sum + (c.product_id ? c.quantity : 0), 0);
+  const totalSendPieces = sendCards.reduce((sum, c) => sum + (c.product_id ? c.quantity : 0), 0);
 
   // Create helpers
   const openCreate = () => { loadCustomers(); loadProducts(); setShowCreate(true); setCreateStep(0); resetForm(); };
@@ -337,11 +340,23 @@ export default function SubstitutionsScreen() {
         {/* Value badges from step 1+ */}
         {createStep >= 1 && (
           <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#FEE2E2', borderRadius: 10, paddingVertical: 6 }}>
-              <Ionicons name="arrow-up-circle" size={14} color="#DC2626" /><Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>Ritiro: {formatCurrency(totalRetrieve)}</Text>
+            <View style={{ flex: 1, alignItems: 'center', backgroundColor: '#FEE2E2', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="arrow-up-circle" size={14} color="#DC2626" />
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B' }}>Ritiro</Text>
+              </View>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#991B1B', marginTop: 2 }}>
+                {totalRetrievePieces} {totalRetrievePieces === 1 ? 'pz' : 'pz'} · {formatCurrency(totalRetrieve)}
+              </Text>
             </View>
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#D1FAE5', borderRadius: 10, paddingVertical: 6 }}>
-              <Ionicons name="arrow-down-circle" size={14} color="#059669" /><Text style={{ fontSize: 11, fontWeight: '700', color: '#065F46' }}>Invio: {formatCurrency(totalSend)}</Text>
+            <View style={{ flex: 1, alignItems: 'center', backgroundColor: '#D1FAE5', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="arrow-down-circle" size={14} color="#059669" />
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#065F46' }}>Invio</Text>
+              </View>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#065F46', marginTop: 2 }}>
+                {totalSendPieces} {totalSendPieces === 1 ? 'pz' : 'pz'} · {formatCurrency(totalSend)}
+              </Text>
             </View>
           </View>
         )}

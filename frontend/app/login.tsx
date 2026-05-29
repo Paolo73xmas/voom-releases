@@ -118,7 +118,8 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      // Trim BOTH email and password (iOS autofill può aggiungere spazi invisibili)
+      await login(email.trim(), password.trim());
 
       // Persist credentials securely if "Ricordami" is checked
       if (rememberMe) {
@@ -194,6 +195,9 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
+              spellCheck={false}
             />
           </View>
 
@@ -206,6 +210,11 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="password"
+              textContentType="password"
+              spellCheck={false}
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}

@@ -184,6 +184,10 @@ export default function OrderCollectionV2() {
   // ── Data Lists ──
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  // ✅ Web parity: categorie disabilitate per l'utente (user_category_permissions con is_allowed=false)
+  // Modello "Opt-out": l'utente vede TUTTO tranne le categorie esplicitamente disabilitate.
+  // Admin/admincustom bypass: nessun filtro applicato.
+  const [disabledCategoryIds, setDisabledCategoryIds] = useState<string[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [packages, setPackages] = useState<PackageData[]>([]);
@@ -401,13 +405,17 @@ export default function OrderCollectionV2() {
         fetchProducts(isForeignOrder),
         fetchShippingMethods(isForeignOrder),
       ]);
-      setProducts(productsData);
+      // ✅ Web parity: filtra categorie disabilitate anche al toggle Italia/Estero
+      const filteredProducts = (productsData || []).filter(
+        (p: Product) => !p.category_id || !disabledCategoryIds.includes(p.category_id)
+      );
+      setProducts(filteredProducts);
       setShippingMethods(shippingsData);
 
       // Reload available stock for new product set (branch-aware, virtual branches use central stock)
-      if (productsData.length > 0) {
+      if (filteredProducts.length > 0) {
         try {
-          const ids = productsData.map((p: Product) => p.id);
+          const ids = filteredProducts.map((p: Product) => p.id);
           const stockMap = (user?.branchId && !isVirtualBranch)
             ? await getBranchAvailableStock(user.branchId, ids)
             : await getAvailableStock(ids);
@@ -417,7 +425,7 @@ export default function OrderCollectionV2() {
 
       // Check for incompatible cart items
       if (isForeignOrder && cart.length > 0) {
-        const eligibleIds = new Set(productsData.map((p: Product) => p.id));
+        const eligibleIds = new Set(filteredProducts.map((p: Product) => p.id));
         const incompatible = cart.filter(item => !eligibleIds.has(item.product.id));
         if (incompatible.length > 0) {
           const nomi = incompatible.map(i => i.product.short_description || i.product.name).join(', ');
@@ -430,6 +438,45 @@ export default function OrderCollectionV2() {
       setLoadingProducts(false);
     }
   };
+
+  // ✅ Web parity: Carica le categorie disabilitate per l'utente corrente.
+  // Modello "Opt-out": utente vede tutto tranne categorie esplicitamente bloccate.
+  // Admin e admincustom bypassano sempre il filtro.
+  useEffect(() => {
+    const loadDisabledCategories = async () => {
+      if (!user?.id || !user?.role) return;
+
+      // Bypass per admin e admincustom: vedono tutti i prodotti
+      if (user.role === 'admin' || user.role === 'admincustom') {
+        setDisabledCategoryIds([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('user_category_permissions')
+          .select('category_id')
+          .eq('user_id', user.id)
+          .eq('is_allowed', false);
+
+        if (error) {
+          console.warn('[V2] Failed to load category permissions:', error.message);
+          setDisabledCategoryIds([]);
+          return;
+        }
+
+        const ids = (data || []).map((r: any) => r.category_id);
+        setDisabledCategoryIds(ids);
+        if (ids.length > 0) {
+          console.log(`[V2] User has ${ids.length} disabled categories - products will be filtered`);
+        }
+      } catch (e) {
+        console.warn('[V2] loadDisabledCategories error:', e);
+        setDisabledCategoryIds([]);
+      }
+    };
+    loadDisabledCategories();
+  }, [user?.id, user?.role]);
 
   const loadInitialData = async () => {
     setIsLoading(true);
@@ -450,14 +497,22 @@ export default function OrderCollectionV2() {
       });
 
       setCustomers(custData || []);
-      setProducts(productsData || []);
+      // ✅ Web parity: filtra prodotti con categoria disabilitata per l'utente
+      const filteredProducts = (productsData || []).filter(
+        (p: Product) => !p.category_id || !disabledCategoryIds.includes(p.category_id)
+      );
+      const excluded = (productsData?.length || 0) - filteredProducts.length;
+      if (excluded > 0) {
+        console.log(`[V2] Filtered out ${excluded} products from disabled categories`);
+      }
+      setProducts(filteredProducts);
       setPaymentMethods(paymentsData || []);
       setShippingMethods(shippingsData || []);
 
       // Load available stock (branch-aware, virtual branches use central stock)
-      if (productsData && productsData.length > 0) {
+      if (filteredProducts.length > 0) {
         try {
-          const ids = productsData.map((p: Product) => p.id);
+          const ids = filteredProducts.map((p: Product) => p.id);
           const stockMap = (user?.branchId && !isVirtualBranch)
             ? await getBranchAvailableStock(user.branchId, ids)
             : await getAvailableStock(ids);

@@ -16,6 +16,7 @@ export interface Product {
   estero?: boolean;
   rottamazione_no?: boolean;
   stock_quantity?: number;
+  category_id?: string | null;
 }
 
 export interface PaymentMethod {

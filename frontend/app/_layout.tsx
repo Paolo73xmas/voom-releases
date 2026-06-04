@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
@@ -12,8 +12,14 @@ import {
 import { useAuthStore, initializeAuthListeners } from '../store/authStore';
 import { COLORS, FONTS } from '../lib/theme';
 
+// Tempo massimo di attesa per il caricamento dei font.
+// Su Android Expo Go, il fetch dei font da Google può fallire o bloccarsi:
+// in tal caso, procediamo comunque con i font di sistema (fallback).
+const FONTS_LOAD_TIMEOUT_MS = 3000;
+
 export default function RootLayout() {
   const initialize = useAuthStore((state) => state.initialize);
+  const [fontsTimedOut, setFontsTimedOut] = useState(false);
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -23,13 +29,25 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    // Registra listener globali (AppState + onAuthStateChange)
-    // PRIMA dell'initialize, così catturiamo tutti gli eventi di auth da subito
     initializeAuthListeners();
     initialize();
   }, []);
 
-  if (!fontsLoaded) {
+  // ⏱️ Fallback: se i font non si caricano entro X secondi, procediamo lo stesso
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!fontsLoaded) {
+        console.warn(`[RootLayout] Fonts not loaded after ${FONTS_LOAD_TIMEOUT_MS}ms, proceeding with system fonts`);
+        setFontsTimedOut(true);
+      }
+    }, FONTS_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [fontsLoaded]);
+
+  // Non bloccare l'app se i font non sono caricati (degrade gracefully a font di sistema)
+  const canRender = fontsLoaded || fontsTimedOut;
+
+  if (!canRender) {
     return (
       <View style={{ flex: 1, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#FFFFFF" />

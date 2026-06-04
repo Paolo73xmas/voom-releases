@@ -336,10 +336,15 @@ export default function AnagraficaScreen() {
   };
 
   const updateField = (field: string, value: string) => {
-    const upper = ['businessName','address','city','province','contactName','contactSurname','fiscalCode','sdi']
-      .includes(field) ? value.toUpperCase() : value;
-    setForm(prev => ({ ...prev, [field]: upper }));
+    // ❌ NON applicare value.toUpperCase() qui!
+    // Su Android causava input erratico (caratteri casuali, sequenze) perché
+    // mutare il testo dentro onChangeText rompe il composing dell'IME nativo.
+    // L'uppercase ora viene gestito tramite autoCapitalize="characters" sui TextInput.
+    setForm(prev => ({ ...prev, [field]: value }));
   };
+
+  // Lista dei campi che devono essere visualizzati in MAIUSCOLO (gestito via autoCapitalize)
+  const UPPERCASE_FIELDS = new Set(['businessName','address','city','province','contactName','contactSurname','fiscalCode','sdi']);
 
   const canProceed = (): boolean => {
     if (step === 1) return isPhoneVisit || photos.length >= 2;
@@ -594,24 +599,24 @@ export default function AnagraficaScreen() {
 
         {/* Form Fields */}
         <Text style={styles.sectionTitle}>Dati Aziendali</Text>
-        <FormField label="Ragione Sociale *" value={form.businessName} field="businessName" onChange={updateField} />
+        <FormField label="Ragione Sociale *" value={form.businessName} field="businessName" onChange={updateField} autoCapitalize="characters" />
         <FormField label="P.IVA * (11 cifre)" value={form.vatNumber} field="vatNumber" onChange={updateField} keyboardType="numeric" maxLength={11}
           error={form.vatNumber && !vatRegex.test(form.vatNumber) ? 'P.IVA deve essere di 11 cifre' : ''} />
         <FormField label="Codice Fiscale * (16 car.)" value={form.fiscalCode} field="fiscalCode" onChange={updateField} maxLength={16} autoCapitalize="characters"
           error={form.fiscalCode && !fiscalCodeRegex.test(form.fiscalCode.toUpperCase()) ? 'Codice Fiscale: 16 caratteri alfanumerici' : ''} />
 
         <Text style={styles.sectionTitle}>Indirizzo</Text>
-        <FormField label="Indirizzo *" value={form.address} field="address" onChange={updateField} />
+        <FormField label="Indirizzo *" value={form.address} field="address" onChange={updateField} autoCapitalize="characters" />
         <View style={styles.row}>
-          <View style={{ flex: 2 }}><FormField label="Citta *" value={form.city} field="city" onChange={updateField} /></View>
-          <View style={{ flex: 1, marginLeft: 8 }}><FormField label="Prov. *" value={form.province} field="province" onChange={updateField} maxLength={2} /></View>
+          <View style={{ flex: 2 }}><FormField label="Citta *" value={form.city} field="city" onChange={updateField} autoCapitalize="characters" /></View>
+          <View style={{ flex: 1, marginLeft: 8 }}><FormField label="Prov. *" value={form.province} field="province" onChange={updateField} maxLength={2} autoCapitalize="characters" /></View>
           <View style={{ flex: 1, marginLeft: 8 }}><FormField label="CAP *" value={form.postalCode} field="postalCode" onChange={updateField} keyboardType="numeric" maxLength={5} /></View>
         </View>
 
         <Text style={styles.sectionTitle}>Contatto</Text>
         <View style={styles.row}>
-          <View style={{ flex: 1 }}><FormField label="Nome *" value={form.contactName} field="contactName" onChange={updateField} /></View>
-          <View style={{ flex: 1, marginLeft: 8 }}><FormField label="Cognome *" value={form.contactSurname} field="contactSurname" onChange={updateField} /></View>
+          <View style={{ flex: 1 }}><FormField label="Nome *" value={form.contactName} field="contactName" onChange={updateField} autoCapitalize="characters" /></View>
+          <View style={{ flex: 1, marginLeft: 8 }}><FormField label="Cognome *" value={form.contactSurname} field="contactSurname" onChange={updateField} autoCapitalize="characters" /></View>
         </View>
         <FormField label="Telefono *" value={form.contactPhone} field="contactPhone" onChange={updateField} keyboardType="phone-pad" />
         <FormField label="Email *" value={form.contactEmail} field="contactEmail" onChange={updateField} keyboardType="email-address" autoCapitalize="none"

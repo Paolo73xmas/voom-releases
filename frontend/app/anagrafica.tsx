@@ -137,7 +137,15 @@ export default function AnagraficaScreen() {
     customerType: 'retail' as CustomerType, notes: '',
     vatNumber: '', fiscalCode: '', pec: '', sdi: '',
     tabaccheriaId: '',
+    // ✅ Web parity (nuove modifiche): progetto associato + IBAN cliente
+    projectType: 'nessun_progetto', // slug del progetto, default = nessun_progetto
+    iban: '',
   });
+
+  // ✅ Web parity: lista progetti disponibili (caricata da Supabase)
+  type ProjectOpt = { id: string; slug: string; name: string; color: string };
+  const [projects, setProjects] = useState<ProjectOpt[]>([]);
+  const [showProjectPicker, setShowProjectPicker] = useState(false);
 
   // Step 3: Follow-up
   const [scheduleAppointment, setScheduleAppointment] = useState(false);
@@ -158,6 +166,20 @@ export default function AnagraficaScreen() {
       loadTabaccheriaData(params.tabaccheriaId as string);
     }
   }, [params.tabaccheriaId]);
+
+  // ✅ Web parity: Load active projects on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('projects')
+          .select('id, slug, name, color')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+        setProjects(data || []);
+      } catch (e) { console.warn('[Anagrafica] projects load error:', e); }
+    })();
+  }, []);
 
   const loadTabaccheriaData = async (tabId: string) => {
     try {
@@ -412,6 +434,9 @@ export default function AnagraficaScreen() {
           pec: form.pec || '',
           sdi: form.sdi || '',
           tabaccheria_id: form.tabaccheriaId || null,
+          // ✅ Web parity: nuove modifiche - progetto e IBAN
+          project_type: form.projectType || 'nessun_progetto',
+          iban: form.iban ? form.iban.trim().toUpperCase() : null,
           first_visit_date: new Date().toISOString(),
           last_visit_date: new Date().toISOString(),
         })
@@ -628,6 +653,29 @@ export default function AnagraficaScreen() {
         {!form.pec?.trim() && !form.sdi?.trim() && (
           <Text style={styles.validationHint}>Almeno uno tra PEC o SDI deve essere compilato</Text>
         )}
+        {/* ✅ Web parity: IBAN opzionale */}
+        <FormField label="IBAN (opzionale)" value={form.iban} field="iban" onChange={updateField} autoCapitalize="characters" maxLength={34} />
+
+        {/* ✅ Web parity: Progetto associato */}
+        <Text style={styles.sectionTitle}>Progetto</Text>
+        <TouchableOpacity
+          style={styles.projectPicker}
+          onPress={() => setShowProjectPicker(true)}
+          activeOpacity={0.75}
+        >
+          {(() => {
+            const selected = projects.find(p => p.slug === form.projectType);
+            return (
+              <>
+                <View style={[styles.projectDot, { backgroundColor: selected?.color || '#9CA3AF' }]} />
+                <Text style={styles.projectPickerText}>
+                  {selected?.name || 'Nessun progetto'}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="#6B7280" />
+              </>
+            );
+          })()}
+        </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Tipo Cliente</Text>
         <View style={styles.typeRow}>
@@ -813,6 +861,34 @@ export default function AnagraficaScreen() {
           <View style={{ paddingBottom: insets.bottom }} />
         </View>
       </Modal>
+
+      {/* ✅ Web parity: Project Picker Modal */}
+      <Modal visible={showProjectPicker} animationType="fade" transparent onRequestClose={() => setShowProjectPicker(false)}>
+        <TouchableOpacity style={styles.projectOverlay} activeOpacity={1} onPress={() => setShowProjectPicker(false)}>
+          <View style={styles.projectSheet}>
+            <Text style={styles.projectSheetTitle}>Seleziona Progetto</Text>
+            <TouchableOpacity
+              style={[styles.projectItem, form.projectType === 'nessun_progetto' && styles.projectItemActive]}
+              onPress={() => { setForm(p => ({ ...p, projectType: 'nessun_progetto' })); setShowProjectPicker(false); }}
+            >
+              <View style={[styles.projectDot, { backgroundColor: '#9CA3AF' }]} />
+              <Text style={styles.projectItemText}>Nessun progetto</Text>
+              {form.projectType === 'nessun_progetto' && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
+            </TouchableOpacity>
+            {projects.map(p => (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.projectItem, form.projectType === p.slug && styles.projectItemActive]}
+                onPress={() => { setForm(prev => ({ ...prev, projectType: p.slug })); setShowProjectPicker(false); }}
+              >
+                <View style={[styles.projectDot, { backgroundColor: p.color }]} />
+                <Text style={styles.projectItemText}>{p.name}</Text>
+                {form.projectType === p.slug && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -928,4 +1004,43 @@ const styles = StyleSheet.create({
   assignedBadge: { backgroundColor: '#FEF3C7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   assignedBadgeText: { fontSize: 10, color: '#92400E', fontWeight: '600' },
   emptySearch: { textAlign: 'center', color: '#9CA3AF', marginTop: 24, fontSize: 14 },
+
+  // ✅ Web parity: Project picker styles
+  projectPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 8,
+  },
+  projectDot: { width: 14, height: 14, borderRadius: 7 },
+  projectPickerText: { flex: 1, fontSize: 15, color: '#1F2937', fontWeight: '500' },
+  projectOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  projectSheet: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    paddingBottom: 32,
+  },
+  projectSheetTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 12, textAlign: 'center' },
+  projectItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  projectItemActive: { backgroundColor: '#F0FDF4' },
+  projectItemText: { flex: 1, fontSize: 15, color: '#1F2937', fontWeight: '500' },
 });

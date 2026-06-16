@@ -26,7 +26,7 @@ import { useAuthStore } from '../store/authStore';
 import { uploadVisitPhotos } from '../lib/api/photos';
 import { usePhotoStamper } from '../components/PhotoStamper';
 
-type CustomerType = 'retail' | 'horeca' | 'industry' | 'other';
+// type CustomerType non più hardcoded: ora viene letto dinamicamente da customer_types table
 
 interface PhotoData {
   uri: string;
@@ -134,7 +134,7 @@ export default function AnagraficaScreen() {
   const [form, setForm] = useState({
     businessName: '', address: '', city: '', province: '', postalCode: '',
     contactName: '', contactSurname: '', contactPhone: '', contactEmail: '',
-    customerType: 'retail' as CustomerType, notes: '',
+    customerType: 'tabaccheria' as string, notes: '',
     vatNumber: '', fiscalCode: '', pec: '', sdi: '',
     tabaccheriaId: '',
     // ✅ Web parity (nuove modifiche): progetto associato + IBAN cliente
@@ -146,6 +146,12 @@ export default function AnagraficaScreen() {
   type ProjectOpt = { id: string; slug: string; name: string; color: string };
   const [projects, setProjects] = useState<ProjectOpt[]>([]);
   const [showProjectPicker, setShowProjectPicker] = useState(false);
+
+  // ✅ Web parity: lista tipi cliente dinamica (tabella customer_types)
+  // I tipi possono essere aggiunti/rinominati/eliminati lato admin web app.
+  type CustomerTypeOpt = { id: string; value: string; label: string; sort_order: number };
+  const [customerTypes, setCustomerTypes] = useState<CustomerTypeOpt[]>([]);
+  const [showCustomerTypePicker, setShowCustomerTypePicker] = useState(false);
 
   // Step 3: Follow-up
   const [scheduleAppointment, setScheduleAppointment] = useState(false);
@@ -167,17 +173,26 @@ export default function AnagraficaScreen() {
     }
   }, [params.tabaccheriaId]);
 
-  // ✅ Web parity: Load active projects on mount
+  // ✅ Web parity: Load active projects + customer types on mount
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase
-          .from('projects')
-          .select('id, slug, name, color')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true });
-        setProjects(data || []);
-      } catch (e) { console.warn('[Anagrafica] projects load error:', e); }
+        const [projRes, typesRes] = await Promise.all([
+          supabase.from('projects').select('id, slug, name, color').eq('is_active', true).order('sort_order', { ascending: true }),
+          // ✅ Web parity: tipi cliente dinamici (admin può aggiungere/modificare in web)
+          supabase.from('customer_types').select('id, value, label, sort_order').order('sort_order', { ascending: true }),
+        ]);
+        setProjects(projRes.data || []);
+        const types = typesRes.data || [];
+        setCustomerTypes(types);
+        // Se il customerType corrente non esiste più nella lista, fallback al primo (default)
+        if (types.length > 0) {
+          setForm(prev => {
+            const exists = types.some((t: any) => t.value === prev.customerType);
+            return exists ? prev : { ...prev, customerType: types[0].value };
+          });
+        }
+      } catch (e) { console.warn('[Anagrafica] projects/types load error:', e); }
     })();
   }, []);
 
@@ -678,16 +693,26 @@ export default function AnagraficaScreen() {
         </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Tipo Cliente</Text>
-        <View style={styles.typeRow}>
-          {(['retail', 'horeca', 'industry', 'other'] as CustomerType[]).map(t => (
-            <TouchableOpacity key={t} style={[styles.typeBtn, form.customerType === t && styles.typeBtnActive]}
-              onPress={() => setForm(prev => ({ ...prev, customerType: t }))}>
-              <Text style={[styles.typeBtnText, form.customerType === t && styles.typeBtnTextActive]}>
-                {t === 'retail' ? 'Retail' : t === 'horeca' ? 'Horeca' : t === 'industry' ? 'Industry' : 'Altro'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* ✅ Web parity: dropdown dinamico dal database (tabella customer_types).
+            L'admin può aggiungere/modificare/eliminare tipi dalla web app. */}
+        <TouchableOpacity
+          style={styles.projectPicker}
+          onPress={() => setShowCustomerTypePicker(true)}
+          activeOpacity={0.75}
+        >
+          {(() => {
+            const selected = customerTypes.find(t => t.value === form.customerType);
+            return (
+              <>
+                <Ionicons name="business" size={18} color="#1E40AF" />
+                <Text style={styles.projectPickerText}>
+                  {selected?.label || (customerTypes.length === 0 ? 'Caricamento...' : 'Seleziona tipo')}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="#6B7280" />
+              </>
+            );
+          })()}
+        </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Note *</Text>
         <TextInput style={styles.textArea} multiline numberOfLines={4} textAlignVertical="top"
@@ -711,7 +736,7 @@ export default function AnagraficaScreen() {
         <SummaryRow label="Email" value={form.contactEmail} />
         {form.pec ? <SummaryRow label="PEC" value={form.pec} /> : null}
         {form.sdi ? <SummaryRow label="SDI" value={form.sdi} /> : null}
-        <SummaryRow label="Tipo" value={form.customerType} />
+        <SummaryRow label="Tipo" value={customerTypes.find(t => t.value === form.customerType)?.label || form.customerType} />
         <SummaryRow label="Note" value={form.notes} />
         <SummaryRow label="Foto" value={isPhoneVisit ? 'Visita telefonica' : `${photos.length} foto`} />
         {gpsPosition && <SummaryRow label="GPS" value={`${gpsPosition.lat.toFixed(5)}, ${gpsPosition.lng.toFixed(5)}`} />}
@@ -886,6 +911,32 @@ export default function AnagraficaScreen() {
                 {form.projectType === p.slug && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
               </TouchableOpacity>
             ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ✅ Web parity: Customer Type Picker Modal (dinamico) */}
+      <Modal visible={showCustomerTypePicker} animationType="fade" transparent onRequestClose={() => setShowCustomerTypePicker(false)}>
+        <TouchableOpacity style={styles.projectOverlay} activeOpacity={1} onPress={() => setShowCustomerTypePicker(false)}>
+          <View style={styles.projectSheet}>
+            <Text style={styles.projectSheetTitle}>Seleziona Tipo Cliente</Text>
+            {customerTypes.length === 0 ? (
+              <Text style={{ textAlign: 'center', color: '#9CA3AF', paddingVertical: 16 }}>
+                Caricamento tipi cliente...
+              </Text>
+            ) : (
+              customerTypes.map(t => (
+                <TouchableOpacity
+                  key={t.id}
+                  style={[styles.projectItem, form.customerType === t.value && styles.projectItemActive]}
+                  onPress={() => { setForm(prev => ({ ...prev, customerType: t.value })); setShowCustomerTypePicker(false); }}
+                >
+                  <Ionicons name="business-outline" size={18} color="#1E40AF" />
+                  <Text style={styles.projectItemText}>{t.label}</Text>
+                  {form.customerType === t.value && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
+                </TouchableOpacity>
+              ))
+            )}
           </View>
         </TouchableOpacity>
       </Modal>

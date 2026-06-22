@@ -442,13 +442,32 @@ export default function OrderCollectionV2() {
         } catch (e) { /* fallback */ }
       }
 
-      // Check for incompatible cart items
-      if (isForeignOrder && cart.length > 0) {
-        const eligibleIds = new Set(filteredProducts.map((p: Product) => p.id));
-        const incompatible = cart.filter(item => !eligibleIds.has(item.product.id));
-        if (incompatible.length > 0) {
-          const nomi = incompatible.map(i => i.product.short_description || i.product.name).join(', ');
-          Alert.alert('Conflitto Ordine Estero', `${incompatible.length} prodotto/i non abilitati per ordini esteri:\n\n${nomi}\n\nRimuovili dal carrello.`);
+      // ✅ Web parity: Check di compatibilità prodotti nel carrello al toggle
+      // - Estero: rimuovere prodotti che non hanno estero=true
+      // - Italia: rimuovere prodotti EST- (short_description inizia con "EST-")
+      if (cart.length > 0) {
+        let incompatible: typeof cart = [];
+        if (isForeignOrder) {
+          // Toggle a Estero: i prodotti rimasti devono tutti avere estero=true
+          const eligibleIds = new Set(filteredProducts.filter(p => p.estero === true).map(p => p.id));
+          incompatible = cart.filter(item => !eligibleIds.has(item.product.id));
+          if (incompatible.length > 0) {
+            const nomi = incompatible.map(i => i.product.short_description || i.product.name).join(', ');
+            Alert.alert(
+              'Conflitto Ordine Estero',
+              `${incompatible.length} prodotto/i non abilitati per ordini esteri:\n\n${nomi}\n\nRimuovili dal carrello.`
+            );
+          }
+        } else {
+          // Toggle a Italia: NESSUN prodotto EST- può rimanere nel carrello
+          incompatible = cart.filter(item => isEsteroDescription(item.product.short_description));
+          if (incompatible.length > 0) {
+            const nomi = incompatible.map(i => i.product.short_description || i.product.name).join(', ');
+            Alert.alert(
+              'Conflitto Ordine Italia',
+              `${incompatible.length} prodotto/i estero (EST-) non possono essere ordinati in modalità Italia:\n\n${nomi}\n\nRimuovili dal carrello.`
+            );
+          }
         }
       }
     } catch (e) {
@@ -741,6 +760,17 @@ export default function OrderCollectionV2() {
   // ═══════════════════════════════════════════════════
 
   const addToCart = (product: Product, qty: number) => {
+    // ✅ Web parity: blocco hardcoded incompatibilità Italia/Estero
+    // (defense-in-depth oltre al filtro lista)
+    if (!isForeignOrder && isEsteroDescription(product.short_description)) {
+      Alert.alert('Conflitto Ordine', `"${product.short_description || product.name}" è un prodotto estero (EST-) e non può essere aggiunto a un ordine Italia. Attiva "Estero" per ordinare questo articolo.`);
+      return;
+    }
+    if (isForeignOrder && product.estero !== true) {
+      Alert.alert('Conflitto Ordine Estero', `"${product.short_description || product.name}" non è abilitato per ordini esteri.`);
+      return;
+    }
+
     const stock = getEffectiveStock(product.id, product.stock_quantity || 0);
     const existing = cart.find(c => c.product.id === product.id);
     const currentQty = existing ? existing.quantity : 0;

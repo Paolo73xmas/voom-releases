@@ -651,9 +651,14 @@ export default function OrderCollectionV2() {
 
   const filteredProducts = useMemo(() => {
     let list = products;
-    // When Italia mode, hide products with short_description starting with "EST-" (matching old version)
+    // ✅ Web parity: filtri lato client (oltre al filtro server-side in fetchProducts):
     if (!isForeignOrder) {
+      // Modalità ITALIA: nasconde prodotti con short_description che inizia con "EST-"
       list = list.filter(p => !(p.short_description && p.short_description.toUpperCase().startsWith('EST-')));
+    } else {
+      // Modalità ESTERO: mostra SOLO prodotti con estero=true (colonna products.estero)
+      // Filtra fuori tutti gli altri, anche se per qualche motivo dovessero essere arrivati nella lista
+      list = list.filter(p => p.estero === true);
     }
     // Search filter
     if (productSearch.trim()) {

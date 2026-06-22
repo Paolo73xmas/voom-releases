@@ -250,7 +250,7 @@ export default function OrderCollectionV2() {
   const [rottamazioneIvaRate, setRottamazioneIvaRate] = useState(DEFAULT_ROTTAMAZIONE_IVA_RATE);
 
   // Location
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number; accuracy?: number | null } | null>(null);
 
   // ── Draft system ──
   const [draftId, setDraftId] = useState<string>(generateDraftId());
@@ -566,7 +566,7 @@ export default function OrderCollectionV2() {
       const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const loc = await ExpoLocation.getCurrentPositionAsync({ accuracy: ExpoLocation.Accuracy.Balanced });
-        setLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        setLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude, accuracy: loc.coords.accuracy ?? null });
       }
     } catch (e) {
       console.log('[V2] Location not available:', e);
@@ -970,8 +970,10 @@ export default function OrderCollectionV2() {
           shipping_address: shippingAddress || null,
           latitude: location?.latitude || null,
           longitude: location?.longitude || null,
+          gps_accuracy: location?.accuracy ?? null,
           // Customer anagrafica
           contact_name: selectedCustomer.contact_name || null,
+          contact_surname: selectedCustomer.contact_surname || null,
           contact_phone: selectedCustomer.contact_phone || null,
           contact_email: selectedCustomer.contact_email || null,
           vat_number: selectedCustomer.vat_number || null,
@@ -982,6 +984,7 @@ export default function OrderCollectionV2() {
           // Agent anagrafica
           agent_full_name: agentInfo?.full_name || null,
           agent_email: agentInfo?.email || null,
+          agent_phone: agentInfo?.phone || null,
           codice_agente_prestashop: agentInfo?.codice_agente_prestashop || null,
           // CashBack & Rottamazione fields
           cashback_used: isUsingCashBack ? cashBackToUse : 0,

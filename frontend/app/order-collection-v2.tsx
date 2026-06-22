@@ -743,6 +743,18 @@ export default function OrderCollectionV2() {
   // ── Rottamazione helpers ──
   const getRottamazioneNetAmount = (gross: number) => Math.round((gross / rottamazioneIvaRate) * 100) / 100;
 
+  /**
+   * ✅ Web parity: prodotti nel carrello INCOMPATIBILI con la modalità corrente.
+   * - Italia: prodotti EST- non possono restare
+   * - Estero: prodotti non-estero non possono restare
+   */
+  const incompatibleCartItems = useMemo(() => {
+    if (!isForeignOrder) {
+      return cart.filter(item => isEsteroDescription(item.product.short_description));
+    }
+    return cart.filter(item => item.product.estero !== true);
+  }, [cart, isForeignOrder]);
+
   const getAvailableRottamazioneLots = () => {
     if (isForeignOrder) return [0];
     const hasRottamazioneNoProducts = cart.some(i => i.product.rottamazione_no === true);
@@ -1357,6 +1369,33 @@ export default function OrderCollectionV2() {
           )}
         </View>
       </View>
+
+      {/* ✅ Web parity: Banner conflitto Italia/Estero (incompatibilità nel carrello) */}
+      {incompatibleCartItems.length > 0 && (
+        <View style={s.conflictBanner}>
+          <Ionicons name="warning" size={20} color="#B91C1C" />
+          <View style={{ flex: 1 }}>
+            <Text style={s.conflictTitle}>
+              {!isForeignOrder
+                ? `Conflitto Italia: ${incompatibleCartItems.length} prodotto/i EST- nel carrello`
+                : `Conflitto Estero: ${incompatibleCartItems.length} prodotto/i non abilitati estero`}
+            </Text>
+            <Text style={s.conflictDesc} numberOfLines={2}>
+              {incompatibleCartItems.map(i => i.product.short_description || i.product.name).join(', ')}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={s.conflictBtn}
+            onPress={() => {
+              const incIds = new Set(incompatibleCartItems.map(i => i.product.id));
+              setCart(prev => prev.filter(c => !incIds.has(c.product.id)));
+            }}
+          >
+            <Ionicons name="trash" size={16} color="#FFF" />
+            <Text style={s.conflictBtnText}>Rimuovi</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* CashBack badge */}
       {!isForeignOrder && customerCashBackBalance > 0 && (
@@ -2136,6 +2175,27 @@ const s = StyleSheet.create({
   maxBtn: { backgroundColor: '#1E40AF', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12 },
   maxBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   cashbackBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#ECFDF5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 8, borderWidth: 1, borderColor: '#A7F3D0' },
+
+  // ✅ Web parity: Banner conflitto Italia/Estero
+  conflictBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 8,
+  },
+  conflictTitle: { fontSize: 13, fontWeight: '700', color: '#991B1B' },
+  conflictDesc: { fontSize: 11, color: '#7F1D1D', marginTop: 2 },
+  conflictBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8,
+  },
+  conflictBtnText: { color: '#FFF', fontWeight: '700', fontSize: 12 },
   cashbackBadgeText: { fontSize: 12, fontWeight: '600', color: '#059669' },
   confirmPriceBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#1E40AF', borderRadius: 10, paddingVertical: 14 },
   confirmPriceBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },

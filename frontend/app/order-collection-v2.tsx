@@ -90,25 +90,35 @@ interface PackageData {
 // UTILITY FUNCTIONS (matching web app exactly)
 // ═══════════════════════════════════════════════════════
 
-/** Calculate line total for an item (with IVA + Accisa) — matches web app */
-const calculateLineTotal = (
-  quantity: number, unitPrice: number,
-  accisa: number = 0, ivaPercentage: number = 22,
-  isForeign: boolean = false
-): number => {
-  const priceWithAccisa = unitPrice + accisa;
-  const subtotal = priceWithAccisa * quantity;
-  if (isForeign) return subtotal;
-  return subtotal * (1 + ivaPercentage / 100);
-};
-
 /**
  * Web parity helper: rileva se la short_description del prodotto inizia con "EST-"
- * (prodotti dedicati all'estero). Usato per nascondere la visualizzazione dell'accisa
- * per-riga negli ordini esteri (il totale finale resta corretto).
+ * (prodotti dedicati all'estero). Per questi prodotti accisa e IVA sono SEMPRE 0.
  */
 const isEsteroDescription = (shortDesc?: string | null): boolean => {
   return !!(shortDesc && shortDesc.trim().toUpperCase().startsWith('EST-'));
+};
+
+/**
+ * Calculate line total for an item — matches web app logic.
+ *
+ * REGOLE (aggiornate alla web app — vedere OrderCollection.tsx):
+ * • ACCISA: azzerata SOLO per prodotti con short_description "EST-" (prefisso).
+ *   Un prodotto con estero=true MA senza prefisso "EST-" mantiene l'accisa anche in ordine estero.
+ * • IVA: azzerata per ordini esteri (isForeign=true) OPPURE prodotti "EST-".
+ */
+const calculateLineTotal = (
+  quantity: number, unitPrice: number,
+  accisa: number = 0, ivaPercentage: number = 22,
+  isForeign: boolean = false,
+  shortDescription?: string | null
+): number => {
+  const isEstPrefix = isEsteroDescription(shortDescription);
+  const effectiveAccisa = isEstPrefix ? 0 : accisa;
+  const isVatExempt = isForeign || isEstPrefix;
+  const priceWithAccisa = unitPrice + effectiveAccisa;
+  const subtotal = priceWithAccisa * quantity;
+  if (isVatExempt) return subtotal;
+  return subtotal * (1 + ivaPercentage / 100);
 };
 
 /** Calculate shipping cost with VAT — matches web app */
@@ -676,19 +686,19 @@ export default function OrderCollectionV2() {
       const accisa = p.accisa || 0;
       const iva = p.iva_percentage || 0;
       const base = item.unit_price * item.quantity;
-      const accLine = accisa * item.quantity;
+      // ✅ Web parity rules:
+      // • ACCISA: azzerata SOLO per prodotti EST- (prefisso). Prodotti estero=true SENZA
+      //   prefisso "EST-" mantengono l'accisa anche in ordine estero.
+      // • IVA: esente per ordini esteri OPPURE prodotti EST-.
+      const isEstPrefix = isEsteroDescription(p.short_description);
+      const effectiveAccisaLine = isEstPrefix ? 0 : accisa * item.quantity;
+      const isVatExempt = isForeignOrder || isEstPrefix;
       imponibile += base;
-      // ✅ Web parity: per ordini esteri, non sommare accisa di prodotti EST-
-      // (resta visualizzata 0 nel riepilogo, coerente con la web app).
-      // Il lineTotal NON è influenzato da questa riga (calcolo invariato).
-      const hideAccisaForDisplay = isForeignOrder && isEsteroDescription(p.short_description);
-      if (!hideAccisaForDisplay) {
-        accisaTotal += accLine;
+      accisaTotal += effectiveAccisaLine;
+      if (!isVatExempt) {
+        ivaTotal += (base + effectiveAccisaLine) * (iva / 100);
       }
-      if (!isForeignOrder) {
-        ivaTotal += (base + accLine) * (iva / 100);
-      }
-      lineTotal += calculateLineTotal(item.quantity, item.unit_price, accisa, iva, isForeignOrder);
+      lineTotal += calculateLineTotal(item.quantity, item.unit_price, accisa, iva, isForeignOrder, p.short_description);
     }
     const shippingMethod = shippingMethods.find(s => s.id === selectedShipping);
     const shippingBase = shippingMethod?.cost || 0;
@@ -900,13 +910,13 @@ export default function OrderCollectionV2() {
         finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
       }
 
-      // ── Calculate total_amount (matching web app: with IVA + Accisa) ──
+      // ── Calculate total_amount (matching web app: with IVA + Accisa, EST- aware) ──
       let itemsTotal = 0;
       for (const oi of finalItems) {
         const product = cart.find(c => c.product.id === oi.product_id)?.product;
         const accisa = product?.accisa || 0;
         const iva = product?.iva_percentage || 0;
-        itemsTotal += calculateLineTotal(oi.quantity, oi.unit_price, accisa, iva, isForeignOrder);
+        itemsTotal += calculateLineTotal(oi.quantity, oi.unit_price, accisa, iva, isForeignOrder, product?.short_description);
       }
 
       const shippingMethod = shippingMethods.find(s => s.id === selectedShipping);
@@ -1238,7 +1248,7 @@ export default function OrderCollectionV2() {
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Text style={[s.prodPrice, isOutOfStock && { color: '#9CA3AF' }]}>{formatCurrency(inCart ? inCart.unit_price : item.unit_price)}</Text>
-            {(item.accisa || 0) > 0 && !isForeignOrder && !isEsteroDescription(item.short_description) && <Text style={s.prodAccisa}>+{formatCurrency(item.accisa || 0)} acc.</Text>}
+            {(item.accisa || 0) > 0 && !isEsteroDescription(item.short_description) && <Text style={s.prodAccisa}>+{formatCurrency(item.accisa || 0)} acc.</Text>}
             {isOutOfStock && (
               <View style={s.outOfStockBadge}>
                 <Text style={s.outOfStockText}>ESAURITO</Text>
@@ -1915,7 +1925,7 @@ export default function OrderCollectionV2() {
           )}
           <View style={{ padding: 16 }}>
             <Text style={s.summaryValue}>Prezzo: {formatCurrency(selectedProductDetail?.unit_price || 0)}</Text>
-            {(selectedProductDetail?.accisa || 0) > 0 && !isForeignOrder && !isEsteroDescription(selectedProductDetail?.short_description) && <Text style={s.prodAccisa}>Accisa: {formatCurrency(selectedProductDetail?.accisa || 0)}</Text>}
+            {(selectedProductDetail?.accisa || 0) > 0 && !isEsteroDescription(selectedProductDetail?.short_description) && <Text style={s.prodAccisa}>Accisa: {formatCurrency(selectedProductDetail?.accisa || 0)}</Text>}
             <Text style={s.summarySubLabel}>SKU: {selectedProductDetail?.sku}</Text>
           </View>
         </View>

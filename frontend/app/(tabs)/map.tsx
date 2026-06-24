@@ -490,20 +490,60 @@ export default function MapScreen() {
     setShowPopup(false);
   };
 
-  const handleOrderClick = (tab: Tabaccheria) => {
+  /**
+   * ✅ Web parity (MPV2.tsx): risolve l'ID cliente di una tabaccheria.
+   *
+   * Causa: molte tabaccherie hanno customer_id=NULL pur avendo un cliente collegato
+   * in senso inverso via customers.tabaccheria_id (1072+ tabaccherie con questa situazione).
+   * Usare tab.customer_id || tab.id era sbagliato perché tab.id è l'ID della tabaccheria,
+   * NON un customer_id.
+   *
+   * Priorità: 1) tab.customer_id, 2) lookup inverso customers.tabaccheria_id, 3) null
+   */
+  const resolveCustomerId = useCallback(async (tab: Tabaccheria): Promise<string | null> => {
+    if (tab.customer_id) return tab.customer_id;
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('tabaccheria_id', tab.id)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (error) {
+        console.error('[Map] resolveCustomerId error:', error);
+        return null;
+      }
+      if (data && data.length > 0) {
+        return data[0].id as string;
+      }
+    } catch (err) {
+      console.error('[Map] resolveCustomerId exception:', err);
+    }
+    return null;
+  }, []);
+
+  const handleOrderClick = async (tab: Tabaccheria) => {
     setShowPopup(false);
     const customerName = tab.customer_business_name || tab.denominazione || '';
+    // ✅ Web parity: usa resolveCustomerId per gestire customer_id NULL
+    const customerId = await resolveCustomerId(tab);
+    if (!customerId) {
+      Alert.alert('Errore', 'Nessun cliente associato a questo punto vendita');
+      return;
+    }
     router.push({
       pathname: '/order-collection-v2',
-      params: {
-        ...(tab.customer_id ? { customerId: tab.customer_id } : {}),
-        customerName: customerName,
-      },
+      params: { customerId, customerName },
     });
   };
 
   const handleShowOrderData = async (tab: Tabaccheria) => {
-    if (!tab.customer_id) return;
+    // ✅ Web parity: risolvi customer_id reale (anche se tab.customer_id è null)
+    const customerId = await resolveCustomerId(tab);
+    if (!customerId) {
+      Alert.alert('Errore', 'Nessun cliente associato a questo punto vendita');
+      return;
+    }
     setShowOrderDataModal(true);
     setLoadingOrderData(true);
     setOrderData(null);
@@ -511,7 +551,7 @@ export default function MapScreen() {
       const { data, error } = await supabase
         .from('orders')
         .select('order_date, total_amount')
-        .eq('customer_id', tab.customer_id)
+        .eq('customer_id', customerId)
         .order('order_date', { ascending: false })
         .limit(1)
         .single();
@@ -859,14 +899,14 @@ export default function MapScreen() {
 
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}
-                    onPress={() => {
-                      const custId = selectedTab?.customer_id;
+                    onPress={async () => {
+                      // ✅ Web parity: resolveCustomerId gestisce customer_id=NULL via fallback inverso
+                      const custId = await resolveCustomerId(selectedTab);
                       if (!custId) {
-                        Alert.alert('Errore', 'Nessun cliente associato a questa tabaccheria');
+                        Alert.alert('Errore', 'Nessun cliente associato a questo punto vendita');
                         return;
                       }
                       // Close popup first, then navigate AFTER modal has dismissed
-                      // (avoids race condition on Android where Modal blocks navigation)
                       setShowPopup(false);
                       setTimeout(() => {
                         router.push(`/inspection/new?customerId=${encodeURIComponent(custId)}`);
@@ -887,16 +927,22 @@ export default function MapScreen() {
                 </View>
               )}
 
-              {/* Orphan (NOT owned by current agent): Reclama button — RED rose (web parity) */}
-              {/* HIDE if customer_id is null (cannot claim a customer that doesn't exist yet) */}
-              {(selectedColor === 'purple' || selectedColor === 'yellow') && selectedTab.agente_id !== user?.id && selectedTab.customer_id && (
+              {/* Orphan (NOT owned by current agent): Reclama button — RED rose (web parity)
+                  ✅ Web parity: Si mostra sempre (anche se tab.customer_id=NULL).
+                  Al tap, resolveCustomerId trova il customer reale via tabaccheria_id lookup. */}
+              {(selectedColor === 'purple' || selectedColor === 'yellow') && selectedTab.agente_id !== user?.id && (
                 <TouchableOpacity
                   style={[styles.actionBtn, { backgroundColor: '#E11D48' }]}
-                  onPress={() => {
-                    if (!user || !selectedTab.customer_id) return;
-                    const customerId = selectedTab.customer_id;
+                  onPress={async () => {
+                    if (!user) return;
                     const tabaccheriaId = selectedTab.id;
                     const customerName = getDisplayName(selectedTab);
+                    // ✅ Web parity: risolvi customer_id reale (anche se tab.customer_id è null)
+                    const customerId = await resolveCustomerId(selectedTab);
+                    if (!customerId) {
+                      Alert.alert('Errore', 'Nessun cliente associato a questo punto vendita');
+                      return;
+                    }
                     // Close popup BEFORE showing alert (web parity + Android Alert visibility fix)
                     setShowPopup(false);
                     // Small timeout so popup unmounts cleanly before Alert appears
@@ -925,16 +971,6 @@ export default function MapScreen() {
                   <Ionicons name="flag" size={18} color="#FFF" />
                   <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Reclama</Text>
                 </TouchableOpacity>
-              )}
-
-              {/* Info banner: orphan marker without customer (cannot be claimed) */}
-              {(selectedColor === 'purple' || selectedColor === 'yellow') && selectedTab.agente_id !== user?.id && !selectedTab.customer_id && (
-                <View style={[styles.grayInfoBox, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
-                  <Ionicons name="information-circle" size={16} color="#A16207" />
-                  <Text style={[styles.grayInfoText, { color: '#A16207' }]}>
-                    Cliente non ancora registrato — non reclamabile
-                  </Text>
-                </View>
               )}
 
               {/* Orphan info banners */}

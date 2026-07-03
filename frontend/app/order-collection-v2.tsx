@@ -355,6 +355,12 @@ export default function OrderCollectionV2() {
       // Load cashback balance for the customer
       if (customer) loadCashBackBalance(customer.id);
 
+      // ✅ Aggiorna lo stock live per validare le quantità del carrello ripristinato
+      // (senza attendere il useEffect su currentStep, per avere il banner immediatamente)
+      refreshStock(true).then(() => {
+        console.log('[drafts] Stock refreshed after draft restore');
+      });
+
       Alert.alert('Bozza Ripristinata', `Ordine per "${draft.customerName}" ripristinato allo Step ${draft.currentStep + 1}`);
     } catch (e) {
       console.error('[drafts] Error restoring draft:', e);
@@ -755,6 +761,39 @@ export default function OrderCollectionV2() {
     return cart.filter(item => item.product.estero !== true);
   }, [cart, isForeignOrder]);
 
+  /**
+   * ✅ Web parity: prodotti nel carrello con QUANTITÀ superiore allo stock disponibile.
+   * Rilevante quando si ripristina una bozza o si duplica un ordine e nel frattempo
+   * lo stock è cambiato (magazzino centrale / branch).
+   *
+   * Confronto per product.id (equivalente SKU nel nostro schema); include:
+   *  - ESAURITI: stock disponibile <= 0
+   *  - INSUFFICIENTE: quantity > stock
+   */
+  const stockConflicts = useMemo(() => {
+    return cart
+      .map(item => {
+        const available = getEffectiveStock(item.product.id, item.product.stock_quantity || 0);
+        return { item, available, requested: item.quantity };
+      })
+      .filter(c => c.requested > c.available);
+  }, [cart, availableStockMap]);
+
+  const hasStockConflicts = stockConflicts.length > 0;
+
+  /**
+   * Apre il modale di modifica sul primo prodotto in conflitto, così l'utente
+   * può correggere la quantità richiesta.
+   */
+  const openFirstConflict = () => {
+    const first = stockConflicts[0];
+    if (!first) return;
+    setEditCartItem(first.item);
+    setEditPrice(first.item.unit_price.toString());
+    // Pre-imposta la quantità al massimo disponibile (o mantieni la richiesta se il modale la clamperà)
+    setEditQty(Math.max(1, Math.min(first.item.quantity, first.available)));
+  };
+
   const getAvailableRottamazioneLots = () => {
     if (isForeignOrder) return [0];
     const hasRottamazioneNoProducts = cart.some(i => i.product.rottamazione_no === true);
@@ -820,6 +859,11 @@ export default function OrderCollectionV2() {
     if (!item) return;
     const stock = getEffectiveStock(productId, item.product.stock_quantity || 0);
     const finalQty = Math.min(newQty, stock);
+    // Se lo stock è 0 (ESAURITO), rimuovi il prodotto dal carrello
+    if (finalQty <= 0) {
+      removeFromCart(productId);
+      return;
+    }
     setCart(prev => prev.map(c =>
       c.product.id === productId ? { ...c, quantity: finalQty } : c
     ));
@@ -1159,7 +1203,7 @@ export default function OrderCollectionV2() {
   const canAdvance = () => {
     switch (currentStep) {
       case 0: return !!selectedCustomer;
-      case 1: return cart.length > 0;
+      case 1: return cart.length > 0 && !hasStockConflicts && incompatibleCartItems.length === 0;
       case 2: return !!selectedPayment;
       case 3: return !!selectedShipping;
       default: return true;
@@ -1267,12 +1311,15 @@ export default function OrderCollectionV2() {
     const isOutOfStock = stock <= 0;
     const isMaxedOut = !isOutOfStock && cartQty >= stock;
     const remaining = Math.max(0, stock - cartQty);
+    // ✅ Conflitto stock: prodotto in carrello con quantità > disponibilità
+    const hasConflict = !!inCart && cartQty > stock;
 
     return (
       <View style={[
         s.prodRow,
         inCart && s.prodRowInCart,
-        isOutOfStock && s.prodRowDisabled,
+        isOutOfStock && !inCart && s.prodRowDisabled,
+        hasConflict && s.prodRowConflict,
       ]}>
         <View style={{ position: 'relative' }}>
           <TouchableOpacity style={s.prodIcon} onPress={() => setSelectedProductDetail(item)}>
@@ -1283,17 +1330,22 @@ export default function OrderCollectionV2() {
             )}
           </TouchableOpacity>
           {inCart && (
-            <View style={s.cartBadge}>
+            <View style={[s.cartBadge, hasConflict && { backgroundColor: '#B91C1C' }]}>
               <Text style={s.cartBadgeText}>{inCart.quantity}</Text>
             </View>
           )}
         </View>
 
         <TouchableOpacity style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { setEditCartItem(inCart); setEditPrice(inCart.unit_price.toString()); setEditQty(inCart.quantity); } }}>
-          <Text style={[s.prodName, inCart && { color: '#1E40AF' }, isOutOfStock && { color: '#9CA3AF' }]} numberOfLines={1}>
+          <Text style={[
+            s.prodName,
+            inCart && { color: '#1E40AF' },
+            isOutOfStock && { color: '#9CA3AF' },
+            hasConflict && { color: '#B91C1C', fontWeight: '700' },
+          ]} numberOfLines={1}>
             {item.short_description || item.name}
           </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <Text style={[s.prodPrice, isOutOfStock && { color: '#9CA3AF' }]}>{formatCurrency(inCart ? inCart.unit_price : item.unit_price)}</Text>
             {(item.accisa || 0) > 0 && !isEsteroDescription(item.short_description) && <Text style={s.prodAccisa}>+{formatCurrency(item.accisa || 0)} acc.</Text>}
             {isOutOfStock && (
@@ -1301,33 +1353,57 @@ export default function OrderCollectionV2() {
                 <Text style={s.outOfStockText}>ESAURITO</Text>
               </View>
             )}
+            {hasConflict && (
+              <View style={s.conflictInlineBadge}>
+                <Ionicons name="alert-circle" size={10} color="#FFF" />
+                <Text style={s.conflictInlineText}>Rich. {cartQty} · Disp. {stock}</Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
 
         {!isOutOfStock && (
-          <View style={[s.stockBadge, stock <= 10 ? s.stockAmber : s.stockGreen]}>
-            <Text style={s.stockText}>{stock}</Text>
+          <View style={[s.stockBadge, hasConflict ? s.stockRed : (stock <= 10 ? s.stockAmber : s.stockGreen)]}>
+            <Text style={[s.stockText, hasConflict && { color: '#B91C1C' }]}>{stock}</Text>
             {reserved > 0 && <Text style={s.stockReserved}>({reserved})</Text>}
           </View>
         )}
 
         <View style={s.prodActions}>
-          <TouchableOpacity
-            style={[s.addBtn, (isOutOfStock || isMaxedOut) && s.addBtnDisabled]}
-            onPress={() => addToCart(item, 1)}
-            disabled={isOutOfStock || isMaxedOut}
-          >
-            <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: '#9CA3AF' }]}>+1</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.addBtn, s.addBtn10, (isOutOfStock || isMaxedOut) && s.addBtnDisabled]}
-            onPress={() => addToCart(item, 10)}
-            disabled={isOutOfStock || isMaxedOut}
-          >
-            <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: '#9CA3AF' }]}>
-              {!isOutOfStock && !isMaxedOut && remaining < 10 ? `+${remaining}` : '+10'}
-            </Text>
-          </TouchableOpacity>
+          {hasConflict ? (
+            <TouchableOpacity
+              style={[s.addBtn, s.fixBtn]}
+              onPress={() => {
+                if (inCart) {
+                  setEditCartItem(inCart);
+                  setEditPrice(inCart.unit_price.toString());
+                  setEditQty(Math.max(1, Math.min(inCart.quantity, stock)));
+                }
+              }}
+            >
+              <Ionicons name="create-outline" size={14} color="#FFF" />
+              <Text style={s.fixBtnText}>Correggi</Text>
+            </TouchableOpacity>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[s.addBtn, (isOutOfStock || isMaxedOut) && s.addBtnDisabled]}
+                onPress={() => addToCart(item, 1)}
+                disabled={isOutOfStock || isMaxedOut}
+              >
+                <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: '#9CA3AF' }]}>+1</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.addBtn, s.addBtn10, (isOutOfStock || isMaxedOut) && s.addBtnDisabled]}
+                onPress={() => addToCart(item, 10)}
+                disabled={isOutOfStock || isMaxedOut}
+              >
+                <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: '#9CA3AF' }]}>
+                  {!isOutOfStock && !isMaxedOut && remaining < 10 ? `+${remaining}` : '+10'}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
     );
@@ -1393,6 +1469,30 @@ export default function OrderCollectionV2() {
           >
             <Ionicons name="trash" size={16} color="#FFF" />
             <Text style={s.conflictBtnText}>Rimuovi</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ✅ Banner conflitto STOCK (bozza ripristinata / ordine duplicato con stock insufficiente) */}
+      {hasStockConflicts && (
+        <View style={s.conflictBanner}>
+          <Ionicons name="alert-circle" size={20} color="#B91C1C" />
+          <View style={{ flex: 1 }}>
+            <Text style={s.conflictTitle}>
+              Stock insufficiente: {stockConflicts.length} prodotto/i
+            </Text>
+            <Text style={s.conflictDesc} numberOfLines={3}>
+              {stockConflicts
+                .map(c => `${c.item.product.short_description || c.item.product.name} (richiesti ${c.requested}, disp. ${c.available})`)
+                .join(' · ')}
+            </Text>
+            <Text style={[s.conflictDesc, { fontStyle: 'italic', marginTop: 4 }]}>
+              Correggi le quantità per procedere.
+            </Text>
+          </View>
+          <TouchableOpacity style={s.conflictBtn} onPress={openFirstConflict}>
+            <Ionicons name="create-outline" size={16} color="#FFF" />
+            <Text style={s.conflictBtnText}>Correggi</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -2123,6 +2223,7 @@ const s = StyleSheet.create({
   prodRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 8, padding: 8, marginBottom: 4, gap: 8 },
   prodRowInCart: { backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE' },
   prodRowDisabled: { backgroundColor: '#F9FAFB', opacity: 0.7 },
+  prodRowConflict: { backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#DC2626' },
   prodIcon: { width: 40, height: 40, borderRadius: 6, overflow: 'hidden' },
   prodImg: { width: 40, height: 40, borderRadius: 6 },
   prodImgPlaceholder: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
@@ -2145,6 +2246,10 @@ const s = StyleSheet.create({
   addBtn10: { backgroundColor: '#C7D2FE' },
   addBtnDisabled: { backgroundColor: '#E5E7EB', opacity: 0.5 },
   addBtnText: { fontSize: 12, fontWeight: '700', color: '#1E40AF' },
+  fixBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#DC2626', paddingHorizontal: 10, paddingVertical: 8 },
+  fixBtnText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
+  conflictInlineBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#DC2626', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  conflictInlineText: { fontSize: 9, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.3 },
   cartBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1E40AF', borderRadius: 10, padding: 12, marginTop: 8 },
   cartBarText: { color: '#93C5FD', fontSize: 13, fontWeight: '600' },
   cartBarTotal: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },

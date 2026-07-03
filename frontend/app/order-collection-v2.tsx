@@ -18,6 +18,7 @@ import { fetchCustomers } from '../lib/api/customers';
 import { fetchProducts, fetchPaymentMethods, fetchShippingMethods } from '../lib/api/order-collection';
 import { createReservation, getAvailableStock, getBranchAvailableStock } from '../lib/api/stock-reservation';
 import { subtractStockForOrder, verifyAndSetStockSubtracted, subtractBranchStockForOrder, isBranchVirtual } from '../lib/api/stock-management';
+import { fetchOrderById } from '../lib/api/orders';
 import { processCashBackUsage, processCashBackAccumulation } from '../lib/api/cashback';
 import { saveDraft, deleteDraft, getDrafts, generateDraftId, OrderDraft } from '../lib/drafts';
 import { useVirtualBranch } from '../hooks/useVirtualBranch';
@@ -185,7 +186,7 @@ const STEPS = ['Cliente', 'Prodotti', 'Pagamento', 'Spedizione', 'Riepilogo'];
 // ═══════════════════════════════════════════════════════
 export default function OrderCollectionV2() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ draftId?: string }>();
+  const params = useLocalSearchParams<{ draftId?: string; duplicateOrderId?: string }>();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
   // ✅ Web parity: Virtual branches use central warehouse stock (no branch overlay)
@@ -321,6 +322,78 @@ export default function OrderCollectionV2() {
       restoreDraft(params.draftId);
     }
   }, [isLoading, customers, params.draftId, draftLoaded]);
+
+  // ✅ Duplica Ordine: idrata carrello e cliente da un ordine esistente
+  useEffect(() => {
+    if (!isLoading && !draftLoaded && params.duplicateOrderId && customers.length > 0 && products.length > 0) {
+      restoreFromOrder(params.duplicateOrderId);
+    }
+  }, [isLoading, customers, products, params.duplicateOrderId, draftLoaded]);
+
+  /**
+   * ✅ Duplicazione ordine: carica un ordine passato, ripristina cliente + prodotti in Step 2.
+   * Match by product.id (SKU). Ogni item usa lo `unit_price` originale.
+   * La validazione stock live si attiva automaticamente in Step 2 (banner rosso + blocco "Avanti"
+   * su articoli con quantità > disponibilità).
+   */
+  const restoreFromOrder = async (originOrderId: string) => {
+    try {
+      console.log(`[duplicate] Loading order ${originOrderId}...`);
+      const src = await fetchOrderById(originOrderId);
+      if (!src) { console.warn('[duplicate] Order not found'); return; }
+
+      // Match cliente sulla lista già caricata (per garantire ID valido)
+      const customer = customers.find(c => c.id === src.customer_id);
+      if (customer) {
+        setSelectedCustomer(customer);
+      } else {
+        console.warn('[duplicate] Customer not in current list, skipping customer set');
+      }
+
+      // Ricostruisci il carrello dai order_items — match per product.id contro products caricati
+      const productMap = new Map(products.map(p => [p.id, p]));
+      const rebuiltCart: CartItem[] = [];
+      const skipped: string[] = [];
+
+      for (const oi of (src.order_items || [])) {
+        const productId = (oi as any).product_id || (oi as any).product?.id;
+        const qty = (oi as any).quantity || 0;
+        const unitPrice = (oi as any).unit_price || 0;
+        if (!productId || qty <= 0) continue;
+        const p = productMap.get(productId);
+        if (!p) {
+          skipped.push((oi as any).product?.short_description || (oi as any).product?.name || productId);
+          continue;
+        }
+        rebuiltCart.push({ product: p, quantity: qty, unit_price: unitPrice });
+      }
+
+      setCart(rebuiltCart);
+      setIsForeignOrder(src.is_foreign === true);
+      // Vai direttamente allo Step 2 (Prodotti) così l'utente vede subito eventuali conflitti stock
+      setCurrentStep(1);
+      setDraftLoaded(true);
+
+      // Carica saldo cashback per il cliente
+      if (customer) loadCashBackBalance(customer.id);
+
+      // Aggiorna lo stock live per innescare la validazione dei conflitti
+      refreshStock(true).then(() => {
+        console.log('[duplicate] Stock refreshed after order duplication');
+      });
+
+      const msgParts: string[] = [`${rebuiltCart.length} prodotto/i copiati da #${src.order_number}.`];
+      if (skipped.length > 0) {
+        msgParts.push(`\n\n${skipped.length} prodotto/i saltati (non più disponibili in catalogo): ${skipped.slice(0, 3).join(', ')}${skipped.length > 3 ? '…' : ''}`);
+      }
+      msgParts.push('\n\nControlla lo stock: eventuali articoli non più disponibili sono evidenziati in rosso.');
+
+      Alert.alert('Ordine Duplicato', msgParts.join(''));
+    } catch (e) {
+      console.error('[duplicate] Error:', e);
+      Alert.alert('Errore', 'Impossibile duplicare l\'ordine');
+    }
+  };
 
   const restoreDraft = async (incomingDraftId: string) => {
     try {

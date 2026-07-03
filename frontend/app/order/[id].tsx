@@ -7,9 +7,10 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchOrderById, getOrderStatusLabel, getOrderStatusColor } from '../../lib/api/orders';
 import { Order } from '../../types';
@@ -35,6 +36,32 @@ export default function OrderDetailScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * ✅ Duplica ordine: naviga a Order Collection V2 con l'ID dell'ordine.
+   * La schermata target caricherà cliente e prodotti dall'ordine originale,
+   * eseguirà la validazione live dello stock (banner rosso + blocco "Avanti"
+   * su articoli con quantità > disponibilità).
+   */
+  const handleDuplicate = () => {
+    if (!order) return;
+    Alert.alert(
+      'Duplica Ordine',
+      `Vuoi creare un nuovo ordine copiando i prodotti e il cliente da #${order.order_number}?\n\nLo stock verrà rivalidato: eventuali articoli non più disponibili saranno evidenziati e dovrai correggere le quantità prima di procedere.`,
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Duplica',
+          onPress: () => {
+            router.push({
+              pathname: '/order-collection-v2',
+              params: { duplicateOrderId: order.id },
+            });
+          },
+        },
+      ]
+    );
   };
 
   const formatDate = (dateString: string | null | undefined) => {
@@ -94,6 +121,12 @@ export default function OrderDetailScreen() {
           </View>
         )}
       </View>
+
+      {/* ✅ Duplica Ordine — crea un nuovo ordine partendo da questo */}
+      <TouchableOpacity style={styles.duplicateBtn} onPress={handleDuplicate} activeOpacity={0.85}>
+        <Ionicons name="copy-outline" size={18} color="#FFFFFF" />
+        <Text style={styles.duplicateBtnText}>Duplica Ordine</Text>
+      </TouchableOpacity>
 
       {/* Customer Info */}
       <View style={styles.section}>
@@ -377,6 +410,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
+  },
+  duplicateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1E40AF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    gap: 8,
+    shadowColor: '#1E40AF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  duplicateBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   orderHeader: {
     flexDirection: 'row',

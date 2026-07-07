@@ -1,0 +1,180 @@
+{
+  "app_name": "CRM Vendite",
+  "personality": "1 iOS-Native Clean",
+  "personality_one_liner": "A precision instrument for the road—high-contrast, dense yet breathable, and elegantly utilitarian.",
+  "color": {
+    "light": {
+      "surface": "#FFFFFF",
+      "onSurface": "#1C1C1E",
+      "surfaceSecondary": "#F2F2F7",
+      "onSurfaceSecondary": "#3A3A3C",
+      "surfaceTertiary": "#E5E5EA",
+      "onSurfaceTertiary": "#8E8E93",
+      "surfaceInverse": "#1C1C1E",
+      "onSurfaceInverse": "#FFFFFF",
+      "brand": "#C2410C",
+      "brandPrimary": "#C2410C",
+      "onBrandPrimary": "#FFFFFF",
+      "brandSecondary": "#F9E0D4",
+      "onBrandSecondary": "#9A3412",
+      "brandTertiary": "#FFF7ED",
+      "onBrandTertiary": "#C2410C",
+      "success": "#166534",
+      "onSuccess": "#FFFFFF",
+      "warning": "#B45309",
+      "onWarning": "#FFFFFF",
+      "error": "#991B1B",
+      "onError": "#FFFFFF",
+      "info": "#3F3F46",
+      "onInfo": "#FFFFFF",
+      "border": "#E5E5EA",
+      "borderStrong": "#D1D1D6",
+      "divider": "#E5E5EA"
+    },
+    "dark": {
+      "surface": "#000000",
+      "onSurface": "#F2F2F7",
+      "surfaceSecondary": "#1C1C1E",
+      "onSurfaceSecondary": "#E5E5EA",
+      "surfaceTertiary": "#2C2C2E",
+      "onSurfaceTertiary": "#8E8E93",
+      "surfaceInverse": "#FFFFFF",
+      "onSurfaceInverse": "#1C1C1E",
+      "brand": "#EA580C",
+      "brandPrimary": "#EA580C",
+      "onBrandPrimary": "#FFFFFF",
+      "brandSecondary": "#431407",
+      "onBrandSecondary": "#FDBA74",
+      "brandTertiary": "#2A0E05",
+      "onBrandTertiary": "#EA580C",
+      "success": "#22C55E",
+      "onSuccess": "#000000",
+      "warning": "#F59E0B",
+      "onWarning": "#000000",
+      "error": "#EF4444",
+      "onError": "#000000",
+      "info": "#A1A1AA",
+      "onInfo": "#000000",
+      "border": "#38383A",
+      "borderStrong": "#545456",
+      "divider": "#38383A"
+    }
+  },
+  "typography": {
+    "displayFontFamily": "Plus Jakarta Sans",
+    "textFontFamily": "Plus Jakarta Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous padding around content. Clear grouping of related elements. Use sticky CTAs over scrolling content.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "1",
+  "navigation": "bottom_tabs",
+  "icon_set": "Ionicons",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Bottom tab bar when content scrolls behind it",
+      "Floating search bar over the Map",
+      "Bottom-sheet handles and headers for client details on map"
+    ],
+    "dont's": [
+      "Cards in dense lists",
+      "Form inputs",
+      "Body content"
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-blur",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Global Navigation",
+      "purpose": "Consolidate the sprawling 7-tab bar into a focused, ergonomic 4-tab structure.",
+      "states": {
+        "loading": "spinner",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Reduce bottom tabs to 4: Dashboard, Mappa, Clienti, Altro (Menu). Move Ordini, Prodotti, Calendario, Profilo into the 'Altro' drawer or list menu. Use outlined Ionicons for inactive tabs, filled for active. Apply glassmorphism to the tab bar."
+    },
+    {
+      "name": "Dashboard",
+      "purpose": "Provide a fast, scannable overview of the day's priorities and quick actions.",
+      "states": {
+        "loading": "Skeleton loaders for stats and appointments.",
+        "empty": "Illustration of a clean desk with 'Nessun dato per oggi'.",
+        "error": "Text 'Errore di caricamento' with a Retry button."
+      },
+      "layout": "Remove generic white cards on grey backgrounds. Use edge-to-edge sectioned lists with generous vertical breathing room. 'Appuntamenti Imminenti' (Upcoming appointments) should be a horizontal scroll section at the top. 'Azioni Rapide' (Quick actions) in a 2-column grid (`justifyContent: 'space-between'`, `gap: md`)."
+    },
+    {
+      "name": "Mappa Punti Vendita",
+      "purpose": "Visualize clients spatially with clear status indicators, optimized for outdoor visibility.",
+      "states": {
+        "loading": "Map loading overlay.",
+        "empty": "N/A",
+        "error": "Map load error with Retry button."
+      },
+      "layout": "Keep Leaflet in WebView, but redesign the chrome. Unify the search bar as a floating element at the top with `expo-blur`. Replace messy Leaflet HTML popups with a native `@gorhom/bottom-sheet` that slides up when a marker is tapped, displaying client details and primary circular actions (Naviga, Ordine, Ispezione). Map marker colors: Green (success), Amber (warning), Red (error), Zinc/Grey (info) - avoid purple."
+    },
+    {
+      "name": "Raccolta Ordine (Order Wizard)",
+      "purpose": "Streamline the complex 5-step order process into a frictionless, linear flow.",
+      "states": {
+        "loading": "Spinner during submission.",
+        "empty": "N/A",
+        "error": "Inline validation errors in red."
+      },
+      "layout": "Single-column layout only. Display a clear step tracker at the top (e.g., 'Step 2 of 5: Prodotti'). Anchor a sticky, full-width primary CTA button at the very bottom (above the safe area) labeled with contextual action verbs (e.g., 'Continua al Pagamento'). Use `KeyboardAvoidingView` appropriately. Group related fields to reduce cognitive load."
+    }
+  ],
+  "images": {
+    "splash_background": {
+      "url": "https://images.unsplash.com/photo-1778222239168-c61866c8e3a3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjh8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMG1pbmltYWxpc3QlMjBnZW9tZXRyaWMlMjBzaGFwZXMlMjB3YXJtJTIwdGVycmFjb3R0YSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzgyNjc4MTYzfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Abstract textured wall with warm terracotta color block"
+    },
+    "empty_state_dashboard": {
+      "url": "https://images.unsplash.com/photo-1781197479551-dcba5ebcc414?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwZW1wdHklMjBkZXNrJTIwc3BhY2UlMjBjbGVhbiUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzgyMTMzNjUyfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Minimalist clean empty desk space"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the 'iOS-Native Clean' personality. Avoid all muddy palettes, blue/purple/indigo SaaS defaults, and excessive shadows.",
+    "Replace the current 7-tab bar with a 4-tab bar (Dashboard, Mappa, Clienti, Altro).",
+    "Replace the generic '#1E40AF' (blue) and '#7C3AED' (purple) with the new 'brand' palette based on Signal Rust/Terracotta (#C2410C). Update map marker colors to align with the new status tokens.",
+    "Map View: Do not edit Leaflet tiles. Instead, implement a native floating search bar and intercept marker taps to trigger a native `@gorhom/bottom-sheet` for client details, removing web-based popups.",
+    "Order Wizard: Implement a sticky, full-width CTA at the bottom of the screen. Content must scroll behind it. Add a progress tracker at the top.",
+    "Use 'Plus Jakarta Sans' font family across the app. Cap font weight at 500 max. Use size for hierarchy.",
+    "Ensure touch targets are at least 44x44pt.",
+    "Apply `expo-blur` to the tab bar, floating search bar on the map, and bottom sheet headers."
+  ]
+}

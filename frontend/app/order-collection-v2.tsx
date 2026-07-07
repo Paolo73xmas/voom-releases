@@ -311,10 +311,13 @@ export default function OrderCollectionV2() {
     // Wait for virtual branch detection to complete BEFORE loading products/stock
     // (otherwise virtual branches load with branch_stock=0 instead of central warehouse)
     if (vbLoading) return;
+    // Wait for auth store hydration (deep-link / cold navigation): without user.id
+    // fetchCustomers('') fails with uuid error and the customer list stays empty
+    if (!user?.id) return;
     loadInitialData();
     loadLocation();
     loadRottamazioneConfig();
-  }, [vbLoading]);
+  }, [vbLoading, user?.id]);
 
   // Restore draft after data is loaded
   useEffect(() => {
@@ -334,21 +337,22 @@ export default function OrderCollectionV2() {
   // Il chiamante passa customerId: selezioniamo il cliente allo Step 1 così l'agente
   // deve solo premere "Avanti" (che carica cashback/pacchetti come la selezione manuale).
   useEffect(() => {
+    const targetCustomerId = Array.isArray(params.customerId) ? params.customerId[0] : params.customerId;
     if (
       !isLoading &&
       !draftLoaded &&
-      params.customerId &&
+      targetCustomerId &&
       !params.draftId &&
       !params.duplicateOrderId &&
       customers.length > 0 &&
       !selectedCustomer
     ) {
-      const customer = customers.find(c => c.id === params.customerId);
+      const customer = customers.find(c => c.id === targetCustomerId);
       if (customer) {
         setSelectedCustomer(customer);
         console.log('[order-v2] Cliente pre-selezionato da navigazione:', customer.business_name);
       } else {
-        console.warn('[order-v2] customerId da navigazione non trovato tra i clienti:', params.customerId);
+        console.warn('[order-v2] customerId da navigazione non trovato tra i clienti:', targetCustomerId);
       }
     }
   }, [isLoading, customers, params.customerId, draftLoaded]);

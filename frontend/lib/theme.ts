@@ -124,6 +124,41 @@ export const ANIM_DURATION = {
   slow: 400,
 };
 
+/**
+ * DS — Nuovo design system "iOS-Native Clean" (restyling giu 2026)
+ * Brand: Terracotta #C2410C — blueprint completo in /app/design_guidelines.json
+ */
+export const DS = {
+  // Brand
+  brand: '#C2410C',
+  brandDark: '#9A3412',
+  brandSoft: '#F9E0D4',
+  brandTint: '#FFF7ED',
+  // Superfici (scala iOS)
+  surface: '#FFFFFF',
+  surface2: '#F2F2F7',
+  surface3: '#E5E5EA',
+  // Testo
+  ink: '#1C1C1E',
+  ink2: '#3A3A3C',
+  inkMuted: '#8E8E93',
+  // Bordi
+  border: '#E5E5EA',
+  borderStrong: '#D1D1D6',
+  // Semantici (alto contrasto per esterni)
+  success: '#166534',
+  warning: '#B45309',
+  error: '#991B1B',
+};
+
+/** Font Plus Jakarta Sans (caricati localmente via expo-font in _layout) */
+export const JAKARTA = {
+  regular: 'Jakarta_400',
+  medium: 'Jakarta_500',
+  semibold: 'Jakarta_600',
+  bold: 'Jakarta_700',
+};
+
 /** Greet user based on local time */
 export function getTimeGreeting(): string {
   const h = new Date().getHours();

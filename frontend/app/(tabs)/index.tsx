@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { setStatusBarStyle } from 'expo-status-bar';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useAuthStore } from '../../store/authStore';
 import { fetchCustomers } from '../../lib/api/customers';
@@ -25,8 +25,8 @@ import { getCache, setCache, clearCache } from '../../lib/memory-cache';
 import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
 import { Avatar } from '../../components/Avatar';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
-import { EmptyState } from '../../components/EmptyState';
-import { COLORS, GRADIENTS, FONTS, FONT_SIZE, SPACING, RADIUS, SHADOWS, getTimeGreeting } from '../../lib/theme';
+import { Skeleton } from '../../components/Skeleton';
+import { DS, JAKARTA, getTimeGreeting } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
 
 export default function Dashboard() {
@@ -49,6 +49,8 @@ export default function Dashboard() {
   });
   const [draftCount, setDraftCount] = useState(0);
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [aptsLoaded, setAptsLoaded] = useState(false);
 
   const loadStats = async (force: boolean = false) => {
     if (!user) return;
@@ -65,6 +67,7 @@ export default function Dashboard() {
           pendingOrders: cached.pendingOrders,
         });
         if (cached.monthlySales) setMonthlySales(cached.monthlySales);
+        setStatsLoading(false);
         return;
       }
     }
@@ -91,6 +94,8 @@ export default function Dashboard() {
       setCache(cacheKey, { ...newStats, monthlySales: ms }, 60_000);
     } catch (error) {
       console.error('Error loading stats:', error);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -147,10 +152,13 @@ export default function Dashboard() {
   // Refresh on focus: drafts + appointments always (cheap), stats from cache (60s TTL)
   useFocusEffect(
     useCallback(() => {
+      // Status bar scura su sfondo chiaro (solo su questa schermata)
+      setStatusBarStyle('dark');
       getDraftCount().then(setDraftCount);
       loadUpcomingAppointments();
       // Stats: respects 60s cache, only refetches if expired
       loadStats(false);
+      return () => setStatusBarStyle('light');
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id])
   );
@@ -183,6 +191,8 @@ export default function Dashboard() {
       }
     } catch (e) {
       console.error('[Dashboard] Error loading appointments:', e);
+    } finally {
+      setAptsLoaded(true);
     }
   };
 
@@ -198,24 +208,24 @@ export default function Dashboard() {
 
   const { hasAccess: hasRimborsiAccess } = useRimborsiAccess();
 
-  // Quick actions grouped by section, with gradient colors per action
+  // Quick actions grouped by section
   const actionGroups = [
     {
       title: 'Vendite',
       actions: [
-        { title: 'Raccolta Ordine', icon: 'cart' as const, gradient: GRADIENTS.success, onPress: () => router.push('/order-collection-v2') },
-        { title: 'Bozze Ordine', icon: 'document-text-outline' as const, gradient: GRADIENTS.warning, badge: draftCount, onPress: () => router.push('/drafts') },
-        { title: 'Sostituzioni', icon: 'swap-horizontal-outline' as const, gradient: GRADIENTS.purple, onPress: () => router.push('/substitutions') },
-        ...(hasRimborsiAccess ? [{ title: 'Rimborsi', icon: 'receipt-outline' as const, gradient: GRADIENTS.teal, onPress: () => router.push('/rimborsi') }] : []),
+        { title: 'Raccolta Ordine', icon: 'cart-outline' as const, onPress: () => router.push('/order-collection-v2') },
+        { title: 'Bozze Ordine', icon: 'document-text-outline' as const, badge: draftCount, onPress: () => router.push('/drafts') },
+        { title: 'Sostituzioni', icon: 'swap-horizontal-outline' as const, onPress: () => router.push('/substitutions') },
+        ...(hasRimborsiAccess ? [{ title: 'Rimborsi', icon: 'receipt-outline' as const, onPress: () => router.push('/rimborsi') }] : []),
       ],
     },
     {
       title: 'Punti Vendita',
       actions: [
-        { title: 'Nuova Ispezione', icon: 'camera' as const, gradient: GRADIENTS.ocean, onPress: () => router.push('/inspection/new') },
-        { title: 'Anagrafica', icon: 'document-text' as const, gradient: GRADIENTS.danger, onPress: () => router.push('/anagrafica') },
-        { title: 'No Mappa', icon: 'globe' as const, gradient: GRADIENTS.primary, onPress: () => router.push('/rivendite-no-mappa') },
-        { title: 'Reclami', icon: 'flag-outline' as const, gradient: GRADIENTS.pink, onPress: () => router.push('/orphan-claims') },
+        { title: 'Nuova Ispezione', icon: 'camera-outline' as const, onPress: () => router.push('/inspection/new') },
+        { title: 'Anagrafica', icon: 'clipboard-outline' as const, onPress: () => router.push('/anagrafica') },
+        { title: 'No Mappa', icon: 'globe-outline' as const, onPress: () => router.push('/rivendite-no-mappa') },
+        { title: 'Reclami', icon: 'flag-outline' as const, onPress: () => router.push('/orphan-claims') },
       ],
     },
   ];
@@ -224,8 +234,9 @@ export default function Dashboard() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={DS.brand} />
       }
     >
       {/* Header — Avatar + greeting + logout */}
@@ -245,138 +256,113 @@ export default function Dashboard() {
             ]);
           }}
         >
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+          <Ionicons name="log-out-outline" size={20} color={DS.inkMuted} />
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Stats Cards — gradient + count-up animation */}
-      <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.statsGrid}>
-        {[
-          { label: 'Clienti', value: stats.customers, icon: 'people', gradient: GRADIENTS.primary as [string, string] },
-          { label: 'Ordini', value: stats.orders, icon: 'cart', gradient: GRADIENTS.success as [string, string] },
-          { label: 'Visite', value: stats.visits, icon: 'location', gradient: GRADIENTS.warning as [string, string] },
-          { label: 'In Attesa', value: stats.pendingOrders, icon: 'time', gradient: GRADIENTS.danger as [string, string] },
-        ].map((s, i) => (
-          <LinearGradient
-            key={s.label}
-            colors={s.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.statCard}
-          >
-            <View style={styles.statIconCircle}>
-              <Ionicons name={s.icon as any} size={16} color="#FFF" />
-            </View>
-            <AnimatedNumber
-              value={s.value}
-              duration={700 + i * 100}
-              style={styles.statNumberGrad}
-            />
-            <Text style={styles.statLabelGrad}>{s.label}</Text>
-          </LinearGradient>
-        ))}
-      </Animated.View>
-
-      {/* Quick Actions — grouped by section, with gradient icons */}
-      {actionGroups.map((group, gIdx) => (
-        <Animated.View key={group.title} entering={FadeInDown.delay(200 + gIdx * 80).duration(400)}>
-          <Text style={styles.sectionTitle}>{group.title}</Text>
-          <View style={styles.actionsGrid}>
-            {group.actions.map((action, idx) => (
-              <Pressable
-                key={action.title}
-                style={({ pressed }) => [
-                  styles.actionCard,
-                  pressed && { transform: [{ scale: 0.96 }], opacity: 0.85 },
-                ]}
-                onPress={() => { hap.light(); action.onPress(); }}
-              >
-                <View style={{ position: 'relative' }}>
-                  <LinearGradient
-                    colors={action.gradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.actionIconGrad}
-                  >
-                    <Ionicons name={action.icon} size={22} color="#FFF" />
-                  </LinearGradient>
-                  {(action as any).badge > 0 && (
-                    <View style={styles.draftBadge}>
-                      <Text style={styles.draftBadgeText}>{(action as any).badge}</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.actionTitle}>{action.title}</Text>
-              </Pressable>
-            ))}
+      {/* Prossimi Appuntamenti — scroll orizzontale in cima */}
+      <Animated.View entering={FadeInDown.delay(80).duration(400)}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, styles.sectionTitleInline]}>Prossimi appuntamenti</Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/calendar')} hitSlop={8}>
+            <Text style={styles.sectionLink}>Calendario</Text>
+          </TouchableOpacity>
+        </View>
+        {!aptsLoaded ? (
+          <View style={styles.aptRow}>
+            <Skeleton width={250} height={100} borderRadius={20} />
+            <Skeleton width={250} height={100} borderRadius={20} />
           </View>
-        </Animated.View>
-      ))}
+        ) : upcomingAppointments.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.aptRow}>
+            {upcomingAppointments.map((apt) => {
+              const startDate = new Date(apt.appointment_date);
+              const dayStr = startDate.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' });
+              const timeStr = startDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+              const customerName = (apt.customers as any)?.business_name || apt.quick_customer_name || 'Cliente';
+              const customerCity = (apt.customers as any)?.city || apt.quick_customer_city || '';
+              const isToday = startDate.toDateString() === new Date().toDateString();
+              const isTomorrow = startDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+              const typeLabels: Record<string, string> = {
+                first_visit: 'Prima visita',
+                follow_up: 'Follow-up',
+                delivery: 'Consegna',
+                other: 'Altro',
+              };
+              const typeLabel = apt.appointment_type ? typeLabels[apt.appointment_type] : null;
 
-      {/* Prossimi Appuntamenti */}
-      <Text style={styles.sectionTitle}>Prossimi Appuntamenti</Text>
-      {upcomingAppointments.length > 0 ? (
-        <View style={{ marginBottom: 16 }}>
-          {upcomingAppointments.map((apt) => {
-            const startDate = new Date(apt.appointment_date);
-            const dayStr = startDate.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' });
-            const timeStr = startDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-            const customerName = (apt.customers as any)?.business_name || apt.quick_customer_name || 'Cliente';
-            const customerCity = (apt.customers as any)?.city || apt.quick_customer_city || '';
-            const isToday = startDate.toDateString() === new Date().toDateString();
-            const isTomorrow = startDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
-            const typeLabels: Record<string, string> = {
-              first_visit: 'Prima visita',
-              follow_up: 'Follow-up',
-              delivery: 'Consegna',
-              other: 'Altro',
-            };
-            const typeLabel = apt.appointment_type ? typeLabels[apt.appointment_type] : null;
-
-            return (
-              <TouchableOpacity
-                key={apt.id}
-                style={styles.appointmentCard}
-                onPress={() => router.push('/(tabs)/calendar')}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.appointmentDateBadge, isToday && { backgroundColor: '#DC2626' }, isTomorrow && { backgroundColor: '#F59E0B' }]}>
-                  <Text style={styles.appointmentDateText}>{isToday ? 'OGGI' : isTomorrow ? 'DOMANI' : dayStr.toUpperCase()}</Text>
-                  <Text style={styles.appointmentTimeText}>{timeStr}</Text>
-                </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.appointmentTitle} numberOfLines={1}>{customerName}</Text>
-                  <Text style={styles.appointmentSub} numberOfLines={1}>
+              return (
+                <TouchableOpacity
+                  key={apt.id}
+                  style={styles.aptCard}
+                  onPress={() => router.push('/(tabs)/calendar')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.aptTopRow}>
+                    <View style={[styles.aptChip, isToday && styles.aptChipToday, isTomorrow && styles.aptChipTomorrow]}>
+                      <Text style={[styles.aptChipText, (isToday || isTomorrow) && styles.aptChipTextOn]}>
+                        {isToday ? 'OGGI' : isTomorrow ? 'DOMANI' : dayStr.toUpperCase()}
+                      </Text>
+                    </View>
+                    <Text style={styles.aptTime}>{timeStr}</Text>
+                  </View>
+                  <Text style={styles.aptName} numberOfLines={1}>{customerName}</Text>
+                  <Text style={styles.aptSub} numberOfLines={1}>
                     {typeLabel ? `${typeLabel}` : ''}{typeLabel && customerCity ? ' · ' : ''}{customerCity}
                   </Text>
-                  {apt.notes ? <Text style={styles.appointmentNotes} numberOfLines={1}>{apt.notes}</Text> : null}
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
-              </TouchableOpacity>
-            );
-          })}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        ) : (
+          <View style={styles.aptEmpty}>
+            <Ionicons name="calendar-outline" size={22} color={DS.inkMuted} />
+            <Text style={styles.aptEmptyText}>Nessun appuntamento nei prossimi 7 giorni</Text>
+          </View>
+        )}
+      </Animated.View>
+
+      {/* Panoramica — griglia stats 2x2 */}
+      <Text style={styles.sectionTitle}>Panoramica</Text>
+      {statsLoading ? (
+        <View style={styles.statsGrid}>
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} width="47%" height={108} borderRadius={20} style={{ flexGrow: 1 }} />
+          ))}
         </View>
       ) : (
-        <View style={styles.emptyAppointments}>
-          <Ionicons name="calendar-outline" size={28} color="#D1D5DB" />
-          <Text style={styles.emptyAppointmentsText}>Nessun appuntamento nei prossimi 7 giorni</Text>
-        </View>
+        <Animated.View entering={FadeInDown.delay(140).duration(400)} style={styles.statsGrid}>
+          {[
+            { label: 'Clienti', value: stats.customers, icon: 'people-outline' },
+            { label: 'Ordini', value: stats.orders, icon: 'cart-outline' },
+            { label: 'Visite', value: stats.visits, icon: 'location-outline' },
+            { label: 'In attesa', value: stats.pendingOrders, icon: 'time-outline' },
+          ].map((s, i) => (
+            <View key={s.label} style={styles.statCard}>
+              <View style={styles.statIconChip}>
+                <Ionicons name={s.icon as any} size={17} color={DS.brand} />
+              </View>
+              <AnimatedNumber value={s.value} duration={700 + i * 100} style={styles.statNumber} />
+              <Text style={styles.statLabel}>{s.label}</Text>
+            </View>
+          ))}
+        </Animated.View>
       )}
 
-      {/* Venduto del Mese Corrente */}
+      {/* Venduto del Mese — hero card brand */}
       <Text style={styles.sectionTitle}>
-        Venduto {monthlySales.monthLabel ? `- ${monthlySales.monthLabel}` : 'del Mese'}
+        Venduto {monthlySales.monthLabel ? `— ${monthlySales.monthLabel}` : 'del mese'}
       </Text>
-      <View style={styles.salesCard}>
+      <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.salesCard}>
         <View style={styles.salesMainRow}>
-          <View style={styles.salesMainBlock}>
+          <View style={{ flex: 1 }}>
             <Text style={styles.salesMainLabel}>Netto (no IVA, no Accisa)</Text>
             <Text style={styles.salesMainValue}>
               € {monthlySales.netto.toFixed(2).replace('.', ',')}
             </Text>
           </View>
           <View style={styles.salesBadge}>
-            <Ionicons name="receipt-outline" size={16} color="#3B82F6" />
+            <Ionicons name="receipt-outline" size={14} color="#FFFFFF" />
             <Text style={styles.salesBadgeText}>{monthlySales.orderCount} ordini</Text>
           </View>
         </View>
@@ -396,12 +382,38 @@ export default function Dashboard() {
           </View>
           <View style={styles.salesDetailItem}>
             <Text style={styles.salesDetailLabel}>Lordo</Text>
-            <Text style={[styles.salesDetailValue, { fontWeight: '700' }]}>
+            <Text style={[styles.salesDetailValue, { fontFamily: JAKARTA.bold }]}>
               € {monthlySales.lordo.toFixed(2).replace('.', ',')}
             </Text>
           </View>
         </View>
-      </View>
+      </Animated.View>
+
+      {/* Azioni rapide — griglia 2 colonne per sezione */}
+      {actionGroups.map((group, gIdx) => (
+        <Animated.View key={group.title} entering={FadeInDown.delay(260 + gIdx * 80).duration(400)}>
+          <Text style={styles.sectionTitle}>{group.title}</Text>
+          <View style={styles.actionsGrid}>
+            {group.actions.map((action) => (
+              <Pressable
+                key={action.title}
+                style={({ pressed }) => [styles.actionCard, pressed && styles.actionPressed]}
+                onPress={() => { hap.light(); action.onPress(); }}
+              >
+                <View style={styles.actionIconChip}>
+                  <Ionicons name={action.icon} size={20} color={DS.brand} />
+                  {(action as any).badge > 0 && (
+                    <View style={styles.draftBadge}>
+                      <Text style={styles.draftBadgeText}>{(action as any).badge}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.actionTitle} numberOfLines={2}>{action.title}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Animated.View>
+      ))}
     </ScrollView>
   );
 }
@@ -409,263 +421,212 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: DS.surface,
   },
   content: {
-    padding: SPACING.lg,
-    paddingTop: Platform.OS === 'ios' ? 60 : 28,
+    padding: 20,
+    paddingTop: Platform.OS === 'ios' ? 64 : 32,
     paddingBottom: 120, // space for floating tab bar
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: 28,
   },
   greeting: {
-    fontSize: FONT_SIZE.md,
-    fontFamily: FONTS.regular,
-    color: COLORS.textMuted,
+    fontSize: 13,
+    fontFamily: JAKARTA.medium,
+    color: DS.inkMuted,
+    letterSpacing: 0.2,
   },
   userName: {
-    fontSize: FONT_SIZE.xxl,
-    fontFamily: FONTS.bold,
-    color: COLORS.text,
+    fontSize: 24,
+    fontFamily: JAKARTA.bold,
+    color: DS.ink,
     marginTop: 2,
+    letterSpacing: -0.4,
   },
   logoutBtn: {
     width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(239,68,68,0.1)',
+    backgroundColor: DS.surface2,
   },
-  subtitle: {
-    fontSize: FONT_SIZE.lg,
-    fontFamily: FONTS.regular,
-    color: COLORS.textMuted,
+
+  // Sezioni
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
     marginTop: 4,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: SPACING.xl,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: '22%',
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-    borderRadius: RADIUS.lg,
-    alignItems: 'center',
-    ...SHADOWS.md,
-  },
-  statIconCircle: {
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 6,
-  },
-  statNumberGrad: {
-    fontSize: 22,
-    fontFamily: FONTS.bold,
-    color: '#FFF',
-    letterSpacing: -0.3,
-  },
-  statLabelGrad: {
-    fontSize: 11,
-    fontFamily: FONTS.medium,
-    color: 'rgba(255,255,255,0.9)',
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#6B7280',
-    marginTop: 2,
-    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 12,
-    fontFamily: FONTS.semibold,
-    color: COLORS.textMuted,
+    fontFamily: JAKARTA.semibold,
+    color: DS.inkMuted,
     marginBottom: 12,
     marginTop: 4,
     textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  sectionTitleInline: {
+    marginBottom: 0,
+    marginTop: 0,
+  },
+  sectionLink: {
+    fontSize: 13,
+    fontFamily: JAKARTA.semibold,
+    color: DS.brand,
+  },
+
+  // Appuntamenti (scroll orizzontale)
+  aptRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingRight: 8,
+    marginBottom: 28,
+  },
+  aptCard: {
+    width: 250,
+    backgroundColor: DS.surface2,
+    borderRadius: 20,
+    padding: 14,
+  },
+  aptTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  aptChip: {
+    backgroundColor: DS.brandTint,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  aptChipToday: {
+    backgroundColor: DS.brand,
+  },
+  aptChipTomorrow: {
+    backgroundColor: DS.warning,
+  },
+  aptChipText: {
+    fontSize: 10,
+    fontFamily: JAKARTA.bold,
+    color: DS.brand,
     letterSpacing: 0.6,
   },
-  actionsGrid: {
+  aptChipTextOn: {
+    color: '#FFFFFF',
+  },
+  aptTime: {
+    fontSize: 13,
+    fontFamily: JAKARTA.semibold,
+    color: DS.ink2,
+  },
+  aptName: {
+    fontSize: 15,
+    fontFamily: JAKARTA.semibold,
+    color: DS.ink,
+  },
+  aptSub: {
+    fontSize: 12,
+    fontFamily: JAKARTA.regular,
+    color: DS.inkMuted,
+    marginTop: 3,
+  },
+  aptEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: DS.surface2,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 28,
+  },
+  aptEmptyText: {
+    fontSize: 13,
+    fontFamily: JAKARTA.regular,
+    color: DS.inkMuted,
+    flex: 1,
+  },
+
+  // Stats 2x2
+  statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: SPACING.lg,
+    gap: 12,
+    marginBottom: 28,
   },
-  actionCard: {
-    flexBasis: '23%',
+  statCard: {
+    flexBasis: '47%',
     flexGrow: 1,
-    backgroundColor: COLORS.surface,
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    borderRadius: RADIUS.lg,
-    alignItems: 'center',
-    ...SHADOWS.sm,
+    backgroundColor: DS.surface2,
+    borderRadius: 20,
+    padding: 16,
   },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  actionIconGrad: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    ...SHADOWS.sm,
-  },
-  actionTitle: {
-    fontSize: 11.5,
-    fontFamily: FONTS.semibold,
-    color: COLORS.text,
-    textAlign: 'center',
-    lineHeight: 14,
-  },
-  draftBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#DC2626',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    zIndex: 10,
-  },
-  draftBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  appointmentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  statIconChip: {
+    width: 34, height: 34, borderRadius: 10,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 10,
   },
-  appointmentDateBadge: {
-    backgroundColor: '#1E40AF',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    alignItems: 'center',
-    minWidth: 56,
+  statNumber: {
+    fontSize: 26,
+    fontFamily: JAKARTA.bold,
+    color: DS.ink,
+    letterSpacing: -0.5,
   },
-  appointmentDateText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
-  appointmentTimeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginTop: 2,
-  },
-  appointmentTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  appointmentSub: {
+  statLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    fontFamily: JAKARTA.medium,
+    color: DS.inkMuted,
     marginTop: 2,
   },
-  appointmentNotes: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-  emptyAppointments: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  emptyAppointmentsText: {
-    fontSize: 13,
-    color: '#9CA3AF',
-  },
+
+  // Venduto hero card
   salesCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: DS.brand,
+    borderRadius: 24,
     padding: 20,
-    marginBottom: 24,
+    marginBottom: 28,
   },
   salesMainRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  salesMainBlock: {
-    flex: 1,
+    alignItems: 'flex-start',
   },
   salesMainLabel: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 4,
+    fontSize: 12,
+    fontFamily: JAKARTA.medium,
+    color: 'rgba(255,255,255,0.75)',
+    marginBottom: 6,
   },
   salesMainValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1E40AF',
+    fontSize: 32,
+    fontFamily: JAKARTA.bold,
+    color: '#FFFFFF',
+    letterSpacing: -0.8,
   },
   salesBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEF2FF',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 20,
-    gap: 4,
+    borderRadius: 999,
+    gap: 5,
   },
   salesBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#3B82F6',
+    fontFamily: JAKARTA.semibold,
+    color: '#FFFFFF',
   },
   salesDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: 'rgba(255,255,255,0.25)',
     marginVertical: 16,
   },
   salesDetailsRow: {
@@ -677,13 +638,72 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   salesDetailLabel: {
-    fontSize: 12,
-    color: '#9CA3AF',
+    fontSize: 11,
+    fontFamily: JAKARTA.medium,
+    color: 'rgba(255,255,255,0.7)',
     marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   salesDetailValue: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
+    fontFamily: JAKARTA.semibold,
+    color: '#FFFFFF',
+  },
+
+  // Azioni rapide — 2 colonne
+  actionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 28,
+  },
+  actionCard: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: DS.surface2,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    minHeight: 64,
+  },
+  actionPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.85,
+  },
+  actionIconChip: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  actionTitle: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: JAKARTA.semibold,
+    color: DS.ink,
+    lineHeight: 17,
+  },
+  draftBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: DS.brand,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+    borderWidth: 2,
+    borderColor: DS.surface2,
+    zIndex: 10,
+  },
+  draftBadgeText: {
+    fontSize: 10,
+    fontFamily: JAKARTA.bold,
+    color: '#FFFFFF',
   },
 });

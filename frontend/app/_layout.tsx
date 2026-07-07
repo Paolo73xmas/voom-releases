@@ -26,6 +26,11 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    // Plus Jakarta Sans — nuovo design system (asset locali, nessun fetch remoto)
+    Jakarta_400: require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
+    Jakarta_500: require('../assets/fonts/PlusJakartaSans-Medium.ttf'),
+    Jakarta_600: require('../assets/fonts/PlusJakartaSans-SemiBold.ttf'),
+    Jakarta_700: require('../assets/fonts/PlusJakartaSans-Bold.ttf'),
   });
 
   useEffect(() => {

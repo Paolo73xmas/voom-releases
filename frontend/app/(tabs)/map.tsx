@@ -4,12 +4,10 @@ import {
   Text,
   ActivityIndicator,
   TouchableOpacity,
-  TextInput,
   Modal,
   Alert,
   Platform,
   Linking,
-  Keyboard,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +19,9 @@ let WebView: any = null;
 if (Platform.OS !== 'web') {
   WebView = require('react-native-webview').WebView;
 }
-import { fetchTabaccherieByBounds, fetchAllTabaccherie } from '../../lib/api/tabaccherie';
+import { fetchTabaccherieByBounds, fetchAllTabaccherie, fetchTabaccheriaById } from '../../lib/api/tabaccherie';
+import { MpvpSearchBar } from '../../components/map/MpvpSearchBar';
+import type { MpvpCustomerResult, PlaceSuggestion } from '../../lib/api/mpvp-customer-search';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { Tabaccheria } from '../../types';
@@ -62,10 +62,8 @@ export default function MapScreen() {
   const [loadingOrderData, setLoadingOrderData] = useState(false);
   const [showOrderDataModal, setShowOrderDataModal] = useState(false);
 
-  // Search
+  // Search (MPVP unified search bar)
   const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Legend
   const [showLegend, setShowLegend] = useState(true);
@@ -565,33 +563,34 @@ export default function MapScreen() {
     }
   };
 
-  // Geocoding search
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setIsGeocoding(true);
-    Keyboard.dismiss();
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=it&limit=1`,
-        { headers: { 'User-Agent': 'VoomApp/1.0' } }
-      );
-      const results = await response.json();
-      if (results.length === 0) {
-        Alert.alert('Non trovato', 'Indirizzo non trovato. Prova con un formato diverso.');
-        return;
-      }
-      const result = results[0];
-      const lat = parseFloat(result.lat);
-      const lon = parseFloat(result.lon);
-      sendToMap({ type: 'setCenter', lat, lng: lon, zoom: 16 });
-      setShowSearch(false);
-      setSearchQuery('');
-    } catch {
-      Alert.alert('Errore', 'Impossibile cercare l\'indirizzo.');
-    } finally {
-      setIsGeocoding(false);
+  // ✅ MPVP: selezione LUOGO dalla barra di ricerca unificata → zoom sulla posizione
+  const handleMpvpSelectPlace = useCallback((place: PlaceSuggestion) => {
+    setShowSearch(false);
+    sendToMap({ type: 'setCenter', lat: place.lat, lng: place.lon, zoom: 15 });
+  }, [sendToMap]);
+
+  // ✅ MPVP: selezione CLIENTE → zoom sul punto vendita + apertura popup marker
+  const handleMpvpSelectCustomer = useCallback(async (c: MpvpCustomerResult) => {
+    setShowSearch(false);
+    if (c.latitude == null || c.longitude == null) {
+      Alert.alert('Posizione mancante', 'Questo punto vendita non ha coordinate GPS.');
+      return;
     }
-  };
+    sendToMap({ type: 'setCenter', lat: c.latitude, lng: c.longitude, zoom: 17 });
+
+    // Apri il popup: prima cerca tra i punti già caricati, altrimenti fetch completo
+    const existing = tabaccherieRef.current.find(t => t.id === c.id);
+    if (existing) {
+      setSelectedTab(existing);
+      setShowPopup(true);
+      return;
+    }
+    const full = await fetchTabaccheriaById(c.id);
+    if (full) {
+      setSelectedTab(full);
+      setShowPopup(true);
+    }
+  }, [sendToMap]);
 
   // Recenter on user
   const recenterOnUser = () => {
@@ -756,47 +755,14 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* Search Modal */}
-      <Modal visible={showSearch} transparent animationType="fade" onRequestClose={() => setShowSearch(false)}>
-        <View style={styles.searchOverlay}>
-          <View style={[styles.searchContainer, { marginTop: insets.top + 16 }]}>
-            <View style={styles.searchInputRow}>
-              <Ionicons name="search" size={20} color="#7C3AED" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Cerca indirizzo, citta..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholderTextColor="#9CA3AF"
-                autoFocus
-                returnKeyType="search"
-                onSubmitEditing={handleSearch}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.searchActions}>
-              <TouchableOpacity style={styles.searchCancelBtn} onPress={() => { setShowSearch(false); setSearchQuery(''); }}>
-                <Text style={styles.searchCancelText}>Annulla</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.searchGoBtn, (!searchQuery.trim() || isGeocoding) && styles.searchGoBtnDisabled]}
-                onPress={handleSearch}
-                disabled={!searchQuery.trim() || isGeocoding}
-              >
-                {isGeocoding ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <Text style={styles.searchGoText}>Cerca</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* MPVP Unified Search Bar (Clienti + Luoghi) */}
+      <MpvpSearchBar
+        visible={showSearch}
+        onClose={() => setShowSearch(false)}
+        onSelectCustomer={handleMpvpSelectCustomer}
+        onSelectPlace={handleMpvpSelectPlace}
+        topInset={insets.top}
+      />
 
       {/* Marker Popup (Bottom Sheet - NO Modal to avoid blocking Leaflet) */}
       {showPopup && selectedTab && (

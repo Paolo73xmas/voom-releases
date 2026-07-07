@@ -146,6 +146,78 @@ export async function fetchTabaccherieByBounds(
 }
 
 /**
+ * Fetch di una singola tabaccheria per ID (con join customers per popup mappa).
+ * Usato dalla ricerca MPVP quando il punto selezionato non è nei bounds correnti.
+ */
+export async function fetchTabaccheriaById(id: string): Promise<Tabaccheria | null> {
+  try {
+    const { data: tab, error } = await supabase
+      .from('tabaccherie')
+      .select(`
+        id,
+        denominazione,
+        indirizzo,
+        comune,
+        provincia,
+        cap,
+        gps_lat,
+        gps_lng,
+        customer_id,
+        agente_id,
+        stato_visita,
+        telefono_mobile,
+        telefono_fisso,
+        email,
+        customers!tabaccherie_customer_id_fkey (
+          id,
+          business_name,
+          agent_id,
+          last_order_date,
+          last_visit_date,
+          first_visit_date
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error || !tab) {
+      console.error('[tabaccherie] fetchTabaccheriaById error:', error);
+      return null;
+    }
+
+    const lat = parseCoordinate(tab.gps_lat);
+    const lng = parseCoordinate(tab.gps_lng);
+    const customerData: any = tab.customers || null;
+
+    return {
+      id: tab.id,
+      denominazione: tab.denominazione || '',
+      indirizzo: tab.indirizzo || '',
+      comune: tab.comune || '',
+      provincia: tab.provincia || '',
+      cap: tab.cap || '',
+      gps_lat: tab.gps_lat?.toString() || '',
+      gps_lng: tab.gps_lng?.toString() || '',
+      latitude: lat,
+      longitude: lng,
+      customer_id: tab.customer_id,
+      agente_id: tab.agente_id,
+      stato_visita: tab.stato_visita,
+      customer_business_name: customerData?.business_name || null,
+      customer_last_order_date: customerData?.last_order_date || null,
+      customer_last_visit_date: customerData?.last_visit_date || null,
+      customer_first_visit_date: customerData?.first_visit_date || null,
+      telefono_mobile: tab.telefono_mobile || null,
+      telefono_fisso: tab.telefono_fisso || null,
+      email: tab.email || null,
+    };
+  } catch (error) {
+    console.error('[tabaccherie] fetchTabaccheriaById exception:', error);
+    return null;
+  }
+}
+
+/**
  * Fetch tabaccherie within a radius (km) from center point.
  * Calculates a bounding box from the center and radius, then queries Supabase.
  */

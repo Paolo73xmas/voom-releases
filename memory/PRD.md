@@ -127,6 +127,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=[key]
 - Admin marker color visibility (real colors vs gray for agents)
 - Map -> Order Collection navigation with customer pre-selection
 - **Anagrafica (First Visit)**: Complete 3-step wizard with photo/GPS, form with search, summary/review, Supabase submission
+- **MPVP Unified Search Bar (web parity)**: Barra ricerca unificata sulla mappa — fuzzy search clienti (tabaccherie: denominazione, indirizzo, comune, P.IVA, cod. fiscale) + luoghi via Nominatim in un unico dropdown. Selezione cliente → zoom + apertura popup marker (con fetchTabaccheriaById se fuori bounds); selezione luogo → zoom sulla posizione. Sostituito il vecchio modal di ricerca geocoding.
 
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)

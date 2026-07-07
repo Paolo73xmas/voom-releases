@@ -43,7 +43,6 @@ export default function MapScreen() {
   const { user, profile } = useAuthStore();
   const userRole = profile?.role || 'agent';
   const webViewRef = useRef<any>(null);
-  const iframeRef = useRef<any>(null);
 
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +76,6 @@ export default function MapScreen() {
   const leafletMarkersRef = useRef<any[]>([]);
   const leafletUserMarkerRef = useRef<any>(null);
   const leafletClusterRef = useRef<any>(null);
-  const mapDivRef = useRef<any>(null);
   const leafletReadyRef = useRef(false);
 
   useEffect(() => {
@@ -833,9 +831,7 @@ export default function MapScreen() {
                     setShowPopup(false);
                     router.push({
                       pathname: '/anagrafica',
-                      params: selectedTab.customer_id
-                        ? { tabaccheriaId: selectedTab.id }
-                        : { tabaccheriaId: selectedTab.id },
+                      params: { tabaccheriaId: selectedTab.id },
                     });
                   }}
                 >

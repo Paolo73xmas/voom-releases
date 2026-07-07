@@ -186,7 +186,7 @@ const STEPS = ['Cliente', 'Prodotti', 'Pagamento', 'Spedizione', 'Riepilogo'];
 // ═══════════════════════════════════════════════════════
 export default function OrderCollectionV2() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ draftId?: string; duplicateOrderId?: string }>();
+  const params = useLocalSearchParams<{ draftId?: string; duplicateOrderId?: string; customerId?: string; customerName?: string }>();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
   // ✅ Web parity: Virtual branches use central warehouse stock (no branch overlay)
@@ -329,6 +329,29 @@ export default function OrderCollectionV2() {
       restoreFromOrder(params.duplicateOrderId);
     }
   }, [isLoading, customers, products, params.duplicateOrderId, draftLoaded]);
+
+  // ✅ Pre-selezione cliente da navigazione (Mappa "Ordine" / Scheda cliente "Ordine")
+  // Il chiamante passa customerId: selezioniamo il cliente allo Step 1 così l'agente
+  // deve solo premere "Avanti" (che carica cashback/pacchetti come la selezione manuale).
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !draftLoaded &&
+      params.customerId &&
+      !params.draftId &&
+      !params.duplicateOrderId &&
+      customers.length > 0 &&
+      !selectedCustomer
+    ) {
+      const customer = customers.find(c => c.id === params.customerId);
+      if (customer) {
+        setSelectedCustomer(customer);
+        console.log('[order-v2] Cliente pre-selezionato da navigazione:', customer.business_name);
+      } else {
+        console.warn('[order-v2] customerId da navigazione non trovato tra i clienti:', params.customerId);
+      }
+    }
+  }, [isLoading, customers, params.customerId, draftLoaded]);
 
   /**
    * ✅ Duplicazione ordine: carica un ordine passato, ripristina cliente + prodotti in Step 2.

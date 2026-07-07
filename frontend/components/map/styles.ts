@@ -153,66 +153,6 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6B7280',
   },
-  // Search Modal
-  searchOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  searchContainer: {
-    backgroundColor: '#FFF',
-    marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 16,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  searchInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1F2937',
-  },
-  searchActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
-    marginTop: 12,
-  },
-  searchCancelBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  searchCancelText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  searchGoBtn: {
-    backgroundColor: '#7C3AED',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  searchGoBtnDisabled: {
-    opacity: 0.5,
-  },
-  searchGoText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFF',
-  },
   // Popup (Inline Bottom Sheet - no Modal)
   popupOverlayInline: {
     position: 'absolute',

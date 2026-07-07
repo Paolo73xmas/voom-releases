@@ -15,21 +15,6 @@ function isValidCoordinate(lat: number | null, lng: number | null): boolean {
   return true;
 }
 
-export async function fetchTabaccherieInBounds(
-  bounds: { north: number; south: number; east: number; west: number },
-  userId?: string,
-  userRole?: string
-): Promise<Tabaccheria[]> {
-  // Deprecated: use fetchTabaccherieInRadius instead
-  return fetchTabaccherieInRadius(
-    (bounds.north + bounds.south) / 2,
-    (bounds.east + bounds.west) / 2,
-    40,
-    userId,
-    userRole
-  );
-}
-
 /**
  * Fetch tabaccherie within the exact visible map bounds.
  * Paginates to overcome the Supabase 1000-row default limit.
@@ -217,110 +202,6 @@ export async function fetchTabaccheriaById(id: string): Promise<Tabaccheria | nu
   }
 }
 
-/**
- * Fetch tabaccherie within a radius (km) from center point.
- * Calculates a bounding box from the center and radius, then queries Supabase.
- */
-export async function fetchTabaccherieInRadius(
-  centerLat: number,
-  centerLng: number,
-  radiusKm: number,
-  userId?: string,
-  userRole?: string
-): Promise<Tabaccheria[]> {
-  try {
-    // Calculate bounding box from center + radius
-    // 1 degree latitude ≈ 111km
-    // 1 degree longitude ≈ 111km * cos(latitude)
-    const latDelta = radiusKm / 111;
-    const lngDelta = radiusKm / (111 * Math.cos(centerLat * Math.PI / 180));
-
-    const bounds = {
-      north: centerLat + latDelta,
-      south: centerLat - latDelta,
-      east: centerLng + lngDelta,
-      west: centerLng - lngDelta,
-    };
-
-    console.log('[tabaccherie] Fetching in radius', radiusKm, 'km from center:', centerLat, centerLng, 'bounds:', bounds);
-
-    const { data, error } = await supabase
-      .from('tabaccherie')
-      .select(`
-        id,
-        denominazione,
-        indirizzo,
-        comune,
-        provincia,
-        cap,
-        gps_lat,
-        gps_lng,
-        customer_id,
-        agente_id,
-        stato_visita,
-        telefono_mobile,
-        telefono_fisso,
-        email,
-        customers!tabaccherie_customer_id_fkey (
-          id,
-          business_name,
-          agent_id,
-          last_order_date,
-          last_visit_date,
-          first_visit_date
-        )
-      `)
-      .filter('gps_lat::float', 'gte', bounds.south)
-      .filter('gps_lat::float', 'lte', bounds.north)
-      .filter('gps_lng::float', 'gte', bounds.west)
-      .filter('gps_lng::float', 'lte', bounds.east)
-      .limit(5000);
-
-    if (error) throw error;
-    if (!data) return [];
-
-    const validResults: Tabaccheria[] = [];
-
-    data.forEach((tab: any) => {
-      const lat = parseCoordinate(tab.gps_lat);
-      const lng = parseCoordinate(tab.gps_lng);
-
-      if (!isValidCoordinate(lat, lng)) return;
-
-      const customerData = tab.customers || null;
-
-      validResults.push({
-        id: tab.id,
-        denominazione: tab.denominazione || '',
-        indirizzo: tab.indirizzo || '',
-        comune: tab.comune || '',
-        provincia: tab.provincia || '',
-        cap: tab.cap || '',
-        gps_lat: tab.gps_lat?.toString() || '',
-        gps_lng: tab.gps_lng?.toString() || '',
-        latitude: lat,
-        longitude: lng,
-        customer_id: tab.customer_id,
-        agente_id: tab.agente_id,
-        stato_visita: tab.stato_visita,
-        customer_business_name: customerData?.business_name || null,
-        customer_last_order_date: customerData?.last_order_date || null,
-        customer_last_visit_date: customerData?.last_visit_date || null,
-        customer_first_visit_date: customerData?.first_visit_date || null,
-        telefono_mobile: tab.telefono_mobile || null,
-        telefono_fisso: tab.telefono_fisso || null,
-        email: tab.email || null,
-      });
-    });
-
-    console.log('[tabaccherie] Returning', validResults.length, 'valid points in', radiusKm, 'km radius');
-    return validResults;
-  } catch (error) {
-    console.error('[tabaccherie] Error:', error);
-    throw error;
-  }
-}
-
 export async function fetchAllTabaccherie(
   userId?: string,
   userRole?: string,
@@ -407,54 +288,5 @@ export async function fetchAllTabaccherie(
   } catch (error) {
     console.error('[tabaccherie] Error:', error);
     throw error;
-  }
-}
-
-export async function searchTabaccherie(query: string): Promise<Tabaccheria[]> {
-  if (!query || query.length < 2) return [];
-
-  try {
-    const searchTerm = `%${query}%`;
-
-    const { data, error } = await supabase
-      .from('tabaccherie')
-      .select('*')
-      .or(`denominazione.ilike.${searchTerm},indirizzo.ilike.${searchTerm},comune.ilike.${searchTerm}`)
-      .limit(50);
-
-    if (error) throw error;
-
-    return (data || []).map((tab: any) => ({
-      ...tab,
-      latitude: parseCoordinate(tab.gps_lat),
-      longitude: parseCoordinate(tab.gps_lng),
-    }));
-  } catch (error) {
-    console.error('[searchTabaccherie] Error:', error);
-    throw error;
-  }
-}
-
-export function getStatusColor(status: string | null | undefined): string {
-  switch (status) {
-    case 'ordinato':
-      return '#10B981'; // Green
-    case 'visitato':
-      return '#3B82F6'; // Blue
-    case 'non_visitato':
-    default:
-      return '#EF4444'; // Red
-  }
-}
-
-export function getStatusLabel(status: string | null | undefined): string {
-  switch (status) {
-    case 'ordinato':
-      return 'Ordinato';
-    case 'visitato':
-      return 'Visitato';
-    case 'non_visitato':
-    default:
-      return 'Non Visitato';
   }
 }

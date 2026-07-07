@@ -129,7 +129,7 @@ export default function CustomerDetailScreen() {
     switch (status) {
       case 'confirmed': return { label: 'Confermato', bg: '#DCFCE7', color: '#166534' };
       case 'pending': return { label: 'In Attesa', bg: '#FEF3C7', color: '#92400E' };
-      case 'shipped': return { label: 'Spedito', bg: '#DBEAFE', color: '#1E40AF' };
+      case 'shipped': return { label: 'Spedito', bg: '#DBEAFE', color: '#1D4ED8' };
       case 'delivered': return { label: 'Consegnato', bg: '#D1FAE5', color: '#065F46' };
       case 'cancelled': return { label: 'Annullato', bg: '#FEE2E2', color: '#991B1B' };
       default: return { label: status, bg: '#E5E7EB', color: '#374151' };
@@ -138,15 +138,15 @@ export default function CustomerDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: '#1E40AF' }]} edges={['top']}>
-        <View style={styles.centered}><ActivityIndicator size="large" color="#1E40AF" /></View>
+      <SafeAreaView style={[styles.container, { backgroundColor: '#C2410C' }]} edges={['top']}>
+        <View style={styles.centered}><ActivityIndicator size="large" color="#C2410C" /></View>
       </SafeAreaView>
     );
   }
 
   if (!customer) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: '#1E40AF' }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: '#C2410C' }]} edges={['top']}>
         <View style={styles.centered}>
           <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
           <Text style={styles.errorText}>Cliente non trovato</Text>
@@ -159,7 +159,7 @@ export default function CustomerDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#1E40AF' }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: '#C2410C' }]} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       {/* Header */}
       <View style={styles.header}>
@@ -389,20 +389,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderBottomWidth: 1,
-    borderBottomColor: '#1E3A8A',
+    borderBottomColor: '#9A3412',
   },
   backBtn: { padding: 4, marginRight: 8 },
   headerCenter: { flex: 1 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  headerSub: { fontSize: 11, color: '#BFDBFE' },
+  headerSub: { fontSize: 11, color: '#FED7AA' },
   catBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   catBadgeText: { fontSize: 10, fontWeight: '600' },
   clientBg: { backgroundColor: 'rgba(255,255,255,0.2)' },
   prospectBg: { backgroundColor: 'rgba(255,255,255,0.15)' },
   clientColor: { color: '#FFFFFF' },
-  prospectColor: { color: '#DBEAFE' },
+  prospectColor: { color: '#FED7AA' },
 
   body: { flex: 1, backgroundColor: '#F3F4F6' },
   bodyContent: { padding: 16 },

@@ -91,8 +91,18 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="altro"
+        options={{
+          title: 'Altro',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={focused ? 25 : 22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="orders"
         options={{
+          href: null,
           title: 'Ordini',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'cart' : 'cart-outline'} size={focused ? 26 : 23} color={color} />
@@ -102,6 +112,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="products"
         options={{
+          href: null,
           title: 'Prodotti',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'pricetag' : 'pricetag-outline'} size={focused ? 26 : 23} color={color} />
@@ -111,6 +122,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
+          href: null,
           title: 'Calendario',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={focused ? 26 : 23} color={color} />

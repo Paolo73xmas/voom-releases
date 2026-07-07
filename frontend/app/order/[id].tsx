@@ -83,7 +83,7 @@ export default function OrderDetailScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1E40AF" />
+        <ActivityIndicator size="large" color="#C2410C" />
       </View>
     );
   }
@@ -415,13 +415,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 16,
     gap: 8,
-    shadowColor: '#1E40AF',
+    shadowColor: '#C2410C',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: '#C2410C',
   },
   shippingRow: {
     flexDirection: 'row',

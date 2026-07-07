@@ -271,14 +271,14 @@ export default function PrivacyTermsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
   },
   container: {
     flex: 1,
     backgroundColor: '#F3F4F6',
   },
   header: {
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 20,
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   partTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E40AF',
+    color: '#C2410C',
     marginBottom: 2,
     letterSpacing: 1,
   },
@@ -404,8 +404,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   checkboxChecked: {
-    backgroundColor: '#1E40AF',
-    borderColor: '#1E40AF',
+    backgroundColor: '#C2410C',
+    borderColor: '#C2410C',
   },
   checkboxLabel: {
     flex: 1,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   },
   acceptButton: {
     flexDirection: 'row',
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 32 : 20,
   },
   readOnlyButton: {
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

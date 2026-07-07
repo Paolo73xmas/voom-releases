@@ -310,7 +310,7 @@ export default function CalendarScreen() {
           onPress={() => setShowModePicker(true)}
         >
           <Text style={styles.modeSelectorText}>{MODE_LABELS[mode]}</Text>
-          <Ionicons name="chevron-down" size={16} color="#1E40AF" />
+          <Ionicons name="chevron-down" size={16} color="#C2410C" />
         </TouchableOpacity>
 
         <View style={styles.navRow}>
@@ -338,9 +338,9 @@ export default function CalendarScreen() {
             style={{ marginLeft: 8, padding: 4 }}
           >
             {refreshing ? (
-              <ActivityIndicator size="small" color="#1E40AF" />
+              <ActivityIndicator size="small" color="#C2410C" />
             ) : (
-              <Ionicons name="refresh" size={18} color="#1E40AF" />
+              <Ionicons name="refresh" size={18} color="#C2410C" />
             )}
           </TouchableOpacity>
 
@@ -387,7 +387,7 @@ export default function CalendarScreen() {
       {/* Calendar */}
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#1E40AF" />
+          <ActivityIndicator size="large" color="#C2410C" />
           <Text style={styles.loadingText}>Caricamento calendario...</Text>
         </View>
       ) : (
@@ -421,7 +421,7 @@ export default function CalendarScreen() {
                 <Text style={[styles.modeOptionText, mode === m && styles.modeOptionTextActive]}>
                   {MODE_LABELS[m]}
                 </Text>
-                {mode === m && <Ionicons name="checkmark" size={18} color="#1E40AF" />}
+                {mode === m && <Ionicons name="checkmark" size={18} color="#C2410C" />}
               </TouchableOpacity>
             ))}
           </View>
@@ -550,16 +550,16 @@ const styles = StyleSheet.create({
   modeSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#FFF7ED',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     gap: 4,
   },
-  modeSelectorText: { fontSize: 14, fontWeight: '600', color: '#1E40AF' },
+  modeSelectorText: { fontSize: 14, fontWeight: '600', color: '#C2410C' },
   navRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   navBtn: { padding: 6 },
-  todayBtn: { fontSize: 14, fontWeight: '600', color: '#1E40AF' },
+  todayBtn: { fontSize: 14, fontWeight: '600', color: '#C2410C' },
 
   legend: {
     flexDirection: 'row',
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
   },
   modeOptionActive: {},
   modeOptionText: { fontSize: 16, color: '#4B5563' },
-  modeOptionTextActive: { color: '#1E40AF', fontWeight: '700' },
+  modeOptionTextActive: { color: '#C2410C', fontWeight: '700' },
 
   // Event modal
   eventModal: {

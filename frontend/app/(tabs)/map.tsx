@@ -170,7 +170,7 @@ export default function MapScreen() {
     if (!document.getElementById('leaflet-custom-css')) {
       const style = document.createElement('style');
       style.id = 'leaflet-custom-css';
-      style.textContent = `.custom-marker{border:none!important;background:none!important}@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}70%{box-shadow:0 0 0 10px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}#leaflet-map-container{position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;}.marker-cluster-custom{background:rgba(30,64,175,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center}.marker-cluster-custom div{background:#1E40AF;color:#fff;font-weight:700;font-size:13px;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3)}.marker-cluster-large{background:rgba(220,38,38,0.2)!important}.marker-cluster-large div{background:#DC2626!important}.marker-cluster-medium{background:rgba(249,115,22,0.2)!important}.marker-cluster-medium div{background:#F97316!important}`;
+      style.textContent = `.custom-marker{border:none!important;background:none!important}@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}70%{box-shadow:0 0 0 10px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}#leaflet-map-container{position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;}.marker-cluster-custom{background:rgba(30,64,175,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center}.marker-cluster-custom div{background:#C2410C;color:#fff;font-weight:700;font-size:13px;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3)}.marker-cluster-large{background:rgba(220,38,38,0.2)!important}.marker-cluster-large div{background:#DC2626!important}.marker-cluster-medium{background:rgba(249,115,22,0.2)!important}.marker-cluster-medium div{background:#F97316!important}`;
       document.head.appendChild(style);
     }
 
@@ -688,7 +688,7 @@ export default function MapScreen() {
         style={[styles.fabButton, { top: 86, right: 12 }]}
         onPress={() => setShowSearch(true)}
       >
-        <Ionicons name="search" size={22} color="#7C3AED" />
+        <Ionicons name="search" size={22} color="#C2410C" />
       </TouchableOpacity>
 
       {/* Rivendite No Mappa button */}

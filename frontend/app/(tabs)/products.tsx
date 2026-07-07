@@ -274,7 +274,7 @@ export default function ProductsScreen() {
     <View style={styles.innerContent}>
       <View style={styles.navHeader}>
         <TouchableOpacity onPress={handleBack} style={styles.backRow}>
-          <Ionicons name="arrow-back" size={20} color="#1E40AF" />
+          <Ionicons name="arrow-back" size={20} color="#C2410C" />
           <Text style={styles.backText}>Categorie</Text>
         </TouchableOpacity>
         <Text style={styles.navTitle}>{selectedCategory?.name}</Text>
@@ -298,7 +298,7 @@ export default function ProductsScreen() {
       </View>
 
       {innerLoading ? (
-        <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#C2410C" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filteredSubs}
@@ -458,7 +458,7 @@ export default function ProductsScreen() {
 
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Prezzo unitario</Text>
-                  <Text style={[styles.detailValue, { fontSize: 18, fontWeight: '800', color: '#1E40AF' }]}>{formatPrice(p.unit_price)}</Text>
+                  <Text style={[styles.detailValue, { fontSize: 18, fontWeight: '800', color: '#C2410C' }]}>{formatPrice(p.unit_price)}</Text>
                 </View>
 
                 {p.accisa != null && p.accisa > 0 && (
@@ -511,7 +511,7 @@ export default function ProductsScreen() {
     <View style={styles.innerContent}>
       <View style={styles.navHeader}>
         <TouchableOpacity onPress={handleBack} style={styles.backRow}>
-          <Ionicons name="arrow-back" size={20} color="#1E40AF" />
+          <Ionicons name="arrow-back" size={20} color="#C2410C" />
           <Text style={styles.backText}>{selectedCategory?.name}</Text>
         </TouchableOpacity>
         <Text style={styles.navTitle}>{selectedSubCategory?.name}</Text>
@@ -535,7 +535,7 @@ export default function ProductsScreen() {
       </View>
 
       {innerLoading ? (
-        <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#C2410C" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filteredProducts}
@@ -557,7 +557,7 @@ export default function ProductsScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1E40AF" />
+        <ActivityIndicator size="large" color="#C2410C" />
       </View>
     );
   }
@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
   },
   subCatBadgeText: {
-    fontSize: 12, fontWeight: '800', color: '#1E40AF',
+    fontSize: 12, fontWeight: '800', color: '#C2410C',
   },
   subCatBadgeTextEmpty: {
     color: '#9CA3AF',
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
   // Nav header
   navHeader: { marginTop: 12, marginBottom: 10 },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
-  backText: { fontSize: 14, color: '#1E40AF', fontWeight: '500' },
+  backText: { fontSize: 14, color: '#C2410C', fontWeight: '500' },
   navTitle: { fontSize: 22, fontWeight: '700', color: '#1F2937' },
   navCount: { fontSize: 13, color: '#6B7280', marginTop: 2 },
 
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
   productSku: { fontSize: 10, color: '#9CA3AF', marginTop: 1 },
   productAccisa: { fontSize: 10, color: '#6B7280', marginTop: 1 },
   productPriceWrap: { alignItems: 'flex-end', marginLeft: 6 },
-  productPrice: { fontSize: 14, fontWeight: '700', color: '#1E40AF' },
+  productPrice: { fontSize: 14, fontWeight: '700', color: '#C2410C' },
   productUnit: { fontSize: 10, color: '#9CA3AF' },
   stockBadge: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981',

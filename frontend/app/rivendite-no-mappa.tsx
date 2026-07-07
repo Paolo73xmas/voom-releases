@@ -332,7 +332,7 @@ export default function RivenditeNoMappaScreen() {
               setUseManualGPS(val);
               if (!val) acquireGPS();
             }}
-            trackColor={{ true: '#7C3AED' }}
+            trackColor={{ true: '#C2410C' }}
           />
         </View>
 
@@ -353,7 +353,7 @@ export default function RivenditeNoMappaScreen() {
           <View style={styles.gpsStatus}>
             {gpsLoading ? (
               <View style={styles.gpsLoadingRow}>
-                <ActivityIndicator size="small" color="#7C3AED" />
+                <ActivityIndicator size="small" color="#C2410C" />
                 <Text style={styles.gpsLoadingText}>Rilevamento posizione...</Text>
               </View>
             ) : latitude && longitude ? (
@@ -509,7 +509,7 @@ export default function RivenditeNoMappaScreen() {
 
           {/* Add photo buttons */}
           <TouchableOpacity style={styles.addPhotoBtn} onPress={takePhoto}>
-            <Ionicons name="camera" size={32} color="#7C3AED" />
+            <Ionicons name="camera" size={32} color="#C2410C" />
             <Text style={styles.addPhotoText}>Scatta Foto</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.addPhotoBtn, { borderColor: '#3B82F6' }]} onPress={pickFromGallery}>
@@ -635,11 +635,11 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 16, backgroundColor: '#E5E7EB',
     alignItems: 'center', justifyContent: 'center',
   },
-  stepDotActive: { backgroundColor: '#7C3AED' },
+  stepDotActive: { backgroundColor: '#C2410C' },
   stepDotText: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
   stepDotTextActive: { color: '#FFF' },
   stepLine: { width: 60, height: 3, backgroundColor: '#E5E7EB', marginHorizontal: 8, borderRadius: 2 },
-  stepLineActive: { backgroundColor: '#7C3AED' },
+  stepLineActive: { backgroundColor: '#C2410C' },
   stepLabel: { textAlign: 'center', fontSize: 13, color: '#6B7280', marginBottom: 8 },
 
   scrollContent: { flex: 1, paddingHorizontal: 16 },
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
   gpsOkRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   gpsOkText: { fontSize: 13, color: '#10B981', fontWeight: '500' },
   gpsRetryBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#7C3AED',
+    flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#C2410C',
     borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start',
   },
   gpsRetryText: { fontSize: 14, color: '#FFF', fontWeight: '600' },
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
     borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: '#F9FAFB',
   },
-  typeBtnActive: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  typeBtnActive: { backgroundColor: '#C2410C', borderColor: '#C2410C' },
   typeBtnText: { fontSize: 13, fontWeight: '500', color: '#6B7280' },
   typeBtnTextActive: { color: '#FFF' },
 
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
     width: '47%', aspectRatio: 1, borderRadius: 12, borderWidth: 2, borderColor: '#D1D5DB',
     borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB',
   },
-  addPhotoText: { fontSize: 13, color: '#7C3AED', fontWeight: '600', marginTop: 6 },
+  addPhotoText: { fontSize: 13, color: '#C2410C', fontWeight: '600', marginTop: 6 },
 
   warningBox: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12,
@@ -712,7 +712,7 @@ const styles = StyleSheet.create({
   bottomBar: { paddingHorizontal: 16, paddingTop: 12, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
   primaryBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#7C3AED', borderRadius: 12, paddingVertical: 14,
+    backgroundColor: '#C2410C', borderRadius: 12, paddingVertical: 14,
   },
   primaryBtnDisabled: { opacity: 0.5 },
   primaryBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },

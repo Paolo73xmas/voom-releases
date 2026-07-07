@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   retryText: {
-    color: '#1E40AF',
+    color: '#C2410C',
     fontWeight: '500',
   },
   section: {

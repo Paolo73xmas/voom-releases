@@ -141,7 +141,7 @@ export function MpvpSearchBar({
       <View style={s.container}>
         {/* Input row */}
         <View style={s.inputRow}>
-          <Ionicons name="search" size={20} color="#7C3AED" />
+          <Ionicons name="search" size={20} color="#C2410C" />
           <TextInput
             ref={inputRef}
             style={s.input}
@@ -154,7 +154,7 @@ export function MpvpSearchBar({
             autoCapitalize="none"
             autoCorrect={false}
           />
-          {isLoading && <ActivityIndicator size="small" color="#7C3AED" />}
+          {isLoading && <ActivityIndicator size="small" color="#C2410C" />}
           {!isLoading && searchText.length > 0 && (
             <TouchableOpacity onPress={clearText} hitSlop={8}>
               <Ionicons name="close-circle" size={20} color="#9CA3AF" />
@@ -176,7 +176,7 @@ export function MpvpSearchBar({
 
             {isLoading && !hasResults && (
               <View style={s.emptyRow}>
-                <ActivityIndicator size="small" color="#7C3AED" />
+                <ActivityIndicator size="small" color="#C2410C" />
                 <Text style={[s.emptyText, { marginLeft: 8 }]}>Ricerca in corso...</Text>
               </View>
             )}
@@ -189,8 +189,8 @@ export function MpvpSearchBar({
               {/* Sezione CLIENTI */}
               {customerResults.length > 0 && (
                 <View>
-                  <View style={[s.sectionHeader, { backgroundColor: '#F5F3FF', borderBottomColor: '#EDE9FE' }]}>
-                    <Ionicons name="storefront" size={13} color="#7C3AED" />
+                  <View style={[s.sectionHeader, { backgroundColor: '#FFF7ED', borderBottomColor: '#FFF7ED' }]}>
+                    <Ionicons name="storefront" size={13} color="#C2410C" />
                     <Text style={[s.sectionHeaderText, { color: '#6D28D9' }]}>Clienti / Punti vendita</Text>
                   </View>
                   {customerResults.map((c) => (
@@ -200,8 +200,8 @@ export function MpvpSearchBar({
                       onPress={() => handleSelectCustomer(c)}
                       activeOpacity={0.7}
                     >
-                      <View style={[s.iconBubble, { backgroundColor: '#EDE9FE' }]}>
-                        <Ionicons name="storefront" size={14} color="#7C3AED" />
+                      <View style={[s.iconBubble, { backgroundColor: '#FFF7ED' }]}>
+                        <Ionicons name="storefront" size={14} color="#C2410C" />
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <View style={s.resultTitleRow}>
@@ -363,7 +363,7 @@ const s = StyleSheet.create({
     color: '#1F2937',
   },
   matchBadge: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FFF7ED',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,
@@ -371,7 +371,7 @@ const s = StyleSheet.create({
   matchBadgeText: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#7C3AED',
+    color: '#C2410C',
     letterSpacing: 0.3,
   },
   resultSub: {

@@ -109,7 +109,7 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/privacy-terms?readOnly=true')}>
             <View style={styles.menuIconContainer}>
-              <Ionicons name="shield-checkmark-outline" size={20} color="#1E40AF" />
+              <Ionicons name="shield-checkmark-outline" size={20} color="#C2410C" />
             </View>
             <Text style={styles.menuLabel}>Privacy e Termini</Text>
             <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   roleBadge: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#FFF7ED',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 20,

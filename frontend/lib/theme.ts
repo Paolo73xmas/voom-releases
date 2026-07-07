@@ -4,11 +4,11 @@
  */
 
 export const COLORS = {
-  // Brand
-  primary: '#1E40AF',
-  primaryDark: '#1E3A8A',
-  primaryLight: '#3B82F6',
-  primarySoft: '#EFF6FF',
+  // Brand — Terracotta (restyling giu 2026)
+  primary: '#C2410C',
+  primaryDark: '#9A3412',
+  primaryLight: '#EA580C',
+  primarySoft: '#FFF7ED',
 
   // Semantic
   success: '#10B981',
@@ -46,7 +46,7 @@ export const COLORS = {
 };
 
 export const GRADIENTS: Record<string, [string, string]> = {
-  primary: ['#3B82F6', '#1E40AF'],
+  primary: ['#EA580C', '#C2410C'],
   success: ['#10B981', '#059669'],
   warning: ['#F59E0B', '#D97706'],
   danger: ['#EF4444', '#DC2626'],
@@ -75,10 +75,10 @@ export const RADIUS = {
 };
 
 export const FONTS = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
+  regular: 'Jakarta_400',
+  medium: 'Jakarta_500',
+  semibold: 'Jakarta_600',
+  bold: 'Jakarta_700',
 };
 
 export const FONT_SIZE = {

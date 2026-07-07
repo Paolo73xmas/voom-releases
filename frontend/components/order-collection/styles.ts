@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#10B981',
   },
   stepDotCurrent: {
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
   },
   stepNumber: {
     fontSize: 12,
@@ -140,7 +140,7 @@ export const styles = StyleSheet.create({
   productRowPrice: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: '#C2410C',
   },
   productRowPriceRow: {
     flexDirection: 'row',
@@ -198,7 +198,7 @@ export const styles = StyleSheet.create({
     marginTop: 1,
   },
   addOneBtn: {
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -349,7 +349,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 16,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: '#C2410C',
     width: 110,
     textAlign: 'center',
   },
@@ -357,7 +357,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderRadius: 8,
     paddingVertical: 10,
     gap: 6,
@@ -399,7 +399,7 @@ export const styles = StyleSheet.create({
   },
   viewCartBtnText: {
     fontSize: 13,
-    color: '#1E40AF',
+    color: '#C2410C',
     fontWeight: '600',
   },
   cartModal: {
@@ -578,7 +578,7 @@ export const styles = StyleSheet.create({
   cashbackEligibleTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1E40AF',
+    color: '#C2410C',
   },
   cashbackEligibleProducts: {
     fontSize: 11,
@@ -713,12 +713,12 @@ export const styles = StyleSheet.create({
   spreadedPreviewTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: '#C2410C',
     marginBottom: 6,
   },
   spreadedPreviewItem: {
     fontSize: 11,
-    color: '#1E3A8A',
+    color: '#9A3412',
     marginBottom: 2,
   },
   spreadedPreviewItemExcluded: {
@@ -730,7 +730,7 @@ export const styles = StyleSheet.create({
   },
   // Cart Summary
   cartSummaryCard: {
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderRadius: 10,
     padding: 12,
     marginBottom: 10,
@@ -913,7 +913,7 @@ export const styles = StyleSheet.create({
   modalPriceValueBold: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: '#C2410C',
   },
   modalBadges: {
     flexDirection: 'row',
@@ -937,7 +937,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderRadius: 10,
     padding: 14,
     gap: 8,
@@ -960,7 +960,7 @@ export const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   optionCardSelected: {
-    borderColor: '#1E40AF',
+    borderColor: '#C2410C',
     backgroundColor: '#EEF2FF',
   },
   optionInfo: {
@@ -976,7 +976,7 @@ export const styles = StyleSheet.create({
     color: '#1F2937',
   },
   optionNameSelected: {
-    color: '#1E40AF',
+    color: '#C2410C',
   },
   optionDescription: {
     fontSize: 12,
@@ -1160,7 +1160,7 @@ export const styles = StyleSheet.create({
   },
   // Total
   totalSection: {
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
@@ -1231,7 +1231,7 @@ export const styles = StyleSheet.create({
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#C2410C',
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,

@@ -615,9 +615,9 @@ export default function AnagraficaScreen() {
               <Ionicons name="camera" size={28} color="#6B7280" />
               <Text style={styles.photoAddText}>Scatta</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.photoAdd, { borderColor: '#7C3AED' }]} onPress={handlePickFromGallery}>
-              <Ionicons name="images" size={28} color="#7C3AED" />
-              <Text style={[styles.photoAddText, { color: '#7C3AED' }]}>Galleria</Text>
+            <TouchableOpacity style={[styles.photoAdd, { borderColor: '#C2410C' }]} onPress={handlePickFromGallery}>
+              <Ionicons name="images" size={28} color="#C2410C" />
+              <Text style={[styles.photoAddText, { color: '#C2410C' }]}>Galleria</Text>
             </TouchableOpacity>
           </View>
           {photos.length < 2 && (
@@ -633,7 +633,7 @@ export default function AnagraficaScreen() {
       <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Search Tabaccheria Button */}
         <TouchableOpacity style={styles.searchTabBtn} onPress={() => setShowSearch(true)}>
-          <Ionicons name="search" size={18} color="#7C3AED" />
+          <Ionicons name="search" size={18} color="#C2410C" />
           <Text style={styles.searchTabBtnText}>Cerca Tabaccheria</Text>
         </TouchableOpacity>
 
@@ -704,7 +704,7 @@ export default function AnagraficaScreen() {
             const selected = customerTypes.find(t => t.value === form.customerType);
             return (
               <>
-                <Ionicons name="business" size={18} color="#1E40AF" />
+                <Ionicons name="business" size={18} color="#C2410C" />
                 <Text style={styles.projectPickerText}>
                   {selected?.label || (customerTypes.length === 0 ? 'Caricamento...' : 'Seleziona tipo')}
                 </Text>
@@ -745,10 +745,10 @@ export default function AnagraficaScreen() {
       {/* Follow-up */}
       <Text style={styles.sectionTitle}>Follow-up</Text>
       <View style={styles.phoneToggleRow}>
-        <Ionicons name="calendar" size={20} color="#7C3AED" />
+        <Ionicons name="calendar" size={20} color="#C2410C" />
         <Text style={styles.phoneToggleLabel}>Pianifica appuntamento</Text>
         <Switch value={scheduleAppointment} onValueChange={setScheduleAppointment}
-          trackColor={{ false: '#E5E7EB', true: '#C4B5FD' }} thumbColor={scheduleAppointment ? '#7C3AED' : '#9CA3AF'} />
+          trackColor={{ false: '#E5E7EB', true: '#FED7AA' }} thumbColor={scheduleAppointment ? '#C2410C' : '#9CA3AF'} />
       </View>
       {scheduleAppointment && (
         <View>
@@ -851,7 +851,7 @@ export default function AnagraficaScreen() {
                 onChangeText={setSearchNumOrdinale} placeholderTextColor="#9CA3AF" keyboardType="numeric" />
             </View>
             {searchLoading ? (
-              <ActivityIndicator style={{ marginTop: 20 }} color="#7C3AED" size="large" />
+              <ActivityIndicator style={{ marginTop: 20 }} color="#C2410C" size="large" />
             ) : (
               <FlatList
                 data={searchResults}
@@ -931,7 +931,7 @@ export default function AnagraficaScreen() {
                   style={[styles.projectItem, form.customerType === t.value && styles.projectItemActive]}
                   onPress={() => { setForm(prev => ({ ...prev, customerType: t.value })); setShowCustomerTypePicker(false); }}
                 >
-                  <Ionicons name="business-outline" size={18} color="#1E40AF" />
+                  <Ionicons name="business-outline" size={18} color="#C2410C" />
                   <Text style={styles.projectItemText}>{t.label}</Text>
                   {form.customerType === t.value && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
                 </TouchableOpacity>
@@ -985,17 +985,17 @@ const styles = StyleSheet.create({
   stepItem: { alignItems: 'center', gap: 4 },
   stepCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' },
   stepDone: { backgroundColor: '#10B981' },
-  stepActive: { backgroundColor: '#7C3AED' },
+  stepActive: { backgroundColor: '#C2410C' },
   stepNum: { fontSize: 12, fontWeight: '700', color: '#9CA3AF' },
   stepNumActive: { color: '#FFF' },
   stepLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
-  stepLabelActive: { color: '#7C3AED', fontWeight: '700' },
+  stepLabelActive: { color: '#C2410C', fontWeight: '700' },
   stepContent: { flex: 1, paddingHorizontal: 16 },
   // Phone toggle
   phoneToggleRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, gap: 10, marginBottom: 12 },
-  phoneToggleLabel: { flex: 1, fontSize: 14, color: '#1E40AF', fontWeight: '600' },
+  phoneToggleLabel: { flex: 1, fontSize: 14, color: '#C2410C', fontWeight: '600' },
   infoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#DBEAFE', borderRadius: 10, padding: 12, gap: 8, marginBottom: 12 },
-  infoBoxText: { flex: 1, fontSize: 12, color: '#1E40AF' },
+  infoBoxText: { flex: 1, fontSize: 12, color: '#C2410C' },
   // GPS
   gpsButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#3B82F6', borderRadius: 12, paddingVertical: 14, gap: 8, marginBottom: 12 },
   gpsButtonText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
@@ -1020,13 +1020,13 @@ const styles = StyleSheet.create({
   validationHint: { fontSize: 12, color: '#D97706', marginBottom: 8 },
   typeRow: { flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' },
   typeBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
-  typeBtnActive: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  typeBtnActive: { backgroundColor: '#C2410C', borderColor: '#C2410C' },
   typeBtnText: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
   typeBtnTextActive: { color: '#FFF' },
   textArea: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: '#1F2937', minHeight: 80 },
   // Search button
-  searchTabBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3E8FF', borderRadius: 12, paddingVertical: 14, gap: 8, marginBottom: 12, marginTop: 4 },
-  searchTabBtnText: { fontSize: 14, fontWeight: '600', color: '#7C3AED' },
+  searchTabBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF7ED', borderRadius: 12, paddingVertical: 14, gap: 8, marginBottom: 12, marginTop: 4 },
+  searchTabBtnText: { fontSize: 14, fontWeight: '600', color: '#C2410C' },
   // Summary
   summaryCard: { backgroundColor: '#FFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB' },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
@@ -1036,7 +1036,7 @@ const styles = StyleSheet.create({
   bottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#E5E7EB', backgroundColor: '#FFF' },
   prevBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 12, paddingHorizontal: 16 },
   prevBtnText: { fontSize: 14, color: '#6B7280', fontWeight: '600' },
-  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#7C3AED', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },
+  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#C2410C', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },
   nextBtnDisabled: { opacity: 0.4 },
   nextBtnText: { fontSize: 14, fontWeight: '600', color: '#FFF' },
   submitBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#10B981', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },

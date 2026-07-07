@@ -411,7 +411,7 @@ export default function RimborsiScreen() {
   if (loading) {
     return (
       <View style={s.loading}>
-        <ActivityIndicator size="large" color="#1E40AF" />
+        <ActivityIndicator size="large" color="#C2410C" />
       </View>
     );
   }
@@ -567,9 +567,9 @@ export default function RimborsiScreen() {
                         disabled={processingPhoto}
                       >
                         {processingPhoto ? (
-                          <ActivityIndicator size="small" color="#1E40AF" />
+                          <ActivityIndicator size="small" color="#C2410C" />
                         ) : (
-                          <Ionicons name="camera" size={20} color="#1E40AF" />
+                          <Ionicons name="camera" size={20} color="#C2410C" />
                         )}
                         <Text style={s.photoBtnTxt}>
                           {processingPhoto ? 'Elaborazione...' : 'Scatta Foto'}
@@ -581,9 +581,9 @@ export default function RimborsiScreen() {
                         disabled={processingPhoto}
                       >
                         {processingPhoto ? (
-                          <ActivityIndicator size="small" color="#1E40AF" />
+                          <ActivityIndicator size="small" color="#C2410C" />
                         ) : (
-                          <Ionicons name="images" size={20} color="#1E40AF" />
+                          <Ionicons name="images" size={20} color="#C2410C" />
                         )}
                         <Text style={s.photoBtnTxt}>
                           {processingPhoto ? 'Elaborazione...' : 'Galleria'}
@@ -645,7 +645,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: '#FFF',
     marginRight: 8, borderWidth: 1, borderColor: '#E5E7EB',
   },
-  chipActive: { backgroundColor: '#1E40AF', borderColor: '#1E40AF' },
+  chipActive: { backgroundColor: '#C2410C', borderColor: '#C2410C' },
   chipTxt: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
   chipTxtActive: { color: '#FFF' },
   card: {
@@ -658,7 +658,7 @@ const s = StyleSheet.create({
   statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 4 },
   statusText: { fontSize: 11, fontWeight: '600' },
-  amount: { fontSize: 24, fontWeight: '700', color: '#1E40AF', marginVertical: 6 },
+  amount: { fontSize: 24, fontWeight: '700', color: '#C2410C', marginVertical: 6 },
   desc: { fontSize: 13, color: '#4B5563', marginTop: 4 },
   attRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 8, padding: 8, marginTop: 10 },
   attImg: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#E5E7EB' },
@@ -667,7 +667,7 @@ const s = StyleSheet.create({
   noteAdmin: {
     flexDirection: 'row', backgroundColor: '#EFF6FF', borderRadius: 8, padding: 8, marginTop: 10, gap: 6,
   },
-  noteAdminTxt: { fontSize: 12, color: '#1E40AF', flex: 1 },
+  noteAdminTxt: { fontSize: 12, color: '#C2410C', flex: 1 },
   deleteBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingVertical: 8, marginTop: 10, gap: 6, borderRadius: 8,
@@ -707,10 +707,10 @@ const s = StyleSheet.create({
   gpsBadgeTxt: { fontSize: 11, color: '#FFF' },
   photoBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 12, borderRadius: 10, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE',
+    paddingVertical: 12, borderRadius: 10, backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#FED7AA',
   },
   photoBtnDisabled: { opacity: 0.6, backgroundColor: '#F3F4F6', borderColor: '#D1D5DB' },
-  photoBtnTxt: { fontSize: 14, fontWeight: '600', color: '#1E40AF' },
+  photoBtnTxt: { fontSize: 14, fontWeight: '600', color: '#C2410C' },
   submitBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#10B981', paddingVertical: 14, borderRadius: 12, marginTop: 16,

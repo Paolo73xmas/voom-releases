@@ -28,7 +28,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   pending: { label: 'In Attesa', color: '#92400E', bg: '#FEF3C7', icon: 'time-outline' },
   approved: { label: 'Approvata', color: '#065F46', bg: '#D1FAE5', icon: 'checkmark-circle-outline' },
   rejected: { label: 'Rifiutata', color: '#991B1B', bg: '#FEE2E2', icon: 'close-circle-outline' },
-  completed: { label: 'Completata', color: '#1E40AF', bg: '#DBEAFE', icon: 'shield-checkmark-outline' },
+  completed: { label: 'Completata', color: '#1D4ED8', bg: '#DBEAFE', icon: 'shield-checkmark-outline' },
 };
 
 interface Product { id: string; name: string; sku: string | null; short_description?: string; unit_price?: number | null; stock_quantity?: number | null }
@@ -365,7 +365,7 @@ export default function SubstitutionsScreen() {
           {createStep === 0 && (<>
             <Text style={st.formLabel}>Seleziona Cliente</Text>
             <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca cliente..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor="#9CA3AF" /></View>
-            {selectedCustomer && <View style={st.selectedPill}><Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#1E40AF' }}>{selectedCustomer.business_name}</Text><TouchableOpacity onPress={() => setSelectedCustomer(null)}><Ionicons name="close-circle" size={18} color="#1E40AF" /></TouchableOpacity></View>}
+            {selectedCustomer && <View style={st.selectedPill}><Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#C2410C' }}>{selectedCustomer.business_name}</Text><TouchableOpacity onPress={() => setSelectedCustomer(null)}><Ionicons name="close-circle" size={18} color="#C2410C" /></TouchableOpacity></View>}
             <FlatList data={(customerSearch.length >= 2 ? customers.filter(c => c.business_name.toLowerCase().includes(customerSearch.toLowerCase())) : customers).slice(0, 30)} keyExtractor={c => c.id} scrollEnabled={false}
               renderItem={({ item: c }) => (<TouchableOpacity style={[st.listItem, selectedCustomer?.id === c.id && st.listItemSelected]} onPress={() => setSelectedCustomer(c)}><Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>{c.business_name}</Text><Text style={{ fontSize: 11, color: '#9CA3AF' }}>{c.city}{c.province ? ` (${c.province})` : ''}</Text></TouchableOpacity>)} />
           </>)}
@@ -426,7 +426,7 @@ export default function SubstitutionsScreen() {
           renderItem={({ item: p }) => (
             <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }} onPress={() => selectProduct(p.id)}>
               <View style={{ flex: 1 }}><Text style={{ fontSize: 13, fontWeight: '600', color: '#1F2937' }} numberOfLines={1}>{p.short_description || p.name}</Text>{p.sku && <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{p.sku}</Text>}</View>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E40AF' }}>{p.unit_price != null ? formatCurrency(Number(p.unit_price)) : ''}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#C2410C' }}>{p.unit_price != null ? formatCurrency(Number(p.unit_price)) : ''}</Text>
             </TouchableOpacity>
           )} />
         <TouchableOpacity style={{ padding: 16, alignItems: 'center' }} onPress={() => setShowProductPicker(false)}><Text style={{ color: '#6B7280', fontWeight: '600' }}>Annulla</Text></TouchableOpacity>
@@ -440,7 +440,7 @@ export default function SubstitutionsScreen() {
       <View style={st.header}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}><Ionicons name="arrow-back" size={24} color="#FFF" /></TouchableOpacity>
         <Text style={st.headerTitle}>Sostituzioni</Text>
-        <TouchableOpacity onPress={openCreate} style={{ backgroundColor: '#FFF', borderRadius: 8, padding: 6 }}><Ionicons name="add" size={20} color="#1E40AF" /></TouchableOpacity>
+        <TouchableOpacity onPress={openCreate} style={{ backgroundColor: '#FFF', borderRadius: 8, padding: 6 }}><Ionicons name="add" size={20} color="#C2410C" /></TouchableOpacity>
       </View>
 
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
@@ -456,7 +456,7 @@ export default function SubstitutionsScreen() {
         </ScrollView>
       </View>
 
-      {loading ? <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#1E40AF" /></View> : (
+      {loading ? <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#C2410C" /></View> : (
         <FlashList data={filtered} renderItem={renderSubCard} keyExtractor={s => s.id} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} refreshing={refreshing} onRefresh={onRefresh}
           ListEmptyComponent={<View style={{ alignItems: 'center', marginTop: 60 }}><Ionicons name="swap-horizontal-outline" size={48} color="#D1D5DB" /><Text style={{ fontSize: 16, fontWeight: '600', color: '#6B7280', marginTop: 12 }}>Nessuna sostituzione</Text></View>} />
       )}
@@ -469,12 +469,12 @@ export default function SubstitutionsScreen() {
 
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1E40AF', paddingHorizontal: 16, paddingVertical: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#C2410C', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8, borderWidth: 1, borderColor: '#E5E7EB' },
   searchInput: { flex: 1, fontSize: 13, color: '#1F2937' },
   filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#FFF', marginRight: 6, borderWidth: 1, borderColor: '#E5E7EB' },
-  filterChipActive: { backgroundColor: '#1E40AF', borderColor: '#1E40AF' },
+  filterChipActive: { backgroundColor: '#C2410C', borderColor: '#C2410C' },
   filterChipText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
   filterChipTextActive: { color: '#FFF' },
   card: { backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E5E7EB' },
@@ -501,20 +501,20 @@ const st = StyleSheet.create({
   pickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F9FAFB', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 12, paddingVertical: 12 },
   qtyBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   addItemBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB', marginTop: 6 },
-  wizHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1E40AF', paddingHorizontal: 16, paddingVertical: 12 },
+  wizHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#C2410C', paddingHorizontal: 16, paddingVertical: 12 },
   wizTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
   stepIndicators: { flexDirection: 'row', justifyContent: 'center', gap: 10, paddingVertical: 12, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
   stepDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-  stepDotActive: { backgroundColor: '#1E40AF' },
+  stepDotActive: { backgroundColor: '#C2410C' },
   stepDotText: { fontSize: 12, fontWeight: '700', color: '#9CA3AF' },
   stepDotTextActive: { color: '#FFF' },
   formLabel: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 8 },
   input: { backgroundColor: '#FFF', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#1F2937' },
-  selectedPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#EFF6FF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10, borderWidth: 1, borderColor: '#BFDBFE' },
+  selectedPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFF7ED', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10, borderWidth: 1, borderColor: '#FED7AA' },
   listItem: { backgroundColor: '#FFF', borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: '#E5E7EB' },
-  listItemSelected: { borderColor: '#1E40AF', backgroundColor: '#EFF6FF' },
+  listItemSelected: { borderColor: '#C2410C', backgroundColor: '#FFF7ED' },
   wizBottom: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
   wizBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 12 },
-  wizNextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#1E40AF', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 12 },
+  wizNextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#C2410C', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 12 },
   wizSubmitBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 12 },
 });

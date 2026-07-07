@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
   searchResult: {
     fontSize: 12,
-    color: '#1E40AF',
+    color: '#C2410C',
     fontWeight: '600',
     marginTop: 4,
     marginLeft: 4,
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
   totalAmount: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1E40AF',
+    color: '#C2410C',
   },
   chevron: {
     position: 'absolute',

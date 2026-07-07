@@ -76,7 +76,7 @@ export default function DraftsScreen() {
 
       <View style={styles.cardBody}>
         <View style={styles.infoPill}>
-          <Ionicons name="cube-outline" size={14} color="#1E40AF" />
+          <Ionicons name="cube-outline" size={14} color="#C2410C" />
           <Text style={styles.infoPillText}>{item.productCount} prodotti</Text>
         </View>
         <View style={styles.infoPill}>
@@ -96,7 +96,7 @@ export default function DraftsScreen() {
       </View>
 
       <View style={styles.resumeRow}>
-        <Ionicons name="play-circle" size={18} color="#1E40AF" />
+        <Ionicons name="play-circle" size={18} color="#C2410C" />
         <Text style={styles.resumeText}>Tocca per riprendere</Text>
         <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
       </View>
@@ -133,7 +133,7 @@ export default function DraftsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1E40AF', paddingHorizontal: 16, paddingVertical: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#C2410C', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
@@ -141,10 +141,10 @@ const styles = StyleSheet.create({
   dateText: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
   deleteBtn: { padding: 8, marginTop: -4, marginRight: -4 },
   cardBody: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  infoPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EFF6FF', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  infoPillText: { fontSize: 12, fontWeight: '600', color: '#1E40AF' },
+  infoPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF7ED', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  infoPillText: { fontSize: 12, fontWeight: '600', color: '#C2410C' },
   resumeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
-  resumeText: { flex: 1, fontSize: 13, fontWeight: '600', color: '#1E40AF' },
+  resumeText: { flex: 1, fontSize: 13, fontWeight: '600', color: '#C2410C' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
   emptyTitle: { fontSize: 18, fontWeight: '600', color: '#6B7280', marginTop: 16 },
   emptySubtitle: { fontSize: 13, color: '#9CA3AF', marginTop: 8, textAlign: 'center', lineHeight: 20 },

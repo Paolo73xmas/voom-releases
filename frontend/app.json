@@ -24,7 +24,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#1E40AF"
+        "backgroundColor": "#C2410C"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.voom.crm",
@@ -46,10 +46,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/splash-image.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#1E40AF"
+          "backgroundColor": "#C2410C"
         }
       ],
       "expo-location",

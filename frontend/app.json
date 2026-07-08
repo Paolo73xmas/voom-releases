@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.voom.crm",
+      "bundleIdentifier": "app.emergent.voomioscdc30962",
       "buildNumber": "1",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Per registrare visite, ispezioni e georeferenziare i rimborsi",

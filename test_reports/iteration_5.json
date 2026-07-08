@@ -1,0 +1,30 @@
+{
+  "summary": "Deploy-config check + smoke test post fix bundleIdentifier iOS. TUTTI I CONTROLLI PASSATI: (1) /app/frontend/app.json JSON valido, contiene expo.name='VOOM crm', slug='voom-crm', version='3.0.1', ios.bundleIdentifier='app.emergent.voomioscdc30962', ios.buildNumber='1', tutti gli asset (icon.png, adaptive-icon.png, favicon.png, splash-image.png) presenti in ./assets/images/. (2) /app/frontend/eas.json JSON valido, submit.production.ios.ascAppId='6764538786'. (3) 'npx expo config --type public' esegue senza errori (exit code 0) e restituisce name='VOOM crm', version='3.0.1', ios.bundleIdentifier='app.emergent.voomioscdc30962', ios.buildNumber='1'. (4) SMOKE FUNZIONALE: privacy screen (3 checkbox Dichiaro) + Accetta e Continua funzionano; login con admin1@voomweb.it/Test123! ok; Dashboard mostra Admin Test 1 con PANORAMICA (2813 Clienti, 200 Ordini, 100 Visite, 0 In attesa) e VENDUTO — LUGLIO 2026 (€4,40 netto, ACCISA €0,70, IVA €0,97, LORDO €6,07, 1 ordini); tab Mappa carica marker (563 punti • 6 • 2 • 555, legenda visibile, mappa Roma renderizzata); tab Clienti carica lista (2813 di 2813 clienti con RIVENDITA/TABACCHERIA e badge Cliente/Prospect); tab Altro apre menu (Ordini, Prodotti, Calendario, Profilo, Bozze Ordine, Sostituzioni, Rimborsi, ecc.). NESSUN errore console al boot (0 errori, solo i warning noti shadow*/pointerEvents da ignorare). Nessuna regressione osservata rispetto a iteration_3/iteration_4. La configurazione è pronta per Publish/EAS submit.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/dashboard.png",
+    "/tmp/mappa_screen.png",
+    "/tmp/clienti_screen.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Nota informativa (non blocca il rilascio iOS): sul web preview document.title risulta vuoto e non è presente <link rel=manifest>. Comportamento tipico di Expo Router su web (il titolo viene gestito dallo Stack.Screen a runtime, la manifest PWA non è generata automaticamente in export dev). Non impatta il bundleIdentifier/versione iOS che è l'oggetto del fix. Se si vuole PWA-friendly, valutare l'aggiunta di web.name nel app.json.",
+    "eas.json contiene ancora i placeholder 'YOUR_APPLE_ID_HERE' e 'YOUR_APPLE_TEAM_ID_HERE' per submit.production.ios.appleId/appleTeamId. Vanno valorizzati prima del comando `eas submit`, altrimenti la submit fallirà. L'ascAppId è invece correttamente impostato a 6764538786."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped, dati Supabase remoto)", "frontend": "100%"},
+  "seed_data_creation": "Nessuno",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "app.json e eas.json validati per bundleIdentifier=app.emergent.voomioscdc30962 (App Store ID 6764538786, v3.0.1 build 1). Smoke test frontend completo: privacy → login admin1@voomweb.it/Test123! → Dashboard (2813 clienti, 200 ordini, VENDUTO LUGLIO 2026 €4,40) → Mappa (563 marker Roma) → Clienti (lista 2813) → Altro (menu completo). Warning noti da ignorare: shadow* deprecated, pointerEvents deprecated. Attendere ~10s dopo goto per splash, ~9s dopo login. Il pulsante 'Accedi' appare due volte nel DOM (titolo + submit): usare `.last`. Documento.title vuoto è normale su Expo web.",
+  "rca_of_issue": "N/A - questo iteration è una verifica di configurazione post-fix (bundleIdentifier per allineamento App Store Connect ID 6764538786) e smoke test funzionale. Nessun bug riscontrato."
+}

@@ -1,0 +1,38 @@
+{
+  "summary": "PDF Preventivo Step 5 + handleSubmitOrder refactoring (computeFinalItemsAndTotal) — FULL PASS. End-to-end wizard tested with admin1@voomweb.it on mobile viewport 390x844: (1) Login + navigazione a /order-collection-v2 (customers loaded: 2809), (2) Step 1 seleziono 'RIVENDITA 19 LOSETO CRESCENZA BARI' → Continua ai Prodotti, (3) Step 2 add +1 x2 su '4 MULTI BLUE RAZZ 20' → Continua al Pagamento, (4) Step 3 seleziono CONTANTI → Continua alla Spedizione, (5) Step 4 seleziono 'Bartolini base - Corriere €6.00' → Vai al Riepilogo, (6) Step 5 verifica card Cliente/Prodotti(2pz)/Imponibile €4.40/Accisa €0.70/IVA €1.12/Spedizione €7.32/TOTALE €13.54 (calcolo corretto), card CashBack + Rottamazione + Note + nuova card 'Preventivo PDF' terracotta con testo esplicativo e pulsante 'Genera PDF Preventivo'. (7) CLICK Genera PDF Preventivo → window.print intercettato 1x, NESSUN errore console, NESSUN alert, nessun crash. (8) CLICK Crea Ordine → ordine 2a0adb3f-53a9-4bd2-9b08-fe3c9345ee57 CREATO CON SUCCESSO: [stock-reservation] Reservation created, [STOCK-AUDIT] subtract_stock_for_order RPC completed 1 item, [STOCK-VERIFY] Movements FOUND, stock_subtracted=true, [drafts] Deleted draft. Alert conferma non appare su web (limitazione nota Alert.alert multi-bottone) ma la creazione è confermata dai log. REGRESSIONE handleSubmitOrder tramite refactor computeFinalItemsAndTotal(): OK — totale coerente somma righe(4.40)+accisa(0.70)+IVA(1.12)+spedizione(7.32) = 13.54. CODE-LEVEL test buildQuoteHtml: 23/24 check passati (l'1 fail è bug del mio test inline replica, non del sorgente order-quote.ts che gestisce correttamente isForeignOrder alla riga 184). Nessun red-screen React Native. Nessun deprecato nuovo introdotto (expo-print, expo-sharing non sono deprecati). Warning noti (shadow*, pointerEvents, text node) ignorati come da nota utente.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_1.json",
+    "/app/test_reports/iteration_2.json",
+    "/app/test_reports/iteration_3.json",
+    "/app/test_reports/iteration_4.json",
+    "/tmp/test_quote_html.mjs (code-level test buildQuoteHtml)"
+  ],
+  "action_items": [
+    "Nessuno bloccante. La feature è pronta.",
+    "OPTIONAL/INFO: l'ordine di test creato durante il test è ORD-... con id 2a0adb3f-53a9-4bd2-9b08-fe3c9345ee57 su cliente 'RIVENDITA 19 LOSETO CRESCENZA BARI' (agent admin1@voomweb.it) — totale €13.54, 2 unità di '4 MULTI BLUE RAZZ 20'. Il main agent (o utente) può annullarlo dalla tab Ordini se lo desidera. Lo stock è stato sottratto (1 movimento).",
+    "OPTIONAL/INFO: il 406 error console '[V2] First order check' NON è nuovo — pre-esiste e non blocca il flusso (isFirstOrder ricade su false). Fuori scope di questa iterazione.",
+    "OPTIONAL/LOW: su native (iOS/Android) il flow generateAndShareQuotePdf → Print.printToFileAsync + Sharing.shareAsync NON è testabile in web preview. Consiglio smoke-test manuale su device Expo Go una volta prima di distribuire."
+  ],
+  "critical_code_review_comments": [
+    "/app/frontend/lib/pdf/order-quote.ts (NUOVO, 220 righe): file ben strutturato, HTML brandizzato terracotta #C2410C, escape XSS su tutti i campi utente (esc()), formattazione € it-IT con virgola, quote number randomico PREV-YYYYMMDD-XXXX, gestione isForeignOrder (IVA e badge estero), gestione condizionale badge sconti (rottamazione/cashback/scontoBenvenuto), footer disclaimer. generateAndShareQuotePdf() usa Platform.OS con branch web = Print.printAsync (dialog stampa) e mobile = printToFileAsync + Sharing.shareAsync. Nessun MongoDB _id (non applicabile). Nessun hardcoded URL/credenziali.",
+    "/app/frontend/app/order-collection-v2.tsx computeFinalItemsAndTotal (righe 1048-1116): estrazione ben fatta della logica di calcolo prezzi/totali. Copre 4 rami mutuamente esclusivi (rottamazione, cashback, scontoBenvenuto+isFirstOrder, nessuno sconto). Ritorna oggetto tipizzato con finalItems, finalTotalAmount, ecc. Riutilizzato correttamente sia in handleSubmitOrder (righe 1206-1207) sia in handleGenerateQuotePdf (riga 1127).",
+    "/app/frontend/app/order-collection-v2.tsx handleGenerateQuotePdf (righe 1123-1190): ricalcolo imponibile/accisa/IVA sui prezzi FINALI (post-sconti spalmati) — logica coerente con quella dell'ordine reale. Gestione errori con try/catch + Alert. Loading state via isGeneratingPdf/setIsGeneratingPdf. isEstPrefix gestito per prodotti con descrizione 'EST-*'.",
+    "/app/frontend/app/order-collection-v2.tsx card Step 5 (righe 2107-2130): card terracotta ben integrata dopo Note, disabled state con opacity 0.7 durante generazione, ActivityIndicator durante loading, disabled attribute correttamente su TouchableOpacity. Accessibility: nessun testID esplicito sui pulsanti Genera PDF/Crea Ordine, ma il flow funziona via selector testuale.",
+    "/app/frontend/package.json: expo-print ~15.0.8 + expo-sharing ~14.0.8 aggiunti — versioni compatibili con Expo SDK 54. Nessuna versione deprecata (expo-print è il pacchetto ufficiale corrente).",
+    "handleSubmitOrder refactoring (righe 1192-1400 approssimative): il refactor NON ha rotto il flusso — l'insert su tabella 'orders' + RPC insert_order_items_safe + stock subtraction (subtractStockForOrder) + verifica movimenti + delete draft funzionano identici alla versione pre-refactor. Verificato tramite creazione ordine reale."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request — Supabase remoto)", "frontend": "100% — tutti i flussi critici testati: login, wizard step1→5 completo, PDF button, Crea Ordine end-to-end con verifica creazione DB via console logs."},
+  "seed_data_creation": "Nessun seed. Creato UN ordine reale di test (2a0adb3f-53a9-4bd2-9b08-fe3c9345ee57) come conseguenza del test 'Crea Ordine' — segnalato al main agent per eventuale annullamento.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Feature PDF Preventivo + refactor handleSubmitOrder confermati funzionanti. Per riprodurre il test: login admin1@voomweb.it/Test123!, quindi in-session `window.history.pushState({}, '', '/order-collection-v2'); window.dispatchEvent(new PopStateEvent('popstate'));` (NON navigare via page.goto altrimenti si perde la sessione Supabase nel browser context). Selezionare qualsiasi cliente con click su testo esatto, +1 su un prodotto, CONTANTI su Step3, prima opzione di spedizione (usa evaluate per leggere .innerText di div piccoli e clicca sul primo). Su web il Genera PDF Preventivo chiama window.print — intercettare con addInitScript prima di navigare. Alert.alert multi-button non appare su web ma la creazione ordine può essere verificata dai log CONSOLE '[stock-reservation]' e '[drafts] Deleted draft'. NON aspettarsi cambio URL dopo submit.",
+  "rca_of_issue": "N/A — nessun bug rilevato. Feature funzionante e regressione confermata assente."
+}

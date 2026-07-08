@@ -21,6 +21,7 @@ import { subtractStockForOrder, verifyAndSetStockSubtracted, subtractBranchStock
 import { fetchOrderById } from '../lib/api/orders';
 import { processCashBackUsage, processCashBackAccumulation } from '../lib/api/cashback';
 import { saveDraft, deleteDraft, getDrafts, generateDraftId, OrderDraft } from '../lib/drafts';
+import { generateAndShareQuotePdf } from '../lib/pdf/order-quote';
 import { useVirtualBranch } from '../hooks/useVirtualBranch';
 import type { AvailableStockMap } from '../types/reservation';
 
@@ -188,7 +189,7 @@ const NEXT_LABELS = ['Continua ai Prodotti', 'Continua al Pagamento', 'Continua 
 export default function OrderCollectionV2() {
   const router = useRouter();
   const params = useLocalSearchParams<{ draftId?: string; duplicateOrderId?: string; customerId?: string; customerName?: string }>();
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const insets = useSafeAreaInsets();
   // ✅ Web parity: Virtual branches use central warehouse stock (no branch overlay)
   // ✅ Web parity: estero_orders_enabled flag controls visibility of "Italia/Estero" toggle
@@ -267,6 +268,9 @@ export default function OrderCollectionV2() {
   // ── Draft system ──
   const [draftId, setDraftId] = useState<string>(generateDraftId());
   const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // ── PDF Preventivo ──
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   // Auto-save draft when step changes or cart changes (only from step 1 onward with a customer)
   const autoSaveDraft = useCallback(async () => {
@@ -1036,6 +1040,155 @@ export default function OrderCollectionV2() {
   // ORDER SUBMISSION (matching web app logic exactly)
   // ═══════════════════════════════════════════════════
 
+  /**
+   * ✅ Calcola gli items finali con i prezzi spalmati (rottamazione/cashback/sconto benvenuto)
+   * e il totale finale. Stessa identica logica usata sia per la creazione dell'ordine
+   * che per il PDF preventivo.
+   */
+  const computeFinalItemsAndTotal = () => {
+    const isRottamazione = rottamazioneAmount > 0;
+    const isUsingCashBack = !isRottamazione && cashBackToUse > 0;
+
+    // ── Build items with prices adjusted for rottamazione/cashback ──
+    let finalItems: Array<{ product_id: string; quantity: number; unit_price: number; discount_percent: number; original_unit_price?: number }>;
+
+    if (isRottamazione) {
+      const netAmount = getRottamazioneNetAmount(rottamazioneAmount);
+      const eligibleItems = cart.filter(c => c.product.rottamazione_no !== true);
+      if (eligibleItems.length > 0) {
+        const eligible = eligibleItems.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
+        const excluded = cart.filter(c => c.product.rottamazione_no === true);
+        const distributed = distributeDiscountToItems(eligible, netAmount);
+        finalItems = [
+          ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 0, original_unit_price: d.original_unit_price })),
+          ...excluded.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 })),
+        ];
+      } else {
+        finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
+      }
+    } else if (isUsingCashBack) {
+      const eligible = cart.filter(c => c.product.cashback_eligible === true);
+      const nonEligible = cart.filter(c => c.product.cashback_eligible !== true);
+      if (eligible.length > 0) {
+        const eligibleMapped = eligible.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
+        const distributed = distributeDiscountToItems(eligibleMapped, cashBackToUse);
+        finalItems = [
+          ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 0, original_unit_price: d.original_unit_price })),
+          ...nonEligible.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 })),
+        ];
+      } else {
+        finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
+      }
+    } else if (scontoBenvenuto && isFirstOrder) {
+      // Sconto Benvenuto: 25% on rottamazione-eligible products
+      const eligible = cart.filter(c => c.product.rottamazione_no !== true);
+      const excluded = cart.filter(c => c.product.rottamazione_no === true);
+      const discountAmount = eligible.reduce((s, c) => s + c.unit_price * c.quantity, 0) * 0.25;
+      if (eligible.length > 0 && discountAmount > 0) {
+        const eligibleMapped = eligible.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
+        const distributed = distributeDiscountToItems(eligibleMapped, discountAmount);
+        finalItems = [
+          ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 25, original_unit_price: d.original_unit_price })),
+          ...excluded.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 })),
+        ];
+      } else {
+        finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
+      }
+    } else {
+      finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
+    }
+
+    // ── Calculate total_amount (matching web app: with IVA + Accisa, EST- aware) ──
+    let itemsTotal = 0;
+    for (const oi of finalItems) {
+      const product = cart.find(c => c.product.id === oi.product_id)?.product;
+      const accisa = product?.accisa || 0;
+      const iva = product?.iva_percentage || 0;
+      itemsTotal += calculateLineTotal(oi.quantity, oi.unit_price, accisa, iva, isForeignOrder, product?.short_description);
+    }
+
+    const shippingMethod = shippingMethods.find(sm => sm.id === selectedShipping);
+    const shippingBase = shippingMethod?.cost || 0;
+    const shippingWithVAT = getShippingCostWithVAT(shippingBase, isForeignOrder);
+    const finalTotalAmount = Math.round((itemsTotal + shippingWithVAT) * 100) / 100;
+
+    return { finalItems, isRottamazione, isUsingCashBack, itemsTotal, shippingMethod, shippingBase, shippingWithVAT, finalTotalAmount };
+  };
+
+  /**
+   * ✅ PDF Preventivo: genera un PDF con il riepilogo (prezzi finali post-sconti)
+   * e apre lo share sheet. La bozza resta salvata (auto-save), quindi l'agente può
+   * consegnare il preventivo al cliente e creare l'ordine in un secondo momento.
+   */
+  const handleGenerateQuotePdf = async () => {
+    if (!selectedCustomer || cart.length === 0) return;
+    setIsGeneratingPdf(true);
+    try {
+      const { finalItems, shippingMethod, shippingWithVAT, finalTotalAmount } = computeFinalItemsAndTotal();
+      const r2 = (v: number) => Math.round(v * 100) / 100;
+
+      // Totali ricalcolati sui prezzi FINALI (post sconti spalmati)
+      let imponibile = 0, accisaTotal = 0, ivaTotal = 0;
+      const quoteItems = finalItems.map(fi => {
+        const p = cart.find(c => c.product.id === fi.product_id)!.product;
+        const isEstPrefix = isEsteroDescription(p.short_description);
+        const accisaLine = isEstPrefix ? 0 : (p.accisa || 0) * fi.quantity;
+        const base = fi.unit_price * fi.quantity;
+        imponibile += base;
+        accisaTotal += accisaLine;
+        if (!(isForeignOrder || isEstPrefix)) {
+          ivaTotal += (base + accisaLine) * ((p.iva_percentage || 0) / 100);
+        }
+        return {
+          name: p.short_description || p.name,
+          sku: p.sku || '',
+          quantity: fi.quantity,
+          unitPrice: fi.unit_price,
+          originalUnitPrice: fi.original_unit_price,
+          lineTotal: r2(calculateLineTotal(fi.quantity, fi.unit_price, p.accisa || 0, p.iva_percentage || 0, isForeignOrder, p.short_description)),
+        };
+      });
+
+      const paymentMethod = paymentMethods.find(pm => pm.id === selectedPayment);
+
+      await generateAndShareQuotePdf({
+        customer: {
+          businessName: selectedCustomer.business_name,
+          address: [selectedCustomer.address, selectedCustomer.postal_code, selectedCustomer.city, selectedCustomer.province ? `(${selectedCustomer.province})` : ''].filter(Boolean).join(' '),
+          vatNumber: selectedCustomer.vat_number || '',
+          fiscalCode: selectedCustomer.fiscal_code || '',
+        },
+        agentName: profile?.full_name || user?.email || '',
+        agentEmail: profile?.email || user?.email || '',
+        isForeignOrder,
+        items: quoteItems,
+        totals: {
+          imponibile: r2(imponibile),
+          accisa: r2(accisaTotal),
+          iva: r2(ivaTotal),
+          shipping: shippingWithVAT,
+          grandTotal: finalTotalAmount,
+          totalProducts: cartTotals.totalProducts,
+        },
+        discounts: {
+          rottamazione: rottamazioneAmount > 0
+            ? { gross: rottamazioneAmount, net: getRottamazioneNetAmount(rottamazioneAmount), description: rottamazioneDescription }
+            : null,
+          cashBack: rottamazioneAmount === 0 && cashBackToUse > 0 ? cashBackToUse : null,
+          scontoBenvenuto: scontoBenvenuto && isFirstOrder,
+        },
+        paymentLabel: paymentMethod?.name || null,
+        shippingLabel: shippingMethod?.name || null,
+        notes: notes.trim() || null,
+      });
+    } catch (e: any) {
+      console.error('[order-v2] Errore generazione PDF:', e);
+      Alert.alert('Errore PDF', 'Impossibile generare il PDF del preventivo. Riprova.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   const handleSubmitOrder = async () => {
     if (!selectedCustomer || !user || cart.length === 0) return;
     if (!selectedPayment) { Alert.alert('Errore', 'Seleziona un metodo di pagamento'); return; }
@@ -1050,71 +1203,7 @@ export default function OrderCollectionV2() {
 
     setIsSubmitting(true);
     try {
-      const isRottamazione = rottamazioneAmount > 0;
-      const isUsingCashBack = !isRottamazione && cashBackToUse > 0;
-
-      // ── Build items with prices adjusted for rottamazione/cashback ──
-      let finalItems: Array<{ product_id: string; quantity: number; unit_price: number; discount_percent: number; original_unit_price?: number }>;
-
-      if (isRottamazione) {
-        const netAmount = getRottamazioneNetAmount(rottamazioneAmount);
-        const eligibleItems = cart.filter(c => c.product.rottamazione_no !== true);
-        if (eligibleItems.length > 0) {
-          const eligible = eligibleItems.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
-          const excluded = cart.filter(c => c.product.rottamazione_no === true);
-          const distributed = distributeDiscountToItems(eligible, netAmount);
-          finalItems = [
-            ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 0, original_unit_price: d.original_unit_price })),
-            ...excluded.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 })),
-          ];
-        } else {
-          finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
-        }
-      } else if (isUsingCashBack) {
-        const eligible = cart.filter(c => c.product.cashback_eligible === true);
-        const nonEligible = cart.filter(c => c.product.cashback_eligible !== true);
-        if (eligible.length > 0) {
-          const eligibleMapped = eligible.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
-          const distributed = distributeDiscountToItems(eligibleMapped, cashBackToUse);
-          finalItems = [
-            ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 0, original_unit_price: d.original_unit_price })),
-            ...nonEligible.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 })),
-          ];
-        } else {
-          finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
-        }
-      } else if (scontoBenvenuto && isFirstOrder) {
-        // Sconto Benvenuto: 25% on rottamazione-eligible products
-        const eligible = cart.filter(c => c.product.rottamazione_no !== true);
-        const excluded = cart.filter(c => c.product.rottamazione_no === true);
-        const discountAmount = eligible.reduce((s, c) => s + c.unit_price * c.quantity, 0) * 0.25;
-        if (eligible.length > 0 && discountAmount > 0) {
-          const eligibleMapped = eligible.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
-          const distributed = distributeDiscountToItems(eligibleMapped, discountAmount);
-          finalItems = [
-            ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 25, original_unit_price: d.original_unit_price })),
-            ...excluded.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 })),
-          ];
-        } else {
-          finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
-        }
-      } else {
-        finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
-      }
-
-      // ── Calculate total_amount (matching web app: with IVA + Accisa, EST- aware) ──
-      let itemsTotal = 0;
-      for (const oi of finalItems) {
-        const product = cart.find(c => c.product.id === oi.product_id)?.product;
-        const accisa = product?.accisa || 0;
-        const iva = product?.iva_percentage || 0;
-        itemsTotal += calculateLineTotal(oi.quantity, oi.unit_price, accisa, iva, isForeignOrder, product?.short_description);
-      }
-
-      const shippingMethod = shippingMethods.find(s => s.id === selectedShipping);
-      const shippingBase = shippingMethod?.cost || 0;
-      const shippingWithVAT = getShippingCostWithVAT(shippingBase, isForeignOrder);
-      const finalTotalAmount = Math.round((itemsTotal + shippingWithVAT) * 100) / 100;
+      const { finalItems, isRottamazione, isUsingCashBack, shippingBase, finalTotalAmount } = computeFinalItemsAndTotal();
 
       // ── Build detailed notes (matching web app format) ──
       const notesParts: string[] = [];
@@ -2013,6 +2102,31 @@ export default function OrderCollectionV2() {
         <View style={s.summaryCard}>
           <Text style={s.summaryLabel}>Note</Text>
           <TextInput style={s.textArea} placeholder="Note per l'ordine..." value={notes} onChangeText={setNotes} multiline placeholderTextColor="#9CA3AF" />
+        </View>
+
+        {/* ═══ PDF Preventivo ═══ */}
+        <View style={[s.summaryCard, { borderWidth: 1, borderColor: '#FED7AA', backgroundColor: '#FFF7ED' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <Ionicons name="document-attach-outline" size={18} color="#C2410C" />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#9A3412' }}>Preventivo PDF</Text>
+          </View>
+          <Text style={{ fontSize: 12, color: '#9A3412', lineHeight: 17, marginBottom: 10 }}>
+            Genera un PDF con questo riepilogo da consegnare al cliente. Potrai poi creare l&apos;ordine subito oppure salvarlo in bozza (pulsante “Bozza” in alto) e confermarlo in un secondo momento.
+          </Text>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#C2410C', borderRadius: 10, paddingVertical: 13, opacity: isGeneratingPdf ? 0.7 : 1 }}
+            onPress={handleGenerateQuotePdf}
+            disabled={isGeneratingPdf}
+          >
+            {isGeneratingPdf ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <>
+                <Ionicons name="share-outline" size={18} color="#FFF" />
+                <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>Genera PDF Preventivo</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={{ height: 100 }} />

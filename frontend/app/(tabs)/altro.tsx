@@ -32,6 +32,7 @@ export default function AltroScreen() {
       items: [
         { label: 'Bozze Ordine', icon: 'document-text-outline', route: '/drafts' },
         { label: 'Sostituzioni', icon: 'swap-horizontal-outline', route: '/substitutions' },
+        { label: 'Scadenziario', icon: 'hourglass-outline', route: '/scadenziario', sub: 'Fatture da incassare e solleciti' },
         ...(hasRimborsiAccess ? [{ label: 'Rimborsi', icon: 'receipt-outline', route: '/rimborsi' }] : []),
         { label: 'Reclami Orfani', icon: 'flag-outline', route: '/orphan-claims' },
         { label: 'Rivendite No Mappa', icon: 'globe-outline', route: '/rivendite-no-mappa' },

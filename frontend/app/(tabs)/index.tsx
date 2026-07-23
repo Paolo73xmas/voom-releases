@@ -22,6 +22,7 @@ import { fetchVisits } from '../../lib/api/visits';
 import { supabase } from '../../lib/supabase';
 import { getDraftCount } from '../../lib/drafts';
 import { getCache, setCache, clearCache } from '../../lib/memory-cache';
+import { fetchScadenziarioCached, ScadenziarioKpi } from '../../lib/api/scadenziario';
 import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
 import { Avatar } from '../../components/Avatar';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
@@ -48,6 +49,7 @@ export default function Dashboard() {
     monthLabel: '',
   });
   const [draftCount, setDraftCount] = useState(0);
+  const [scadKpi, setScadKpi] = useState<ScadenziarioKpi | null>(null);
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [aptsLoaded, setAptsLoaded] = useState(false);
@@ -144,8 +146,19 @@ export default function Dashboard() {
     }
   };
 
+  const loadScadenziario = async (force: boolean = false) => {
+    if (!user) return;
+    try {
+      const data = await fetchScadenziarioCached(user.id, user.role, force);
+      setScadKpi(data.kpi);
+    } catch (e) {
+      console.error('[Dashboard] Scadenziario error:', e);
+    }
+  };
+
   useEffect(() => {
     loadStats();
+    loadScadenziario();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -202,7 +215,7 @@ export default function Dashboard() {
     await loadStats(true);
     const dc = await getDraftCount();
     setDraftCount(dc);
-    await loadUpcomingAppointments();
+    await Promise.all([loadUpcomingAppointments(), loadScadenziario(true)]);
     setRefreshing(false);
   };
 
@@ -387,6 +400,32 @@ export default function Dashboard() {
             </Text>
           </View>
         </View>
+      </Animated.View>
+
+      {/* Scadenziario — fatture da incassare */}
+      <Text style={styles.sectionTitle}>Scadenziario</Text>
+      <Animated.View entering={FadeInDown.delay(230).duration(400)}>
+        <Pressable
+          style={({ pressed }) => [styles.scadCard, pressed && styles.actionPressed]}
+          onPress={() => { hap.light(); router.push('/scadenziario'); }}
+        >
+          <View style={styles.scadCol}>
+            <Text style={[styles.scadLabel, { color: DS.error }]}>Scaduto</Text>
+            <Text style={[styles.scadValue, { color: DS.error }]}>
+              {scadKpi ? `€ ${scadKpi.overdue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+            </Text>
+            <Text style={styles.scadSub}>{scadKpi ? `${scadKpi.overdueCount} fatture` : 'caricamento...'}</Text>
+          </View>
+          <View style={styles.scadDivider} />
+          <View style={styles.scadCol}>
+            <Text style={styles.scadLabel}>Da incassare</Text>
+            <Text style={styles.scadValue}>
+              {scadKpi ? `€ ${scadKpi.total.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+            </Text>
+            <Text style={styles.scadSub}>{scadKpi ? `${scadKpi.openCount} fatture aperte` : ''}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={DS.borderStrong} />
+        </Pressable>
       </Animated.View>
 
       {/* Azioni rapide — griglia 2 colonne per sezione */}
@@ -649,6 +688,46 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: JAKARTA.semibold,
     color: '#FFFFFF',
+  },
+
+  // Scadenziario card
+  scadCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: DS.surface2,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 28,
+    gap: 12,
+  },
+  scadCol: {
+    flex: 1,
+  },
+  scadLabel: {
+    fontSize: 11,
+    fontFamily: JAKARTA.semibold,
+    color: DS.inkMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 4,
+  },
+  scadValue: {
+    fontSize: 19,
+    fontFamily: JAKARTA.bold,
+    color: DS.ink,
+    letterSpacing: -0.4,
+  },
+  scadSub: {
+    fontSize: 11,
+    fontFamily: JAKARTA.regular,
+    color: DS.inkMuted,
+    marginTop: 2,
+  },
+  scadDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: DS.borderStrong,
+    opacity: 0.5,
   },
 
   // Azioni rapide — 2 colonne

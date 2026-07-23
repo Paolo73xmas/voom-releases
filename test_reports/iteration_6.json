@@ -1,0 +1,39 @@
+{
+  "summary": "Full frontend testing of NEW Scadenziario feature (fatture da incassare) on Expo web preview. ALL FLOWS PASS. (1) Privacy gate: 3 'Dichiaro' checkboxes + 'Accetta e Continua' work, redirect to login. (2) ADMIN admin1@voomweb.it: Dashboard shows SCADENZIARIO card between VENDUTO and VENDITE with 'Scaduto € 26.373,70 44 fatture' and 'Da incassare € 95.830,07 151 fatture aperte' formatted it-IT exactly as spec. (3) /scadenziario screen renders: terracotta header + back arrow, 4 KPI (Scaduto rossa €26.373,70 / Entro 7 gg ambra €13.840,16 / 8-30 gg €27.823,12 / Totale €95.830,07 151 fatture aperte), Proiezione incassi con chip Settimana ('20/07 – 26/07 €8254,57 16 rate', '27/07 – 02/08 €21.013,47 57 rate', ...) e Mese ('LUGLIO 2026 €20.078,05 40 rate', 'AGOSTO 2026 €21.585...'). Toggle Settimana/Mese cambia i bucket. (4) Invoice card admin: numero MI-2026-XXXXX, residuo, customer name, 'Agente: <name>' (Luca Tadini, Francesco Arceri, Paolo Natale...), data fattura + metodo pagamento, 'Scad. gg/mm/aaaa' con badge rosso 'X gg ritardo' o giallo 'in scadenza', Chiama (verde outline) + Fattura PDF (terracotta filled). (5) Search: 'ITAB' filtra correttamente a '2 fatture aperte' con 2 card ITAB S.R.L.; '01737' mostra MI-2026-01737; svuotando torna alla lista completa. NOTA: il conteggio '151 fatture aperte' della KPI Totale è duplicato con quello sopra la lista (per ricerca reale il valore del listCount cambia, verificato da screenshot). (6) Fattura PDF su MI-2026-01718 (TABACCHERIA DI STEFANO LIN RIV 71 - Agente Luca Tadini, residuo €15,88): window.print() chiamato correttamente su web, nessun crash, sollecito_log insert riuscito (dopo il click appare 'Ultimo sollecito: 23/07/2026 (WhatsApp)' sulla card). (7) Chiama: pulsante visibile ed enabled sulle card con phone. (8) Menu Altro > Strumenti contiene 'Scadenziario' con sottotitolo 'Fatture da incassare e solleciti' (verificato). (9) AGENT gdeintinis@gmail.com: Dashboard Scadenziario card '€ 0,00 / 0 fatture' e '€ 0,00 / 0 fatture aperte' come atteso; screen /scadenziario mostra tutti i KPI a €0,00, projection 'Nessun incasso previsto: tutte le fatture risultano saldate.', empty state icona check + 'Nessuna fattura aperta' + 'Tutte le fatture dei tuoi ordini risultano incassate.' -- EMPTY STATE CORRETTO. (10) 0 errori console in tutto il flusso (nessun errore Supabase/RLS/40x). Solo warning noti (shadow*/pointerEvents) ignorati come da istruzioni.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/04_dashboard.png",
+    "/tmp/05_dashboard_scad.png",
+    "/tmp/06_scadenziario.png",
+    "/tmp/08_mese.png",
+    "/tmp/09_search_itab.png",
+    "/tmp/10_pdf.png",
+    "/tmp/12_agent_dash.png",
+    "/tmp/13_agent_scad_card.png",
+    "/tmp/14_agent_scad_screen.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "scadenziario.tsx (line 174-176): 'Agente:' line viene mostrato solo se isAdminView && row.agentName. Corretto — agente non vede la propria firma. Ok.",
+    "scadenziario.tsx (line 316): fetchScadenziarioCached usa TTL 120000ms condiviso tra dashboard e schermata: dopo il primo caricamento (dashboard) l'apertura della schermata è istantanea. Buon design.",
+    "scadenziario.tsx handlePdf (line 128-160): logSollecito viene fatto DOPO generateAndShareInvoicePdf ma senza await sull'errore del PDF prima del logging — se il print viene annullato dall'utente il log viene comunque scritto. Comportamento accettabile visto che web print non ritorna esito, ma potenziale over-logging. Nessuna azione richiesta.",
+    "lib/api/scadenziario.ts fetchAllInvoicesAdmin: paginazione con range(from, from+999) per 1000 righe per volta è corretta ma senza limite hard. Con dataset in crescita (>10k fatture aperte) potrebbe diventare pesante. Considerare filtro server-side 'residuo > 0' se supportato.",
+    "invoice card mostra 'Ultimo sollecito' con canale ('WhatsApp' o 'Email'). Correttamente allineato con logSollecito che imposta channel='whatsapp'. Ok."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped, dati Supabase remoto)", "frontend": "100%"},
+  "seed_data_creation": "Una sola riga sollecito_log inserita come da istruzioni: invoice_id di MI-2026-01718 (TABACCHERIA DI STEFANO LIN RIV 71, residuo €15,88, Agente Luca Tadini), channel='whatsapp', da account admin1@voomweb.it. Verificato che l'insert è andato a buon fine (badge 'Ultimo sollecito: 23/07/2026 (WhatsApp)' è comparso sulla card dopo il click).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Feature Scadenziario testata e funzionante al 100% via web preview (mobile viewport 390x844). Admin: 151 fatture aperte, €95.830,07 totale, €26.373,70 scaduto (44 fatture). Agent gdeintinis: empty state correttamente mostrato (0 fatture). Come da spec: get_by_text('Accedi', exact=True) matches 2 -> usare .nth(1) per il bottone submit login. Le label testuali con textTransform:'uppercase' sui chip proiezione fanno sì che 'Luglio 2026' venga renderizzato come 'LUGLIO 2026' in schermata (usare regex case-insensitive nei check). KPI 'TOTALE' e listCount sotto search entrambi mostrano 'N fatture aperte' -> per verificare filtro search preferire screenshot piuttosto che regex globale (KPI totale non cambia). window.print viene intercettato correttamente su web tramite override JS (verificato con __printCalled flag). sollecito_log insert come admin riesce (RLS ok). 0 errori console durante l'intero flusso. Warnings shadow*/pointerEvents da ignorare come noto.",
+  "rca_of_issue": "N/A - test di feature con esito positivo. Nessun bug trovato."
+}

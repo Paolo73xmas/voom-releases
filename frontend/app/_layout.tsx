@@ -104,6 +104,10 @@ export default function RootLayout() {
           name="rimborsi"
           options={{ title: 'Rimborsi', headerBackTitle: 'Indietro', presentation: 'card' }}
         />
+        <Stack.Screen
+          name="scadenziario"
+          options={{ headerShown: false, presentation: 'card' }}
+        />
       </Stack>
     </>
   );

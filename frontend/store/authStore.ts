@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { AppState, AppStateStatus, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { loadSavedCredentials } from '../lib/secure-credentials';
 
@@ -61,6 +62,31 @@ let intentionalLogout = false;
  * che possono causare race conditions e stati inconsistenti.
  */
 let initInProgress = false;
+
+/**
+ * Migrazione chiavi API Supabase (lug 2026): la legacy anon key (eyJ...) è stata
+ * disabilitata e sostituita dalla publishable key. Le sessioni emesse con la
+ * vecchia chiave vengono invalidate UNA TANTUM al primo avvio: logout locale
+ * forzato, poi il re-login silente (SecureStore) o il login manuale
+ * riautenticano con la nuova chiave.
+ */
+const API_KEY_MIGRATION_FLAG = 'supabase_publishable_key_migration_2026_07';
+
+async function runApiKeyMigration(): Promise<void> {
+  try {
+    const done = await AsyncStorage.getItem(API_KEY_MIGRATION_FLAG);
+    if (done) return;
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (e) {
+      console.warn('[Auth] Migration signOut warning:', e);
+    }
+    await AsyncStorage.setItem(API_KEY_MIGRATION_FLAG, '1');
+    console.log('[Auth] Legacy API key migration: local session invalidated');
+  } catch (e) {
+    console.warn('[Auth] API key migration error:', e);
+  }
+}
 
 function profileToUser(profile: Profile): User {
   return {
@@ -267,6 +293,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     try {
       set({ isLoading: true });
+
+      // Invalida una tantum le sessioni emesse con la legacy anon key disabilitata
+      await runApiKeyMigration();
 
       // Niente Promise.race qui: i timeout interferivano con il lock interno di Supabase auth
       const recovered = await recoverSession();

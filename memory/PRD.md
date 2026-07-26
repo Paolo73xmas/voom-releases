@@ -109,7 +109,7 @@ Mobile CRM application for field sales agents managing tobacco shops (tabaccheri
 ## Environment Variables
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://gorwxfzzyzxmxnizmebw.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=[key]
+EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 2026 — la legacy anon key eyJ... è DISABILITATA lato Supabase e non va mai ripristinata; mai usare chiavi sb_secret_ nel client)
 ```
 
 ## Known Issues

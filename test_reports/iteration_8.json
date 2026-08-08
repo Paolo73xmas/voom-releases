@@ -1,0 +1,30 @@
+{
+  "summary": "RETEST of Sconto Cartone in order-collection-v2.tsx after main-agent fix. ALL 5 acceptances PASS end-to-end via Playwright at 390x844. TEST A: 99pz row shows €3.75, amber hint 'mancano 1 pz', Imp €371.25; +1 -> 100pz -> €3.38, green 'attivo', Imp €337.50. TEST B: modal pre-fill is now '3.38' (was raw 3.375), qty-minus once + confirm without touching price correctly reverts to €3.75/Imp €371.25 with amber hint back and NO 'attivo'. TEST C (the previous CRITICAL bug): typing '3' in the modal at qty=100 now correctly sets row price €3.00, Imp €300.00, no 'attivo' badge; +1 from the list -> qty 101, price STAYS €3.00 (Imp €303.00); reopening modal shows prefill '3.00', two -1 -> qty 99, confirming without touching price STILL keeps €3.00 (Imp €297.00) - carton logic never overrides the manual flag. TEST D: remove + re-add to 100 via list buttons -> €3.38 auto + green attivo; Step 5 Riepilogo shows the green 'Sconto cartone −10%' badge under 'MESH MINI RAGING BULL 20' with x100 line total €337.50. Order NOT submitted. TEST E: VOOM POD RAGING (no carton fields) has no hint and behaves normally; no functional console errors during the entire flow (only pre-existing Supabase 406/400 warnings for scadenziario + shadow*/pointerEvents deprecation warnings which are ignored per reviewer note). handleConfirmEdit single-setCart atomic update + toFixed(2) prefill both verified working. Added missing testID='edit-modal-qty-minus' on the single-minus TouchableOpacity (line ~2281) which the reviewer said had been added but was actually still missing.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "Console warnings (pre-existing, ignored per reviewer)", "issue": "'shadow*' style props deprecated (use 'boxShadow') and 'props.pointerEvents is deprecated (use style.pointerEvents)'. Non-blocking cosmetic web warnings only."}
+    ]
+  },
+  "test_report_links": ["/tmp/a_99pz.png", "/tmp/a_100pz.png", "/tmp/b_after_confirm.png", "/tmp/c_after_manual3.png", "/tmp/c_101_manual.png", "/tmp/c_99_manual.png", "/tmp/d_readd_100.png", "/tmp/d_step5.png"],
+  "action_items": [
+    "Nothing functional. Optional cleanup: replace deprecated shadow*/pointerEvents style props to silence web console warnings.",
+    "Optional refactor: order-collection-v2.tsx is 2613 lines - consider splitting into smaller modules (>700 lines guideline)."
+  ],
+  "critical_code_review_comments": [
+    "handleConfirmEdit (L2222-2249) now does a single atomic setCart with the correct manual/carton logic. Tolerance |p - current| > 0.005 correctly ignores display-rounding differences. ✅",
+    "Modal price pre-fill uses toFixed(2) at all three entry points (L931, L1558, L1610). ✅",
+    "getCartonPrice/isCartonDiscountActive/applyPackage/addToCart/updateCartQty consistent with manual_price forwarding. ✅",
+    "testIDs edit-modal-qty-plus, edit-modal-price-input, edit-modal-confirm present. edit-modal-qty-minus was missing on the single-'-' button; added by testing agent (L2281)."
+  ],
+  "updated_files": ["/app/frontend/app/order-collection-v2.tsx (added testID='edit-modal-qty-minus' on the -1 button around L2281 to enable modal qty-minus automation)"],
+  "success_rate": {"backend": "n/a (frontend only)", "frontend": "5/5 acceptances PASS (A,B,C,D,E)"},
+  "seed_data_creation": "None. Used existing Supabase customer 'ITAB S.R.L.' + product 'MESH MINI RAGING BULL 20' (listino 3.75, pezzi_cartone=100, sconto_cartone=10). Order was NOT submitted (stopped at Step 5 Riepilogo as instructed).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Sconto Cartone feature is fully working per acceptances 1-5. Manual price flag correctly persists across all qty change paths (list +1/+10 and modal qty-minus). Step 5 Riepilogo badge renders correctly. If regressing this area, run: login admin1@voomweb.it, Raccolta Ordine -> ITAB S.R.L. -> RAGING -> reproduce sequences A,B,C,D above. testIDs available: edit-modal-qty-minus, edit-modal-qty-plus, edit-modal-price-input, edit-modal-confirm.",
+  "rca_of_issue": "Not applicable - previous CRITICAL bug (manual price silently overridden by carton logic) is RESOLVED. Fix by main agent: (1) handleConfirmEdit merged price+qty into a single setCart update, (2) priceEdited detected via |p - current| > 0.005 tolerance so untouched 2-decimal prefill does not accidentally flip the manual flag, (3) all three prefill callsites now format with .toFixed(2)."
+}

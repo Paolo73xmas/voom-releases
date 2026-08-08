@@ -928,7 +928,7 @@ export default function OrderCollectionV2() {
     const first = stockConflicts[0];
     if (!first) return;
     setEditCartItem(first.item);
-    setEditPrice(first.item.unit_price.toString());
+    setEditPrice(first.item.unit_price.toFixed(2));
     // Pre-imposta la quantità al massimo disponibile (o mantieni la richiesta se il modale la clamperà)
     setEditQty(Math.max(1, Math.min(first.item.quantity, first.available)));
   };
@@ -990,37 +990,6 @@ export default function OrderCollectionV2() {
 
   const removeFromCart = (productId: string) => {
     setCart(prev => prev.filter(c => c.product.id !== productId));
-  };
-
-  const updateCartQty = (productId: string, newQty: number) => {
-    if (newQty <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    const item = cart.find(c => c.product.id === productId);
-    if (!item) return;
-    const stock = getEffectiveStock(productId, item.product.stock_quantity || 0);
-    const finalQty = Math.min(newQty, stock);
-    // Se lo stock è 0 (ESAURITO), rimuovi il prodotto dal carrello
-    if (finalQty <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    setCart(prev => prev.map(c =>
-      c.product.id === productId
-        // ✅ Sconto cartone: ricalcola il prezzo con la nuova quantità
-        ? { ...c, quantity: finalQty, unit_price: getCartonPrice(c.product, finalQty, c.unit_price, c.manual_price) }
-        : c
-    ));
-  };
-
-  const updateCartPrice = (productId: string, newPrice: number, manual: boolean = false) => {
-    setCart(prev => prev.map(c =>
-      c.product.id === productId
-        // ✅ manual=true marca il prezzo come modificato a mano: la logica cartone non lo toccherà più
-        ? { ...c, unit_price: newPrice, manual_price: manual ? true : c.manual_price }
-        : c
-    ));
   };
 
   const clearCart = () => {
@@ -1586,7 +1555,7 @@ export default function OrderCollectionV2() {
           )}
         </View>
 
-        <TouchableOpacity style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { setEditCartItem(inCart); setEditPrice(inCart.unit_price.toString()); setEditQty(inCart.quantity); } }}>
+        <TouchableOpacity style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { setEditCartItem(inCart); setEditPrice(inCart.unit_price.toFixed(2)); setEditQty(inCart.quantity); } }}>
           <Text style={[
             s.prodName,
             inCart && { color: '#C2410C' },
@@ -1638,7 +1607,7 @@ export default function OrderCollectionV2() {
               onPress={() => {
                 if (inCart) {
                   setEditCartItem(inCart);
-                  setEditPrice(inCart.unit_price.toString());
+                  setEditPrice(inCart.unit_price.toFixed(2));
                   setEditQty(Math.max(1, Math.min(inCart.quantity, stock)));
                 }
               }}
@@ -2253,17 +2222,27 @@ export default function OrderCollectionV2() {
     const handleConfirmEdit = () => {
       Keyboard.dismiss();
       if (editCartItem) {
-        // Apply price — normalize comma to dot for decimal
-        const normalized = editPrice.trim().replace(',', '.');
-        const p = normalized === '' ? 0 : parseFloat(normalized);
-        if (!isNaN(p) && p >= 0) {
-          updateCartPrice(editCartItem.product.id, p);
-        }
-        // Apply quantity
         if (editQty <= 0) {
           removeFromCart(editCartItem.product.id);
         } else {
-          updateCartQty(editCartItem.product.id, editQty);
+          const normalized = editPrice.trim().replace(',', '.');
+          const p = normalized === '' ? NaN : parseFloat(normalized);
+          // ✅ Sconto cartone: il prezzo è "manuale" SOLO se cambiato oltre la tolleranza
+          // di visualizzazione a 2 decimali (il campo è precompilato col prezzo corrente)
+          const priceEdited = !isNaN(p) && p >= 0 && Math.abs(p - editCartItem.unit_price) > 0.005;
+          // Prezzo e quantità applicati in un UNICO update atomico: la logica cartone
+          // non deve mai sovrascrivere un prezzo appena modificato a mano
+          setCart(prev => prev.map(c => {
+            if (c.product.id !== editCartItem.product.id) return c;
+            const manual = priceEdited ? true : c.manual_price;
+            const basePrice = priceEdited ? p : c.unit_price;
+            return {
+              ...c,
+              quantity: editQty,
+              unit_price: getCartonPrice(c.product, editQty, basePrice, manual),
+              manual_price: manual,
+            };
+          }));
         }
       }
       setEditCartItem(null);
@@ -2300,6 +2279,7 @@ export default function OrderCollectionV2() {
               <Text style={[s.summaryLabel, { marginTop: 16, marginBottom: 8 }]}>Quantità</Text>
               <View style={s.qtyRow}>
                 <TouchableOpacity
+                  testID="edit-modal-qty-minus"
                   style={[s.qtyBtn, editQty <= 1 && s.qtyBtnDisabled]}
                   onPress={() => { Keyboard.dismiss(); setEditQty(Math.max(1, editQty - 1)); }}
                   disabled={editQty <= 1}
@@ -2326,6 +2306,7 @@ export default function OrderCollectionV2() {
                   <Text style={[s.qtyBtnLabel, editQty >= stock && { color: '#D1D5DB' }]}>+10</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  testID="edit-modal-qty-plus"
                   style={[s.qtyBtn, editQty >= stock && s.qtyBtnDisabled]}
                   onPress={() => { Keyboard.dismiss(); setEditQty(Math.min(stock, editQty + 1)); }}
                   disabled={editQty >= stock}
@@ -2338,6 +2319,7 @@ export default function OrderCollectionV2() {
               <Text style={[s.summaryLabel, { marginTop: 16, marginBottom: 8 }]}>Prezzo unitario</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <TextInput
+                  testID="edit-modal-price-input"
                   style={[s.textInput, { flex: 1, fontSize: 18, fontWeight: '700', textAlign: 'center' }]}
                   keyboardType="numeric"
                   value={editPrice}
@@ -2352,7 +2334,7 @@ export default function OrderCollectionV2() {
                   style={[s.headerBtn, { backgroundColor: '#F3F4F6', paddingVertical: 12 }]}
                   onPress={() => {
                     Keyboard.dismiss();
-                    setEditPrice(editCartItem.product.unit_price.toString());
+                    setEditPrice(editCartItem.product.unit_price.toFixed(2));
                   }}
                 >
                   <Ionicons name="refresh" size={16} color="#6B7280" />
@@ -2360,7 +2342,7 @@ export default function OrderCollectionV2() {
               </View>
 
               {/* ── Action buttons ── */}
-              <TouchableOpacity style={[s.confirmPriceBtn, { marginTop: 20 }]} onPress={handleConfirmEdit}>
+              <TouchableOpacity testID="edit-modal-confirm" style={[s.confirmPriceBtn, { marginTop: 20 }]} onPress={handleConfirmEdit}>
                 <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
                 <Text style={s.confirmPriceBtnText}>OK - Conferma</Text>
               </TouchableOpacity>

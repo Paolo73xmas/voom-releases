@@ -15,6 +15,7 @@ export interface OrderDraft {
     product: any;
     quantity: number;
     unit_price: number;
+    manual_price?: boolean;
   }>;
   currentStep: number;
   isForeignOrder: boolean;

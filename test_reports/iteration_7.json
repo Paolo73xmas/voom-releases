@@ -1,0 +1,57 @@
+{
+  "summary": "Tested Sconto Cartone feature in order-collection-v2.tsx. Acceptances 1 and 2 PASS (amber hint & discount activation at qty>=100 work correctly). Acceptance 3 skipped in this run because the modal '-' (single-minus) icon button proved hard to locate reliably, but by code review the flow appears correct provided the modal is confirmed without changing the price. Acceptance 4 (manual price never overridden) FAILS — CRITICAL BUG: setting price to 3.00 in the Modifica Prodotto modal is silently ignored; the row stays at €3.38 with green 'Sconto cartone -10% attivo' badge, and after +1 the price still remains 3.375 (Imp 340.88). Root cause: in handleConfirmEdit (order-collection-v2.tsx ~L2253) updateCartPrice is called with default manual=false (never compares editPrice vs editCartItem.unit_price), then updateCartQty runs immediately after and calls getCartonPrice with manual_price=false, which returns the discounted product.unit_price * (1 - sc/100) = 3.375 and overwrites the user-typed price. Additional UX issue: modal price input pre-fills with RAW 4-decimal unit_price (e.g. '3.375') instead of the DISPLAYED 2-decimal value ('3.38'), contradicting the reviewer note.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "order-collection-v2.tsx / Edit Product modal (handleConfirmEdit ~L2253-2270)",
+        "issue": "Manual price never applied: (a) updateCartPrice is called with default manual=false so the manual_price flag is NEVER set from the modal; (b) even if the price value differs, updateCartQty runs right after and calls getCartonPrice(c.product, finalQty, c.unit_price, c.manual_price=false) which returns the carton-discounted price and OVERWRITES the user-typed price. Result: typing 3.00 at qty=100 leaves the row at 3.375 (displayed 3.38) with the green 'attivo' badge still shown; subsequent +1 keeps discounted price (Imp 340.88).",
+        "testID": "n/a",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "order-collection-v2.tsx / Edit Product modal price TextInput (~L2355 & row-onPress ~L1589,1641)",
+        "issue": "editPrice is pre-filled from inCart.unit_price.toString() -> raw 4-decimal value like '3.375' instead of the DISPLAYED formatted value '3.38'. Reviewer note explicitly says the modal should pre-fill '3.38' when discounted. Even after fixing the manual-price detection, a user who leaves the field untouched but expects '3.38' will confuse the comparison logic.",
+        "testID": "n/a",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Edit modal -> Cart state after Conferma",
+        "issue": "Sequential setState calls in handleConfirmEdit (updateCartPrice then updateCartQty) cause the second update to override any manual price change because manual_price flag isn't set beforehand. Even with correct manual_price detection, the code must either merge both changes in a single setCart update, or set manual_price BEFORE the qty recalculation.",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Console warnings",
+        "issue": "'shadow*' style props are deprecated. Use 'boxShadow'. And 'props.pointerEvents is deprecated. Use style.pointerEvents'. Non-blocking but should be cleaned up."
+      }
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "FIX handleConfirmEdit in /app/frontend/app/order-collection-v2.tsx (~L2253): compare editPrice with editCartItem.unit_price (with same formatting) and pass manual=true to updateCartPrice when different. IMPORTANT: apply BOTH price and quantity in a SINGLE setCart update (or ensure updateCartQty reads the just-updated manual_price flag). Simplest fix: build the new cart row locally { quantity: editQty, unit_price: (manualChanged ? p : getCartonPrice(item.product, editQty, p, manualChanged)), manual_price: manualChanged || item.manual_price } and setCart once.",
+    "FIX modal price pre-fill: when opening the edit modal (order-collection-v2.tsx L1589 and L1641, plus L931), format inCart.unit_price with the same 2-decimal display formatter used in the row (e.g. inCart.unit_price.toFixed(2)) so the input shows '3.38' and matches the displayed price. Otherwise the 'price differs = manual' check becomes user-unfriendly.",
+    "After fix, re-verify Acceptance 3 (reduce qty via modal '-' button, price returns to 3.75 and NO manual flag set), Acceptance 4 (price 3.00 stays across qty changes both from list buttons and modal), and Acceptance 5 (green 'Sconto cartone -10%' badge in Step 5 Riepilogo).",
+    "Cosmetic: replace deprecated shadow* style props with boxShadow, and props.pointerEvents with style.pointerEvents to remove console noise."
+  ],
+  "critical_code_review_comments": [
+    "getCartonPrice correctly uses product.unit_price as base (not currentPrice), rounds to 4 decimals via Math.round(x*10000)/10000, and returns currentPrice when manualPrice is truthy. ✅",
+    "isCartonDiscountActive correctly gates on !item.manual_price. ✅",
+    "applyPackage correctly marks package custom prices as manual_price=true and passes manual_price to getCartonPrice for existing rows. ✅",
+    "addToCart and updateCartQty correctly forward c.manual_price to getCartonPrice. ✅",
+    "handleConfirmEdit is the ONLY path that fails to set manual_price when the user edits the price in the modal — this is the sole functional gap.",
+    "drafts.ts OrderDraft cart type includes manual_price?: boolean. Serialization is fine. ✅",
+    "order-collection-v2.tsx is 2631 lines — recommend splitting into smaller modules (>700 lines guideline)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only test)", "frontend": "2/4 acceptances verified (1,2 PASS; 4 FAIL; 3 not fully executable due to modal selector limitation but code path likely OK; 5 not reached due to 4 blocking)"},
+  "seed_data_creation": "None. Used existing Supabase customer 'ITAB S.R.L.' and existing product 'MESH MINI RAGING BULL 20' (pezzi_cartone=100, sconto_cartone=10, unit_price=3.75).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "After main agent fixes handleConfirmEdit and modal pre-fill formatting, re-run this full flow: login admin1@voomweb.it, Raccolta Ordine -> ITAB S.R.L. -> search RAGING. Then execute all 5 acceptances end-to-end including Step 5 badge verification. To click the modal '-' (single-minus) button reliably in Playwright, target the second Ionicons SVG icon in the qty row via `page.locator('svg').filter(has_text=\"\")` scoped to the modal, or add data-testid='edit-modal-qty-minus' to the TouchableOpacity at line 2302.",
+  "rca_of_issue": "Bug: manual price not preserved. Reproduction: 1) add MESH MINI RAGING BULL 20 to qty=100 (price auto-discounts to 3.375/3.38). 2) Tap row name to open Modifica Prodotto modal. 3) Type '3' in Prezzo unitario. 4) Tap OK - Conferma. Expected: row price €3.00, no 'attivo' badge, Imp €300.00. Actual: row price €3.38, 'attivo' badge remains, Imp €337.50 (no state change from typed price). RCA: handleConfirmEdit calls updateCartPrice(id, 3, /*manual*/false) followed by updateCartQty(id, 100). updateCartQty invokes getCartonPrice(product, 100, 3, false) which returns product.unit_price*(1-0.10)=3.375 because manual_price is falsy, thereby overwriting the user's 3.00. Mitigation: (a) In handleConfirmEdit, compute manualChanged = (parseFloat(editPrice.replace(',','.')) !== editCartItem.unit_price); (b) Build the new row inline with unit_price = manualChanged ? p : getCartonPrice(product, editQty, p, false), manual_price = manualChanged || editCartItem.manual_price; (c) Apply via a single setCart(prev.map(...)) instead of two sequential state updates. Also format editPrice pre-fill with toFixed(2) to match displayed price."
+}

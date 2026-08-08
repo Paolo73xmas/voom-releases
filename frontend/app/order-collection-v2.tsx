@@ -62,12 +62,18 @@ interface Product {
   estero?: boolean;
   rottamazione_no?: boolean;
   stock_quantity?: number;
+  /** ✅ Sconto Cartone (parità web): pezzi per cartone */
+  pezzi_cartone?: number | null;
+  /** ✅ Sconto Cartone (parità web): % sconto quando qty >= pezzi_cartone */
+  sconto_cartone?: number | null;
 }
 
 interface CartItem {
   product: Product;
   quantity: number;
   unit_price: number;
+  /** ✅ True se l'utente ha modificato a mano il prezzo: la logica cartone non lo sovrascrive mai */
+  manual_price?: boolean;
 }
 
 interface PaymentMethod {
@@ -128,6 +134,34 @@ const getShippingCostWithVAT = (shippingCost: number, isForeign: boolean): numbe
   if (isForeign) return shippingCost;
   return shippingCost * 1.22;
 };
+
+/**
+ * ✅ Sconto Cartone (parità web CRM VOOM): prezzo unitario con sconto cartone.
+ * Se il prodotto ha pezzi_cartone > 0 E sconto_cartone > 0:
+ * - qty >= pezzi_cartone → prezzo = listino × (1 − sconto/100), arrotondato a 4 decimali
+ * - qty < pezzi_cartone → torna al prezzo di listino (product.unit_price)
+ * Mai applicato se il prezzo è stato modificato manualmente (manual_price).
+ */
+const getCartonPrice = (
+  product: Product,
+  quantity: number,
+  currentPrice: number,
+  manualPrice?: boolean
+): number => {
+  const pz = product.pezzi_cartone;
+  const sc = product.sconto_cartone;
+  if (manualPrice || !pz || pz <= 0 || !sc || sc <= 0) return currentPrice;
+  return quantity >= pz
+    ? Math.round(product.unit_price * (1 - sc / 100) * 10000) / 10000
+    : product.unit_price;
+};
+
+/** ✅ Sconto cartone attivo su una riga carrello (per il badge) — parità web */
+const isCartonDiscountActive = (item: CartItem): boolean =>
+  !item.manual_price &&
+  !!item.product.pezzi_cartone && item.product.pezzi_cartone > 0 &&
+  !!item.product.sconto_cartone && item.product.sconto_cartone > 0 &&
+  item.quantity >= item.product.pezzi_cartone;
 
 /** Distribute discount proportionally across items — matches web app */
 function distributeDiscountToItems(
@@ -279,7 +313,7 @@ export default function OrderCollectionV2() {
       id: draftId,
       customerId: selectedCustomer.id,
       customerName: selectedCustomer.business_name,
-      cart: cart.map(c => ({ product: c.product, quantity: c.quantity, unit_price: c.unit_price })),
+      cart: cart.map(c => ({ product: c.product, quantity: c.quantity, unit_price: c.unit_price, manual_price: c.manual_price })),
       currentStep,
       isForeignOrder,
       selectedPaymentId: selectedPayment || null,
@@ -943,11 +977,14 @@ export default function OrderCollectionV2() {
     }
 
     if (existing) {
-      setCart(prev => prev.map(c =>
-        c.product.id === product.id ? { ...c, quantity: c.quantity + actualQty } : c
-      ));
+      setCart(prev => prev.map(c => {
+        if (c.product.id !== product.id) return c;
+        const newQty = c.quantity + actualQty;
+        // ✅ Sconto cartone: ricalcola il prezzo con la nuova quantità
+        return { ...c, quantity: newQty, unit_price: getCartonPrice(product, newQty, c.unit_price, c.manual_price) };
+      }));
     } else {
-      setCart(prev => [...prev, { product, quantity: actualQty, unit_price: product.unit_price }]);
+      setCart(prev => [...prev, { product, quantity: actualQty, unit_price: getCartonPrice(product, actualQty, product.unit_price) }]);
     }
   };
 
@@ -970,13 +1007,19 @@ export default function OrderCollectionV2() {
       return;
     }
     setCart(prev => prev.map(c =>
-      c.product.id === productId ? { ...c, quantity: finalQty } : c
+      c.product.id === productId
+        // ✅ Sconto cartone: ricalcola il prezzo con la nuova quantità
+        ? { ...c, quantity: finalQty, unit_price: getCartonPrice(c.product, finalQty, c.unit_price, c.manual_price) }
+        : c
     ));
   };
 
-  const updateCartPrice = (productId: string, newPrice: number) => {
+  const updateCartPrice = (productId: string, newPrice: number, manual: boolean = false) => {
     setCart(prev => prev.map(c =>
-      c.product.id === productId ? { ...c, unit_price: newPrice } : c
+      c.product.id === productId
+        // ✅ manual=true marca il prezzo come modificato a mano: la logica cartone non lo toccherà più
+        ? { ...c, unit_price: newPrice, manual_price: manual ? true : c.manual_price }
+        : c
     ));
   };
 
@@ -1023,12 +1066,26 @@ export default function OrderCollectionV2() {
       const p = item.products;
       if (!p) continue;
       // Package item unit_price overrides product unit_price (e.g., 0 for gifts/omaggi)
-      const itemPrice = (item.unit_price != null) ? item.unit_price : p.unit_price;
+      const hasCustomPrice = item.unit_price != null;
+      const itemPrice = hasCustomPrice ? (item.unit_price as number) : p.unit_price;
       const existingIdx = newCart.findIndex(c => c.product.id === (p.id || item.product_id));
       if (existingIdx >= 0) {
-        newCart[existingIdx] = { ...newCart[existingIdx], quantity: newCart[existingIdx].quantity + item.quantity, unit_price: itemPrice };
+        const newQty = newCart[existingIdx].quantity + item.quantity;
+        newCart[existingIdx] = {
+          ...newCart[existingIdx],
+          quantity: newQty,
+          // ✅ Prezzo custom del pacchetto = prezzo manuale (mai sovrascritto dallo sconto cartone);
+          // prezzo di listino → applica la logica cartone con la nuova quantità
+          unit_price: hasCustomPrice ? itemPrice : getCartonPrice(p, newQty, itemPrice, newCart[existingIdx].manual_price),
+          manual_price: hasCustomPrice ? true : newCart[existingIdx].manual_price,
+        };
       } else {
-        newCart.push({ product: { ...p, id: p.id || item.product_id }, quantity: item.quantity, unit_price: itemPrice });
+        newCart.push({
+          product: { ...p, id: p.id || item.product_id },
+          quantity: item.quantity,
+          unit_price: hasCustomPrice ? itemPrice : getCartonPrice(p, item.quantity, itemPrice),
+          manual_price: hasCustomPrice ? true : undefined,
+        });
       }
     }
     setCart(newCart);
@@ -1553,6 +1610,18 @@ export default function OrderCollectionV2() {
               </View>
             )}
           </View>
+          {/* ✅ Sconto cartone: hint in tempo reale sotto il nome (solo prodotti con cartone configurato) */}
+          {(item.pezzi_cartone || 0) > 0 && (item.sconto_cartone || 0) > 0 && (
+            inCart && isCartonDiscountActive(inCart) ? (
+              <Text style={s.cartonHintGreen} numberOfLines={1}>
+                Sconto cartone −{item.sconto_cartone}% attivo ({formatCurrency(getCartonPrice(item, cartQty, item.unit_price))}/pz)
+              </Text>
+            ) : cartQty < (item.pezzi_cartone as number) ? (
+              <Text style={s.cartonHintAmber} numberOfLines={1}>
+                Cartone da {item.pezzi_cartone} pz → −{item.sconto_cartone}%: mancano {(item.pezzi_cartone as number) - cartQty} pz
+              </Text>
+            ) : null
+          )}
         </TouchableOpacity>
 
         {!isOutOfStock && (
@@ -1816,7 +1885,15 @@ export default function OrderCollectionV2() {
           <Text style={s.summaryLabel}>Prodotti ({cartTotals.totalProducts} pz)</Text>
           {cart.map(c => (
             <View key={c.product.id} style={s.summaryItemRow}>
-              <Text style={s.summaryItemName} numberOfLines={1}>{c.product.short_description || c.product.name}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.summaryItemName, { flex: 0 }]} numberOfLines={1}>{c.product.short_description || c.product.name}</Text>
+                {/* ✅ Badge sconto cartone attivo */}
+                {isCartonDiscountActive(c) && (
+                  <View style={s.cartonBadge}>
+                    <Text style={s.cartonBadgeText}>Sconto cartone −{c.product.sconto_cartone}%</Text>
+                  </View>
+                )}
+              </View>
               <Text style={s.summaryItemQty}>x{c.quantity}</Text>
               <Text style={s.summaryItemPrice}>{formatCurrency(c.unit_price * c.quantity)}</Text>
             </View>
@@ -2487,6 +2564,12 @@ const s = StyleSheet.create({
   summaryItemName: { flex: 1, fontSize: 13, color: '#374151' },
   summaryItemQty: { fontSize: 12, color: '#6B7280', width: 30 },
   summaryItemPrice: { fontSize: 13, fontWeight: '600', color: '#1F2937', width: 70, textAlign: 'right' },
+
+  // ✅ Sconto Cartone
+  cartonHintAmber: { fontSize: 10.5, color: '#B45309', fontWeight: '500', marginTop: 2 },
+  cartonHintGreen: { fontSize: 10.5, color: '#15803D', fontWeight: '600', marginTop: 2 },
+  cartonBadge: { alignSelf: 'flex-start', backgroundColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, marginTop: 2 },
+  cartonBadgeText: { fontSize: 10, color: '#15803D', fontWeight: '700' },
   summaryTotalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   summaryGrandTotal: { borderTopWidth: 1, borderTopColor: '#E5E7EB', marginTop: 6, paddingTop: 8 },
   summaryGrandLabel: { fontSize: 16, fontWeight: '800', color: '#C2410C' },

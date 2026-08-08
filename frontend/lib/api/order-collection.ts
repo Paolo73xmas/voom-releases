@@ -17,6 +17,10 @@ export interface Product {
   rottamazione_no?: boolean;
   stock_quantity?: number;
   category_id?: string | null;
+  /** ✅ Sconto Cartone (parità web): pezzi per cartone */
+  pezzi_cartone?: number | null;
+  /** ✅ Sconto Cartone (parità web): % sconto quando qty >= pezzi_cartone */
+  sconto_cartone?: number | null;
 }
 
 export interface PaymentMethod {

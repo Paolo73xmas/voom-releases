@@ -1582,12 +1582,12 @@ export default function OrderCollectionV2() {
           {/* ✅ Sconto cartone: hint in tempo reale sotto il nome (solo prodotti con cartone configurato) */}
           {(item.pezzi_cartone || 0) > 0 && (item.sconto_cartone || 0) > 0 && (
             inCart && isCartonDiscountActive(inCart) ? (
-              <Text style={s.cartonHintGreen} numberOfLines={1}>
+              <Text style={s.cartonHintGreen} numberOfLines={2}>
                 Sconto cartone −{item.sconto_cartone}% attivo ({formatCurrency(getCartonPrice(item, cartQty, item.unit_price))}/pz)
               </Text>
             ) : cartQty < (item.pezzi_cartone as number) ? (
-              <Text style={s.cartonHintAmber} numberOfLines={1}>
-                Cartone da {item.pezzi_cartone} pz → −{item.sconto_cartone}%: mancano {(item.pezzi_cartone as number) - cartQty} pz
+              <Text style={s.cartonHintAmber} numberOfLines={2}>
+                Mancano {(item.pezzi_cartone as number) - cartQty} pz allo sconto cartone −{item.sconto_cartone}% ({item.pezzi_cartone} pz)
               </Text>
             ) : null
           )}

@@ -143,8 +143,7 @@ async function fetchAgentOrderIds(userId: string): Promise<string[]> {
 }
 
 async function fetchAgentInvoices(orderIds: string[]): Promise<InvoiceLight[]> {
-  let all: InvoiceLight[] = [];
-  for (const batch of chunk(orderIds, 100)) {
+  const results = await Promise.all(chunk(orderIds, 100).map(async (batch) => {
     const { data, error } = await supabase
       .from('electronic_invoices')
       .select(INVOICE_LIGHT_FIELDS)
@@ -152,23 +151,24 @@ async function fetchAgentInvoices(orderIds: string[]): Promise<InvoiceLight[]> {
       .neq('status', 'cancelled')
       .in('order_id', batch);
     if (error) throw error;
-    all = all.concat((data || []) as InvoiceLight[]);
-  }
-  return all;
+    return (data || []) as InvoiceLight[];
+  }));
+  return results.flat();
 }
 
 /** Mappa invoice_id -> totale incassato (somma invoice_payments) */
 async function fetchPaidMap(invoiceIds: string[]): Promise<Map<string, number>> {
   const map = new Map<string, number>();
-  for (const batch of chunk(invoiceIds, 100)) {
+  const results = await Promise.all(chunk(invoiceIds, 100).map(async (batch) => {
     const { data, error } = await supabase
       .from('invoice_payments')
       .select('invoice_id, amount')
       .in('invoice_id', batch);
     if (error) throw error;
-    for (const row of data || []) {
-      map.set(row.invoice_id, (map.get(row.invoice_id) || 0) + Number(row.amount || 0));
-    }
+    return data || [];
+  }));
+  for (const row of results.flat()) {
+    map.set(row.invoice_id, (map.get(row.invoice_id) || 0) + Number(row.amount || 0));
   }
   return map;
 }
@@ -184,23 +184,24 @@ interface OrderInfo {
 /** Info ordine (metodo pagamento + cliente/telefono) per gli ordini "reali" */
 async function fetchOrderInfoMap(orderIds: string[]): Promise<Map<string, OrderInfo>> {
   const map = new Map<string, OrderInfo>();
-  for (const batch of chunk(orderIds, 100)) {
+  const results = await Promise.all(chunk(orderIds, 100).map(async (batch) => {
     const { data, error } = await supabase
       .from('orders')
       .select('id, agent_id, payment_methods(name, description), customers!orders_customer_id_fkey(business_name, contact_phone, contact_mobile)')
       .in('id', batch);
     if (error) throw error;
-    for (const o of (data || []) as any[]) {
-      const pm = o.payment_methods as { name?: string; description?: string } | null;
-      const c = o.customers as { business_name?: string; contact_phone?: string; contact_mobile?: string } | null;
-      map.set(o.id, {
-        agentId: o.agent_id || null,
-        businessName: c?.business_name || null,
-        phone: c?.contact_mobile || c?.contact_phone || null,
-        paymentMethodName: pm?.description || pm?.name || null,
-        paymentTermsSource: [pm?.name, pm?.description].filter(Boolean).join(' ') || null,
-      });
-    }
+    return (data || []) as any[];
+  }));
+  for (const o of results.flat()) {
+    const pm = o.payment_methods as { name?: string; description?: string } | null;
+    const c = o.customers as { business_name?: string; contact_phone?: string; contact_mobile?: string } | null;
+    map.set(o.id, {
+      agentId: o.agent_id || null,
+      businessName: c?.business_name || null,
+      phone: c?.contact_mobile || c?.contact_phone || null,
+      paymentMethodName: pm?.description || pm?.name || null,
+      paymentTermsSource: [pm?.name, pm?.description].filter(Boolean).join(' ') || null,
+    });
   }
   return map;
 }
@@ -208,20 +209,21 @@ async function fetchOrderInfoMap(orderIds: string[]): Promise<Map<string, OrderI
 /** Mappa invoice_id -> { ultimo sollecito, conteggio } */
 async function fetchSollecitoMap(invoiceIds: string[]): Promise<Map<string, { last: SollecitoInfo; count: number }>> {
   const map = new Map<string, { last: SollecitoInfo; count: number }>();
-  for (const batch of chunk(invoiceIds, 100)) {
+  const results = await Promise.all(chunk(invoiceIds, 100).map(async (batch) => {
     const { data, error } = await supabase
       .from('sollecito_log')
       .select('invoice_id, channel, sent_at')
       .in('invoice_id', batch)
       .order('sent_at', { ascending: false });
     if (error) throw error;
-    for (const row of data || []) {
-      const cur = map.get(row.invoice_id);
-      if (!cur) {
-        map.set(row.invoice_id, { last: { sentAt: row.sent_at, channel: row.channel }, count: 1 });
-      } else {
-        cur.count += 1;
-      }
+    return data || [];
+  }));
+  for (const row of results.flat()) {
+    const cur = map.get(row.invoice_id);
+    if (!cur) {
+      map.set(row.invoice_id, { last: { sentAt: row.sent_at, channel: row.channel }, count: 1 });
+    } else {
+      cur.count += 1;
     }
   }
   return map;
@@ -255,9 +257,12 @@ export async function fetchScadenziario(userId: string, role: string): Promise<S
     (inv) => (inv.totale_documento || 0) - (paidMap.get(inv.id) || 0) > 0.01
   );
 
-  // 3. Info ordini (metodo pagamento, cliente, telefono) — solo ordini reali
+  // 3. Info ordini (metodo pagamento, cliente, telefono) — solo ordini reali con id UUID
+  // (le fatture storiche hanno order_id tipo "LEGACY-9472"/"DRAFT-..."/"CUSTOM-..." che
+  // non possono essere confrontati con orders.id uuid → PostgREST 400 "22P02")
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const realOrderIds = [...new Set(
-    open.map((i) => i.order_id).filter((id): id is string => !!id && !id.startsWith('DRAFT') && !id.startsWith('CUSTOM'))
+    open.map((i) => i.order_id).filter((id): id is string => !!id && UUID_RE.test(id))
   )];
   const orderInfoMap = await fetchOrderInfoMap(realOrderIds);
 

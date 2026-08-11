@@ -793,8 +793,8 @@ export default function MapScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Quick contact row */}
-            {(selectedTab.telefono_mobile || selectedTab.telefono_fisso) && (
+            {/* Quick contact row — nascosta per i clienti di altri agenti (marker grigi) */}
+            {!isOwnedByOther && (selectedTab.telefono_mobile || selectedTab.telefono_fisso) && (
               <View style={styles.popupContactRow}>
                 <Ionicons name="call-outline" size={14} color="#6B7280" />
                 <Text style={styles.popupContactText} numberOfLines={1}>

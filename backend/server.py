@@ -55,6 +55,7 @@ async def get_status_checks():
 
 # Manuale utente PDF (generato in /app/manual)
 MANUAL_PATH = "/app/manual/manuale-utente-voom.pdf"
+MANUAL_AITOUR_PATH = "/app/manual/manuale-ai-tour-agente-mobile.pdf"
 
 @api_router.get("/manual")
 async def get_manual():
@@ -62,6 +63,14 @@ async def get_manual():
         MANUAL_PATH,
         media_type="application/pdf",
         filename="Manuale-Utente-VOOM-crm.pdf",
+    )
+
+@api_router.get("/manual-aitour")
+async def get_manual_aitour():
+    return FileResponse(
+        MANUAL_AITOUR_PATH,
+        media_type="application/pdf",
+        filename="Manuale-AI-Tour-Agente-VOOM-crm.pdf",
     )
 
 # Include the router in the main app

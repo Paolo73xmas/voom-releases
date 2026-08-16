@@ -1,6 +1,7 @@
 // Modalita' Live AI Tour (Fase 2): stato tour attivo, azioni sugli stop,
 // integrazione con visite/appuntamenti CRM, suggerimenti di recupero tempo.
 import { supabase } from '../supabase';
+import * as Location from 'expo-location';
 import type { TourCandidate, GeoPoint, AiTourSettings, EntityType, PriorityClass } from './types';
 import { timeToMin } from './types';
 import type { SavedTour, SavedStop } from './tours';
@@ -35,15 +36,19 @@ export function nowMin(): number {
   return d.getHours() * 60 + d.getMinutes();
 }
 
-export function getCurrentPos(): Promise<{ lat: number; lng: number } | null> {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) return resolve(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => resolve(null),
-      { timeout: 8000, enableHighAccuracy: true }
-    );
-  });
+export async function getCurrentPos(): Promise<{ lat: number; lng: number } | null> {
+  try {
+    let perm = await Location.getForegroundPermissionsAsync();
+    if (perm.status !== 'granted') {
+      if (!perm.canAskAgain) return null;
+      perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') return null;
+    }
+    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+  } catch {
+    return null;
+  }
 }
 
 export function stopToCandidate(s: SavedStop & { outcome?: string | null; follow_up_date?: string | null }): TourCandidate {

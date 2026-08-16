@@ -27,12 +27,15 @@ import { scoreCandidates, computePortfolioStats } from '../lib/aitour/scoring';
 import { planTour, filterByArea, pickBestCluster, candidatesForDayType, type AreaFilter } from '../lib/aitour/planner';
 import { getStrategySummary, recommendDayType } from '../lib/aitour/ai';
 import { getSettings, saveTour, listTours, loadTourStops, deleteTour, type SavedTour } from '../lib/aitour/tours';
+import { getActiveTour, loadLiveState, startLiveTour, type LiveState } from '../lib/aitour/live';
 import { geocodeAddress } from '../lib/aitour/osrm';
+import { LiveTourView } from '../components/aitour/LiveTourView';
+import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
+import { MonthTab } from '../components/aitour/MonthTab';
+import { AI_PURPLE, AI_PURPLE_SOFT, openNavigation } from '../components/aitour/shared';
 import type { TourPlan, GeoPoint, AiTourSettings, DayType, EntityType, PriorityClass } from '../lib/aitour/types';
 import { DEFAULT_SETTINGS, timeToMin, minToTime, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS } from '../lib/aitour/types';
-
-const AI_PURPLE = '#7C3AED';
-const AI_PURPLE_SOFT = '#F3E8FF';
+import type { WeekDayPlan } from '../lib/aitour/week';
 
 const PRIORITY_COLORS: Record<PriorityClass, string> = {
   Urgente: '#DC2626',
@@ -137,25 +140,17 @@ async function getCurrentPositionMobile(): Promise<{ lat: number; lng: number } 
   }
 }
 
-function openNavigation(lat: number, lng: number, label: string) {
-  const encoded = encodeURIComponent(label);
-  const url = Platform.select({
-    ios: `http://maps.apple.com/?daddr=${lat},${lng}&q=${encoded}`,
-    default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-  });
-  Linking.openURL(url as string).catch(() => {
-    Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`).catch(() => {});
-  });
-}
-
 export default function AITourScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const agentId = user?.id || '';
 
-  const [tab, setTab] = useState<'genera' | 'tours'>('genera');
+  const [tab, setTab] = useState<'genera' | 'settimana' | 'mensile' | 'tours'>('genera');
   const [phase, setPhase] = useState<'form' | 'result'>('form');
+  const [liveState, setLiveState] = useState<LiveState | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [weekPreset, setWeekPreset] = useState<WeekPreset | null>(null);
   const [settings, setSettings] = useState<AiTourSettings>({ ...DEFAULT_SETTINGS });
   const [agentZones, setAgentZones] = useState<TerritoryZone[]>([]);
   const [form, setForm] = useState<FormValues>({
@@ -205,6 +200,16 @@ export default function AITourScreen() {
         if (mine.length > 0) setForm((old) => (old.areaMode === 'auto' ? { ...old, areaMode: 'territory' } : old));
       })
       .catch(() => setAgentZones([]));
+    // Riprendi automaticamente un tour live in corso
+    getActiveTour(agentId).then(async (t) => {
+      if (t) {
+        try {
+          setLiveState(await loadLiveState(t));
+        } catch (err) {
+          console.warn('[AITour] resume live:', err);
+        }
+      }
+    });
   }, [agentId]);
 
   // Ricerca clienti per visite obbligatorie
@@ -504,8 +509,83 @@ export default function AITourScreen() {
     }
   };
 
+  // Avvia la Modalità Live: salva il tour se necessario, poi lo attiva
+  const startLive = async () => {
+    if (!plan || !agentId) return;
+    hap.medium();
+    setStarting(true);
+    setErrMsg('');
+    try {
+      let tourId = savedTourId;
+      if (!tourId) {
+        tourId = await saveTour(agentId, plan);
+        setSavedTourId(tourId);
+      }
+      await startLiveTour(tourId);
+      const tour = (await getActiveTour(agentId))!;
+      setLiveState(await loadLiveState(tour));
+      hap.success();
+    } catch (err) {
+      console.error('[AITour] startLive:', err);
+      setErrMsg("Errore nell'avvio del tour");
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const exitLive = () => {
+    setLiveState(null);
+    setPhase('form');
+    setSavedTourId(null);
+    setPlan(null);
+    if (tab === 'tours') loadSavedTours();
+  };
+
+  // Dalla Vista Settimanale: genera il tour ottimizzato di un singolo giorno
+  const generateFromWeek = async (day: WeekDayPlan, start: GeoPoint, end: GeoPoint | null) => {
+    try {
+      const newPlan = await planTour({
+        candidates: day.candidates,
+        mandatoryKeys: new Set<string>(),
+        start,
+        end,
+        tourDate: day.date,
+        startMin: timeToMin(settings.work_start),
+        endMin: timeToMin(settings.work_end),
+        dayType: 'mista',
+        resolvedDayType: 'mista',
+        bufferPct: settings.buffer_pct_mista,
+        area: { mode: 'auto' },
+      });
+      if (newPlan.stops.length === 0) {
+        setErrMsg("Nessuna visita pianificabile nell'orario configurato");
+        return;
+      }
+      newPlan.areaLabel = day.label;
+      newPlan.aiSummary = await getStrategySummary(newPlan);
+      setSavedTourId(null);
+      setPlan(newPlan);
+      setReadOnly(false);
+      setPhase('result');
+      setTab('genera');
+      hap.success();
+    } catch (err) {
+      console.error('[AITour] generateFromWeek:', err);
+      setErrMsg('Errore nella generazione del tour del giorno');
+    }
+  };
+
   const viewSaved = async (tour: SavedTour) => {
     hap.light();
+    // Tour in corso: riprendi direttamente la Modalità Live
+    if (tour.status === 'active') {
+      try {
+        setLiveState(await loadLiveState(tour));
+        return;
+      } catch (err) {
+        console.warn('[AITour] resume live from list:', err);
+      }
+    }
     try {
       const { stops, geometry } = await loadTourStops(tour.id);
       const planLike: TourPlan = {
@@ -889,6 +969,15 @@ export default function AITourScreen() {
               <Text style={[styles.actionBtnText, { color: '#FFF' }]}>{savedTourId ? 'Salvato' : 'Salva'}</Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.startLiveBtn, readOnly && { marginLeft: 'auto' }]}
+            onPress={startLive}
+            disabled={starting}
+            activeOpacity={0.7}
+          >
+            {starting ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="play" size={15} color="#FFF" />}
+            <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Avvia Tour</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Meta */}
@@ -1095,29 +1184,34 @@ export default function AITourScreen() {
         </View>
       </View>
 
-      {/* Tabs */}
-      <View style={styles.segmented}>
-        <TouchableOpacity
-          style={[styles.segment, tab === 'genera' && styles.segmentActive]}
-          onPress={() => {
-            hap.light();
-            setTab('genera');
-          }}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.segmentText, tab === 'genera' && styles.segmentTextActive]}>Genera Tour</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.segment, tab === 'tours' && styles.segmentActive]}
-          onPress={() => {
-            hap.light();
-            setTab('tours');
-          }}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.segmentText, tab === 'tours' && styles.segmentTextActive]}>I miei Tour</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Modalità Live: sostituisce tutto il contenuto */}
+      {liveState ? (
+        <LiveTourView key={liveState.tour.id} initial={liveState} settings={settings} onExit={exitLive} />
+      ) : (
+        <>
+          {/* Tabs */}
+          <View style={styles.segmented}>
+            {(
+              [
+                { key: 'genera', label: 'Genera' },
+                { key: 'settimana', label: 'Settimana' },
+                { key: 'mensile', label: 'Mese' },
+                { key: 'tours', label: 'I miei Tour' },
+              ] as const
+            ).map((t) => (
+              <TouchableOpacity
+                key={t.key}
+                style={[styles.segment, tab === t.key && styles.segmentActive]}
+                onPress={() => {
+                  hap.light();
+                  setTab(t.key);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.segmentText, tab === t.key && styles.segmentTextActive]}>{t.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
       {errMsg ? (
         <View style={styles.errBanner}>
@@ -1152,8 +1246,32 @@ export default function AITourScreen() {
             tab === 'tours' ? <RefreshControl refreshing={loadingTours} onRefresh={loadSavedTours} tintColor={AI_PURPLE} /> : undefined
           }
         >
-          {tab === 'genera' ? (phase === 'form' ? renderForm() : renderResult()) : renderSavedTours()}
+          {tab === 'genera' && (phase === 'form' ? renderForm() : renderResult())}
+          {tab === 'settimana' && (
+            <WeekTab
+              agentId={agentId}
+              settings={settings}
+              resolvePoint={resolvePoint}
+              onGenerateDay={generateFromWeek}
+              preset={weekPreset}
+              onPresetConsumed={() => setWeekPreset(null)}
+            />
+          )}
+          {tab === 'mensile' && (
+            <MonthTab
+              agentId={agentId}
+              settings={settings}
+              resolvePoint={resolvePoint}
+              onOpenWeek={(p) => {
+                setWeekPreset(p);
+                setTab('settimana');
+              }}
+            />
+          )}
+          {tab === 'tours' && renderSavedTours()}
         </ScrollView>
+      )}
+        </>
       )}
     </View>
   );
@@ -1336,7 +1454,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   errBannerText: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 11, color: '#991B1B' },
-  actionsRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  actionsRow: { flexDirection: 'row', gap: 8, marginTop: 4, flexWrap: 'wrap' },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1351,6 +1469,7 @@ const styles = StyleSheet.create({
   actionBtnText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: DS.ink2 },
   saveBtn: { backgroundColor: '#059669', borderColor: '#059669', marginLeft: 'auto' },
   savedBtn: { backgroundColor: '#6B7280', borderColor: '#6B7280' },
+  startLiveBtn: { backgroundColor: AI_PURPLE, borderColor: AI_PURPLE },
   resultMeta: { fontFamily: JAKARTA.medium, fontSize: 12, color: DS.inkMuted, marginTop: 12 },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   kpiChip: {

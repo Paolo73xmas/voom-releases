@@ -513,6 +513,12 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             </Text>
           </View>
           {next.candidate.reason ? <Text style={styles.nextReason}>{next.candidate.reason}</Text> : null}
+          <View style={styles.inspectReminder}>
+            <Ionicons name="clipboard-outline" size={13} color="#92400E" />
+            <Text style={styles.inspectReminderText}>
+              Ricorda: l&apos;ispezione è sempre obbligatoria durante la visita — non serve solo se il cliente fa l&apos;ordine o se salti la visita.
+            </Text>
+          </View>
           {!next.candidate.customerId && (
             <Text style={styles.noCustomerHint}>
               Nessuna scheda cliente: con Ispezione o Raccolta Ordine acquisisci il punto vendita come prospect (solo di persona, verifica GPS).
@@ -841,6 +847,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 15,
   },
+  inspectReminder: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 8,
+  },
+  inspectReminderText: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 11, color: '#92400E', lineHeight: 15 },
   actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   actionBtn: {
     flexDirection: 'row',

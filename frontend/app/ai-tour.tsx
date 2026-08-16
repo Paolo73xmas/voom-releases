@@ -30,6 +30,7 @@ import { getSettings, saveTour, listTours, loadTourStops, deleteTour, type Saved
 import { getActiveTour, loadLiveState, startLiveTour, type LiveState } from '../lib/aitour/live';
 import { geocodeAddress } from '../lib/aitour/osrm';
 import { LiveTourView } from '../components/aitour/LiveTourView';
+import { TourMapView, type TourMapStop } from '../components/aitour/TourMapView';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
 import { AI_PURPLE, AI_PURPLE_SOFT, openNavigation } from '../components/aitour/shared';
@@ -177,6 +178,7 @@ export default function AITourScreen() {
   const [savedTourId, setSavedTourId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showExcluded, setShowExcluded] = useState(false);
+  const [resultView, setResultView] = useState<'list' | 'map'>('list');
 
   // Visite obbligatorie
   const [search, setSearch] = useState('');
@@ -1022,6 +1024,53 @@ export default function AITourScreen() {
         ))}
         {plan.routingFallback && <Text style={styles.fallbackNote}>Tempi stimati (servizio routing temporaneamente non disponibile).</Text>}
 
+        {/* Vista Elenco / Mappa */}
+        <View style={styles.viewToggle}>
+          {(
+            [
+              { key: 'list', label: 'Elenco', icon: 'list' },
+              { key: 'map', label: 'Mappa', icon: 'map' },
+            ] as const
+          ).map((v) => (
+            <TouchableOpacity
+              key={v.key}
+              style={[styles.viewToggleBtn, resultView === v.key && styles.viewToggleBtnActive]}
+              onPress={() => {
+                hap.light();
+                setResultView(v.key);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={v.icon} size={14} color={resultView === v.key ? '#FFF' : DS.ink2} />
+              <Text style={[styles.viewToggleText, resultView === v.key && { color: '#FFF' }]}>{v.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {resultView === 'map' ? (
+          <TourMapView
+            stops={plan.stops.map(
+              (s): TourMapStop => ({
+                key: s.candidate.key,
+                lat: s.candidate.lat,
+                lng: s.candidate.lng,
+                color: ENTITY_COLORS[s.candidate.entityType],
+                label: String(s.sequence),
+                mandatory: s.mandatory,
+                name: s.candidate.name,
+                entity: ENTITY_LABELS[s.candidate.entityType],
+                line1: `Arrivo ${minToTime(s.arrivalMin)} · visita ${s.candidate.visitMinutes} min · ${s.candidate.score}/100`,
+                line2: `Dal punto precedente: ${Math.round(s.travelMinFromPrev)} min · ${s.travelKmFromPrev.toFixed(1)} km`,
+                reason: s.candidate.reason,
+              })
+            )}
+            geometry={plan.geometry}
+            start={plan.start}
+            end={plan.end}
+            height={440}
+          />
+        ) : (
+          <>
         {/* Partenza */}
         <View style={styles.startRow}>
           <View style={styles.startDot}>
@@ -1096,6 +1145,8 @@ export default function AITourScreen() {
               {minToTime(plan.finishMin)} · Rientro a {plan.end.label}
             </Text>
           </View>
+        )}
+          </>
         )}
 
         {/* Escluse */}
@@ -1493,6 +1544,20 @@ const styles = StyleSheet.create({
   },
   alertText: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 12, lineHeight: 17 },
   fallbackNote: { fontFamily: JAKARTA.regular, fontSize: 10, color: DS.inkMuted, marginTop: 6 },
+  viewToggle: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  viewToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: DS.surface,
+    borderWidth: 1,
+    borderColor: DS.border,
+    borderRadius: 9,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  viewToggleBtnActive: { backgroundColor: AI_PURPLE, borderColor: AI_PURPLE },
+  viewToggleText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: DS.ink2 },
   startRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, marginBottom: 2 },
   startDot: {
     width: 24,

@@ -10,6 +10,7 @@ import { hap } from '../../lib/haptics';
 import { AI_PURPLE, AI_PURPLE_SOFT, openNavigation } from './shared';
 import { EsitoModal } from './EsitoModal';
 import { SkipModal } from './SkipModal';
+import { TourMapView, type TourMapStop } from './TourMapView';
 import type { LiveState, LiveStop } from '../../lib/aitour/live';
 import {
   nowMin, getCurrentPos, markArrived, completeStop, skipStop, cancelStopByRecalc,
@@ -52,6 +53,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [busy, setBusy] = useState(false);
   const [recalcing, setRecalcing] = useState(false);
   const [report, setReport] = useState<TourReport | null>(null);
+  const [showMap, setShowMap] = useState(false);
   const tour = initial.tour;
   const stopsRef = useRef(stops);
   stopsRef.current = stops;
@@ -458,6 +460,49 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         )}
       </View>
 
+      {/* Mappa del giro */}
+      <TouchableOpacity
+        style={styles.mapToggle}
+        onPress={() => {
+          hap.light();
+          setShowMap((x) => !x);
+        }}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="map-outline" size={15} color={AI_PURPLE} />
+        <Text style={styles.mapToggleText}>Mappa del giro</Text>
+        <Ionicons name={showMap ? 'chevron-up' : 'chevron-down'} size={15} color={DS.inkMuted} style={{ marginLeft: 'auto' }} />
+      </TouchableOpacity>
+      {showMap && (
+        <TourMapView
+          stops={stops.map((s): TourMapStop => {
+            const pendingIdx = pending.findIndex((p) => p.id === s.id);
+            return {
+              key: s.id,
+              lat: s.candidate.lat,
+              lng: s.candidate.lng,
+              color: ENTITY_COLORS[s.candidate.entityType],
+              label: pendingIdx >= 0 ? String(pendingIdx + 1) : '',
+              mandatory: s.mandatory,
+              name: s.candidate.name,
+              entity: ENTITY_LABELS[s.candidate.entityType],
+              line1:
+                s.status === 'completed'
+                  ? `Completata${s.outcome ? ` · ${s.outcome}` : ''}`
+                  : s.status === 'skipped' || s.status === 'cancelled'
+                    ? 'Saltata'
+                    : `Arrivo ${s.plannedArrival ? s.plannedArrival.slice(0, 5) : '—'} · visita ${s.candidate.visitMinutes} min · ${s.candidate.score}/100`,
+              reason: s.status === 'planned' || s.status === 'arrived' ? s.candidate.reason : undefined,
+              status: s.status,
+            };
+          })}
+          geometry={[]}
+          start={{ lat: tour.start_lat ?? stops[0]?.candidate.lat ?? 41.9, lng: tour.start_lng ?? stops[0]?.candidate.lng ?? 12.49, label: tour.start_label || 'Partenza' }}
+          end={initial.endPoint}
+          height={380}
+        />
+      )}
+
       {message ? (
         <View style={styles.msgBox}>
           <Ionicons name="sparkles" size={13} color="#2563EB" />
@@ -779,6 +824,17 @@ const styles = StyleSheet.create({
   progressText: { fontFamily: JAKARTA.medium, fontSize: 11, color: DS.inkMuted },
   delayBadge: { borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },
   delayText: { fontFamily: JAKARTA.semibold, fontSize: 10 },
+  mapToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: DS.surface,
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    marginTop: 10,
+  },
+  mapToggleText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: DS.ink2 },
   msgBox: {
     flexDirection: 'row',
     gap: 7,

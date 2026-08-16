@@ -143,6 +143,8 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
 
 - **Manuale AI Tour agente (ago 2026)**: PDF operativo per gli agenti sulla sezione AI Tour mobile (10 capitoli sul modello del manuale web, 18 screenshot reali dell'app). File /app/manual/manuale-ai-tour-agente-mobile.pdf, servito da GET /api/manual-aitour. Rigenerabile con /app/manual/capture_aitour.py + build_manual_aitour.py (+ cleanup dati test con frontend/scripts/cleanup_aitour_test.mjs).
 
+- **Mappa del tour AI in app (ago 2026)**: components/aitour/TourMapView.tsx (Leaflet WebView/iframe, percorso + marker numerati per tipo + popup con Naviga). Toggle Elenco/Mappa nel risultato del tour e "Mappa del giro" collassabile nel Tour Live (con stati ✓/✕). RESTANO NON PORTATE: Heatmap, Monitoring staff, disegno territori.
+
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)
 - Camera integration for photo uploads in anagrafica visits

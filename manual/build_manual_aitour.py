@@ -207,6 +207,9 @@ html = f"""<!DOCTYPE html>
 </ol>
 {figrow(fig("ai06-risultato-fermate", "Fermate in sequenza: orari, badge tipo, priorità e Naviga"), fig("ai07-risultato-escluse", "Le «Visite escluse»: chi è rimasto fuori e perché"))}
 <div class="info">ℹ️ Le <strong>escluse</strong> non sono scartate per sempre: restano candidate e spesso entrano nel giro successivo.</div>
+<h3>Elenco o Mappa</h3>
+<p>Il giro proposto si consulta in due modi con il selettore <strong>Elenco / Mappa</strong>. La vista <strong>Mappa</strong> mostra il <strong>percorso reale</strong> in blu, il marker <strong>P</strong> di partenza (e <strong>A</strong> di rientro, se impostato) e le <strong>fermate numerate</strong> con il colore del tipo di soggetto (bordo rosso se obbligatoria). Toccando un marker si apre la scheda con orario di arrivo, durata, priorità, motivo dell'AI e il pulsante <strong>Naviga</strong>.</p>
+{figrow(fig("ai19-tour-mappa", "La vista Mappa del giro: percorso, partenza P e fermate numerate con popup"))}
 
 <!-- ═══════════ CAP 5 ═══════════ -->
 <h2 class="chapter">5 · Cosa impara l'AI dai tuoi dati (e come "allenarla")</h2>
@@ -233,7 +236,7 @@ html = f"""<!DOCTYPE html>
 <ol class="steps">
   <li><strong>Avvia Tour.</strong> La tua posizione GPS viene salvata periodicamente per chilometraggio e sicurezza (con app aperta).</li>
   <li>Per ogni tappa vedi <strong>distanza, orario previsto di arrivo, durata stimata</strong> e il motivo per cui l'AI l'ha scelta. In alto, il conteggio <em>fatte · saltate · rimanenti</em> e l'indicatore <em>Ritardo/Anticipo</em>.</li>
-  <li><strong>Navigatore</strong> apre le mappe del telefono già puntate sulla tappa.</li>
+  <li><strong>Navigatore</strong> apre le mappe del telefono già puntate sulla tappa. Con <strong>"Mappa del giro"</strong> (sopra la prossima visita) vedi invece tutte le tappe sulla mappa: numerate le rimanenti nell'ordine attuale, <strong>✓ verdi</strong> le completate, <strong>✕ grigie</strong> le saltate.</li>
   <li><strong>"Sono arrivato"</strong>: registra l'orario di arrivo reale (serve per le durate apprese!).</li>
   <li>Fai il tuo lavoro: <strong>Raccolta Ordine</strong> o <strong>Ispezione</strong>. Al salvataggio torni al tour e la tappa si <strong>chiude da sola</strong> con l'esito giusto (ordine/ispezione). <strong>Ricorda: l'ispezione è sempre obbligatoria durante la visita</strong> — non serve solo se il cliente fa l'ordine o se salti la tappa.</li>
   <li><strong>Tappa senza scheda cliente</strong> (tabaccheria da acquisire): toccando Ordine o Ispezione parte la <strong>Prima Visita</strong> con i dati della tabaccheria precompilati — solo se il GPS conferma che sei sul posto (entro 500 m). Al termine il nuovo prospect è collegato alla tappa e prosegui.</li>
@@ -244,6 +247,7 @@ html = f"""<!DOCTYPE html>
 </ol>
 {figrow(fig("ai10-live-esito", "Esito visita: 11 esiti, note e follow-up rapido"), fig("ai12-live-salta", "Salta visita: scegli il motivo"))}
 {figrow(fig("ai11-live-ricalcolo", "Dopo l'esito: giro ricalcolato e recupero tempo suggerito"), fig("ai14-consuntivo", "Il consuntivo di fine giornata con il report"))}
+{figrow(fig("ai20-live-mappa", "La «Mappa del giro» nel Live: tappe numerate e stati in tempo reale"))}
 <div class="warn">⚠️ <strong>Regola d'oro del Tour Live: l'ispezione è SEMPRE obbligatoria a ogni visita.</strong> Le uniche eccezioni sono due: il cliente fa l'ordine (la Raccolta Ordine sostituisce l'ispezione) oppure salti la visita con "Salta visita" indicando il motivo. In tutti gli altri casi, prima di chiudere la tappa, esegui l'<strong>Ispezione</strong> dal pulsante dedicato. L'app te lo ricorda con un avviso su ogni tappa.</div>
 <div class="warn">⚠️ Non chiudere le tappe se non sei sul posto: "rovini" l'apprendimento delle durate e i report chilometrici. Meglio <strong>Salta</strong> con il motivo.</div>
 <div class="info">📍 Con l'app pubblicata (build nativa) la posizione è tracciata in modo affidabile durante il giro; in Expo Go funziona solo con app in primo piano.</div>

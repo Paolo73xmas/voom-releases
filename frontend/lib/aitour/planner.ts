@@ -1,0 +1,356 @@
+// Planner AI Tour: clustering geografico + selezione greedy + 2-opt + timeline.
+// Massimo 2 chiamate OSRM per generazione (matrice + percorso finale).
+import type { TourCandidate, TourPlan, PlannedStop, GeoPoint, DayType } from './types';
+import { haversineKm } from './types';
+import { getMatrix, getRoute } from './osrm';
+import { pointInZones, type TerritoryZone } from './territories';
+
+export interface AreaFilter {
+  mode: 'auto' | 'territory' | 'province' | 'city' | 'radius';
+  province?: string;
+  city?: string;
+  radiusKm?: number;
+  zones?: TerritoryZone[];
+}
+
+export interface PlanInput {
+  candidates: TourCandidate[];
+  mandatoryKeys: Set<string>;
+  start: GeoPoint;
+  end: GeoPoint | null;
+  tourDate: string;
+  startMin: number;
+  endMin: number;
+  dayType: DayType;
+  resolvedDayType: Exclude<DayType, 'ai'>;
+  bufferPct: number;
+  area: AreaFilter;
+}
+
+const MAX_MATRIX_POINTS = 40; // start + max 38 candidati + end (demo OSRM regge fino a ~100)
+
+export function filterByArea(candidates: TourCandidate[], area: AreaFilter, start: GeoPoint): TourCandidate[] {
+  if (area.mode === 'territory' && area.zones && area.zones.length > 0) {
+    return candidates.filter((c) => pointInZones(c.lat, c.lng, area.zones!));
+  }
+  if (area.mode === 'province' && area.province) {
+    return candidates.filter((c) => (c.province || '').trim().toUpperCase() === area.province!.trim().toUpperCase());
+  }
+  if (area.mode === 'city' && area.city) {
+    return candidates.filter((c) => (c.city || '').trim().toLowerCase() === area.city!.trim().toLowerCase());
+  }
+  if (area.mode === 'radius' && area.radiusKm) {
+    return candidates.filter((c) => haversineKm(start.lat, start.lng, c.lat, c.lng) <= area.radiusKm!);
+  }
+  return candidates;
+}
+
+// Clustering a griglia (~5 km): sceglie la zona con maggior valore commerciale
+export function pickBestCluster(candidates: TourCandidate[], start: GeoPoint): { list: TourCandidate[]; label: string } {
+  if (candidates.length === 0) return { list: [], label: '' };
+  const CELL = 0.05;
+  const cells = new Map<string, { score: number; lat: number; lng: number; n: number }>();
+  for (const c of candidates) {
+    const key = `${Math.floor(c.lat / CELL)}:${Math.floor(c.lng / CELL)}`;
+    const e = cells.get(key) || { score: 0, lat: 0, lng: 0, n: 0 };
+    e.score += c.score;
+    e.lat += c.lat;
+    e.lng += c.lng;
+    e.n++;
+    cells.set(key, e);
+  }
+  // Zone oltre MAX_CLUSTER_KM dalla partenza sono escluse dalla scelta; se nessuna zona e'
+  // raggiungibile si ripiega sulla piu' vicina (evita giri assurdi tipo Roma -> Taranto).
+  const MAX_CLUSTER_KM = 120;
+  let best: { score: number; lat: number; lng: number } | null = null;
+  let nearest: { dist: number; lat: number; lng: number } | null = null;
+  for (const [key, e] of cells) {
+    const [gy, gx] = key.split(':').map(Number);
+    let total = e.score;
+    for (const [k2, e2] of cells) {
+      if (k2 === key) continue;
+      const [oy, ox] = k2.split(':').map(Number);
+      if (Math.abs(oy - gy) <= 1 && Math.abs(ox - gx) <= 1) total += e2.score * 0.5;
+    }
+    const centerLat = e.lat / e.n;
+    const centerLng = e.lng / e.n;
+    const distKm = haversineKm(start.lat, start.lng, centerLat, centerLng);
+    // leggera penalita' per zone molto lontane dalla partenza
+    total -= Math.min(40, distKm * 0.6);
+    if (!nearest || distKm < nearest.dist) nearest = { dist: distKm, lat: centerLat, lng: centerLng };
+    if (distKm <= MAX_CLUSTER_KM && (!best || total > best.score)) best = { score: total, lat: centerLat, lng: centerLng };
+  }
+  if (!best && nearest) best = { score: 0, lat: nearest.lat, lng: nearest.lng };
+  if (!best) return { list: candidates, label: '' };
+  let radius = 9;
+  let list = candidates.filter((c) => haversineKm(best!.lat, best!.lng, c.lat, c.lng) <= radius);
+  if (list.length < 6) {
+    radius = 16;
+    list = candidates.filter((c) => haversineKm(best!.lat, best!.lng, c.lat, c.lng) <= radius);
+  }
+  const cityCount = new Map<string, number>();
+  for (const c of list) cityCount.set(c.city, (cityCount.get(c.city) || 0) + 1);
+  const topCities = [...cityCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([city]) => city).filter(Boolean);
+  return { list, label: topCities.join(' / ') };
+}
+
+function twoOpt(order: number[], dur: (number | null)[][], hasEnd: boolean, endIdx: number): number[] {
+  const D = (a: number, b: number) => dur[a]?.[b] ?? 999999;
+  const seq = [...order];
+  const cost = (s: number[]) => {
+    let t = D(0, s[0]);
+    for (let i = 1; i < s.length; i++) t += D(s[i - 1], s[i]);
+    if (hasEnd && s.length > 0) t += D(s[s.length - 1], endIdx);
+    return t;
+  };
+  let improved = true;
+  let guard = 0;
+  while (improved && guard++ < 40) {
+    improved = false;
+    for (let i = 0; i < seq.length - 1; i++) {
+      for (let j = i + 1; j < seq.length; j++) {
+        const alt = [...seq.slice(0, i), ...seq.slice(i, j + 1).reverse(), ...seq.slice(j + 1)];
+        if (cost(alt) < cost(seq) - 1) {
+          seq.splice(0, seq.length, ...alt);
+          improved = true;
+        }
+      }
+    }
+  }
+  return seq;
+}
+
+export async function planTour(input: PlanInput): Promise<TourPlan> {
+  const { start, end, startMin, endMin, bufferPct } = input;
+  const warnings: string[] = [];
+  const availableMin = endMin - startMin;
+  const bufferReserve = Math.round((availableMin * bufferPct) / 100);
+  const usableUntil = endMin - bufferReserve;
+
+  // Ordina per punteggio, obbligatorie sempre incluse, cap per matrice OSRM
+  const sorted = [...input.candidates].sort((a, b) => b.score - a.score);
+  const mandatory = sorted.filter((c) => input.mandatoryKeys.has(c.key));
+  const optional = sorted.filter((c) => !input.mandatoryKeys.has(c.key));
+  const capOptional = Math.max(0, MAX_MATRIX_POINTS - 2 - mandatory.length);
+  const pool = [...mandatory, ...optional.slice(0, capOptional)];
+
+  const points = [
+    { lat: start.lat, lng: start.lng },
+    ...pool.map((c) => ({ lat: c.lat, lng: c.lng })),
+    ...(end ? [{ lat: end.lat, lng: end.lng }] : []),
+  ];
+  const matrix = await getMatrix(points);
+  const endIdx = end ? points.length - 1 : -1;
+  const durMin = (a: number, b: number) => ((matrix.durations[a]?.[b] ?? 999999) as number) / 60;
+
+  // Selezione greedy: massimizza (punteggio - penalita' viaggio) rispettando l'orario
+  const selected: number[] = []; // indici in points (1..pool.length)
+  const inTour = new Set<number>();
+  let currentIdx = 0;
+  let clock = startMin;
+  const mandatoryIdx = new Set(mandatory.map((_, i) => i + 1));
+
+  const fits = (from: number, to: number, visitMin: number, at: number) => {
+    const travel = durMin(from, to);
+    const after = at + travel + visitMin;
+    const backHome = end ? durMin(to, endIdx) : 0;
+    return after + backHome <= usableUntil;
+  };
+
+  // Prima le obbligatorie (in ordine greedy tra loro), incluse anche se sforano (con warning)
+  const mandatoryLeft = new Set(mandatoryIdx);
+  while (mandatoryLeft.size > 0) {
+    let bestI = -1;
+    let bestT = Infinity;
+    for (const i of mandatoryLeft) {
+      const t = durMin(currentIdx, i);
+      if (t < bestT) { bestT = t; bestI = i; }
+    }
+    const cand = pool[bestI - 1];
+    if (!fits(currentIdx, bestI, cand.visitMinutes, clock)) {
+      warnings.push(`La visita obbligatoria "${cand.name}" porta il giro oltre l'orario pianificabile`);
+    }
+    clock += durMin(currentIdx, bestI) + cand.visitMinutes;
+    selected.push(bestI);
+    inTour.add(bestI);
+    currentIdx = bestI;
+    mandatoryLeft.delete(bestI);
+  }
+
+  // Poi le opzionali: score - 1.3*minuti viaggio
+  for (;;) {
+    let bestI = -1;
+    let bestVal = -Infinity;
+    for (let i = 1; i <= pool.length; i++) {
+      if (inTour.has(i)) continue;
+      const cand = pool[i - 1];
+      if (!fits(currentIdx, i, cand.visitMinutes, clock)) continue;
+      const val = cand.score - durMin(currentIdx, i) * 1.3;
+      if (val > bestVal) { bestVal = val; bestI = i; }
+    }
+    if (bestI === -1) break;
+    const cand = pool[bestI - 1];
+    clock += durMin(currentIdx, bestI) + cand.visitMinutes;
+    selected.push(bestI);
+    inTour.add(bestI);
+    currentIdx = bestI;
+  }
+
+  // Miglioramento 2-opt sulla sequenza (start fisso, end fisso se presente)
+  const optimized = selected.length > 2 ? twoOpt(selected, matrix.durations, !!end, endIdx) : selected;
+
+  // Percorso finale per geometria e tempi reali
+  const routePoints = [
+    { lat: start.lat, lng: start.lng },
+    ...optimized.map((i) => ({ lat: pool[i - 1].lat, lng: pool[i - 1].lng })),
+    ...(end ? [{ lat: end.lat, lng: end.lng }] : []),
+  ];
+  const route = optimized.length > 0 ? await getRoute(routePoints) : { latlngs: [], legs: [], totalKm: 0, totalMin: 0, fallback: matrix.fallback };
+
+  // Timeline
+  const stops: PlannedStop[] = [];
+  let t = startMin;
+  let driveMin = 0;
+  let visitMin = 0;
+  optimized.forEach((idx, i) => {
+    const cand = pool[idx - 1];
+    const leg = route.legs[i] || { durationMin: durMin(i === 0 ? 0 : optimized[i - 1], idx), distanceKm: 0 };
+    t += leg.durationMin;
+    driveMin += leg.durationMin;
+    const arrival = t;
+    t += cand.visitMinutes;
+    visitMin += cand.visitMinutes;
+    stops.push({
+      candidate: cand,
+      sequence: i + 1,
+      arrivalMin: arrival,
+      departureMin: t,
+      travelMinFromPrev: leg.durationMin,
+      travelKmFromPrev: leg.distanceKm,
+      mandatory: input.mandatoryKeys.has(cand.key),
+    });
+  });
+  let returnMin = 0;
+  let returnKm = 0;
+  if (end && optimized.length > 0) {
+    const lastLeg = route.legs[optimized.length];
+    returnMin = lastLeg?.durationMin ?? durMin(optimized[optimized.length - 1], endIdx);
+    returnKm = lastLeg?.distanceKm ?? 0;
+    driveMin += returnMin;
+    t += returnMin;
+  }
+  const finishMin = t;
+  if (finishMin > endMin) warnings.push('Il giro termina oltre l\'orario di fine configurato');
+
+  const excluded = pool
+    .map((c, i) => ({ c, i: i + 1 }))
+    .filter(({ i }) => !inTour.has(i))
+    .sort((a, b) => b.c.score - a.c.score)
+    .slice(0, 12)
+    .map(({ c }) => ({
+      candidate: c,
+      why: c.score >= 60 ? 'Non rientrava nell\'orario disponibile' : 'Priorita\' piu\' bassa rispetto alle visite scelte',
+    }));
+
+  const scores = stops.map((s) => s.candidate.score);
+  return {
+    stops,
+    geometry: route.latlngs,
+    start,
+    end,
+    tourDate: input.tourDate,
+    startMin,
+    endMin,
+    dayType: input.dayType,
+    resolvedDayType: input.resolvedDayType,
+    areaLabel: '',
+    totalKm: route.totalKm,
+    driveMin,
+    visitMin,
+    bufferMin: Math.max(0, endMin - finishMin),
+    returnMin,
+    returnKm,
+    finishMin,
+    potentialValue: stops.reduce((s, x) => s + x.candidate.potentialValue, 0),
+    avgScore: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+    excluded,
+    aiSummary: '',
+    aiRecommendation: null,
+    warnings,
+    routingFallback: matrix.fallback || route.fallback,
+  };
+}
+
+export function candidatesForDayType(
+  pool: { clients: TourCandidate[]; prospects: TourCandidate[]; orphans: TourCandidate[] },
+  dayType: Exclude<DayType, 'ai'>,
+): TourCandidate[] {
+  if (dayType === 'clienti') return pool.clients;
+  if (dayType === 'sviluppo') {
+    // sviluppo territorio: prospect + orfani + clienti propri "da recuperare" (molto in ritardo)
+    const daRecuperare = pool.clients.filter((c) => (c.daysSinceOrder ?? 0) > 60 && c.score >= 60);
+    return [...pool.prospects, ...pool.orphans, ...daRecuperare];
+  }
+  return [...pool.clients, ...pool.prospects, ...pool.orphans];
+}
+
+// Ricalcolo con sequenza manuale fissa: solo percorso + timeline (nessuna riottimizzazione)
+export async function planFixedOrder(ordered: TourCandidate[], base: TourPlan): Promise<TourPlan> {
+  const points = [
+    { lat: base.start.lat, lng: base.start.lng },
+    ...ordered.map((c) => ({ lat: c.lat, lng: c.lng })),
+    ...(base.end ? [{ lat: base.end.lat, lng: base.end.lng }] : []),
+  ];
+  const route = await getRoute(points);
+  const stops: PlannedStop[] = [];
+  let t = base.startMin;
+  let driveMin = 0;
+  let visitMin = 0;
+  const mandatorySet = new Set(base.stops.filter((s) => s.mandatory).map((s) => s.candidate.key));
+  ordered.forEach((cand, i) => {
+    const leg = route.legs[i] || { durationMin: 0, distanceKm: 0 };
+    t += leg.durationMin;
+    driveMin += leg.durationMin;
+    const arrival = t;
+    t += cand.visitMinutes;
+    visitMin += cand.visitMinutes;
+    stops.push({
+      candidate: cand,
+      sequence: i + 1,
+      arrivalMin: arrival,
+      departureMin: t,
+      travelMinFromPrev: leg.durationMin,
+      travelKmFromPrev: leg.distanceKm,
+      mandatory: mandatorySet.has(cand.key),
+    });
+  });
+  let returnMin = 0;
+  let returnKm = 0;
+  if (base.end && ordered.length > 0) {
+    const lastLeg = route.legs[ordered.length];
+    returnMin = lastLeg?.durationMin ?? 0;
+    returnKm = lastLeg?.distanceKm ?? 0;
+    driveMin += returnMin;
+    t += returnMin;
+  }
+  const warnings: string[] = [];
+  if (t > base.endMin) warnings.push('La sequenza manuale termina oltre l\'orario di fine configurato');
+  const scores = stops.map((s) => s.candidate.score);
+  return {
+    ...base,
+    stops,
+    geometry: route.latlngs,
+    totalKm: route.totalKm,
+    driveMin,
+    visitMin,
+    bufferMin: Math.max(0, base.endMin - t),
+    returnMin,
+    returnKm,
+    finishMin: t,
+    potentialValue: stops.reduce((s, x) => s + x.candidate.potentialValue, 0),
+    avgScore: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+    excluded: [],
+    warnings,
+    routingFallback: route.fallback,
+  };
+}

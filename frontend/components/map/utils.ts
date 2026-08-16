@@ -37,8 +37,10 @@ export function getMarkerColor(tab: Tabaccheria, userId?: string, userRole?: str
 
 export function getDisplayName(tab: Tabaccheria): string {
   if (tab.customer_business_name) return tab.customer_business_name;
-  if (tab.customer_id) return 'Cliente Nuovo';
-  return tab.denominazione;
+  // Cliente registrato ma business_name non leggibile (RLS di altro agente,
+  // caso tipico dei marker Orfani): mostra la denominazione reale della
+  // tabaccheria invece di "Cliente Nuovo" (parità web fix 21d9df7c).
+  return tab.denominazione || 'Cliente Nuovo';
 }
 
 export function getStatusLabel(color: string): string {

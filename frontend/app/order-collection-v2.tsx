@@ -251,6 +251,11 @@ export default function OrderCollectionV2() {
   // ── Loading ──
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // ✅ Canale di raccolta ordine (parità web): 'visita' di persona vs 'remoto' telefonico.
+  // Default: agente sul campo → visita; staff (admin/supervisor) → remoto.
+  const [orderChannel, setOrderChannel] = useState<'visita' | 'remoto'>(
+    ['admin', 'admincustom', 'supervisor'].includes(user?.role || '') ? 'remoto' : 'visita'
+  );
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   // ── Step 1: Customer ──
@@ -1307,6 +1312,8 @@ export default function OrderCollectionV2() {
           cashback_used: isUsingCashBack ? cashBackToUse : 0,
           generates_cashback: !isRottamazione && cashBackToUse <= 0,
           rottamazione_amount: isRottamazione ? rottamazioneAmount : 0,
+          // ✅ Canale di raccolta (parità web): serve all'AI Tour, l'ordine telefonico non vale come visita
+          order_channel: orderChannel,
         })
         .select()
         .single();
@@ -1386,8 +1393,11 @@ export default function OrderCollectionV2() {
         }
       } catch (e) { console.log('[cashback] non-blocking:', e); }
 
-      // ── UPDATE CUSTOMER ──
-      await supabase.from('customers').update({ category: 'client', last_visit_date: new Date().toISOString() }).eq('id', selectedCustomer.id);
+      // ── UPDATE CUSTOMER ── (✅ parità web: SOLO l'ordine raccolto DI PERSONA
+      // aggiorna last_visit_date — l'ordine telefonico non vale come contatto reale)
+      const customerUpdate: Record<string, any> = { category: 'client' };
+      if (orderChannel === 'visita') customerUpdate.last_visit_date = new Date().toISOString();
+      await supabase.from('customers').update(customerUpdate).eq('id', selectedCustomer.id);
 
       // ── Update tabaccheria stato_visita ──
       if (selectedCustomer.tabaccheria_id) {
@@ -1842,6 +1852,34 @@ export default function OrderCollectionV2() {
     return (
       <ScrollView style={s.stepContent} keyboardShouldPersistTaps="handled">
         <Text style={s.stepTitle}>Riepilogo Ordine</Text>
+
+        {/* ✅ Canale di raccolta ordine (parità web) */}
+        <View style={s.summaryCard}>
+          <Text style={s.summaryLabel}>{"Come stai raccogliendo l'ordine?"}</Text>
+          <View style={s.channelRow}>
+            <TouchableOpacity
+              style={[s.channelBtn, orderChannel === 'visita' && s.channelBtnVisita]}
+              onPress={() => setOrderChannel('visita')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="location" size={16} color={orderChannel === 'visita' ? '#15803D' : '#9CA3AF'} />
+              <Text style={[s.channelBtnText, orderChannel === 'visita' && { color: '#15803D' }]}>Di persona dal cliente</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.channelBtn, orderChannel === 'remoto' && s.channelBtnRemoto]}
+              onPress={() => setOrderChannel('remoto')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="call" size={16} color={orderChannel === 'remoto' ? '#1D4ED8' : '#9CA3AF'} />
+              <Text style={[s.channelBtnText, orderChannel === 'remoto' && { color: '#1D4ED8' }]}>Telefonico / remoto</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={s.channelHint}>
+            {orderChannel === 'visita'
+              ? "Vale come visita di persona: aggiorna l'ultima visita del cliente."
+              : "Non vale come visita: il cliente resta prioritario per un passaggio di persona."}
+          </Text>
+        </View>
 
         {/* Customer */}
         <View style={s.summaryCard}>
@@ -2552,6 +2590,18 @@ const s = StyleSheet.create({
   cartonHintGreen: { fontSize: 10.5, color: '#15803D', fontWeight: '600', marginTop: 2 },
   cartonBadge: { alignSelf: 'flex-start', backgroundColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, marginTop: 2 },
   cartonBadgeText: { fontSize: 10, color: '#15803D', fontWeight: '700' },
+
+  // ✅ Canale raccolta ordine
+  channelRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  channelBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF',
+    borderRadius: 10, paddingVertical: 10, paddingHorizontal: 6,
+  },
+  channelBtnVisita: { borderColor: '#15803D', backgroundColor: '#F0FDF4' },
+  channelBtnRemoto: { borderColor: '#1D4ED8', backgroundColor: '#EFF6FF' },
+  channelBtnText: { fontSize: 12, fontWeight: '600', color: '#9CA3AF', flexShrink: 1, textAlign: 'center' },
+  channelHint: { fontSize: 11, color: '#6B7280', marginTop: 8 },
   summaryTotalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   summaryGrandTotal: { borderTopWidth: 1, borderTopColor: '#E5E7EB', marginTop: 6, paddingTop: 8 },
   summaryGrandLabel: { fontSize: 16, fontWeight: '800', color: '#C2410C' },

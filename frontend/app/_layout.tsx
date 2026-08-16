@@ -79,6 +79,7 @@ export default function RootLayout() {
         <Stack.Screen name="drafts" options={{ headerShown: false }} />
         <Stack.Screen name="substitutions" options={{ headerShown: false }} />
         <Stack.Screen name="orphan-claims" options={{ headerShown: false }} />
+        <Stack.Screen name="ai-tour" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="customer/[id]"

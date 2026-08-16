@@ -229,6 +229,28 @@ async function fetchSollecitoMap(invoiceIds: string[]): Promise<Map<string, { la
   return map;
 }
 
+/**
+ * Fatture spostate in Contenzioso (parità web): escluse da scaduto/proiezione/totale.
+ * La tabella invoice_contenzioso è staff-only (RLS): per gli agenti restituisce 0 righe.
+ */
+async function fetchContenziosoSet(invoiceIds: string[]): Promise<Set<string>> {
+  const set = new Set<string>();
+  try {
+    const results = await Promise.all(chunk(invoiceIds, 100).map(async (batch) => {
+      const { data, error } = await supabase
+        .from('invoice_contenzioso')
+        .select('invoice_id')
+        .in('invoice_id', batch);
+      if (error) throw error;
+      return data || [];
+    }));
+    for (const row of results.flat()) set.add(row.invoice_id);
+  } catch (e) {
+    console.warn('[Scadenziario] invoice_contenzioso non leggibile (ignoro):', e);
+  }
+  return set;
+}
+
 async function resolveAgentNames(agentIds: string[]): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   const ids = [...new Set(agentIds.filter(Boolean))];
@@ -253,9 +275,13 @@ export async function fetchScadenziario(userId: string, role: string): Promise<S
 
   // 2. Pagamenti ricevuti -> residuo -> fatture aperte
   const paidMap = await fetchPaidMap(invoices.map((i) => i.id));
-  const open = invoices.filter(
+  let open = invoices.filter(
     (inv) => (inv.totale_documento || 0) - (paidMap.get(inv.id) || 0) > 0.01
   );
+
+  // 2b. Escludi le fatture in Contenzioso (parità web: escono da scaduto/proiezione/totale)
+  const contenzioso = await fetchContenziosoSet(open.map((i) => i.id));
+  if (contenzioso.size > 0) open = open.filter((inv) => !contenzioso.has(inv.id));
 
   // 3. Info ordini (metodo pagamento, cliente, telefono) — solo ordini reali con id UUID
   // (le fatture storiche hanno order_id tipo "LEGACY-9472"/"DRAFT-..."/"CUSTOM-..." che

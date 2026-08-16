@@ -36,7 +36,8 @@ export async function fetchCustomers(userId: string, userRole: string, branchId?
           query = query.in('agent_id', agentIds);
         }
       } else if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
-        query = query.eq('agent_id', userId);
+        // Agents: own customers + unassigned ones (aligned with production RLS policy)
+        query = query.or(`agent_id.eq.${userId},agent_id.is.null`);
       }
 
       const { data: customers, error } = await query;
@@ -103,7 +104,8 @@ export async function searchCustomers(
         query = query.in('agent_id', branchAgents.map(a => a.id));
       }
     } else if (userRole !== 'admin' && userRole !== 'supervisor' && userRole !== 'admincustom') {
-      query = query.eq('agent_id', userId);
+      // Agents: own customers + unassigned ones (aligned with production RLS policy)
+      query = query.or(`agent_id.eq.${userId},agent_id.is.null`);
     }
 
     if (searchTerm && searchTerm.trim().length > 0) {

@@ -226,6 +226,7 @@ export default function Dashboard() {
     {
       title: 'Vendite',
       actions: [
+        { title: 'AI Tour', icon: 'sparkles-outline' as const, onPress: () => router.push('/ai-tour') },
         { title: 'Raccolta Ordine', icon: 'cart-outline' as const, onPress: () => router.push('/order-collection-v2') },
         { title: 'Bozze Ordine', icon: 'document-text-outline' as const, badge: draftCount, onPress: () => router.push('/drafts') },
         { title: 'Sostituzioni', icon: 'swap-horizontal-outline' as const, onPress: () => router.push('/substitutions') },

@@ -30,6 +30,7 @@ export default function AltroScreen() {
     {
       title: 'Strumenti',
       items: [
+        { label: 'AI Tour', icon: 'sparkles-outline', route: '/ai-tour', sub: 'Pianificazione AI dei giri visita' },
         { label: 'Bozze Ordine', icon: 'document-text-outline', route: '/drafts' },
         { label: 'Sostituzioni', icon: 'swap-horizontal-outline', route: '/substitutions' },
         { label: 'Scadenziario', icon: 'hourglass-outline', route: '/scadenziario', sub: 'Fatture da incassare e solleciti' },

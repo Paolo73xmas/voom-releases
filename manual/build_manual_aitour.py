@@ -231,7 +231,7 @@ html = f"""<!DOCTYPE html>
 
 <!-- ═══════════ CAP 6 ═══════════ -->
 <h2 class="chapter">6 · Il Tour Live passo per passo</h2>
-<p>Dal risultato di un tour (o da un tour salvato in "I miei Tour") tocca <strong>Avvia Tour</strong>: entri in modalità <strong>Live</strong>. Se chiudi l'app e la riapri, il tour in corso <strong>riprende da solo</strong>.</p>
+<p>Dal risultato di un tour (o da un tour salvato in "I miei Tour") tocca <strong>Avvia Tour</strong>: entri in modalità <strong>Live</strong>. Se chiudi l'app e la riapri, il tour in corso <strong>riprende da solo</strong>. Se avvii oggi un tour generato per un altro giorno, la data del tour viene <strong>riallineata a oggi</strong>: report e storici restano corretti.</p>
 {figrow(fig("ai08-live", "Il Live: badge TOUR LIVE, progresso e prossima visita con le azioni"), fig("ai09-live-arrivato", "Dopo «Sono arrivato»: sei sul posto"))}
 <ol class="steps">
   <li><strong>Avvia Tour.</strong> La tua posizione GPS viene salvata periodicamente per chilometraggio e sicurezza (con app aperta).</li>
@@ -240,12 +240,12 @@ html = f"""<!DOCTYPE html>
   <li><strong>"Sono arrivato"</strong>: registra l'orario di arrivo reale (serve per le durate apprese!).</li>
   <li>Fai il tuo lavoro: <strong>Raccolta Ordine</strong> o <strong>Ispezione</strong>. Al salvataggio torni al tour e la tappa si <strong>chiude da sola</strong> con l'esito giusto (ordine/ispezione). <strong>Ricorda: l'ispezione è sempre obbligatoria durante la visita</strong> — non serve solo se il cliente fa l'ordine o se salti la tappa.</li>
   <li><strong>Tappa senza scheda cliente</strong> (tabaccheria da acquisire): toccando Ordine o Ispezione parte la <strong>Prima Visita</strong> con i dati della tabaccheria precompilati — solo se il GPS conferma che sei sul posto (entro 500 m). Al termine il nuovo prospect è collegato alla tappa e prosegui.</li>
-  <li><strong>"Visita terminata"</strong>: registra l'<strong>esito</strong>, una nota e l'eventuale data di follow-up. Usalo per chiudere la tappa quando l'ispezione o l'ordine non sono stati possibili (es. chiuso, titolare assente).</li>
+  <li><strong>"Visita terminata"</strong>: registra l'<strong>esito</strong>, una nota e l'eventuale follow-up con <strong>data e ora</strong> (scegli l'orario tra le proposte: l'appuntamento viene creato in <strong>Calendario</strong> nel giorno e all'ora scelti). Usalo per chiudere la tappa quando l'ispezione o l'ordine non sono stati possibili (es. chiuso, titolare assente). L'esito viene registrato anche come <strong>visita nel CRM</strong> del cliente.</li>
   <li><strong>"Salta visita"</strong>: se non puoi fermarti, indica il motivo (chiuso, titolare assente...). Le visite obbligatorie (★) non si possono saltare.</li>
   <li>Dopo ogni esito o salto l'AI <strong>ricalcola il giro</strong> dalla tua posizione: se sei in ritardo toglie le tappe meno preziose (te lo dice), se sei in anticipo può proporti una <strong>tabaccheria vicina da aggiungere</strong>.</li>
   <li><strong>"Termina"</strong>: ottieni il <strong>consuntivo di fine giornata</strong> (tappe, ordini, ispezioni, interessati, follow-up, km e durata) e chiudi con <em>Termina definitivamente</em>.</li>
 </ol>
-{figrow(fig("ai10-live-esito", "Esito visita: 11 esiti, note e follow-up rapido"), fig("ai12-live-salta", "Salta visita: scegli il motivo"))}
+{figrow(fig("ai10-live-esito", "Esito visita: note e follow-up con data e ora dell'appuntamento"), fig("ai12-live-salta", "Salta visita: scegli il motivo"))}
 {figrow(fig("ai11-live-ricalcolo", "Dopo l'esito: giro ricalcolato e recupero tempo suggerito"), fig("ai14-consuntivo", "Il consuntivo di fine giornata con il report"))}
 {figrow(fig("ai20-live-mappa", "La «Mappa del giro» nel Live: tappe numerate e stati in tempo reale"))}
 <div class="warn">⚠️ <strong>Regola d'oro del Tour Live: l'ispezione è SEMPRE obbligatoria a ogni visita.</strong> Le uniche eccezioni sono due: il cliente fa l'ordine (la Raccolta Ordine sostituisce l'ispezione) oppure salti la visita con "Salta visita" indicando il motivo. In tutti gli altri casi, prima di chiudere la tappa, esegui l'<strong>Ispezione</strong> dal pulsante dedicato. L'app te lo ricorda con un avviso su ogni tappa.</div>
@@ -267,7 +267,7 @@ html = f"""<!DOCTYPE html>
 <ol class="steps">
   <li><strong>Registra ogni ordine subito</strong> e con il canale giusto (visita/remoto): è la base di tutte le frequenze.</li>
   <li><strong>Compila sempre l'esito</strong> della visita in Live: alimenta le priorità di domani.</li>
-  <li><strong>Fissa i follow-up con una data</strong>: quel cliente riceverà il bonus e tornerà nel giro al momento giusto.</li>
+  <li><strong>Fissa i follow-up con data e ora</strong>: l'appuntamento finisce in Calendario, quel cliente riceverà il bonus e tornerà nel giro al momento giusto.</li>
   <li><strong>Avvia e chiudi i tour in Live sul posto</strong>: durate apprese e km reali dipendono da questo.</li>
   <li><strong>Non ignorare gli orfani</strong>: partono già con punteggi alti, sono fatturato che stai perdendo.</li>
   <li><strong>Usa l'ordine telefonico come ponte</strong>, non come sostituto della visita.</li>

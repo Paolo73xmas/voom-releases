@@ -112,18 +112,32 @@ export async function fetchOrphanMap(
       orphan_a_days: cfg.orphan_a_days,
       orphan_b_days: cfg.orphan_b_days,
     });
-    const { data, error } = await supabase.rpc('get_orphan_tabaccherie_ids', {
-      p_orphan_a_days: cfg.orphan_a_days,
-      p_orphan_b_days: cfg.orphan_b_days,
-    });
-    if (error) {
-      console.warn('[orphan-map] RPC error, will use client-side fallback:', error.message);
-    } else if (data && Array.isArray(data)) {
-      for (const row of data) {
+    // PostgREST tronca a 1000 righe: pagina con .range() finché arrivano pagine piene (parità web)
+    const PAGE = 1000;
+    let from = 0;
+    let rpcError = false;
+    for (;;) {
+      const { data, error } = await supabase
+        .rpc('get_orphan_tabaccherie_ids', {
+          p_orphan_a_days: cfg.orphan_a_days,
+          p_orphan_b_days: cfg.orphan_b_days,
+        })
+        .range(from, from + PAGE - 1);
+      if (error) {
+        console.warn('[orphan-map] RPC error, will use client-side fallback:', error.message);
+        rpcError = true;
+        break;
+      }
+      const rows = Array.isArray(data) ? data : [];
+      for (const row of rows) {
         if (row.tabaccheria_id && row.orphan_status) {
           map.set(row.tabaccheria_id, row.orphan_status as OrphanMapStatus);
         }
       }
+      if (rows.length < PAGE) break;
+      from += PAGE;
+    }
+    if (!rpcError) {
       let a = 0, b = 0;
       map.forEach(v => v === 'orphan_a' ? a++ : b++);
       console.log(`[orphan-map] RPC returned ${map.size} orphans (A: ${a}, B: ${b})`);

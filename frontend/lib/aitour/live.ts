@@ -134,9 +134,13 @@ async function logEvent(tourId: string, eventType: string, stopId: string | null
 }
 
 export async function startLiveTour(tourId: string): Promise<void> {
+  // Il giorno di esecuzione reale e' OGGI: riallinea tour_date (es. tour generato
+  // per domani ma avviato oggi) cosi' Monitoring, report e storici restano coerenti.
+  const d = new Date();
+  const localToday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const { error } = await supabase
     .from('ai_tours')
-    .update({ status: 'active', actual_start: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ status: 'active', tour_date: localToday, actual_start: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('id', tourId);
   if (error) throw error;
   await logEvent(tourId, 'started', null);
@@ -155,6 +159,7 @@ export interface EsitoData {
   outcome: string;
   note: string;
   followUpDate: string | null;
+  followUpTime?: string | null;
 }
 
 export async function completeStop(tour: SavedTour, stop: LiveStop, esito: EsitoData): Promise<void> {
@@ -179,35 +184,45 @@ export async function completeStop(tour: SavedTour, stop: LiveStop, esito: Esito
 
   // Integrazione col CRM: registra la visita e l'eventuale follow-up (solo soggetti con scheda cliente)
   if (stop.candidate.customerId) {
+    // visits accetta solo questi valori (check constraint): mappa l'esito AI Tour
+    const OUTCOME_TO_VISIT: Record<string, string> = {
+      ordine: 'positive', trattativa: 'positive', interessato: 'positive',
+      molto_interessato: 'positive', appuntamento_fissato: 'positive',
+      non_interessato: 'negative', chiuso: 'negative',
+      da_richiamare: 'neutral', titolare_assente: 'neutral', non_trovato: 'neutral',
+      ispezione: 'neutral', altro: 'neutral',
+    };
     try {
-      await supabase.from('visits').insert({
+      const { error: visitErr } = await supabase.from('visits').insert({
         customer_id: stop.candidate.customerId,
         agent_id: tour.agent_id,
-        visit_type: 'ai_tour',
+        visit_type: 'follow_up',
         visit_date: now.toISOString(),
         latitude: stop.candidate.lat,
         longitude: stop.candidate.lng,
         gps_accuracy: 0,
-        notes: `[AI Tour] ${esito.note || ''}`.trim(),
-        outcome: esito.outcome,
+        notes: `[AI Tour] Esito: ${esito.outcome}${esito.note ? ` — ${esito.note}` : ''}`,
+        outcome: OUTCOME_TO_VISIT[esito.outcome] || 'neutral',
         next_appointment_date: esito.followUpDate,
       });
+      if (visitErr) console.warn('[AITour][live] insert visita CRM fallito:', visitErr.message);
     } catch (err) {
       console.warn('[AITour][live] insert visita CRM fallito:', err);
     }
     if (esito.followUpDate) {
       try {
         const { data: session } = await supabase.auth.getSession();
-        await supabase.from('appointments').insert({
+        const { error: apptErr } = await supabase.from('appointments').insert({
           customer_id: stop.candidate.customerId,
           agent_id: tour.agent_id,
           created_by_id: session.session?.user.id || tour.agent_id,
-          appointment_date: `${esito.followUpDate}T09:00:00`,
+          appointment_date: `${esito.followUpDate}T${esito.followUpTime || '09:00'}:00`,
           duration_minutes: 30,
           appointment_type: 'follow_up',
           status: 'scheduled',
           notes: `[AI Tour] Follow-up: ${esito.outcome}${esito.note ? ` — ${esito.note}` : ''}`,
         });
+        if (apptErr) console.warn('[AITour][live] insert appuntamento follow-up fallito:', apptErr.message);
       } catch (err) {
         console.warn('[AITour][live] insert appuntamento follow-up fallito:', err);
       }
@@ -343,7 +358,7 @@ export async function suggestNearby(
   excludeTabIds: Set<string>,
   settings: AiTourSettings,
 ): Promise<TourCandidate | null> {
-  const d = 0.03; // ~3 km
+  const d = 0.07; // ~7 km
   const free = await loadFreeTabaccherie(
     { minLat: pos.lat - d, maxLat: pos.lat + d, minLng: pos.lng - d, maxLng: pos.lng + d },
     excludeTabIds,

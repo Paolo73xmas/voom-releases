@@ -27,6 +27,8 @@ const FOLLOWUP_CHIPS: { label: string; days: number | null }[] = [
   { label: '+1 mese', days: 30 },
 ];
 
+const TIME_CHIPS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
+
 function dateInDays(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -38,19 +40,21 @@ interface Props {
   stopName: string;
   saving: boolean;
   onClose: () => void;
-  onConfirm: (outcome: string, note: string, followUpDate: string | null) => void;
+  onConfirm: (outcome: string, note: string, followUpDate: string | null, followUpTime: string | null) => void;
 }
 
 export function EsitoModal({ visible, stopName, saving, onClose, onConfirm }: Props) {
   const [outcome, setOutcome] = useState('');
   const [note, setNote] = useState('');
   const [followUpDays, setFollowUpDays] = useState<number | null>(null);
+  const [followUpTime, setFollowUpTime] = useState('09:00');
 
   useEffect(() => {
     if (visible) {
       setOutcome('');
       setNote('');
       setFollowUpDays(null);
+      setFollowUpTime('09:00');
     }
   }, [visible]);
 
@@ -99,9 +103,27 @@ export function EsitoModal({ visible, stopName, saving, onClose, onConfirm }: Pr
               })}
             </View>
             {followUpDays != null && (
-              <Text style={styles.followUpHint}>
-                Follow-up il {new Date(dateInDays(followUpDays) + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: '2-digit' })}
-              </Text>
+              <>
+                <Text style={styles.label}>Ora dell&apos;appuntamento</Text>
+                <View style={styles.chipRow}>
+                  {TIME_CHIPS.map((t) => {
+                    const active = followUpTime === t;
+                    return (
+                      <TouchableOpacity
+                        key={t}
+                        style={[styles.chip, active && styles.chipActive]}
+                        onPress={() => setFollowUpTime(t)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.chipText, active && styles.chipTextActive]}>{t}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={styles.followUpHint}>
+                  Appuntamento in Calendario {new Date(dateInDays(followUpDays) + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: '2-digit' })} alle {followUpTime}
+                </Text>
+              </>
             )}
           </ScrollView>
           <View style={styles.footer}>
@@ -110,7 +132,7 @@ export function EsitoModal({ visible, stopName, saving, onClose, onConfirm }: Pr
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.confirmBtn, (!outcome || saving) && { opacity: 0.5 }]}
-              onPress={() => onConfirm(outcome, note, followUpDays != null ? dateInDays(followUpDays) : null)}
+              onPress={() => onConfirm(outcome, note, followUpDays != null ? dateInDays(followUpDays) : null, followUpDays != null ? followUpTime : null)}
               disabled={!outcome || saving}
               activeOpacity={0.7}
             >

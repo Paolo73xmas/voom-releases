@@ -145,6 +145,9 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
 
 - **Mappa del tour AI in app (ago 2026)**: components/aitour/TourMapView.tsx (Leaflet WebView/iframe, percorso + marker numerati per tipo + popup con Naviga). Toggle Elenco/Mappa nel risultato del tour e "Mappa del giro" collassabile nel Tour Live (con stati ✓/✕). RESTANO NON PORTATE: Heatmap, Monitoring staff, disegno territori.
 
+- **Allineamento commit web 16/08 (ago 2026)**: ricalcolo automatico live su ritardo >15min (watcher 60s) + suggerimenti nearby 7km; orphan map paginata (1572 orfani vs 1000 troncati); indicatore "(durata appresa)" nel Live; badge giri AI Tour pianificati sulla dashboard agente. Skip motivati: sezioni staff web-only (Monitoring, Posizioni Squadra, Heatmap, contenzioso avvocati, export RiBa, evasione controllata).
+- **Allineamento commit web 16/08 sera (9b8218b + 173e349)**: fix visita CRM da esito Tour Live che falliva sempre in silenzio (check constraint su visits: visit_type 'ai_tour' e outcome raw non ammessi → ora visit_type 'follow_up' + esiti mappati positive/neutral/negative, error logging reale; verificato su DB con insert/cleanup); scelta dell'ORA del follow-up nel modale esito (chips 09:00–17:00, appuntamento in Calendario all'orario scelto, non più fisso 09:00); all'avvio del tour la tour_date viene riallineata a oggi (Monitoring/report/storici coerenti se il tour era generato per un altro giorno). Clone web a 173e349, zero delta residui.
+
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)
 - Camera integration for photo uploads in anagrafica visits

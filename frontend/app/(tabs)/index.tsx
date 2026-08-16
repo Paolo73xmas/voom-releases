@@ -49,6 +49,7 @@ export default function Dashboard() {
     monthLabel: '',
   });
   const [draftCount, setDraftCount] = useState(0);
+  const [aiTourBadge, setAiTourBadge] = useState(0);
   const [scadKpi, setScadKpi] = useState<ScadenziarioKpi | null>(null);
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -169,12 +170,30 @@ export default function Dashboard() {
       setStatusBarStyle('dark');
       getDraftCount().then(setDraftCount);
       loadUpcomingAppointments();
+      loadAiTourBadge();
       // Stats: respects 60s cache, only refetches if expired
       loadStats(false);
       return () => setStatusBarStyle('light');
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id])
   );
+
+  // Badge giri AI Tour pianificati non ancora avviati (assegnati dall'admin o salvati dall'agente)
+  const loadAiTourBadge = async () => {
+    if (!user) return;
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const { count, error } = await supabase
+        .from('ai_tours')
+        .select('id', { count: 'exact', head: true })
+        .eq('agent_id', user.id)
+        .eq('status', 'planned')
+        .gte('tour_date', today);
+      if (!error) setAiTourBadge(count || 0);
+    } catch (e) {
+      console.warn('[Dashboard] AI Tour badge error:', e);
+    }
+  };
 
   const loadUpcomingAppointments = async () => {
     if (!user) return;
@@ -226,7 +245,7 @@ export default function Dashboard() {
     {
       title: 'Vendite',
       actions: [
-        { title: 'AI Tour', icon: 'sparkles-outline' as const, onPress: () => router.push('/ai-tour') },
+        { title: 'AI Tour', icon: 'sparkles-outline' as const, badge: aiTourBadge, onPress: () => router.push('/ai-tour') },
         { title: 'Raccolta Ordine', icon: 'cart-outline' as const, onPress: () => router.push('/order-collection-v2') },
         { title: 'Bozze Ordine', icon: 'document-text-outline' as const, badge: draftCount, onPress: () => router.push('/drafts') },
         { title: 'Sostituzioni', icon: 'swap-horizontal-outline' as const, onPress: () => router.push('/substitutions') },

@@ -91,7 +91,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const delayMin = next?.plannedArrival && next.status === 'planned' ? nowMin() - timeToMin(next.plannedArrival) : 0;
 
   const runRecalc = useCallback(
-    async (currentStops: LiveStop[]) => {
+    async (currentStops: LiveStop[], reasonPrefix?: string) => {
       const remaining = currentStops.filter((s) => s.status === 'planned');
       if (remaining.length === 0) {
         setMessage('Tutte le visite sono state gestite: puoi terminare il tour.');
@@ -140,7 +140,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         });
         setStops(merged);
 
-        let msg = `Giro ricalcolato alle ${minToTime(nowMin())}.`;
+        let msg = `${reasonPrefix ? `${reasonPrefix} — ` : ''}Giro ricalcolato alle ${minToTime(nowMin())}.`;
         if (dropped.length > 0) {
           msg += ` Per mantenere il rientro entro le ${minToTime(initial.endMin)} ho rimosso ${dropped.map((d) => `"${d.candidate.name}" (${d.candidate.score}/100)`).join(', ')}.`;
         }
@@ -165,6 +165,25 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     },
     [tour, initial.endMin, initial.endPoint, fallbackPos, settings]
   );
+
+  // Ricalcolo AUTOMATICO: controllo ogni minuto; se il ritardo sulla prossima tappa
+  // supera la soglia, l'AI ricalcola il giro da sola (orari, sequenza, eventuali tagli
+  // e suggerimento tappa extra se resta margine). Dopo il ricalcolo gli orari ripartono
+  // da adesso, quindi il controllo si riarma solo se si accumula nuovo ritardo.
+  const AUTO_RECALC_DELAY_MIN = 15;
+  useEffect(() => {
+    const iv = setInterval(() => {
+      if (busy || recalcing || esitoOpen || skipOpen || recapOpen || acquireKind) return;
+      const current = stopsRef.current;
+      const nx = current.find((s) => s.status === 'planned' || s.status === 'arrived');
+      if (!nx || nx.status !== 'planned' || !nx.plannedArrival) return;
+      const delay = nowMin() - timeToMin(nx.plannedArrival);
+      if (delay >= AUTO_RECALC_DELAY_MIN) {
+        runRecalc(current, `Ritardo di ${fmtDur(delay)} rilevato`);
+      }
+    }, 60000);
+    return () => clearInterval(iv);
+  }, [busy, recalcing, esitoOpen, skipOpen, recapOpen, acquireKind, runRecalc]);
 
   const handleArrived = async () => {
     if (!next) return;
@@ -340,11 +359,11 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     buildTourReport(tour.id).then(setReport).catch(() => {});
   }, [recapOpen, tour.id]);
 
-  const handleEsito = async (outcome: string, note: string, followUpDate: string | null) => {
+  const handleEsito = async (outcome: string, note: string, followUpDate: string | null, followUpTime: string | null) => {
     if (!next) return;
     setBusy(true);
     try {
-      await completeStop(tour, next, { outcome, note, followUpDate });
+      await completeStop(tour, next, { outcome, note, followUpDate, followUpTime });
       const updated = stops.map((s) => (s.id === next.id ? { ...s, status: 'completed' as const, outcome } : s));
       setStops(updated);
       setEsitoOpen(false);
@@ -554,7 +573,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               </Text>
             </View>
             <Text style={styles.nextMeta}>
-              ~{distToNext.toFixed(1)} km · arrivo {next.plannedArrival ? next.plannedArrival.slice(0, 5) : '—'} · visita {next.candidate.visitMinutes} min · {next.candidate.score}/100
+              ~{distToNext.toFixed(1)} km · arrivo {next.plannedArrival ? next.plannedArrival.slice(0, 5) : '—'} · visita {next.candidate.visitMinutes} min
+              {next.candidate.visitLearnedSamples ? ' (durata appresa)' : ''} · {next.candidate.score}/100
             </Text>
           </View>
           {next.candidate.reason ? <Text style={styles.nextReason}>{next.candidate.reason}</Text> : null}

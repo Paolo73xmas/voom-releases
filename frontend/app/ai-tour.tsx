@@ -457,6 +457,7 @@ export default function AITourScreen() {
         dayType: v.dayType,
         resolvedDayType: resolved,
         bufferPct,
+        bufferMaxMin: settings.buffer_max_min,
         area,
       });
       newPlan.areaLabel = areaLabel;
@@ -480,9 +481,76 @@ export default function AITourScreen() {
         return;
       }
 
+      // INTENSIFICAZIONE: se il giro lascia oltre 90 minuti liberi, riempi con
+      // Mai Visitate/Orfani (e libere) VICINI alle tappe pianificate, senza disperdersi
+      let finalPlan = newPlan;
+      const leftoverMin = Math.round(Math.max(0, timeToMin(v.endTime) - newPlan.finishMin));
+      if (leftoverMin > 90) {
+        setProgress(`Restano ~${leftoverMin} min liberi: aggiungo Mai Visitate e Orfani vicini...`);
+        try {
+          let bMinLat = start.lat, bMaxLat = start.lat, bMinLng = start.lng, bMaxLng = start.lng;
+          for (const s of newPlan.stops) {
+            bMinLat = Math.min(bMinLat, s.candidate.lat); bMaxLat = Math.max(bMaxLat, s.candidate.lat);
+            bMinLng = Math.min(bMinLng, s.candidate.lng); bMaxLng = Math.max(bMaxLng, s.candidate.lng);
+          }
+          const fillBounds = { minLat: bMinLat - 0.05, maxLat: bMaxLat + 0.05, minLng: bMinLng - 0.07, maxLng: bMaxLng + 0.07 };
+          const plannedKeys = new Set(newPlan.stops.map((s) => s.candidate.key));
+          const inBox = (c: { lat: number; lng: number }) =>
+            c.lat >= fillBounds.minLat && c.lat <= fillBounds.maxLat && c.lng >= fillBounds.minLng && c.lng <= fillBounds.maxLng;
+          // orfani vicini non ancora nel giro
+          let fillers = loaded.orphans.filter((c) => !plannedKeys.has(c.key) && inBox(c));
+          if (v.areaMode === 'territory' && agentZones.length > 0) {
+            fillers = fillers.filter((c) => pointInZones(c.lat, c.lng, agentZones));
+          }
+          // mai visitate del territorio + tabaccherie libere vicine al giro
+          const excludeIds = new Set<string>();
+          for (const s of newPlan.stops) if (s.candidate.tabaccheriaId) excludeIds.add(s.candidate.tabaccheriaId);
+          for (const c of candidates) if (c.tabaccheriaId) excludeIds.add(c.tabaccheriaId);
+          let fillFree = await loadFreeTabaccherie(
+            fillBounds, excludeIds, settings,
+            { refLat: (fillBounds.minLat + fillBounds.maxLat) / 2, refLng: (fillBounds.minLng + fillBounds.maxLng) / 2, agentId },
+            40,
+          );
+          if (v.areaMode === 'territory' && agentZones.length > 0) {
+            fillFree = fillFree.filter((c) => pointInZones(c.lat, c.lng, agentZones));
+          }
+          scoreCandidates(fillFree, settings);
+          const known = new Set([...plannedKeys, ...fillers.map((c) => c.key)]);
+          for (const c of fillFree) if (!known.has(c.key)) fillers.push(c);
+          if (fillers.length > 0) {
+            const densePlan = await planTour({
+              candidates: [...newPlan.stops.map((s) => s.candidate), ...fillers],
+              mandatoryKeys,
+              start,
+              end,
+              tourDate: v.date,
+              startMin: effStartMin,
+              endMin: timeToMin(v.endTime),
+              dayType: v.dayType,
+              resolvedDayType: resolved,
+              bufferPct,
+              bufferMaxMin: settings.buffer_max_min,
+              area,
+            });
+            if (densePlan.stops.length > newPlan.stops.length) {
+              densePlan.areaLabel = areaLabel;
+              densePlan.aiRecommendation = recommendation;
+              densePlan.warnings.unshift(`Giornata intensificata: +${densePlan.stops.length - newPlan.stops.length} visite di sviluppo vicine al giro per ridurre il tempo libero`);
+              finalPlan = densePlan;
+            }
+          }
+        } catch (err) {
+          console.warn('[AITour] intensificazione fallita, tengo il piano base:', err);
+        }
+      }
+      const residualMin = Math.round(Math.max(0, timeToMin(v.endTime) - finalPlan.finishMin));
+      if (residualMin > 90) {
+        finalPlan.warnings.push(`Restano circa ${Math.floor(residualMin / 60)}h ${residualMin % 60}m liberi: nessun altro punto raggiungibile nelle vicinanze del giro`);
+      }
+
       setProgress("L'AI sta scrivendo la strategia del giro...");
-      newPlan.aiSummary = await getStrategySummary(newPlan);
-      setPlan(newPlan);
+      finalPlan.aiSummary = await getStrategySummary(finalPlan);
+      setPlan(finalPlan);
       setReadOnly(false);
       setPhase('result');
       hap.success();
@@ -557,6 +625,7 @@ export default function AITourScreen() {
         dayType: 'mista',
         resolvedDayType: 'mista',
         bufferPct: settings.buffer_pct_mista,
+        bufferMaxMin: settings.buffer_max_min,
         area: { mode: 'auto' },
       });
       if (newPlan.stops.length === 0) {

@@ -96,6 +96,7 @@ export interface AiTourSettings {
   buffer_pct_clienti: number;
   buffer_pct_sviluppo: number;
   buffer_pct_mista: number;
+  buffer_max_min: number;
   cadence_weeks_active: number;
   cadence_weeks_low: number;
   home_address: string | null;
@@ -115,6 +116,7 @@ export const DEFAULT_SETTINGS: AiTourSettings = {
   buffer_pct_clienti: 18,
   buffer_pct_sviluppo: 35,
   buffer_pct_mista: 25,
+  buffer_max_min: 60,
   cadence_weeks_active: 5,
   cadence_weeks_low: 8,
   home_address: null,

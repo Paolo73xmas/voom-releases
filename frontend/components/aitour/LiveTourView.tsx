@@ -112,6 +112,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           dayType: tour.tour_type as DayType,
           resolvedDayType: (tour.resolved_tour_type || 'mista') as Exclude<DayType, 'ai'>,
           bufferPct: 5,
+          bufferMaxMin: settings.buffer_max_min,
           area: { mode: 'auto' },
         });
         const keptKeys = new Set(plan.stops.map((p) => p.candidate.key));

@@ -24,6 +24,7 @@ export interface PlanInput {
   dayType: DayType;
   resolvedDayType: Exclude<DayType, 'ai'>;
   bufferPct: number;
+  bufferMaxMin?: number;
   area: AreaFilter;
 }
 
@@ -124,7 +125,9 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   const { start, end, startMin, endMin, bufferPct } = input;
   const warnings: string[] = [];
   const availableMin = endMin - startMin;
-  const bufferReserve = Math.round((availableMin * bufferPct) / 100);
+  // Margine di sicurezza: percentuale della giornata ma MAI oltre 60 minuti
+  // (giornate intensive: lo scarto complessivo deve restare entro ~1h30)
+  const bufferReserve = Math.min(Math.round((availableMin * bufferPct) / 100), input.bufferMaxMin ?? 60);
   const usableUntil = endMin - bufferReserve;
 
   // Ordina per punteggio, obbligatorie sempre incluse, cap per matrice OSRM

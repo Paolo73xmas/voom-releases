@@ -50,6 +50,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [suggestion, setSuggestion] = useState<{ cand: TourCandidate; slack: number } | null>(null);
   const [esitoOpen, setEsitoOpen] = useState(false);
   const [skipOpen, setSkipOpen] = useState(false);
+  const [reassigned, setReassigned] = useState<{ name: string; prevAgent: string } | null>(null);
   const [recapOpen, setRecapOpen] = useState(false);
   const [acquireKind, setAcquireKind] = useState<'inspection' | 'order' | null>(null);
   const [busy, setBusy] = useState(false);
@@ -386,7 +387,27 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       await completeStop(tour, next, { outcome, note, followUpDate, followUpTime });
       const customerId = next.candidate.customerId;
       if (customerId) {
-        // Contatti punto vendita -> scheda cliente
+        // 1) Cliente ORFANO ispezionato di persona -> riassegnazione PRIMA di tutto
+        //    (dopo la riassegnazione le RLS permettono di scrivere contatti/ispezione)
+        if (next.candidate.entityType === 'orphan') {
+          try {
+            const pos = await getCurrentPos();
+            const distM = pos ? Math.round(haversineKm(pos.lat, pos.lng, next.candidate.lat, next.candidate.lng) * 1000) : null;
+            if (distM !== null && distM <= ACQUIRE_MAX_M) {
+              const { data: rr, error: rrErr } = await supabase.rpc('ai_tour_reassign_orphan', { p_stop_id: next.id });
+              if (rrErr) {
+                console.warn('[AITour][live] riassegnazione orfano fallita:', rrErr.message);
+              } else if (rr?.reassigned) {
+                setReassigned({ name: next.candidate.name, prevAgent: rr.previous_agent_name || '' });
+              }
+            } else {
+              setMessage('Cliente orfano non riassegnato: posizione GPS non verificata sul posto');
+            }
+          } catch (err) {
+            console.warn('[AITour][live] riassegnazione orfano:', err);
+          }
+        }
+        // 2) Contatti punto vendita -> scheda cliente (solo se modificati)
         const contactUpdates: Record<string, string> = {};
         if (extras.mobile) contactUpdates.contact_mobile = extras.mobile;
         if (extras.email) contactUpdates.contact_email = extras.email;
@@ -394,7 +415,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           const { error: cErr } = await supabase.from('customers').update(contactUpdates).eq('id', customerId);
           if (cErr) setMessage('Contatti non salvati sulla scheda cliente');
         }
-        // Foto -> ispezione nella sezione Ispezioni (bucket inspection_photos)
+        // 3) Foto (obbligatorie) -> ispezione nella sezione Ispezioni (bucket inspection_photos)
         if (extras.photos.length > 0) {
           try {
             const pos = await getCurrentPos();
@@ -411,6 +432,16 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           } catch (err) {
             console.warn('[AITour][live] registrazione ispezione con foto fallita:', err);
             setMessage('Foto non salvate nella sezione Ispezioni (esito comunque registrato)');
+          }
+        }
+        // 4) Orfano / mai visitato / prospect -> torna cliente o prospect in base agli ordini
+        if (['orphan', 'never', 'prospect'].includes(next.candidate.entityType)) {
+          try {
+            const { data: rs, error: rsErr } = await supabase.rpc('ai_tour_refresh_customer_status', { p_stop_id: next.id });
+            if (rsErr) console.warn('[AITour][live] refresh categoria cliente:', rsErr.message);
+            else if (rs?.updated) setMessage(rs.category === 'client' ? 'Il punto vendita risulta ora tra i tuoi CLIENTI (ha già ordinato)' : 'Il punto vendita risulta ora tra i tuoi PROSPECT (nessun ordine ancora)');
+          } catch (err) {
+            console.warn('[AITour][live] refresh categoria cliente:', err);
           }
         }
       }
@@ -756,7 +787,29 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         </View>
       )}
 
-      <EsitoModal visible={esitoOpen} stopName={next?.candidate.name || ''} customerId={next?.candidate.customerId || null} saving={busy} onClose={() => setEsitoOpen(false)} onConfirm={handleEsito} />
+      <EsitoModal visible={esitoOpen} stopName={next?.candidate.name || ''} stopId={next?.id || null} customerId={next?.candidate.customerId || null} saving={busy} onClose={() => setEsitoOpen(false)} onConfirm={handleEsito} />
+
+      {/* Avviso esplicito: cliente orfano riassegnato all'agente */}
+      <Modal visible={!!reassigned} transparent animationType="fade" onRequestClose={() => setReassigned(null)}>
+        <View style={styles.reassignOverlay}>
+          <View style={styles.reassignCard}>
+            <View style={styles.reassignHeader}>
+              <Ionicons name="person-add" size={18} color="#059669" />
+              <Text style={styles.reassignTitle}>Cliente riassegnato a te</Text>
+            </View>
+            <Text style={styles.reassignText}>
+              <Text style={styles.reassignName}>{reassigned?.name}</Text> era un cliente orfano
+              {reassigned?.prevAgent ? <Text> (prima assegnato a <Text style={styles.reassignName}>{reassigned.prevAgent}</Text>)</Text> : null}.
+            </Text>
+            <View style={styles.reassignBox}>
+              <Text style={styles.reassignBoxText}>Avendo eseguito l&apos;ispezione di persona, il cliente è stato <Text style={styles.reassignName}>riassegnato a te</Text>: da ora lo trovi tra i tuoi clienti.</Text>
+            </View>
+            <TouchableOpacity style={styles.reassignBtn} onPress={() => setReassigned(null)} activeOpacity={0.75}>
+              <Text style={styles.reassignBtnText}>Ho capito</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       <SkipModal visible={skipOpen} stopName={next?.candidate.name || ''} saving={busy} onClose={() => setSkipOpen(false)} onConfirm={handleSkip} />
 
       {/* Acquisizione prospect */}
@@ -1066,4 +1119,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
     lineHeight: 15,
   },
+  reassignOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  reassignCard: { backgroundColor: DS.surface, borderRadius: 16, padding: 18, width: '100%', maxWidth: 360, borderWidth: 1, borderColor: DS.border },
+  reassignHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  reassignTitle: { fontFamily: JAKARTA.bold, fontSize: 15, color: DS.ink },
+  reassignText: { fontFamily: JAKARTA.regular, fontSize: 12.5, color: DS.ink, lineHeight: 18 },
+  reassignName: { fontFamily: JAKARTA.bold },
+  reassignBox: { backgroundColor: 'rgba(5,150,105,0.12)', borderWidth: 1, borderColor: 'rgba(5,150,105,0.4)', borderRadius: 8, padding: 10, marginTop: 10 },
+  reassignBoxText: { fontFamily: JAKARTA.medium, fontSize: 12, color: DS.ink, lineHeight: 17 },
+  reassignBtn: { backgroundColor: '#059669', borderRadius: 10, paddingVertical: 11, alignItems: 'center', marginTop: 14, minHeight: 44, justifyContent: 'center' },
+  reassignBtnText: { fontFamily: JAKARTA.bold, fontSize: 13, color: '#FFF' },
 });

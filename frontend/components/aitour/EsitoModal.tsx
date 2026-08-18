@@ -1,12 +1,14 @@
 // Modale esito ispezione (Modalità Live AI Tour) — parità con EsitoDialog web:
-// esito + foto (bucket Ispezioni) + contatti punto vendita salvati sulla scheda cliente
-import React, { useState, useEffect } from 'react';
+// esito + 2 foto obbligatorie (bucket Ispezioni) + contatti punto vendita (prefill RPC RLS-safe)
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Image, Alert, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { DS, JAKARTA } from '../../lib/theme';
+import { DS, JAKARTA, currentThemeMode } from '../../lib/theme';
 import { supabase } from '../../lib/supabase';
 import { AI_PURPLE, AI_PURPLE_SOFT } from './shared';
+
+const ALERT_RED = currentThemeMode === 'dark' ? '#F87171' : '#DC2626';
 
 export const ESITO_OPTIONS = [
   { value: 'ordine', label: 'Ordine' },
@@ -42,6 +44,7 @@ function dateInDays(days: number): string {
 interface Props {
   visible: boolean;
   stopName: string;
+  stopId?: string | null;
   customerId?: string | null;
   saving: boolean;
   onClose: () => void;
@@ -54,7 +57,7 @@ export interface EsitoExtras {
   email: string;
 }
 
-export function EsitoModal({ visible, stopName, customerId, saving, onClose, onConfirm }: Props) {
+export function EsitoModal({ visible, stopName, stopId, customerId, saving, onClose, onConfirm }: Props) {
   const [outcome, setOutcome] = useState('');
   const [note, setNote] = useState('');
   const [followUpDays, setFollowUpDays] = useState<number | null>(null);
@@ -62,6 +65,7 @@ export function EsitoModal({ visible, stopName, customerId, saving, onClose, onC
   const [photos, setPhotos] = useState<{ uri: string }[]>([]);
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
+  const initialContacts = useRef({ mobile: '', email: '' });
 
   useEffect(() => {
     if (!visible) return;
@@ -72,16 +76,23 @@ export function EsitoModal({ visible, stopName, customerId, saving, onClose, onC
     setPhotos([]);
     setMobile('');
     setEmail('');
-    if (customerId) {
-      supabase.from('customers').select('contact_mobile, contact_email').eq('id', customerId).single()
-        .then(({ data }) => {
-          if (data) {
-            setMobile(data.contact_mobile || '');
-            setEmail(data.contact_email || '');
+    initialContacts.current = { mobile: '', email: '' };
+    if (customerId && stopId) {
+      // RPC dedicato: legge i contatti anche per clienti di altri agenti (orfani), RLS-safe
+      supabase.rpc('ai_tour_stop_customer_contacts', { p_stop_id: stopId })
+        .then(({ data, error }) => {
+          if (error) { console.warn('[EsitoModal] contatti:', error.message); return; }
+          const row = Array.isArray(data) ? data[0] : data;
+          if (row) {
+            const m = row.contact_mobile || row.contact_phone || '';
+            const e = row.contact_email || '';
+            setMobile(m);
+            setEmail(e);
+            initialContacts.current = { mobile: m, email: e };
           }
         });
     }
-  }, [visible, customerId]);
+  }, [visible, customerId, stopId]);
 
   const takePhoto = async () => {
     if (photos.length >= 2) return;
@@ -123,12 +134,18 @@ export function EsitoModal({ visible, stopName, customerId, saving, onClose, onC
       Alert.alert('Email non valida', 'Controlla l\u2019indirizzo email del punto vendita.');
       return;
     }
+    const m = mobile.trim();
     onConfirm(
       outcome,
       note,
       followUpDays != null ? dateInDays(followUpDays) : null,
       followUpDays != null ? followUpTime : null,
-      { photos, mobile: mobile.trim(), email: em }
+      // Contatti inviati solo se modificati rispetto al prefill
+      {
+        photos,
+        mobile: m !== initialContacts.current.mobile ? m : '',
+        email: em !== initialContacts.current.email ? em : '',
+      }
     );
   };
 
@@ -151,7 +168,7 @@ export function EsitoModal({ visible, stopName, customerId, saving, onClose, onC
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.label}>Foto ispezione ({photos.length}/2, facoltative)</Text>
+            <Text style={styles.label}>Foto ispezione ({photos.length}/2, <Text style={styles.labelRequired}>obbligatorie</Text>)</Text>
             <View style={styles.photoRow}>
               {photos.map((p, i) => (
                 <View key={p.uri} style={styles.photoWrap}>
@@ -168,7 +185,8 @@ export function EsitoModal({ visible, stopName, customerId, saving, onClose, onC
                 </TouchableOpacity>
               )}
             </View>
-            {photos.length > 0 && <Text style={styles.followUpHint}>Le foto verranno salvate nella sezione Ispezioni.</Text>}
+            {photos.length < 2 && <Text style={styles.photosRequired}>Scatta {photos.length === 0 ? '2 foto' : 'ancora 1 foto'} per confermare l&apos;esito.</Text>}
+            {photos.length === 2 && <Text style={styles.followUpHint}>Le foto verranno salvate nella sezione Ispezioni.</Text>}
             {customerId ? (
               <>
                 <Text style={styles.label}>Contatti punto vendita (salvati sulla scheda cliente)</Text>
@@ -247,9 +265,9 @@ export function EsitoModal({ visible, stopName, customerId, saving, onClose, onC
               <Text style={styles.cancelText}>Annulla</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.confirmBtn, (!outcome || saving) && { opacity: 0.5 }]}
+              style={[styles.confirmBtn, (!outcome || saving || photos.length < 2) && { opacity: 0.5 }]}
               onPress={handleConfirm}
-              disabled={!outcome || saving}
+              disabled={!outcome || saving || photos.length < 2}
               activeOpacity={0.7}
             >
               {saving ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.confirmText}>Conferma esito</Text>}
@@ -297,6 +315,8 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: JAKARTA.medium, fontSize: 11, color: DS.ink2 },
   chipTextActive: { color: '#FFF' },
   followUpHint: { fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted, marginTop: 6 },
+  labelRequired: { color: ALERT_RED, fontFamily: JAKARTA.bold },
+  photosRequired: { fontFamily: JAKARTA.medium, fontSize: 11, color: ALERT_RED, marginTop: 6 },
   photoRow: { flexDirection: 'row', gap: 8 },
   photoWrap: { position: 'relative' },
   photoThumb: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: DS.border },

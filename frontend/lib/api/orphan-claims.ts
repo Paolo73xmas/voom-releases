@@ -177,7 +177,12 @@ export async function fetchOrphanMap(
       const lastVisit = (c.last_visit_date || c.first_visit_date) as string | null;
 
       if (lastOrder) {
-        const days = Math.floor((now.getTime() - new Date(lastOrder).getTime()) / 86400000);
+        // Orfano A v2 (parità web): NESSUNA attività (ordine O visita) recente
+        const lastActivityMs = Math.max(
+          new Date(lastOrder).getTime(),
+          c.last_visit_date ? new Date(c.last_visit_date as string).getTime() : 0
+        );
+        const days = Math.floor((now.getTime() - lastActivityMs) / 86400000);
         if (days >= cfg.orphan_a_days) map.set(tab.id, 'orphan_a');
       } else if (lastVisit) {
         const days = Math.floor((now.getTime() - new Date(lastVisit).getTime()) / 86400000);

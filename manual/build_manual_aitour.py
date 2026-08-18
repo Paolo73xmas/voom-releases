@@ -92,7 +92,7 @@ html = f"""<!DOCTYPE html>
   <h1><span class="spark">✦</span> AI Tour</h1>
   <div class="sub">Manuale operativo per l'agente — flussi, logica e apprendimento dell'AI</div>
   <div class="box">AI Tour è il tuo assistente commerciale sull'app: analizza ogni giorno il portafoglio, decide chi conviene visitare, costruisce il percorso ottimale e <strong>impara dai tuoi risultati reali</strong> per pianificare sempre meglio. Questo manuale spiega come usarlo dal telefono, passo per passo, e come "allenarlo".</div>
-  <div class="badge">Versione 1.2 · {today} · Documento riservato agli agenti VOOM</div>
+  <div class="badge">Versione 1.3 · {today} · Documento riservato agli agenti VOOM</div>
   <div class="foot">VOOM crm — Manuale AI Tour app mobile per l'agente</div>
 </div>
 
@@ -224,6 +224,7 @@ html = f"""<!DOCTYPE html>
 <h3>Storico del cliente Orfano</h3>
 <p>Sulle fermate di tipo <strong>Orfano</strong> il badge violetto (con la piccola icona orologio) è <strong>toccabile</strong>: si apre una scheda con gli <strong>ordini degli ultimi 12 mesi</strong> del cliente — data, numero ordine, <strong>categorie acquistate</strong> e valore, con il totale dell'anno e la data dell'ultima visita. Se non ci sono ordini recenti vedi l'ultima visita (o <em>"Mai visitato"</em>) e il fatturato storico. Così sai <strong>cosa comprava e quanto valeva</strong> prima ancora di suonare il campanello.</p>
 {figrow(fig("ai21-orfano-storico", "Tocca il badge «Orfano»: ordini degli ultimi 12 mesi, categorie e ultima visita"))}
+<div class="info">🔄 <strong>Come si esce dallo stato Orfano:</strong> lo stato <em>Orfano A</em> (cliente con ordini troppo vecchi) si azzera con <strong>qualsiasi attività recente</strong> — un nuovo ordine <em>oppure una visita/ispezione registrata</em>. E se l'Orfano lo ispezioni <strong>di persona</strong> durante il Tour Live, il cliente viene <strong>riassegnato a te</strong> (vedi cap. 6).</div>
 <h3>Elenco o Mappa</h3>
 <p>Il giro proposto si consulta in due modi con il selettore <strong>Elenco / Mappa</strong>. La vista <strong>Mappa</strong> mostra il <strong>percorso reale</strong> in blu, il marker <strong>P</strong> di partenza (e <strong>A</strong> di rientro, se impostato) e le <strong>fermate numerate</strong> con il colore del tipo di soggetto (bordo rosso se obbligatoria). Toccando un marker si apre la scheda con orario di arrivo, durata, priorità, motivo dell'AI e il pulsante <strong>Naviga</strong>. Con il tasto <strong>«Schermo intero»</strong> (in alto a destra sulla mappa) la porti a <strong>tutto schermo</strong> per navigarla comodamente con le dita; il tasto <strong>«Riduci»</strong> resta sempre visibile per tornare alla vista normale.</p>
 {figrow(fig("ai19-tour-mappa", "La vista Mappa del giro con il tasto «Schermo intero»"), fig("ai22-mappa-fullscreen", "La mappa a tutto schermo: si naviga con le dita, «Riduci» sempre visibile"))}
@@ -249,24 +250,24 @@ html = f"""<!DOCTYPE html>
 <!-- ═══════════ CAP 6 ═══════════ -->
 <h2 class="chapter">6 · Il Tour Live passo per passo</h2>
 <p>Dal risultato di un tour (o da un tour salvato in "I miei Tour") tocca <strong>Avvia Tour</strong> — il tasto violetto sempre visibile <strong>in alto nell'header</strong> della schermata AI Tour: entri in modalità <strong>Live</strong>. Se chiudi l'app e la riapri, il tour in corso <strong>riprende da solo</strong>. Se avvii oggi un tour generato per un altro giorno, la data del tour viene <strong>riallineata a oggi</strong>: report e storici restano corretti.</p>
-{figrow(fig("ai26-avvia-header", "Il tasto «Avvia Tour» nell'header, sempre a portata di pollice sul piano generato"), fig("ai08-live", "Il Live: badge TOUR LIVE, progresso e prossima visita con le azioni"))}
-{figrow(fig("ai09-live-arrivato", "Dopo «Sono arrivato»: sei sul posto"))}
+{figrow(fig("ai26-avvia-header", "Il tasto «Avvia Tour» nell'header, sempre a portata di pollice sul piano generato"), fig("ai29-live-ispezione", "Il Live: badge TOUR LIVE, progresso e la prossima visita con il tasto unico verde «Ispezione»"))}
 <ol class="steps">
   <li><strong>Avvia Tour.</strong> La tua posizione GPS viene salvata periodicamente per chilometraggio e sicurezza (con app aperta).</li>
   <li>Per ogni tappa vedi <strong>distanza, orario previsto di arrivo, durata stimata</strong> e il motivo per cui l'AI l'ha scelta. In alto, il conteggio <em>fatte · saltate · rimanenti</em> e l'indicatore <em>Ritardo/Anticipo</em>.</li>
   <li><strong>Navigatore</strong> apre le mappe del telefono già puntate sulla tappa. Con <strong>"Mappa del giro"</strong> (sopra la prossima visita) vedi invece tutte le tappe sulla mappa: numerate le rimanenti nell'ordine attuale, <strong>✓ verdi</strong> le completate, <strong>✕ grigie</strong> le saltate.</li>
   <li><strong>"Sono arrivato"</strong>: registra l'orario di arrivo reale (serve per le durate apprese!).</li>
-  <li>Fai il tuo lavoro: <strong>Raccolta Ordine</strong> o <strong>Ispezione</strong>. Al salvataggio torni al tour e la tappa si <strong>chiude da sola</strong> con l'esito giusto (ordine/ispezione). <strong>Ricorda: l'ispezione è sempre obbligatoria durante la visita</strong> — non serve solo se il cliente fa l'ordine o se salti la tappa. 💡 <em>Ricerca per parole:</em> nella Raccolta Ordine cerchi clienti e prodotti scrivendo <strong>più parole separate da spazio</strong> — ogni parola deve comparire nel risultato (es. <em>"tab recc"</em> trova "TABACCHERIA DI RECCAGNI LUCA", <em>"mes pea"</em> trova "MESH MINI PEACH ICE 20").</li>
-  <li><strong>Tappa senza scheda cliente</strong> (tabaccheria da acquisire): toccando Ordine o Ispezione parte la <strong>Prima Visita</strong> con i dati della tabaccheria precompilati — solo se il GPS conferma che sei sul posto (entro 500 m). Al termine il nuovo prospect è collegato alla tappa e prosegui.</li>
-  <li><strong>"Visita terminata"</strong>: registra l'<strong>esito</strong>, una nota e l'eventuale follow-up con <strong>data e ora</strong> (scegli l'orario tra le proposte: l'appuntamento viene creato in <strong>Calendario</strong> nel giorno e all'ora scelti). Usalo per chiudere la tappa quando l'ispezione o l'ordine non sono stati possibili (es. chiuso, titolare assente). L'esito viene registrato anche come <strong>visita nel CRM</strong> del cliente.</li>
+  <li>Fai il tuo lavoro con i due tasti della tappa: <strong>Raccolta Ordine</strong> (arancio) apre la raccolta con il cliente già selezionato — al salvataggio torni al tour e la tappa si <strong>chiude da sola</strong> con esito ordine; <strong>Ispezione</strong> (verde) apre direttamente la <strong>scheda Ispezione</strong> della tappa (vedi passo 6). 💡 <em>Ricerca per parole:</em> nella Raccolta Ordine cerchi clienti e prodotti scrivendo <strong>più parole separate da spazio</strong> — ogni parola deve comparire nel risultato (es. <em>"tab recc"</em> trova "TABACCHERIA DI RECCAGNI LUCA", <em>"mes pea"</em> trova "MESH MINI PEACH ICE 20").</li>
+  <li><strong>La scheda Ispezione</strong> (tutto in un unico passaggio): scegli l'<strong>esito</strong>, scatta <strong>2 foto obbligatorie</strong> del punto vendita (vengono salvate automaticamente nella sezione <strong>Ispezioni</strong> con la tua posizione), controlla o completa <strong>Cellulare ed Email</strong> del punto vendita (compaiono già precompilati; se li modifichi vengono salvati sulla <strong>scheda cliente</strong>), aggiungi una nota e l'eventuale follow-up con <strong>data e ora</strong> (l'appuntamento viene creato in <strong>Calendario</strong>). Senza le 2 foto la conferma resta bloccata. L'esito viene registrato anche come <strong>visita nel CRM</strong> del cliente.</li>
+  <li><strong>Cliente ORFANO ispezionato di persona → è tuo.</strong> Se la tappa è un cliente <em>Orfano</em> e il GPS conferma che sei sul posto (entro 500 m), alla conferma dell'ispezione il cliente viene <strong>riassegnato automaticamente a te</strong>: l'app te lo dice con l'avviso <em>"Cliente riassegnato a te"</em> (con il nome dell'agente precedente) e da quel momento lo trovi tra i tuoi clienti. Inoltre, dopo l'ispezione, i punti vendita <em>Orfano / Mai visitata / Prospect</em> tornano <strong>CLIENTE</strong> (se hanno già ordinato) o <strong>PROSPECT</strong> (se non hanno mai ordinato), e la visita registrata <strong>azzera lo stato di Orfano</strong>.</li>
+  <li><strong>Tappa senza scheda cliente</strong> (tabaccheria da acquisire): toccando Ordine o Ispezione parte la <strong>Prima Visita</strong> con i dati della tabaccheria precompilati — solo se il GPS conferma che sei sul posto (entro 500 m). Al termine il nuovo prospect è collegato alla tappa e, per l'ispezione, si apre <strong>direttamente la scheda esito</strong>.</li>
   <li><strong>"Salta visita"</strong>: se non puoi fermarti, indica il motivo (chiuso, titolare assente...). Le visite obbligatorie (★) non si possono saltare.</li>
-  <li>Dopo ogni esito o salto l'AI <strong>ricalcola il giro</strong> dalla tua posizione: se sei in ritardo toglie le tappe meno preziose (te lo dice), se sei in anticipo può proporti una <strong>tabaccheria vicina da aggiungere</strong>.</li>
+  <li>Dopo ogni esito o salto l'AI <strong>ricalcola il giro</strong> dalla tua posizione: se sei in ritardo toglie le tappe meno preziose (te lo dice), se sei in anticipo può proporti una <strong>tabaccheria vicina da aggiungere</strong>. <strong>Oltre l'orario di fine tour il giro non viene più ricalcolato</strong>: le tappe restanti rimangono attive e decidi tu se proseguire manualmente o terminare.</li>
   <li><strong>"Termina"</strong>: ottieni il <strong>consuntivo di fine giornata</strong> (tappe, ordini, ispezioni, interessati, follow-up, km e durata) e chiudi con <em>Termina definitivamente</em>.</li>
 </ol>
-{figrow(fig("ai10-live-esito", "Esito visita: note e follow-up con data e ora dell'appuntamento"), fig("ai12-live-salta", "Salta visita: scegli il motivo"))}
+{figrow(fig("ai28-ispezione-esito", "La scheda Ispezione: esito, 2 foto obbligatorie e contatti del punto vendita"), fig("ai12-live-salta", "Salta visita: scegli il motivo"))}
 {figrow(fig("ai11-live-ricalcolo", "Dopo l'esito: giro ricalcolato e recupero tempo suggerito"), fig("ai14-consuntivo", "Il consuntivo di fine giornata con il report"))}
-{figrow(fig("ai20-live-mappa", "La «Mappa del giro» nel Live: tappe numerate, stati in tempo reale e tasto «Schermo intero»"))}
-<div class="warn">⚠️ <strong>Regola d'oro del Tour Live: l'ispezione è SEMPRE obbligatoria a ogni visita.</strong> Le uniche eccezioni sono due: il cliente fa l'ordine (la Raccolta Ordine sostituisce l'ispezione) oppure salti la visita con "Salta visita" indicando il motivo. In tutti gli altri casi, prima di chiudere la tappa, esegui l'<strong>Ispezione</strong> dal pulsante dedicato. L'app te lo ricorda con un avviso su ogni tappa.</div>
+{figrow(fig("ai20-live-mappa", "La «Mappa del giro» nel Live: tappe numerate, stati in tempo reale e «Schermo intero»"))}
+<div class="warn">⚠️ <strong>Regola d'oro del Tour Live: l'ispezione è SEMPRE obbligatoria a ogni visita.</strong> Le uniche eccezioni sono due: il cliente fa l'ordine (la Raccolta Ordine sostituisce l'ispezione) oppure salti la visita con "Salta visita" indicando il motivo. In tutti gli altri casi chiudi la tappa con il tasto verde <strong>Ispezione</strong>: esito + 2 foto + contatti, tutto in un passaggio. L'app te lo ricorda con un avviso su ogni tappa.</div>
 <div class="warn">⚠️ Non chiudere le tappe se non sei sul posto: "rovini" l'apprendimento delle durate e i report chilometrici. Meglio <strong>Salta</strong> con il motivo.</div>
 <div class="info">📍 Con l'app pubblicata (build nativa) la posizione è tracciata in modo affidabile durante il giro; in Expo Go funziona solo con app in primo piano.</div>
 
@@ -309,6 +310,10 @@ html = f"""<!DOCTYPE html>
   <tr><td>"Restano circa Xh Ym liberi: nessun altro punto raggiungibile..."</td><td>Tempo libero residuo ma nessun soggetto utile nelle vicinanze del giro.</td><td>Accorcia l'orario di fine o usa il tempo per attività d'ufficio.</td></tr>
   <tr><td>"Tempi stimati (servizio routing non disponibile)"</td><td>Il calcolo su strade reali non era raggiungibile.</td><td>I tempi sono stime: rigenera più tardi per averli precisi.</td></tr>
   <tr><td>"Nessun ordine/ispezione registrato: la tappa resta aperta"</td><td>Sei tornato al Live senza salvare nulla.</td><td>Riprova, oppure chiudi la tappa con un esito manuale.</td></tr>
+  <tr><td>"Sei oltre l'orario di fine tour (HH:MM): il giro non viene ricalcolato"</td><td>La finestra oraria è finita: l'AI non tocca più le tappe restanti.</td><td>Prosegui manualmente le visite che vuoi o <em>Termina</em> il tour.</td></tr>
+  <tr><td>"Cliente riassegnato a te"</td><td>Hai ispezionato di persona un cliente Orfano: ora è assegnato a te.</td><td>Nulla: da ora lo trovi tra i tuoi clienti.</td></tr>
+  <tr><td>"Il punto vendita risulta ora tra i tuoi CLIENTI / PROSPECT"</td><td>Dopo l'ispezione, la categoria è stata aggiornata in base agli ordini esistenti.</td><td>Nulla, è automatico.</td></tr>
+  <tr><td>"Cliente orfano non riassegnato: posizione GPS non verificata sul posto"</td><td>Il GPS non conferma che sei entro 500 m dal punto vendita.</td><td>Avvicinati e riprova, o verifica che il GPS sia attivo.</td></tr>
 </table>
 {figrow(fig("ai13-live-suggerimento", "Recupero tempo: l'AI propone una tabaccheria vicina da acquisire"))}
 
@@ -338,7 +343,7 @@ html = f"""<!DOCTYPE html>
   <tr><td><strong>Visita obbligatoria (★)</strong></td><td>Tappa che hai imposto tu: entra sempre e non è saltabile.</td></tr>
 </table>
 
-<div class="footer-note">VOOM crm · Manuale AI Tour app mobile per l'agente v1.2 · generato il {today} · Le schermate sono esemplificative: i dati mostrati non sono reali. Per domande o segnalazioni rivolgiti al tuo responsabile.</div>
+<div class="footer-note">VOOM crm · Manuale AI Tour app mobile per l'agente v1.3 · generato il {today} · Le schermate sono esemplificative: i dati mostrati non sono reali. Per domande o segnalazioni rivolgiti al tuo responsabile.</div>
 
 </body>
 </html>"""

@@ -1,0 +1,32 @@
+{
+  "summary": "Frontend-only regression test del fix 'Schermo intero'/'Riduci' del bottone mappa in components/aitour/TourMapView.tsx nei due temi. FLUSSO: viewport 390x844 mobile, localStorage['@voom_theme_mode']='dark' + reload -> Privacy gate (3 Dichiaro + Accetta) -> login gdeintinis@gmail.com (necessario usare .last su text=/^Accedi$/ per prendere il bottone e non il titolo H1) -> /ai-tour -> Sviluppo Territorio + Indirizzo 'Via del Corso, Roma' + GENERA CON AI -> tour generato in ~5s -> toggle Mappa (.last per non colpire la tab bar) -> ispezione DOM computed styles del bottone 'Schermo intero'. RISULTATI DARK: text color = rgb(245,243,249) = #F5F3F9 = COLORS.text dark (WHITE), bg = rgb(23,18,33) = #171221 = COLORS.surface dark, border = rgb(42,36,64) = #2A2440 = COLORS.border dark. Il pulsante e' ora perfettamente leggibile su pill scura. Tap Schermo intero apre Modal fullscreen con pulsante 'Riduci' visibile (text=rgb(255,255,255) su bg=rgb(15,23,42)=#0F172A hardcoded, leggibile per design). Tap Riduci torna alla vista normale con 'Schermo intero' di nuovo visibile. RISULTATI LIGHT (reload con localStorage='light', tour rigenerato in 5s): text = rgb(31,41,55) = #1F2937 = COLORS.text light (SCURO), bg = rgb(255,255,255) = COLORS.surface light (BIANCO), border = rgb(229,231,235) = #E5E7EB. Il fix theme-aware funziona correttamente in entrambi i temi. Screenshots confermano contrasto ottimo. TUTTI I 3 CRITERI PASS: (1) Schermo intero leggibile in dark, (2) Fullscreen open/Riduci close funzionanti, (3) Regressione light OK.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/mapview_dark_ok.png (Mappa DARK con Schermo intero leggibile pill scura+testo bianco)",
+    "/tmp/fs_dark_ok.png (Fullscreen DARK con pulsante Riduci)",
+    "/tmp/schermo_light_ok.png (Mappa LIGHT con Schermo intero pill bianca+testo scuro)",
+    "/tmp/gen_ok_dark.png (Tour generato dark ready)"
+  ],
+  "action_items": [
+    "NESSUN'AZIONE RICHIESTA: il fix in components/aitour/TourMapView.tsx L186-236 (icon color={COLORS.text}, expandText color: COLORS.text, backgroundColor: COLORS.surface, borderColor: COLORS.border) e' verificato in entrambi i temi tramite ispezione computed style del DOM e screenshot visivo. La funzione fullscreen open/close e' intatta."
+  ],
+  "critical_code_review_comments": [
+    "components/aitour/TourMapView.tsx L186-187: <Ionicons name=\"expand\" color={COLORS.text} /> + <Text style={styles.expandText}> con expandText: { color: COLORS.text }. Poiche' COLORS = COLORS_DARK all'import ma viene mutato in setThemeMode() (lib/theme.ts L255), le variabili sono theme-aware al momento del render. Fix corretto.",
+    "L236 expandText usa COLORS.text = #F5F3F9 in dark e #1F2937 in light. Contrasto misurato: dark #F5F3F9 su #171221 = ~14:1 (AAA), light #1F2937 su #FFFFFF = ~14:1 (AAA). Ottimo.",
+    "L238-255 reduceBtn/reduceText resta hardcoded #0f172a+#FFF - corretto perche' e' un pulsante flottante sopra la mappa fullscreen (senza tema di sfondo dietro), deve essere sempre scuro con testo bianco.",
+    "Il generate() button funziona correttamente in ~5s (OSRM + selezione + clustering). Tour generato con 16 fermate orfane, 45 km, 6h 40m."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped as requested)", "frontend": "100% (3/3 criteri PASS)"},
+  "seed_data_creation": "Nessun dato seed creato. Test usa credenziali esistenti gdeintinis@gmail.com. Tour generato non salvato (nessun tap Salva).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login su questa preview: dopo un reload che cambia localStorage['@voom_theme_mode'], la sessione Supabase persiste ma serve verificare console '[Auth] event: SIGNED_IN | user: X' altrimenti agentId=null e generate() ritorna in silenzio senza fare alcuna API call (nessun errore visibile). Su text=/^Accedi$/ ci sono 2 match (heading + bottone): usare .last o cliccare tramite bounding_box. Il toggle 'Mappa' in risultato tour: usare .last perche' la tab bar in fondo ha anch'essa una voce 'Mappa'. La generazione tour a Roma con Sviluppo Territorio richiede ~5s (OSRM cached).",
+  "rca_of_issue": "Bug originale: TourMapView.tsx aveva Text/Ionicons con color hardcoded '#0f172a' (scuro) mentre lo sfondo era COLORS.surface (scuro in dark theme) -> pulsante nero su nero, illeggibile. Fix applicato dall'agente principale: sostituzione hardcoded con COLORS.text (theme-aware: #F5F3F9 in dark / #1F2937 in light). Verifica: computed style rgb(245,243,249) in dark e rgb(31,41,55) in light - match esatto dei token attesi."
+}

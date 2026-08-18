@@ -183,7 +183,7 @@ export function TourMapView({ stops, geometry, start, end, height = 420 }: Props
           activeOpacity={0.8}
           accessibilityLabel="Mappa a schermo intero"
         >
-          <Ionicons name="expand" size={17} color="#0f172a" />
+          <Ionicons name="expand" size={17} color={COLORS.text} />
           <Text style={styles.expandText}>Schermo intero</Text>
         </TouchableOpacity>
       </View>
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
-  expandText: { fontSize: 12, fontWeight: '700', color: '#0f172a' },
+  expandText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
   fullRoot: { flex: 1, backgroundColor: COLORS.bg },
   reduceBtn: {
     position: 'absolute',

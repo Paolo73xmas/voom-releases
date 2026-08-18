@@ -15,29 +15,9 @@ import { useAuthStore } from '../../store/authStore';
 import {
   COLORS,
   currentThemeMode,
-  setStoredThemeMode,
-  applyThemeMode,
   type ThemeMode,
 } from '../../lib/theme';
-
-/** Riavvio soft per applicare il tema (gli StyleSheet sono statici per modulo) */
-async function reloadApp() {
-  if (Platform.OS === 'web') {
-    (globalThis as unknown as Window).location?.reload();
-    return;
-  }
-  try {
-    const Updates = await import('expo-updates');
-    await Updates.reloadAsync();
-  } catch {
-    try {
-      const { DevSettings } = await import('react-native');
-      DevSettings.reload();
-    } catch {
-      Alert.alert('Tema salvato', "Chiudi e riapri l'app per applicare il nuovo tema.");
-    }
-  }
-}
+import { setThemeAndReload } from '../../lib/themeToggle';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -47,9 +27,7 @@ export default function ProfileScreen() {
   const handleThemeChange = async (mode: ThemeMode) => {
     if (mode === themeMode) return;
     setThemeMode(mode);
-    await setStoredThemeMode(mode);
-    applyThemeMode(mode);
-    await reloadApp();
+    await setThemeAndReload(mode);
   };
 
   const handleLogout = () => {

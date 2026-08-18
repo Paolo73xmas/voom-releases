@@ -27,7 +27,8 @@ import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
 import { Avatar } from '../../components/Avatar';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
 import { Skeleton } from '../../components/Skeleton';
-import { DS, JAKARTA, getTimeGreeting, COLORS } from '../../lib/theme';
+import { DS, JAKARTA, getTimeGreeting, COLORS, currentThemeMode } from '../../lib/theme';
+import { setThemeAndReload } from '../../lib/themeToggle';
 import { hap } from '../../lib/haptics';
 
 export default function Dashboard() {
@@ -279,6 +280,15 @@ export default function Dashboard() {
           <Text style={styles.greeting}>{getTimeGreeting()}</Text>
           <Text style={styles.userName} numberOfLines={1}>{profile?.full_name || 'Utente'}</Text>
         </View>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => {
+            hap.light();
+            setThemeAndReload(currentThemeMode === 'dark' ? 'light' : 'dark');
+          }}
+        >
+          <Ionicons name={currentThemeMode === 'dark' ? 'sunny-outline' : 'moon-outline'} size={20} color={DS.inkMuted} />
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.logoutBtn}
           onPress={() => {

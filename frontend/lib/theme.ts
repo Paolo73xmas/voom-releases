@@ -101,8 +101,8 @@ const COLORS_DARK: typeof COLORS_LIGHT = {
   textPlaceholder: '#554E6B',
 };
 
-/** Token colore correnti (mutati da applyThemeMode all'avvio/toggle) */
-export const COLORS = { ...COLORS_LIGHT };
+/** Token colore correnti (mutati da applyThemeMode all'avvio/toggle) — default SCURO */
+export const COLORS = { ...COLORS_DARK };
 
 export const GRADIENTS: Record<string, [string, string]> = {
   primary: ['#8B5CF6', '#6D28D9'],
@@ -238,11 +238,11 @@ const DS_DARK: typeof DS_LIGHT = {
   error: '#F87171',
 };
 
-/** Token DS correnti (mutati da applyThemeMode all'avvio/toggle) */
-export const DS = { ...DS_LIGHT };
+/** Token DS correnti (mutati da applyThemeMode all'avvio/toggle) — default SCURO */
+export const DS = { ...DS_DARK };
 
 /** Modo tema corrente (aggiornato da applyThemeMode) */
-export let currentThemeMode: ThemeMode = 'light';
+export let currentThemeMode: ThemeMode = 'dark';
 
 /**
  * Applica la palette al set di token condivisi. Gli StyleSheet catturano i
@@ -266,10 +266,10 @@ export function applyThemeMode(mode: ThemeMode): void {
 // WEB: applica SUBITO il tema salvato in modo sincrono (AsyncStorage su web usa
 // localStorage con la stessa chiave). Questo modulo viene valutato prima di
 // qualunque StyleSheet che usa i token, quindi l'ordine è garantito.
-// Su native localStorage non esiste: ci pensa il gate async in app/_layout.
+// Default: SCURO. Su native localStorage non esiste: gate async in app/_layout.
 try {
   const ls = (globalThis as { localStorage?: { getItem: (k: string) => string | null } }).localStorage;
-  if (ls && ls.getItem(THEME_MODE_KEY) === 'dark') applyThemeMode('dark');
+  if (ls) applyThemeMode(ls.getItem(THEME_MODE_KEY) === 'light' ? 'light' : 'dark');
 } catch {
   // ambiente senza localStorage (native/SSR): ignora
 }
@@ -277,9 +277,9 @@ try {
 export async function getStoredThemeMode(): Promise<ThemeMode> {
   try {
     const v = await AsyncStorage.getItem(THEME_MODE_KEY);
-    return v === 'dark' ? 'dark' : 'light';
+    return v === 'light' ? 'light' : 'dark';
   } catch {
-    return 'light';
+    return 'dark';
   }
 }
 

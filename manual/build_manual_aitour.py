@@ -92,7 +92,7 @@ html = f"""<!DOCTYPE html>
   <h1><span class="spark">✦</span> AI Tour</h1>
   <div class="sub">Manuale operativo per l'agente — flussi, logica e apprendimento dell'AI</div>
   <div class="box">AI Tour è il tuo assistente commerciale sull'app: analizza ogni giorno il portafoglio, decide chi conviene visitare, costruisce il percorso ottimale e <strong>impara dai tuoi risultati reali</strong> per pianificare sempre meglio. Questo manuale spiega come usarlo dal telefono, passo per passo, e come "allenarlo".</div>
-  <div class="badge">Versione 1.0 · {today} · Documento riservato agli agenti VOOM</div>
+  <div class="badge">Versione 1.1 · {today} · Documento riservato agli agenti VOOM</div>
   <div class="foot">VOOM crm — Manuale AI Tour app mobile per l'agente</div>
 </div>
 
@@ -203,13 +203,18 @@ html = f"""<!DOCTYPE html>
   <li><strong>Cluster territoriale:</strong> l'AI raggruppa i candidati per zone (~5 km) e sceglie quella col valore complessivo massimo.</li>
   <li><strong>Selezione:</strong> aggiunge visite una alla volta massimizzando il punteggio e minimizzando il tempo di viaggio.</li>
   <li><strong>Ottimizzazione:</strong> riordina la sequenza per ridurre i chilometri e ricalcola i tempi su strade reali.</li>
-  <li><strong>Buffer di sicurezza:</strong> una parte della giornata resta riservata agli imprevisti — 18% Giro Clienti, 25% Mista, 35% Sviluppo.</li>
+  <li><strong>Buffer di sicurezza:</strong> una parte della giornata resta riservata agli imprevisti — 18% Giro Clienti, 25% Mista, 35% Sviluppo — ma <strong>mai oltre il margine massimo</strong> (60 minuti standard, regolabile dallo staff). Le giornate lunghe restano quindi piene di visite.</li>
 </ol>
+<h3>Giornate intensive</h3>
+<p>Se dopo la pianificazione restano <strong>più di 90 minuti liberi</strong>, l'AI <strong>intensifica da sola il giro</strong>: cerca Mai Visitate, Orfani e tabaccherie libere <em>vicine alle tappe già previste</em> (senza farti disperdere) e le aggiunge, avvisandoti con il messaggio <em>"Giornata intensificata: +N visite di sviluppo vicine al giro"</em>. Se non trova nulla di raggiungibile, te lo dice con un avviso sul tempo residuo.</p>
 {figrow(fig("ai06-risultato-fermate", "Fermate in sequenza: orari, badge tipo, priorità e Naviga"), fig("ai07-risultato-escluse", "Le «Visite escluse»: chi è rimasto fuori e perché"))}
 <div class="info">ℹ️ Le <strong>escluse</strong> non sono scartate per sempre: restano candidate e spesso entrano nel giro successivo.</div>
+<h3>Storico del cliente Orfano</h3>
+<p>Sulle fermate di tipo <strong>Orfano</strong> il badge violetto (con la piccola icona orologio) è <strong>toccabile</strong>: si apre una scheda con gli <strong>ordini degli ultimi 12 mesi</strong> del cliente — data, numero ordine, <strong>categorie acquistate</strong> e valore, con il totale dell'anno e la data dell'ultima visita. Se non ci sono ordini recenti vedi l'ultima visita (o <em>"Mai visitato"</em>) e il fatturato storico. Così sai <strong>cosa comprava e quanto valeva</strong> prima ancora di suonare il campanello.</p>
+{figrow(fig("ai21-orfano-storico", "Tocca il badge «Orfano»: ordini degli ultimi 12 mesi, categorie e ultima visita"))}
 <h3>Elenco o Mappa</h3>
-<p>Il giro proposto si consulta in due modi con il selettore <strong>Elenco / Mappa</strong>. La vista <strong>Mappa</strong> mostra il <strong>percorso reale</strong> in blu, il marker <strong>P</strong> di partenza (e <strong>A</strong> di rientro, se impostato) e le <strong>fermate numerate</strong> con il colore del tipo di soggetto (bordo rosso se obbligatoria). Toccando un marker si apre la scheda con orario di arrivo, durata, priorità, motivo dell'AI e il pulsante <strong>Naviga</strong>.</p>
-{figrow(fig("ai19-tour-mappa", "La vista Mappa del giro: percorso, partenza P e fermate numerate con popup"))}
+<p>Il giro proposto si consulta in due modi con il selettore <strong>Elenco / Mappa</strong>. La vista <strong>Mappa</strong> mostra il <strong>percorso reale</strong> in blu, il marker <strong>P</strong> di partenza (e <strong>A</strong> di rientro, se impostato) e le <strong>fermate numerate</strong> con il colore del tipo di soggetto (bordo rosso se obbligatoria). Toccando un marker si apre la scheda con orario di arrivo, durata, priorità, motivo dell'AI e il pulsante <strong>Naviga</strong>. Con il tasto <strong>«Schermo intero»</strong> (in alto a destra sulla mappa) la porti a <strong>tutto schermo</strong> per navigarla comodamente con le dita; il tasto <strong>«Riduci»</strong> resta sempre visibile per tornare alla vista normale.</p>
+{figrow(fig("ai19-tour-mappa", "La vista Mappa del giro con il tasto «Schermo intero»"), fig("ai22-mappa-fullscreen", "La mappa a tutto schermo: si naviga con le dita, «Riduci» sempre visibile"))}
 
 <!-- ═══════════ CAP 5 ═══════════ -->
 <h2 class="chapter">5 · Cosa impara l'AI dai tuoi dati (e come "allenarla")</h2>
@@ -247,7 +252,7 @@ html = f"""<!DOCTYPE html>
 </ol>
 {figrow(fig("ai10-live-esito", "Esito visita: note e follow-up con data e ora dell'appuntamento"), fig("ai12-live-salta", "Salta visita: scegli il motivo"))}
 {figrow(fig("ai11-live-ricalcolo", "Dopo l'esito: giro ricalcolato e recupero tempo suggerito"), fig("ai14-consuntivo", "Il consuntivo di fine giornata con il report"))}
-{figrow(fig("ai20-live-mappa", "La «Mappa del giro» nel Live: tappe numerate e stati in tempo reale"))}
+{figrow(fig("ai20-live-mappa", "La «Mappa del giro» nel Live: tappe numerate, stati in tempo reale e tasto «Schermo intero»"))}
 <div class="warn">⚠️ <strong>Regola d'oro del Tour Live: l'ispezione è SEMPRE obbligatoria a ogni visita.</strong> Le uniche eccezioni sono due: il cliente fa l'ordine (la Raccolta Ordine sostituisce l'ispezione) oppure salti la visita con "Salta visita" indicando il motivo. In tutti gli altri casi, prima di chiudere la tappa, esegui l'<strong>Ispezione</strong> dal pulsante dedicato. L'app te lo ricorda con un avviso su ogni tappa.</div>
 <div class="warn">⚠️ Non chiudere le tappe se non sei sul posto: "rovini" l'apprendimento delle durate e i report chilometrici. Meglio <strong>Salta</strong> con il motivo.</div>
 <div class="info">📍 Con l'app pubblicata (build nativa) la posizione è tracciata in modo affidabile durante il giro; in Expo Go funziona solo con app in primo piano.</div>
@@ -287,6 +292,8 @@ html = f"""<!DOCTYPE html>
   <tr><td>"Nessuna visita rientra nell'orario: la partenza è a circa Xh di guida..."</td><td>Punto di partenza troppo lontano dai candidati.</td><td>Cambia partenza o amplia l'orario.</td></tr>
   <tr><td>"Giro ricalcolato alle HH:MM... ho rimosso ..."</td><td>In Live l'AI ha tolto tappe per farti rientrare in orario.</td><td>Nulla: le rimosse restano candidate per domani.</td></tr>
   <tr><td>"Hai circa N minuti di margine. Nelle vicinanze c'è..."</td><td>Sei in anticipo: proposta di visita extra vicina.</td><td><em>Aggiungi</em> se vuoi sfruttare il tempo, altrimenti <em>No, grazie</em>.</td></tr>
+  <tr><td>"Giornata intensificata: +N visite di sviluppo vicine al giro"</td><td>Restavano oltre 90 minuti liberi: l'AI ha aggiunto Mai Visitate/Orfani vicini alle tappe.</td><td>Nulla: il giro è già ottimizzato con le visite extra.</td></tr>
+  <tr><td>"Restano circa Xh Ym liberi: nessun altro punto raggiungibile..."</td><td>Tempo libero residuo ma nessun soggetto utile nelle vicinanze del giro.</td><td>Accorcia l'orario di fine o usa il tempo per attività d'ufficio.</td></tr>
   <tr><td>"Tempi stimati (servizio routing non disponibile)"</td><td>Il calcolo su strade reali non era raggiungibile.</td><td>I tempi sono stime: rigenera più tardi per averli precisi.</td></tr>
   <tr><td>"Nessun ordine/ispezione registrato: la tappa resta aperta"</td><td>Sei tornato al Live senza salvare nulla.</td><td>Riprova, oppure chiudi la tappa con un esito manuale.</td></tr>
 </table>

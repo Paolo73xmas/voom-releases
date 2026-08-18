@@ -78,6 +78,9 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
 
   const pending = useMemo(() => stops.filter((s) => s.status === 'planned' || s.status === 'arrived'), [stops]);
   const next = pending[0] || null;
+  // Numerazione STABILE del giro: ogni tappa mantiene il proprio numero progressivo
+  // anche dopo esiti/salti (la successiva alla n.1 resta n.2, non torna n.1)
+  const stopNumbers = useMemo(() => new Map(stops.map((s, i) => [s.id, i + 1])), [stops]);
   const doneCount = stops.filter((s) => s.status === 'completed').length;
   const skipCount = stops.filter((s) => s.status === 'skipped' || s.status === 'cancelled').length;
 
@@ -509,13 +512,13 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       {showMap && (
         <TourMapView
           stops={stops.map((s): TourMapStop => {
-            const pendingIdx = pending.findIndex((p) => p.id === s.id);
+            const isPending = s.status === 'planned' || s.status === 'arrived';
             return {
               key: s.id,
               lat: s.candidate.lat,
               lng: s.candidate.lng,
               color: ENTITY_COLORS[s.candidate.entityType],
-              label: pendingIdx >= 0 ? String(pendingIdx + 1) : '',
+              label: isPending ? String(stopNumbers.get(s.id)) : '',
               mandatory: s.mandatory,
               name: s.candidate.name,
               entity: ENTITY_LABELS[s.candidate.entityType],
@@ -690,7 +693,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           {pending.map((s, i) => (
             <View key={s.id} style={[styles.listRow, i === 0 && styles.listRowNext]}>
               <View style={[styles.listSeq, { backgroundColor: ENTITY_COLORS[s.candidate.entityType] }]}>
-                <Text style={styles.listSeqText}>{i + 1}</Text>
+                <Text style={styles.listSeqText}>{stopNumbers.get(s.id)}</Text>
               </View>
               <Text style={styles.listName} numberOfLines={1}>
                 {s.candidate.name}

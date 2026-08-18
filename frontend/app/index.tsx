@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import VoomSplash from '../components/VoomSplash';
+import AiTourSplash from '../components/AiTourSplash';
 
 const PRIVACY_ACCEPTED_KEY = '@privacy_terms_accepted';
 
@@ -37,7 +37,7 @@ export default function Index() {
   }, []);
 
   // 2) FALLBACK SPLASH: forza fine animazione dopo SPLASH_MAX_DURATION_MS
-  // (su Android Expo Go reanimated può non far scattare onFinish del componente VoomSplash)
+  // (su Android Expo Go reanimated può non far scattare onFinish del componente AiTourSplash)
   useEffect(() => {
     const t = setTimeout(() => {
       if (!splashDone) {
@@ -86,7 +86,7 @@ export default function Index() {
   return (
     <View style={styles.container}>
       {!splashDone && (
-        <VoomSplash onFinish={() => setSplashDone(true)} />
+        <AiTourSplash onFinish={() => setSplashDone(true)} />
       )}
     </View>
   );
@@ -95,6 +95,6 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0E1A',
+    backgroundColor: '#0B0714',
   },
 });

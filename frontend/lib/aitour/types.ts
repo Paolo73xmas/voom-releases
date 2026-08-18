@@ -138,6 +138,9 @@ export const ENTITY_LABELS: Record<EntityType, string> = {
   never: 'Mai visitata',
 };
 
+import { currentThemeMode } from '../theme';
+
+/** Colori saturi per marker mappa e dot con testo bianco (uguali in entrambi i temi) */
 export const ENTITY_COLORS: Record<EntityType, string> = {
   client: '#2563eb',
   prospect: '#059669',
@@ -145,6 +148,12 @@ export const ENTITY_COLORS: Record<EntityType, string> = {
   free: '#0d9488',
   never: '#db2777',
 };
+
+/** Varianti per TESTI/BORDI su card: schiarite in dark per il contrasto */
+export const ENTITY_TEXT_COLORS: Record<EntityType, string> =
+  currentThemeMode === 'dark'
+    ? { client: '#93C5FD', prospect: '#6EE7B7', orphan: '#C4B5FD', free: '#5EEAD4', never: '#F9A8D4' }
+    : ENTITY_COLORS;
 
 export function timeToMin(t: string): number {
   const [h, m] = t.split(':').map(Number);

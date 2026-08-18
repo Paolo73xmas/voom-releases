@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Platform, View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FONTS } from '../../lib/theme';
+import { COLORS, FONTS, currentThemeMode } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
 
 /**
@@ -13,10 +13,17 @@ import { hap } from '../../lib/haptics';
 function TabBarBackground() {
   if (Platform.OS === 'ios') {
     return (
-      <BlurView intensity={75} tint="light" style={[StyleSheet.absoluteFill, styles.blurFill]} />
+      <BlurView
+        intensity={75}
+        tint={currentThemeMode === 'dark' ? 'dark' : 'light'}
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: currentThemeMode === 'dark' ? 'rgba(11,7,20,0.72)' : 'rgba(255,255,255,0.7)' },
+        ]}
+      />
     );
   }
-  return <View style={[StyleSheet.absoluteFill, styles.solidFill]} />;
+  return <View style={[StyleSheet.absoluteFill, { backgroundColor: COLORS.surface }]} />;
 }
 
 export default function TabLayout() {
@@ -41,7 +48,7 @@ export default function TabLayout() {
         tabBarStyle: {
           position: 'absolute',
           backgroundColor: 'transparent',
-          borderTopColor: 'rgba(0,0,0,0.06)',
+          borderTopColor: currentThemeMode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
           borderTopWidth: StyleSheet.hairlineWidth,
           height: tabBarHeight,
           paddingBottom: tabBarPadBottom,
@@ -144,6 +151,4 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  blurFill: { backgroundColor: 'rgba(255,255,255,0.7)' },
-  solidFill: { backgroundColor: COLORS.surface },
 });

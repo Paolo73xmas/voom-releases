@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { DS, JAKARTA, SHADOWS, COLORS } from '../lib/theme';
+import { DS, JAKARTA, SHADOWS, COLORS, currentThemeMode } from '../lib/theme';
 import { hap } from '../lib/haptics';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
@@ -39,12 +39,10 @@ import type { TourPlan, GeoPoint, AiTourSettings, DayType, EntityType, PriorityC
 import { DEFAULT_SETTINGS, timeToMin, minToTime, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS } from '../lib/aitour/types';
 import type { WeekDayPlan } from '../lib/aitour/week';
 
-const PRIORITY_COLORS: Record<PriorityClass, string> = {
-  Urgente: '#DC2626',
-  Alta: '#8B5CF6',
-  Media: '#D97706',
-  Bassa: '#64748B',
-};
+const PRIORITY_COLORS: Record<PriorityClass, string> =
+  currentThemeMode === 'dark'
+    ? { Urgente: '#F87171', Alta: '#A78BFA', Media: '#FBBF24', Bassa: '#94A3B8' }
+    : { Urgente: '#DC2626', Alta: '#8B5CF6', Media: '#D97706', Bassa: '#64748B' };
 
 const DAY_TYPES: { value: DayType; label: string; desc: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { value: 'clienti', label: 'Giro Clienti', desc: 'Clienti già acquisiti da rivisitare', icon: 'people-outline' },

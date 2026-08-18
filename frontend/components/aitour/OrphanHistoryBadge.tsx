@@ -8,7 +8,7 @@ import { DS, JAKARTA } from '../../lib/theme';
 import { AI_PURPLE } from './shared';
 import { supabase } from '../../lib/supabase';
 import type { TourCandidate } from '../../lib/aitour/types';
-import { ENTITY_LABELS, ENTITY_COLORS, fmtEur } from '../../lib/aitour/types';
+import { ENTITY_LABELS, ENTITY_TEXT_COLORS, fmtEur } from '../../lib/aitour/types';
 
 interface HistoryOrder {
   order_date: string;
@@ -27,7 +27,7 @@ export function CandidateEntityBadge({ candidate }: { candidate: TourCandidate }
 
   const historyId = candidate.customerId || candidate.historyCustomerId || null;
   const clickable = candidate.entityType === 'orphan' && !!historyId;
-  const color = ENTITY_COLORS[candidate.entityType];
+  const color = ENTITY_TEXT_COLORS[candidate.entityType];
 
   useEffect(() => {
     if (!open || !historyId) return;
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
   },
-  badgeClickable: { backgroundColor: '#F3E8FF44' },
+  badgeClickable: { backgroundColor: DS.brandSoft },
   badgeText: { fontFamily: JAKARTA.semibold, fontSize: 10 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: {

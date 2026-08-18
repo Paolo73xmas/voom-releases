@@ -20,7 +20,7 @@ import {
 import { planTour } from '../../lib/aitour/planner';
 import { buildTourReport, type TourReport } from '../../lib/aitour/report';
 import type { TourCandidate, AiTourSettings, GeoPoint, DayType } from '../../lib/aitour/types';
-import { minToTime, timeToMin, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS } from '../../lib/aitour/types';
+import { minToTime, timeToMin, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS, ENTITY_TEXT_COLORS } from '../../lib/aitour/types';
 
 const EXTERNAL_KEY = 'aitour_external';
 const ACQUIRE_MAX_M = 500;
@@ -568,8 +568,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             {next.candidate.city ? `, ${next.candidate.city}` : ''}
           </Text>
           <View style={styles.nextMetaRow}>
-            <View style={[styles.entityBadge, { borderColor: ENTITY_COLORS[next.candidate.entityType] }]}>
-              <Text style={[styles.entityBadgeText, { color: ENTITY_COLORS[next.candidate.entityType] }]}>
+            <View style={[styles.entityBadge, { borderColor: ENTITY_TEXT_COLORS[next.candidate.entityType] }]}>
+              <Text style={[styles.entityBadgeText, { color: ENTITY_TEXT_COLORS[next.candidate.entityType] }]}>
                 {ENTITY_LABELS[next.candidate.entityType]}
               </Text>
             </View>

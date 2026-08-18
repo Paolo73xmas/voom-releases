@@ -24,7 +24,7 @@ import { saveDraft, deleteDraft, getDrafts, generateDraftId, OrderDraft } from '
 import { generateAndShareQuotePdf } from '../lib/pdf/order-quote';
 import { useVirtualBranch } from '../hooks/useVirtualBranch';
 import type { AvailableStockMap } from '../types/reservation';
-import { COLORS } from '../lib/theme';
+import { COLORS, currentThemeMode } from '../lib/theme';
 
 // ═══════════════════════════════════════════════════════
 // TYPES
@@ -2587,8 +2587,8 @@ const s = StyleSheet.create({
   summaryItemPrice: { fontSize: 13, fontWeight: '600', color: COLORS.text, width: 70, textAlign: 'right' },
 
   // ✅ Sconto Cartone
-  cartonHintAmber: { fontSize: 10.5, color: '#B45309', fontWeight: '500', marginTop: 2 },
-  cartonHintGreen: { fontSize: 10.5, color: '#15803D', fontWeight: '600', marginTop: 2 },
+  cartonHintAmber: { fontSize: 10.5, color: currentThemeMode === 'dark' ? '#FBBF24' : '#B45309', fontWeight: '500', marginTop: 2 },
+  cartonHintGreen: { fontSize: 10.5, color: currentThemeMode === 'dark' ? '#4ADE80' : '#15803D', fontWeight: '600', marginTop: 2 },
   cartonBadge: { alignSelf: 'flex-start', backgroundColor: '#DCFCE7', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, marginTop: 2 },
   cartonBadgeText: { fontSize: 10, color: '#15803D', fontWeight: '700' },
 

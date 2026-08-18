@@ -228,7 +228,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
     const batch = otherOrphanIds.slice(i, i + 300);
     const { data: tabs, error: tabErr } = await supabase
       .from('tabaccherie')
-      .select('id, denominazione, codice_rivendita, indirizzo, comune, provincia, gps_lat, gps_lng')
+      .select('id, denominazione, codice_rivendita, indirizzo, comune, provincia, gps_lat, gps_lng, customer_id')
       .in('id', batch)
       .not('gps_lat', 'is', null)
       .not('gps_lng', 'is', null);
@@ -245,6 +245,9 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
         key: `orphan:${t.id}`,
         entityType: 'orphan',
         customerId: null,
+        // Cliente di altro agente (invisibile via RLS): id usato SOLO per lo
+        // storico ordini del badge Orfano (RPC SECURITY DEFINER a dato minimo)
+        historyCustomerId: t.customer_id || null,
         tabaccheriaId: t.id,
         name: t.denominazione || `Tabaccheria Riv. ${t.codice_rivendita || ''}`.trim(),
         address: t.indirizzo || '',

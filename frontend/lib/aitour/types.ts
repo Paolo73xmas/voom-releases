@@ -14,6 +14,9 @@ export interface TourCandidate {
   key: string;
   entityType: EntityType;
   customerId: string | null;
+  // Solo mobile: customer id di un orfano di altro agente, usato esclusivamente
+  // per il modale storico ordini del badge Orfano (non abilita visite/appuntamenti CRM)
+  historyCustomerId?: string | null;
   tabaccheriaId: string | null;
   name: string;
   address: string;

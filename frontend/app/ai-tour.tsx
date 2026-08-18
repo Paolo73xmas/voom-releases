@@ -33,6 +33,7 @@ import { LiveTourView } from '../components/aitour/LiveTourView';
 import { TourMapView, type TourMapStop } from '../components/aitour/TourMapView';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
+import { CandidateEntityBadge } from '../components/aitour/OrphanHistoryBadge';
 import { AI_PURPLE, AI_PURPLE_SOFT, openNavigation } from '../components/aitour/shared';
 import type { TourPlan, GeoPoint, AiTourSettings, DayType, EntityType, PriorityClass } from '../lib/aitour/types';
 import { DEFAULT_SETTINGS, timeToMin, minToTime, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS } from '../lib/aitour/types';
@@ -1178,11 +1179,7 @@ export default function AITourScreen() {
               </View>
             </View>
             <View style={styles.stopBadges}>
-              <View style={[styles.entityBadge, { borderColor: ENTITY_COLORS[s.candidate.entityType] }]}>
-                <Text style={[styles.entityBadgeText, { color: ENTITY_COLORS[s.candidate.entityType] }]}>
-                  {ENTITY_LABELS[s.candidate.entityType]}
-                </Text>
-              </View>
+              <CandidateEntityBadge candidate={s.candidate} />
               <View style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[s.candidate.priorityClass] + '1A' }]}>
                 <Text style={[styles.priorityBadgeText, { color: PRIORITY_COLORS[s.candidate.priorityClass] }]}>
                   {s.candidate.priorityClass} · {s.candidate.score}/100
@@ -1663,8 +1660,6 @@ const styles = StyleSheet.create({
   stopArrival: { fontFamily: JAKARTA.bold, fontSize: 15, color: DS.ink },
   stopDeparture: { fontFamily: JAKARTA.regular, fontSize: 10, color: DS.inkMuted, marginTop: 1 },
   stopBadges: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 9, flexWrap: 'wrap' },
-  entityBadge: { borderWidth: 1, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },
-  entityBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 10 },
   priorityBadge: { borderRadius: 6, paddingVertical: 3, paddingHorizontal: 7 },
   priorityBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 10 },
   navBtn: {

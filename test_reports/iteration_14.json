@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only regression testing of 3 web-parity deltas (multi-term customer search, multi-term product search, AI Tour zone chips). ALL PASS. (1) Customer search step 1 order-collection-v2: 'tab ros'/'tabacchi rossi' → Tabacchi Rossi & Figli; 'rossi' single term ok; 'rossi xyz' correctly returns 0 results. (2) Product search step 2: 'mes pea' → MESH MINI PEACH ICE 20; 'mes' returns full MESH list; 'mes zzz' → 0 results. (3) AI Tour non-regression: form renders full (Data/Tipo giornata/Partenza/Rientro/Area/Visite obbligatorie); as expected the test agent has NO zones, the 'Territorio assegnato' chip is NOT shown and no zone chips appear; tour generation with 'Sviluppo Territorio' + address 'Via del Corso, Roma' completed in ~15s producing 7 tappe a Roma (13:15→16:47, 20 km, 7 ORF, priorità media 55/100) con strategy summary AI corretta. Nessun red screen, nessun errore fatale in console. Solo warnings deprecation React Native web ('shadow*' style props, 'pointerEvents' prop) e un 406 non-bloccante Supabase (cashback lookup single-row 'no rows').",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "shadow* style props (RN-web)", "issue": "Deprecation warning: 'shadow*' style props are deprecated. Use 'boxShadow'. Emitted from theme/shadow layer. Non-blocking but should be migrated. Reference: lib/theme.ts (SHADOWS)"},
+      {"component": "props.pointerEvents (RN-web)", "issue": "Deprecation warning: props.pointerEvents is deprecated. Use style.pointerEvents. Non-blocking. Reference: unknown component (grep pointerEvents=)"}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_14.json"],
+  "action_items": [
+    "Nessun fix richiesto per i 3 delta testati: multi-term customer/product search e non-regression AI Tour senza zone funzionano correttamente (parità web verificata).",
+    "OPZIONALE (non introdotto in questo delta): migrare 'shadow*' style props a 'boxShadow' e 'props.pointerEvents' a 'style.pointerEvents' per rimuovere le deprecation warnings su react-native-web.",
+    "OPZIONALE: il lookup Supabase su cashback_transactions con .single() ritorna 406 quando il cliente non ha transazioni; il fallback in catch è ok ma si può usare .maybeSingle() per non emettere errore in console (order-collection-v2.tsx loadCashBackBalance)."
+  ],
+  "critical_code_review_comments": [
+    "order-collection-v2.tsx multi-term filter (filteredCustomers ~L816, filteredProducts ~L830) implementato in modo pulito con split(/\\s+/).filter(Boolean) e terms.every → parità web garantita.",
+    "ai-tour.tsx zone chips (~L918-945) condizionati correttamente da agentZones.length>1; chip 'Territorio assegnato' condizionato da agentZones.length>0 (~L912): verificato che con 0 zone non appare.",
+    "order-collection-v2.tsx è >1600 LOC — considerare split in moduli (Step components) per manutenibilità (non bloccante)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "None. Used existing agent gdeintinis@gmail.com and existing customer 'Tabacchi Rossi & Figli' + product 'MESH MINI PEACH ICE 20'.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login agente: privacy gate → 3 checkboxes Dichiaro (usare page.get_by_text(...).first.click(force=True)) → 'Accetta e Continua' → email/password → 'Accedi' (usare .last). Order collection v2 flow: cliente 'Tabacchi Rossi & Figli' NON richiede visita, permette di raggiungere lo Step 2 direttamente. Prodotti disponibili includono famiglia MESH (mesh mini peach ice 20 ecc.). AI Tour genera in ~15s con OSRM su indirizzo 'Via del Corso, Roma'. Agente test NON ha zone territorio → verifica assenza chip 'Territorio assegnato'.",
+  "rca_of_issue": "N/A — regression test, nessun bug rilevato."
+}

@@ -8,15 +8,22 @@ export interface TerritoryZone {
   id: string;
   agent_id: string;
   zone_name: string;
+  alias: string | null;
   color: string;
   geometry: GeoJSON.Polygon;
   agent_name: string;
+}
+
+/** Nome visualizzato di una zona: alias se impostato, altrimenti il nome tecnico. */
+export function zoneLabel(z: Pick<TerritoryZone, 'zone_name' | 'alias'>): string {
+  return (z.alias || '').trim() || z.zone_name;
 }
 
 interface ZoneRow {
   id: string;
   agent_id: string;
   zone_name: string;
+  alias: string | null;
   zone_color: string | null;
   coordinates: number[][];
   agent: { full_name: string | null } | null;
@@ -25,7 +32,7 @@ interface ZoneRow {
 export async function listAllZones(): Promise<TerritoryZone[]> {
   const { data, error } = await supabase
     .from('agent_zones')
-    .select('id, agent_id, zone_name, zone_color, coordinates, agent:profiles!agent_zones_agent_id_fkey(full_name)')
+    .select('id, agent_id, zone_name, alias, zone_color, coordinates, agent:profiles!agent_zones_agent_id_fkey(full_name)')
     .eq('is_active', true)
     .order('created_at');
   if (error) throw error;
@@ -35,6 +42,7 @@ export async function listAllZones(): Promise<TerritoryZone[]> {
       id: r.id,
       agent_id: r.agent_id,
       zone_name: r.zone_name,
+      alias: r.alias || null,
       color: r.zone_color || '#3B82F6',
       geometry: { type: 'Polygon', coordinates: [r.coordinates] } as GeoJSON.Polygon,
       agent_name: r.agent?.full_name || '',

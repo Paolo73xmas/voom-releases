@@ -21,7 +21,7 @@ import { DS, JAKARTA, SHADOWS, COLORS, currentThemeMode } from '../lib/theme';
 import { hap } from '../lib/haptics';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { listAllZones, pointInZones, type TerritoryZone } from '../lib/aitour/territories';
+import { listAllZones, pointInZones, zoneLabel, type TerritoryZone } from '../lib/aitour/territories';
 import { loadCandidates, loadFreeTabaccherie } from '../lib/aitour/data';
 import { scoreCandidates, computePortfolioStats } from '../lib/aitour/scoring';
 import { planTour, filterByArea, pickBestCluster, candidatesForDayType, type AreaFilter } from '../lib/aitour/planner';
@@ -69,6 +69,8 @@ interface FormValues {
   city: string;
   radiusKm: string;
   mandatoryCustomerIds: string[];
+  /** Zone del territorio selezionate (vuoto = tutte) */
+  territoryZoneIds: string[];
 }
 
 const localDateStr = (offsetDays = 0) => {
@@ -167,6 +169,7 @@ export default function AITourScreen() {
     city: '',
     radiusKm: '15',
     mandatoryCustomerIds: [],
+    territoryZoneIds: [],
   });
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState('');
@@ -198,7 +201,14 @@ export default function AITourScreen() {
       .then((z) => {
         const mine = z.filter((x) => x.agent_id === agentId);
         setAgentZones(mine);
-        if (mine.length > 0) setForm((old) => (old.areaMode === 'auto' ? { ...old, areaMode: 'territory' } : old));
+        if (mine.length > 0) {
+          const allIds = mine.map((x) => x.id);
+          setForm((old) => ({
+            ...old,
+            areaMode: old.areaMode === 'auto' ? 'territory' : old.areaMode,
+            territoryZoneIds: allIds,
+          }));
+        }
       })
       .catch(() => setAgentZones([]));
     // Riprendi automaticamente un tour live in corso
@@ -350,17 +360,22 @@ export default function AITourScreen() {
       setProgress('Selezione visite e clustering territoriale...');
       let candidates = candidatesForDayType(loaded, resolved);
       const radiusKm = Math.max(3, Math.min(120, Number(v.radiusKm) || 15));
+      // Zone territorio selezionate nel form (vuoto = tutte)
+      const zonesForTour =
+        v.areaMode === 'territory' && v.territoryZoneIds.length > 0
+          ? agentZones.filter((z) => v.territoryZoneIds.includes(z.id))
+          : agentZones;
       const area: AreaFilter = {
         mode: v.areaMode,
         province: v.province,
         city: v.city,
         radiusKm,
-        zones: v.areaMode === 'territory' ? agentZones : undefined,
+        zones: v.areaMode === 'territory' ? zonesForTour : undefined,
       };
       candidates = filterByArea(candidates, area, start);
       let areaLabel =
         v.areaMode === 'territory'
-          ? agentZones.map((z) => z.zone_name).join(' + ') || 'territorio assegnato'
+          ? zonesForTour.map((z) => zoneLabel(z)).join(' + ') || 'territorio assegnato'
           : v.areaMode === 'province'
             ? `provincia ${v.province}`
             : v.areaMode === 'city'
@@ -378,9 +393,9 @@ export default function AITourScreen() {
       if (resolved === 'sviluppo' || resolved === 'mista') {
         let bounds = { minLat: 35, maxLat: 47.5, minLng: 6, maxLng: 19 };
         const filters: { provincia?: string; comune?: string; refLat: number; refLng: number } = { refLat: start.lat, refLng: start.lng };
-        if (v.areaMode === 'territory' && agentZones.length > 0) {
+        if (v.areaMode === 'territory' && zonesForTour.length > 0) {
           let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
-          for (const z of agentZones) {
+          for (const z of zonesForTour) {
             for (const pt of z.geometry.coordinates[0]) {
               const [lng, lat] = pt as [number, number];
               minLat = Math.min(minLat, lat);
@@ -417,8 +432,8 @@ export default function AITourScreen() {
         }
         const exclude = new Set(candidates.map((c) => c.tabaccheriaId).filter((x): x is string => !!x));
         let free = await loadFreeTabaccherie(bounds, exclude, settings, { ...filters, agentId }, resolved === 'sviluppo' ? 80 : 50);
-        if (v.areaMode === 'territory' && agentZones.length > 0) {
-          free = free.filter((c) => pointInZones(c.lat, c.lng, agentZones));
+        if (v.areaMode === 'territory' && zonesForTour.length > 0) {
+          free = free.filter((c) => pointInZones(c.lat, c.lng, zonesForTour));
         }
         if (free.length > 0) {
           scoreCandidates(free, settings);
@@ -498,8 +513,8 @@ export default function AITourScreen() {
             c.lat >= fillBounds.minLat && c.lat <= fillBounds.maxLat && c.lng >= fillBounds.minLng && c.lng <= fillBounds.maxLng;
           // orfani vicini non ancora nel giro
           let fillers = loaded.orphans.filter((c) => !plannedKeys.has(c.key) && inBox(c));
-          if (v.areaMode === 'territory' && agentZones.length > 0) {
-            fillers = fillers.filter((c) => pointInZones(c.lat, c.lng, agentZones));
+          if (v.areaMode === 'territory' && zonesForTour.length > 0) {
+            fillers = fillers.filter((c) => pointInZones(c.lat, c.lng, zonesForTour));
           }
           // mai visitate del territorio + tabaccherie libere vicine al giro
           const excludeIds = new Set<string>();
@@ -510,8 +525,8 @@ export default function AITourScreen() {
             { refLat: (fillBounds.minLat + fillBounds.maxLat) / 2, refLng: (fillBounds.minLng + fillBounds.maxLng) / 2, agentId },
             40,
           );
-          if (v.areaMode === 'territory' && agentZones.length > 0) {
-            fillFree = fillFree.filter((c) => pointInZones(c.lat, c.lng, agentZones));
+          if (v.areaMode === 'territory' && zonesForTour.length > 0) {
+            fillFree = fillFree.filter((c) => pointInZones(c.lat, c.lng, zonesForTour));
           }
           scoreCandidates(fillFree, settings);
           const known = new Set([...plannedKeys, ...fillers.map((c) => c.key)]);
@@ -900,6 +915,34 @@ export default function AITourScreen() {
         {renderChip('Comune', form.areaMode === 'city', () => set('areaMode', 'city'))}
         {renderChip('Raggio km', form.areaMode === 'radius', () => set('areaMode', 'radius'))}
       </View>
+      {form.areaMode === 'territory' && agentZones.length > 1 && (
+        <>
+          <Text style={styles.zonesHint}>Zone del giro (tocca per includere/escludere, minimo una)</Text>
+          <View style={styles.chipRow}>
+            {agentZones.map((z) => {
+              const active = form.territoryZoneIds.includes(z.id);
+              return renderChip(
+                zoneLabel(z),
+                active,
+                () => {
+                  setForm((old) => {
+                    const has = old.territoryZoneIds.includes(z.id);
+                    if (has && old.territoryZoneIds.length === 1) return old; // almeno una zona
+                    return {
+                      ...old,
+                      territoryZoneIds: has
+                        ? old.territoryZoneIds.filter((id) => id !== z.id)
+                        : [...old.territoryZoneIds, z.id],
+                    };
+                  });
+                },
+                false,
+                z.id,
+              );
+            })}
+          </View>
+        </>
+      )}
       {form.areaMode === 'province' && (
         <TextInput
           style={styles.input}
@@ -1039,15 +1082,6 @@ export default function AITourScreen() {
               <Text style={[styles.actionBtnText, { color: '#FFF' }]}>{savedTourId ? 'Salvato' : 'Salva'}</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.startLiveBtn, readOnly && { marginLeft: 'auto' }]}
-            onPress={startLive}
-            disabled={starting}
-            activeOpacity={0.7}
-          >
-            {starting ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="play" size={15} color="#FFF" />}
-            <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Avvia Tour</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Meta */}
@@ -1297,6 +1331,17 @@ export default function AITourScreen() {
           </View>
           <Text style={styles.subtitle}>Pianificazione AI dei giri visita</Text>
         </View>
+        {!liveState && tab === 'genera' && phase === 'result' && plan && (
+          <TouchableOpacity
+            style={styles.headerStartBtn}
+            onPress={startLive}
+            disabled={starting}
+            activeOpacity={0.8}
+          >
+            {starting ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="play" size={15} color="#FFF" />}
+            <Text style={styles.headerStartText}>Avvia Tour</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Modalità Live: sostituisce tutto il contenuto */}
@@ -1422,6 +1467,7 @@ const styles = StyleSheet.create({
   segmentTextActive: { color: DS.ink },
   content: { padding: 12 },
   label: { fontFamily: JAKARTA.semibold, fontSize: 12, color: DS.ink2, marginTop: 14, marginBottom: 6 },
+  zonesHint: { fontFamily: JAKARTA.medium, fontSize: 10.5, color: DS.inkMuted, marginTop: 8, marginBottom: 6 },
   dateRow: { flexGrow: 0 },
   dateChip: {
     backgroundColor: DS.surface,
@@ -1584,7 +1630,17 @@ const styles = StyleSheet.create({
   actionBtnText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: DS.ink2 },
   saveBtn: { backgroundColor: '#059669', borderColor: '#059669', marginLeft: 'auto' },
   savedBtn: { backgroundColor: '#6B7280', borderColor: '#6B7280' },
-  startLiveBtn: { backgroundColor: AI_PURPLE, borderColor: AI_PURPLE },
+  headerStartBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: AI_PURPLE,
+    borderRadius: 10,
+    paddingHorizontal: 13,
+    minHeight: 40,
+    marginLeft: 8,
+  },
+  headerStartText: { fontFamily: JAKARTA.bold, fontSize: 12.5, color: '#FFF' },
   resultMeta: { fontFamily: JAKARTA.medium, fontSize: 12, color: DS.inkMuted, marginTop: 12 },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   kpiChip: {

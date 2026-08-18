@@ -814,9 +814,17 @@ export default function OrderCollectionV2() {
   // ═══════════════════════════════════════════════════
 
   const filteredCustomers = useMemo(() => {
-    if (!customerSearch.trim()) return customers;
-    const q = customerSearch.toLowerCase();
-    return customers.filter(c => c.business_name?.toLowerCase().includes(q) || c.contact_name?.toLowerCase().includes(q));
+    // Ricerca multi-termine (parità web): ogni parola digitata deve comparire
+    // in almeno uno dei campi (es. "tab recc" trova TABACCHERIA DI RECCAGNI)
+    const terms = customerSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return customers;
+    return customers.filter(c => {
+      const haystack = [c.business_name, c.contact_name, c.contact_phone, c.contact_email]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return terms.every(t => haystack.includes(t));
+    });
   }, [customers, customerSearch]);
 
   const filteredProducts = useMemo(() => {
@@ -830,10 +838,14 @@ export default function OrderCollectionV2() {
       // Filtra fuori tutti gli altri, anche se per qualche motivo dovessero essere arrivati nella lista
       list = list.filter(p => p.estero === true);
     }
-    // Search filter
-    if (productSearch.trim()) {
-      const q = productSearch.toLowerCase();
-      list = list.filter(p => (p.short_description || p.name).toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q));
+    // Search filter — multi-termine (parità web): ogni parola deve comparire
+    // in almeno uno dei campi (es. "mes pea" trova MESH MINI PEACH ICE 20)
+    const terms = productSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length > 0) {
+      list = list.filter(p => {
+        const haystack = [p.short_description, p.name, p.sku].filter(Boolean).join(' ').toLowerCase();
+        return terms.every(t => haystack.includes(t));
+      });
     }
     // Sort alphabetically by short_description (then name as fallback)
     list = [...list].sort((a, b) => {

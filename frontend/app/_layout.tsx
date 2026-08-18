@@ -10,7 +10,7 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { useAuthStore, initializeAuthListeners } from '../store/authStore';
-import { COLORS, FONTS } from '../lib/theme';
+import { COLORS, FONTS, applyThemeMode, getStoredThemeMode } from '../lib/theme';
 
 // Tempo massimo di attesa per il caricamento dei font.
 // Su Android Expo Go, il fetch dei font da Google può fallire o bloccarsi:
@@ -20,6 +20,15 @@ const FONTS_LOAD_TIMEOUT_MS = 3000;
 export default function RootLayout() {
   const initialize = useAuthStore((state) => state.initialize);
   const [fontsTimedOut, setFontsTimedOut] = useState(false);
+  const [themeReady, setThemeReady] = useState(false);
+
+  // Applica il tema salvato PRIMA di renderizzare le route: gli StyleSheet
+  // delle schermate catturano i token al primo import (lazy per route).
+  useEffect(() => {
+    getStoredThemeMode()
+      .then((mode) => applyThemeMode(mode))
+      .finally(() => setThemeReady(true));
+  }, []);
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -50,7 +59,7 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   // Non bloccare l'app se i font non sono caricati (degrade gracefully a font di sistema)
-  const canRender = fontsLoaded || fontsTimedOut;
+  const canRender = (fontsLoaded || fontsTimedOut) && themeReady;
 
   if (!canRender) {
     return (

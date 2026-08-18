@@ -13,6 +13,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { uploadVisitPhotos } from '../lib/api/photos';
 import { usePhotoStamper } from '../components/PhotoStamper';
+import { COLORS } from '../lib/theme';
 
 interface PhotoData {
   uri: string;
@@ -332,7 +333,7 @@ export default function RivenditeNoMappaScreen() {
               setUseManualGPS(val);
               if (!val) acquireGPS();
             }}
-            trackColor={{ true: '#C2410C' }}
+            trackColor={{ true: '#7C3AED' }}
           />
         </View>
 
@@ -341,19 +342,19 @@ export default function RivenditeNoMappaScreen() {
             <View style={styles.gpsInputWrap}>
               <Text style={styles.inputLabel}>Latitudine</Text>
               <TextInput style={styles.input} value={manualLat} onChangeText={setManualLat}
-                placeholder="es. 45.4642" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" />
+                placeholder="es. 45.4642" placeholderTextColor={COLORS.textLight} keyboardType="decimal-pad" />
             </View>
             <View style={styles.gpsInputWrap}>
               <Text style={styles.inputLabel}>Longitudine</Text>
               <TextInput style={styles.input} value={manualLng} onChangeText={setManualLng}
-                placeholder="es. 9.1900" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" />
+                placeholder="es. 9.1900" placeholderTextColor={COLORS.textLight} keyboardType="decimal-pad" />
             </View>
           </View>
         ) : (
           <View style={styles.gpsStatus}>
             {gpsLoading ? (
               <View style={styles.gpsLoadingRow}>
-                <ActivityIndicator size="small" color="#C2410C" />
+                <ActivityIndicator size="small" color="#7C3AED" />
                 <Text style={styles.gpsLoadingText}>Rilevamento posizione...</Text>
               </View>
             ) : latitude && longitude ? (
@@ -377,41 +378,41 @@ export default function RivenditeNoMappaScreen() {
 
         <Text style={styles.inputLabel}>Ragione Sociale *</Text>
         <TextInput style={styles.input} value={form.businessName} onChangeText={v => updateForm('businessName', v)}
-          placeholder="Ragione Sociale" placeholderTextColor="#9CA3AF" autoCapitalize="words" />
+          placeholder="Ragione Sociale" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
 
         <Text style={styles.inputLabel}>N. Ordinale</Text>
         <TextInput style={styles.input} value={form.numOrdinale} onChangeText={v => updateForm('numOrdinale', v)}
-          placeholder="Numero Ordinale (opzionale)" placeholderTextColor="#9CA3AF" keyboardType="numeric" />
+          placeholder="Numero Ordinale (opzionale)" placeholderTextColor={COLORS.textLight} keyboardType="numeric" />
 
         <Text style={styles.inputLabel}>P.IVA * (11 cifre)</Text>
         <TextInput style={styles.input} value={form.vatNumber} onChangeText={v => updateForm('vatNumber', v)}
-          placeholder="12345678901" placeholderTextColor="#9CA3AF" keyboardType="numeric" maxLength={11} />
+          placeholder="12345678901" placeholderTextColor={COLORS.textLight} keyboardType="numeric" maxLength={11} />
 
         <Text style={styles.inputLabel}>Codice Fiscale (16 caratteri)</Text>
         <TextInput style={styles.input} value={form.fiscalCode}
           onChangeText={v => updateForm('fiscalCode', v.toUpperCase())}
-          placeholder="ABCDEF12G34H567I" placeholderTextColor="#9CA3AF" autoCapitalize="characters" maxLength={16} />
+          placeholder="ABCDEF12G34H567I" placeholderTextColor={COLORS.textLight} autoCapitalize="characters" maxLength={16} />
 
         <Text style={styles.inputLabel}>Indirizzo *</Text>
         <TextInput style={styles.input} value={form.address} onChangeText={v => updateForm('address', v)}
-          placeholder="Via Roma 1" placeholderTextColor="#9CA3AF" autoCapitalize="words" />
+          placeholder="Via Roma 1" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
 
         <View style={styles.row}>
           <View style={{ flex: 2 }}>
             <Text style={styles.inputLabel}>Città *</Text>
             <TextInput style={styles.input} value={form.city} onChangeText={v => updateForm('city', v)}
-              placeholder="Roma" placeholderTextColor="#9CA3AF" autoCapitalize="words" />
+              placeholder="Roma" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={styles.inputLabel}>Prov. *</Text>
             <TextInput style={styles.input} value={form.province}
               onChangeText={v => updateForm('province', v.toUpperCase())}
-              placeholder="RM" placeholderTextColor="#9CA3AF" autoCapitalize="characters" maxLength={2} />
+              placeholder="RM" placeholderTextColor={COLORS.textLight} autoCapitalize="characters" maxLength={2} />
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={styles.inputLabel}>CAP</Text>
             <TextInput style={styles.input} value={form.postalCode} onChangeText={v => updateForm('postalCode', v)}
-              placeholder="00100" placeholderTextColor="#9CA3AF" keyboardType="numeric" maxLength={5} />
+              placeholder="00100" placeholderTextColor={COLORS.textLight} keyboardType="numeric" maxLength={5} />
           </View>
         </View>
       </View>
@@ -424,35 +425,35 @@ export default function RivenditeNoMappaScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.inputLabel}>Nome</Text>
             <TextInput style={styles.input} value={form.contactName} onChangeText={v => updateForm('contactName', v)}
-              placeholder="Mario" placeholderTextColor="#9CA3AF" autoCapitalize="words" />
+              placeholder="Mario" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={styles.inputLabel}>Cognome</Text>
             <TextInput style={styles.input} value={form.contactSurname}
               onChangeText={v => updateForm('contactSurname', v)}
-              placeholder="Rossi" placeholderTextColor="#9CA3AF" autoCapitalize="words" />
+              placeholder="Rossi" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
           </View>
         </View>
 
         <Text style={styles.inputLabel}>Telefono</Text>
         <TextInput style={styles.input} value={form.contactPhone} onChangeText={v => updateForm('contactPhone', v)}
-          placeholder="333 1234567" placeholderTextColor="#9CA3AF" keyboardType="phone-pad" />
+          placeholder="333 1234567" placeholderTextColor={COLORS.textLight} keyboardType="phone-pad" />
 
         <Text style={styles.inputLabel}>Email *</Text>
         <TextInput style={styles.input} value={form.contactEmail} onChangeText={v => updateForm('contactEmail', v)}
-          placeholder="email@esempio.com" placeholderTextColor="#9CA3AF" keyboardType="email-address" autoCapitalize="none" />
+          placeholder="email@esempio.com" placeholderTextColor={COLORS.textLight} keyboardType="email-address" autoCapitalize="none" />
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <Text style={styles.inputLabel}>PEC</Text>
             <TextInput style={styles.input} value={form.pec} onChangeText={v => updateForm('pec', v)}
-              placeholder="pec@esempio.it" placeholderTextColor="#9CA3AF" keyboardType="email-address" autoCapitalize="none" />
+              placeholder="pec@esempio.it" placeholderTextColor={COLORS.textLight} keyboardType="email-address" autoCapitalize="none" />
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={styles.inputLabel}>SDI</Text>
             <TextInput style={styles.input} value={form.sdi}
               onChangeText={v => updateForm('sdi', v.toUpperCase())}
-              placeholder="ABCDE12" placeholderTextColor="#9CA3AF" autoCapitalize="characters" maxLength={7} />
+              placeholder="ABCDE12" placeholderTextColor={COLORS.textLight} autoCapitalize="characters" maxLength={7} />
           </View>
         </View>
       </View>
@@ -480,7 +481,7 @@ export default function RivenditeNoMappaScreen() {
         <Text style={styles.sectionTitle}>Note</Text>
         <TextInput style={[styles.input, styles.textArea]} value={form.notes}
           onChangeText={v => updateForm('notes', v)}
-          placeholder="Note sulla rivendita..." placeholderTextColor="#9CA3AF"
+          placeholder="Note sulla rivendita..." placeholderTextColor={COLORS.textLight}
           multiline numberOfLines={3} textAlignVertical="top" />
       </View>
 
@@ -509,7 +510,7 @@ export default function RivenditeNoMappaScreen() {
 
           {/* Add photo buttons */}
           <TouchableOpacity style={styles.addPhotoBtn} onPress={takePhoto}>
-            <Ionicons name="camera" size={32} color="#C2410C" />
+            <Ionicons name="camera" size={32} color="#7C3AED" />
             <Text style={styles.addPhotoText}>Scatta Foto</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.addPhotoBtn, { borderColor: '#3B82F6' }]} onPress={pickFromGallery}>
@@ -619,57 +620,57 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#FFF',
-    borderBottomWidth: 1, borderBottomColor: '#E5E7EB',
+    paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.surface,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 44, paddingRight: 8 },
-  backBtnText: { fontSize: 15, color: '#1F2937', fontWeight: '500' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#1F2937' },
+  backBtnText: { fontSize: 15, color: COLORS.text, fontWeight: '500' },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: COLORS.text },
 
   // Step indicator
   stepIndicator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 16, paddingBottom: 4 },
   stepDot: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: '#E5E7EB',
+    width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  stepDotActive: { backgroundColor: '#C2410C' },
-  stepDotText: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
+  stepDotActive: { backgroundColor: '#7C3AED' },
+  stepDotText: { fontSize: 14, fontWeight: '600', color: COLORS.textLight },
   stepDotTextActive: { color: '#FFF' },
-  stepLine: { width: 60, height: 3, backgroundColor: '#E5E7EB', marginHorizontal: 8, borderRadius: 2 },
-  stepLineActive: { backgroundColor: '#C2410C' },
-  stepLabel: { textAlign: 'center', fontSize: 13, color: '#6B7280', marginBottom: 8 },
+  stepLine: { width: 60, height: 3, backgroundColor: COLORS.border, marginHorizontal: 8, borderRadius: 2 },
+  stepLineActive: { backgroundColor: '#7C3AED' },
+  stepLabel: { textAlign: 'center', fontSize: 13, color: COLORS.textMuted, marginBottom: 8 },
 
   scrollContent: { flex: 1, paddingHorizontal: 16 },
 
   // Section
-  section: { backgroundColor: '#FFF', borderRadius: 12, padding: 16, marginTop: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 12 },
-  sectionDesc: { fontSize: 13, color: '#6B7280', marginBottom: 12 },
+  section: { backgroundColor: COLORS.surface, borderRadius: 12, padding: 16, marginTop: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 12 },
+  sectionDesc: { fontSize: 13, color: COLORS.textMuted, marginBottom: 12 },
 
   // Input
-  inputLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4, marginTop: 10 },
+  inputLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 4, marginTop: 10 },
   input: {
     borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 12,
-    paddingVertical: 10, fontSize: 15, color: '#1F2937', backgroundColor: '#F9FAFB',
+    paddingVertical: 10, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.bgAlt,
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   row: { flexDirection: 'row' },
 
   // GPS
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  switchLabel: { fontSize: 14, color: '#374151' },
+  switchLabel: { fontSize: 14, color: COLORS.textSecondary },
   manualGpsRow: { flexDirection: 'row', gap: 12 },
   gpsInputWrap: { flex: 1 },
   gpsStatus: { marginTop: 4 },
   gpsLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  gpsLoadingText: { fontSize: 14, color: '#6B7280' },
+  gpsLoadingText: { fontSize: 14, color: COLORS.textMuted },
   gpsOkRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   gpsOkText: { fontSize: 13, color: '#10B981', fontWeight: '500' },
   gpsRetryBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#C2410C',
+    flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#7C3AED',
     borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start',
   },
   gpsRetryText: { fontSize: 14, color: '#FFF', fontWeight: '600' },
@@ -678,10 +679,10 @@ const styles = StyleSheet.create({
   typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   typeBtn: {
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: '#F9FAFB',
+    borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: COLORS.bgAlt,
   },
-  typeBtnActive: { backgroundColor: '#C2410C', borderColor: '#C2410C' },
-  typeBtnText: { fontSize: 13, fontWeight: '500', color: '#6B7280' },
+  typeBtnActive: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  typeBtnText: { fontSize: 13, fontWeight: '500', color: COLORS.textMuted },
   typeBtnTextActive: { color: '#FFF' },
 
   // Photos
@@ -692,9 +693,9 @@ const styles = StyleSheet.create({
   photoLabel: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', padding: 4, textAlign: 'center', color: '#FFF', fontSize: 11 },
   addPhotoBtn: {
     width: '47%', aspectRatio: 1, borderRadius: 12, borderWidth: 2, borderColor: '#D1D5DB',
-    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB',
+    borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bgAlt,
   },
-  addPhotoText: { fontSize: 13, color: '#C2410C', fontWeight: '600', marginTop: 6 },
+  addPhotoText: { fontSize: 13, color: '#7C3AED', fontWeight: '600', marginTop: 6 },
 
   warningBox: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12,
@@ -703,16 +704,16 @@ const styles = StyleSheet.create({
   warningText: { fontSize: 13, color: '#92400E' },
 
   // Summary
-  summaryCard: { backgroundColor: '#F9FAFB', borderRadius: 10, padding: 12 },
+  summaryCard: { backgroundColor: COLORS.bgAlt, borderRadius: 10, padding: 12 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  summaryLabel: { fontSize: 13, color: '#6B7280' },
-  summaryValue: { fontSize: 13, fontWeight: '600', color: '#1F2937', maxWidth: '60%', textAlign: 'right' },
+  summaryLabel: { fontSize: 13, color: COLORS.textMuted },
+  summaryValue: { fontSize: 13, fontWeight: '600', color: COLORS.text, maxWidth: '60%', textAlign: 'right' },
 
   // Bottom bar
-  bottomBar: { paddingHorizontal: 16, paddingTop: 12, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
+  bottomBar: { paddingHorizontal: 16, paddingTop: 12, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
   primaryBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#C2410C', borderRadius: 12, paddingVertical: 14,
+    backgroundColor: '#7C3AED', borderRadius: 12, paddingVertical: 14,
   },
   primaryBtnDisabled: { opacity: 0.5 },
   primaryBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },

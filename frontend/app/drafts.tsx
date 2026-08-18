@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDrafts, deleteDraft, OrderDraft } from '../lib/drafts';
+import { COLORS } from '../lib/theme';
 
 const STEP_LABELS = ['Cliente', 'Prodotti', 'Pagamento', 'Spedizione', 'Riepilogo'];
 
@@ -76,7 +77,7 @@ export default function DraftsScreen() {
 
       <View style={styles.cardBody}>
         <View style={styles.infoPill}>
-          <Ionicons name="cube-outline" size={14} color="#C2410C" />
+          <Ionicons name="cube-outline" size={14} color="#7C3AED" />
           <Text style={styles.infoPillText}>{item.productCount} prodotti</Text>
         </View>
         <View style={styles.infoPill}>
@@ -96,7 +97,7 @@ export default function DraftsScreen() {
       </View>
 
       <View style={styles.resumeRow}>
-        <Ionicons name="play-circle" size={18} color="#C2410C" />
+        <Ionicons name="play-circle" size={18} color="#7C3AED" />
         <Text style={styles.resumeText}>Tocca per riprendere</Text>
         <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
       </View>
@@ -132,20 +133,20 @@ export default function DraftsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#C2410C', paddingHorizontal: 16, paddingVertical: 12 },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#7C3AED', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  card: { backgroundColor: COLORS.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
-  customerName: { fontSize: 16, fontWeight: '700', color: '#1F2937' },
-  dateText: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
+  customerName: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+  dateText: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
   deleteBtn: { padding: 8, marginTop: -4, marginRight: -4 },
   cardBody: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  infoPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF7ED', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  infoPillText: { fontSize: 12, fontWeight: '600', color: '#C2410C' },
+  infoPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primarySoft, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  infoPillText: { fontSize: 12, fontWeight: '600', color: '#7C3AED' },
   resumeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
-  resumeText: { flex: 1, fontSize: 13, fontWeight: '600', color: '#C2410C' },
+  resumeText: { flex: 1, fontSize: 13, fontWeight: '600', color: '#7C3AED' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#6B7280', marginTop: 16 },
-  emptySubtitle: { fontSize: 13, color: '#9CA3AF', marginTop: 8, textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: COLORS.textMuted, marginTop: 16 },
+  emptySubtitle: { fontSize: 13, color: COLORS.textLight, marginTop: 8, textAlign: 'center', lineHeight: 20 },
 });

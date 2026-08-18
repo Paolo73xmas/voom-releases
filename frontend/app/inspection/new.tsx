@@ -22,6 +22,7 @@ import { createInspection } from '../../lib/api/inspections';
 import { uploadInspectionPhotos } from '../../lib/api/photos';
 import { Customer } from '../../types';
 import { usePhotoStamper } from '../../components/PhotoStamper';
+import { COLORS } from '../../lib/theme';
 
 export default function NewInspectionScreen() {
   const router = useRouter();
@@ -316,7 +317,7 @@ export default function NewInspectionScreen() {
           <TextInput
             style={styles.notesInput}
             placeholder="Aggiungi note sull'ispezione..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={COLORS.textLight}
             value={notes}
             onChangeText={setNotes}
             multiline
@@ -351,13 +352,13 @@ export default function NewInspectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   content: {
     padding: 16,
   },
   gpsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -370,7 +371,7 @@ const styles = StyleSheet.create({
   gpsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
     marginLeft: 8,
   },
   gpsLoading: {
@@ -379,12 +380,12 @@ const styles = StyleSheet.create({
   },
   gpsLoadingText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginLeft: 8,
   },
   gpsCoords: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   retryButton: {
@@ -395,7 +396,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   retryText: {
-    color: '#C2410C',
+    color: '#7C3AED',
     fontWeight: '500',
   },
   section: {
@@ -404,11 +405,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: COLORS.textSecondary,
     marginBottom: 8,
   },
   pickerButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
   },
   pickerPlaceholder: {
     fontSize: 16,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
   },
   selectedCustomer: {
     flexDirection: 'row',
@@ -443,14 +444,14 @@ const styles = StyleSheet.create({
   customerName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   customerCity: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   customerPicker: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     marginTop: 8,
     maxHeight: 250,
@@ -478,11 +479,11 @@ const styles = StyleSheet.create({
   optionName: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   optionCity: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   photoGrid: {
@@ -504,32 +505,32 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     right: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
   },
   addPhotoButton: {
     width: 100,
     height: 100,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
     borderStyle: 'dashed',
   },
   addPhotoText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 4,
   },
   notesInput: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     minHeight: 100,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   submitButton: {
     flexDirection: 'row',

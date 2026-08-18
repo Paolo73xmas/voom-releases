@@ -1,9 +1,10 @@
 import { StyleSheet } from 'react-native';
+import { COLORS } from '../../lib/theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   stepper: {
     flexDirection: 'row',
@@ -12,13 +13,13 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
   },
   stepDot: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -26,12 +27,12 @@ export const styles = StyleSheet.create({
     backgroundColor: '#10B981',
   },
   stepDotCurrent: {
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
   },
   stepNumber: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   stepNumberCurrent: {
     color: '#FFFFFF',
@@ -39,7 +40,7 @@ export const styles = StyleSheet.create({
   stepLine: {
     flex: 1,
     height: 2,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.border,
     marginHorizontal: 4,
   },
   stepLineCompleted: {
@@ -56,13 +57,13 @@ export const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
     marginBottom: 12,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 44,
@@ -72,7 +73,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     fontSize: 15,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   // Product Row Styles (compact list)
   productList: {
@@ -81,7 +82,7 @@ export const styles = StyleSheet.create({
   productRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 8,
@@ -100,13 +101,13 @@ export const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 6,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   productIconPlaceholder: {
     width: 40,
     height: 40,
     borderRadius: 6,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -135,12 +136,12 @@ export const styles = StyleSheet.create({
   productRowName: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   productRowPrice: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#C2410C',
+    color: '#7C3AED',
   },
   productRowPriceRow: {
     flexDirection: 'row',
@@ -194,11 +195,11 @@ export const styles = StyleSheet.create({
   },
   stockReservedText: {
     fontSize: 9,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginTop: 1,
   },
   addOneBtn: {
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -229,11 +230,11 @@ export const styles = StyleSheet.create({
     opacity: 0.6,
   },
   addBtnTextDisabled: {
-    color: '#9CA3AF',
+    color: COLORS.textLight,
   },
   // Cart Item Edit Modal Styles
   editCartModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     marginHorizontal: 12,
@@ -251,11 +252,11 @@ export const styles = StyleSheet.create({
   editCartTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   editCartProductInfo: {
     flexDirection: 'column',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.bgAlt,
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,
@@ -271,7 +272,7 @@ export const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
@@ -282,13 +283,13 @@ export const styles = StyleSheet.create({
   editCartName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
     marginBottom: 4,
     textAlign: 'center',
   },
   editCartSku: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginBottom: 2,
     textAlign: 'center',
   },
@@ -300,19 +301,19 @@ export const styles = StyleSheet.create({
   },
   editCartStock: {
     fontSize: 11,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     textAlign: 'center',
   },
   editCartSection: {
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: COLORS.border,
     paddingTop: 16,
     marginBottom: 16,
   },
   editCartSectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
     marginBottom: 10,
   },
   editCartPriceRow: {
@@ -323,11 +324,11 @@ export const styles = StyleSheet.create({
   },
   editCartOriginalLabel: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   editCartOriginalPrice: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     textDecorationLine: 'line-through',
   },
   editCartPriceInputRow: {
@@ -338,7 +339,7 @@ export const styles = StyleSheet.create({
   },
   editCartPriceLabel: {
     fontSize: 13,
-    color: '#1F2937',
+    color: COLORS.text,
     flex: 1,
   },
   editCartPriceInput: {
@@ -349,7 +350,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 16,
     fontWeight: '700',
-    color: '#C2410C',
+    color: '#7C3AED',
     width: 110,
     textAlign: 'center',
   },
@@ -357,7 +358,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 8,
     paddingVertical: 10,
     gap: 6,
@@ -399,11 +400,11 @@ export const styles = StyleSheet.create({
   },
   viewCartBtnText: {
     fontSize: 13,
-    color: '#C2410C',
+    color: '#7C3AED',
     fontWeight: '600',
   },
   cartModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
@@ -421,7 +422,7 @@ export const styles = StyleSheet.create({
   cartModalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   cartModalList: {
     maxHeight: 300,
@@ -457,7 +458,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: '#DC2626',
     borderRadius: 6,
@@ -492,7 +493,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   incompatibleRemoveBtn: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 4,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -578,7 +579,7 @@ export const styles = StyleSheet.create({
   cashbackEligibleTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#C2410C',
+    color: '#7C3AED',
   },
   cashbackEligibleProducts: {
     fontSize: 11,
@@ -623,7 +624,7 @@ export const styles = StyleSheet.create({
     color: '#5B21B6',
   },
   rottamazioneRulesBox: {
-    backgroundColor: '#F5F3FF',
+    backgroundColor: COLORS.primarySoft,
     borderRadius: 8,
     padding: 10,
     marginTop: 10,
@@ -674,7 +675,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   rottamazioneSummaryBox: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: COLORS.primarySoft,
     borderWidth: 1,
     borderColor: '#FB923C',
     borderRadius: 10,
@@ -689,13 +690,13 @@ export const styles = StyleSheet.create({
   },
   rottamazioneSummaryLabel: {
     fontSize: 12,
-    color: '#9A3412',
+    color: '#5B21B6',
     flex: 1,
   },
   rottamazioneSummaryValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#EA580C',
+    color: '#8B5CF6',
   },
   rottamazioneSummaryDiscount: {
     fontSize: 14,
@@ -713,12 +714,12 @@ export const styles = StyleSheet.create({
   spreadedPreviewTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#C2410C',
+    color: '#7C3AED',
     marginBottom: 6,
   },
   spreadedPreviewItem: {
     fontSize: 11,
-    color: '#9A3412',
+    color: '#5B21B6',
     marginBottom: 2,
   },
   spreadedPreviewItemExcluded: {
@@ -730,7 +731,7 @@ export const styles = StyleSheet.create({
   },
   // Cart Summary
   cartSummaryCard: {
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 10,
     padding: 12,
     marginBottom: 10,
@@ -761,7 +762,7 @@ export const styles = StyleSheet.create({
   },
   // Cart Section
   cartSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 10,
     marginBottom: 10,
@@ -770,7 +771,7 @@ export const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: COLORS.textSecondary,
     marginBottom: 8,
   },
   cartItemsList: {
@@ -795,7 +796,7 @@ export const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 6,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -805,11 +806,11 @@ export const styles = StyleSheet.create({
   cartItemName: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   cartItemPrice: {
     fontSize: 11,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   cartItemIva: {
     fontSize: 10,
@@ -823,7 +824,7 @@ export const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -831,7 +832,7 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginHorizontal: 10,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   // Product Detail Modal
   modalOverlay: {
@@ -842,7 +843,7 @@ export const styles = StyleSheet.create({
     padding: 20,
   },
   productDetailModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     width: '100%',
@@ -864,7 +865,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     height: 150,
     borderRadius: 10,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -872,16 +873,16 @@ export const styles = StyleSheet.create({
   modalProductName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
     marginBottom: 4,
   },
   modalProductSku: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginBottom: 12,
   },
   modalPriceSection: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.bgAlt,
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
@@ -893,27 +894,27 @@ export const styles = StyleSheet.create({
   },
   modalPriceRowTotal: {
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: COLORS.border,
     paddingTop: 8,
     marginTop: 4,
   },
   modalPriceLabel: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   modalPriceValue: {
     fontSize: 13,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   modalPriceLabelBold: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   modalPriceValueBold: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#C2410C',
+    color: '#7C3AED',
   },
   modalBadges: {
     flexDirection: 'row',
@@ -937,7 +938,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 10,
     padding: 14,
     gap: 8,
@@ -952,7 +953,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 14,
     marginBottom: 10,
@@ -960,7 +961,7 @@ export const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   optionCardSelected: {
-    borderColor: '#C2410C',
+    borderColor: '#7C3AED',
     backgroundColor: '#EEF2FF',
   },
   optionInfo: {
@@ -973,14 +974,14 @@ export const styles = StyleSheet.create({
   optionName: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   optionNameSelected: {
-    color: '#C2410C',
+    color: '#7C3AED',
   },
   optionDescription: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   optionPrice: {
     fontSize: 14,
@@ -992,11 +993,11 @@ export const styles = StyleSheet.create({
     marginTop: 12,
   },
   textArea: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 12,
     fontSize: 14,
-    color: '#1F2937',
+    color: COLORS.text,
     minHeight: 70,
     textAlignVertical: 'top',
   },
@@ -1007,17 +1008,17 @@ export const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: COLORS.textSecondary,
     marginBottom: 6,
   },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 12,
   },
   summaryValue: {
     fontSize: 14,
-    color: '#1F2937',
+    color: COLORS.text,
     marginLeft: 10,
   },
   summaryItem: {
@@ -1027,25 +1028,25 @@ export const styles = StyleSheet.create({
   },
   summaryItemName: {
     fontSize: 13,
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     flex: 1,
   },
   summaryItemPrice: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   summaryItemLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   summaryItemValue: {
     fontSize: 12,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.border,
     marginVertical: 8,
   },
   // CashBack
@@ -1061,12 +1062,12 @@ export const styles = StyleSheet.create({
   },
   cashbackEligible: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginBottom: 8,
   },
   cashbackNotEligible: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     fontStyle: 'italic',
   },
   cashbackInputRow: {
@@ -1076,11 +1077,11 @@ export const styles = StyleSheet.create({
   },
   cashbackInputLabel: {
     fontSize: 13,
-    color: '#374151',
+    color: COLORS.textSecondary,
   },
   cashbackInput: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -1115,7 +1116,7 @@ export const styles = StyleSheet.create({
   },
   rottamazioneInfo: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginBottom: 8,
   },
   rottamazioneLots: {
@@ -1128,7 +1129,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     borderWidth: 1,
     borderColor: 'transparent',
   },
@@ -1138,7 +1139,7 @@ export const styles = StyleSheet.create({
   },
   rottamazioneLotText: {
     fontSize: 12,
-    color: '#4B5563',
+    color: COLORS.textSecondary,
   },
   rottamazioneLotTextSelected: {
     color: '#FFFFFF',
@@ -1151,7 +1152,7 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
   },
   rottamazioneInput: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     borderRadius: 8,
     padding: 10,
     fontSize: 13,
@@ -1160,7 +1161,7 @@ export const styles = StyleSheet.create({
   },
   // Total
   totalSection: {
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
@@ -1213,9 +1214,9 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: COLORS.border,
   },
   backButton: {
     flexDirection: 'row',
@@ -1225,13 +1226,13 @@ export const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginLeft: 6,
   },
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -1294,11 +1295,11 @@ export const styles = StyleSheet.create({
   selectedName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   selectedCity: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   customerList: {
     flex: 1,
@@ -1306,7 +1307,7 @@ export const styles = StyleSheet.create({
   customerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
@@ -1331,11 +1332,11 @@ export const styles = StyleSheet.create({
   customerItemName: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   customerItemCity: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   productHeader: {
     flexDirection: 'row',
@@ -1346,7 +1347,7 @@ export const styles = StyleSheet.create({
   foreignToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.border,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -1356,7 +1357,7 @@ export const styles = StyleSheet.create({
   },
   foreignToggleText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginLeft: 4,
   },
   foreignToggleTextActive: {
@@ -1364,7 +1365,7 @@ export const styles = StyleSheet.create({
   },
   emptyText: {
     textAlign: 'center',
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginTop: 24,
     fontSize: 14,
   },
@@ -1390,7 +1391,7 @@ export const styles = StyleSheet.create({
   },
   // Package Modal
   packageModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
@@ -1406,7 +1407,7 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border,
   },
   packageModalHeaderLeft: {
     flexDirection: 'row',
@@ -1416,12 +1417,12 @@ export const styles = StyleSheet.create({
   packageModalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   packageSearchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -1431,7 +1432,7 @@ export const styles = StyleSheet.create({
   packageSearchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#1F2937',
+    color: COLORS.text,
     paddingVertical: 0,
   },
   packageLoading: {
@@ -1441,7 +1442,7 @@ export const styles = StyleSheet.create({
   },
   packageLoadingText: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginTop: 10,
   },
   packageList: {
@@ -1453,7 +1454,7 @@ export const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
   },
   packageCardHeader: {
     flexDirection: 'row',
@@ -1478,7 +1479,7 @@ export const styles = StyleSheet.create({
   packageCardName: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   packageCardBranch: {
     fontSize: 11,
@@ -1498,12 +1499,12 @@ export const styles = StyleSheet.create({
   },
   packageCardDesc: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginBottom: 10,
     lineHeight: 18,
   },
   packageItemsList: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 8,
     padding: 8,
     marginBottom: 10,
@@ -1522,17 +1523,17 @@ export const styles = StyleSheet.create({
   },
   packageItemName: {
     fontSize: 12,
-    color: '#374151',
+    color: COLORS.textSecondary,
     flex: 1,
   },
   packageItemPrice: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   packageMoreItems: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     fontStyle: 'italic',
     marginTop: 4,
     textAlign: 'center',
@@ -1542,17 +1543,17 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: COLORS.border,
     paddingTop: 10,
   },
   packageTotalLabel: {
     fontSize: 11,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   packageTotalValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   packageApplyBtn: {
     flexDirection: 'row',
@@ -1576,12 +1577,12 @@ export const styles = StyleSheet.create({
   packageEmptyTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 12,
   },
   packageEmptySubtitle: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginTop: 4,
     textAlign: 'center',
   },

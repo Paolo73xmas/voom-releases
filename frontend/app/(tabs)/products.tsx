@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
 import { useDebounce } from '../../hooks/useDebounce';
+import { COLORS } from '../../lib/theme';
 
 interface Category {
   id: string;
@@ -274,7 +275,7 @@ export default function ProductsScreen() {
     <View style={styles.innerContent}>
       <View style={styles.navHeader}>
         <TouchableOpacity onPress={handleBack} style={styles.backRow}>
-          <Ionicons name="arrow-back" size={20} color="#C2410C" />
+          <Ionicons name="arrow-back" size={20} color="#7C3AED" />
           <Text style={styles.backText}>Categorie</Text>
         </TouchableOpacity>
         <Text style={styles.navTitle}>{selectedCategory?.name}</Text>
@@ -286,7 +287,7 @@ export default function ProductsScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder="Cerca sotto-categoria..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={COLORS.textLight}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -298,7 +299,7 @@ export default function ProductsScreen() {
       </View>
 
       {innerLoading ? (
-        <ActivityIndicator size="large" color="#C2410C" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#7C3AED" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filteredSubs}
@@ -419,7 +420,7 @@ export default function ProductsScreen() {
               ) : (
                 <View style={styles.modalImagePlaceholder}>
                   <Ionicons name="cube-outline" size={48} color="#D1D5DB" />
-                  <Text style={{ color: '#9CA3AF', marginTop: 8 }}>Nessuna immagine</Text>
+                  <Text style={{ color: COLORS.textLight, marginTop: 8 }}>Nessuna immagine</Text>
                 </View>
               )}
 
@@ -458,7 +459,7 @@ export default function ProductsScreen() {
 
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Prezzo unitario</Text>
-                  <Text style={[styles.detailValue, { fontSize: 18, fontWeight: '800', color: '#C2410C' }]}>{formatPrice(p.unit_price)}</Text>
+                  <Text style={[styles.detailValue, { fontSize: 18, fontWeight: '800', color: '#7C3AED' }]}>{formatPrice(p.unit_price)}</Text>
                 </View>
 
                 {p.accisa != null && p.accisa > 0 && (
@@ -511,7 +512,7 @@ export default function ProductsScreen() {
     <View style={styles.innerContent}>
       <View style={styles.navHeader}>
         <TouchableOpacity onPress={handleBack} style={styles.backRow}>
-          <Ionicons name="arrow-back" size={20} color="#C2410C" />
+          <Ionicons name="arrow-back" size={20} color="#7C3AED" />
           <Text style={styles.backText}>{selectedCategory?.name}</Text>
         </TouchableOpacity>
         <Text style={styles.navTitle}>{selectedSubCategory?.name}</Text>
@@ -523,7 +524,7 @@ export default function ProductsScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder="Cerca prodotto o SKU..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={COLORS.textLight}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -535,7 +536,7 @@ export default function ProductsScreen() {
       </View>
 
       {innerLoading ? (
-        <ActivityIndicator size="large" color="#C2410C" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#7C3AED" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filteredProducts}
@@ -557,7 +558,7 @@ export default function ProductsScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#C2410C" />
+        <ActivityIndicator size="large" color="#7C3AED" />
       </View>
     );
   }
@@ -573,7 +574,7 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: { flex: 1, backgroundColor: COLORS.bg },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { flex: 1, paddingHorizontal: 16 },
   innerContent: { flex: 1, paddingHorizontal: 16 },
@@ -581,33 +582,33 @@ const styles = StyleSheet.create({
   // Stats
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
   statCard: {
-    width: '47%', backgroundColor: '#FFF', borderRadius: 12, padding: 14, borderLeftWidth: 4,
+    width: '47%', backgroundColor: COLORS.surface, borderRadius: 12, padding: 14, borderLeftWidth: 4,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
-  statValue: { fontSize: 26, fontWeight: '700', color: '#1F2937', marginTop: 6 },
-  statLabel: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  subtitle: { fontSize: 14, color: '#6B7280', marginTop: 20, marginBottom: 12 },
+  statValue: { fontSize: 26, fontWeight: '700', color: COLORS.text, marginTop: 6 },
+  statLabel: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  subtitle: { fontSize: 14, color: COLORS.textMuted, marginTop: 20, marginBottom: 12 },
 
   // Grid
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 24 },
   gridRow: { gap: 10, marginBottom: 4 },
   gridCard: {
-    width: '47%', backgroundColor: '#FFF', borderRadius: 12, padding: 14,
+    width: '47%', backgroundColor: COLORS.surface, borderRadius: 12, padding: 14,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
   gridIconWrap: {
     width: 34, height: 34, borderRadius: 8,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
-  gridCardTitle: { fontSize: 13, fontWeight: '600', color: '#1F2937' },
-  gridCardDesc: { fontSize: 10, color: '#6B7280', marginTop: 2 },
+  gridCardTitle: { fontSize: 13, fontWeight: '600', color: COLORS.text },
+  gridCardDesc: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
   gridCardCount: { fontSize: 11, color: '#3B82F6', fontWeight: '500', marginTop: 4 },
 
   // Sub-category card
   subCatRow: { justifyContent: 'space-between', marginBottom: 12 },
   subCatCard: {
     width: '48.5%',
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 14,
     padding: 14,
     minHeight: 120,
@@ -622,7 +623,7 @@ const styles = StyleSheet.create({
   subCatIconWrap: {
     width: 38, height: 38, borderRadius: 10,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#F5F3FF',
+    backgroundColor: COLORS.primarySoft,
   },
   subCatBadge: {
     backgroundColor: '#EFF6FF',
@@ -632,18 +633,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   subCatBadgeEmpty: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   subCatBadgeText: {
-    fontSize: 12, fontWeight: '800', color: '#C2410C',
+    fontSize: 12, fontWeight: '800', color: '#7C3AED',
   },
   subCatBadgeTextEmpty: {
-    color: '#9CA3AF',
+    color: COLORS.textLight,
   },
   subCatTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
     lineHeight: 18,
     marginTop: 2,
     ...Platform.select({
@@ -653,7 +654,7 @@ const styles = StyleSheet.create({
   },
   subCatProductCount: {
     fontSize: 11,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 4,
     fontWeight: '500',
     ...Platform.select({
@@ -665,36 +666,36 @@ const styles = StyleSheet.create({
   // Nav header
   navHeader: { marginTop: 12, marginBottom: 10 },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
-  backText: { fontSize: 14, color: '#C2410C', fontWeight: '500' },
-  navTitle: { fontSize: 22, fontWeight: '700', color: '#1F2937' },
-  navCount: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  backText: { fontSize: 14, color: '#7C3AED', fontWeight: '500' },
+  navTitle: { fontSize: 22, fontWeight: '700', color: COLORS.text },
+  navCount: { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
 
   // Search
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
     borderRadius: 10, paddingHorizontal: 12, height: 44, marginBottom: 12,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 15, color: '#1F2937' },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 15, color: COLORS.text },
 
   // Product card
   productCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
     borderRadius: 10, padding: 8, paddingHorizontal: 10, marginBottom: 10,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
   },
-  productImage: { width: 42, height: 42, borderRadius: 6, backgroundColor: '#F9FAFB' },
+  productImage: { width: 42, height: 42, borderRadius: 6, backgroundColor: COLORS.bgAlt },
   productImagePlaceholder: {
-    width: 42, height: 42, borderRadius: 6, backgroundColor: '#F3F4F6',
+    width: 42, height: 42, borderRadius: 6, backgroundColor: COLORS.bg,
     alignItems: 'center', justifyContent: 'center',
   },
   productInfo: { flex: 1, marginLeft: 10 },
-  productName: { fontSize: 13, fontWeight: '600', color: '#1F2937', lineHeight: 17 },
-  productSku: { fontSize: 10, color: '#9CA3AF', marginTop: 1 },
-  productAccisa: { fontSize: 10, color: '#6B7280', marginTop: 1 },
+  productName: { fontSize: 13, fontWeight: '600', color: COLORS.text, lineHeight: 17 },
+  productSku: { fontSize: 10, color: COLORS.textLight, marginTop: 1 },
+  productAccisa: { fontSize: 10, color: COLORS.textMuted, marginTop: 1 },
   productPriceWrap: { alignItems: 'flex-end', marginLeft: 6 },
-  productPrice: { fontSize: 14, fontWeight: '700', color: '#C2410C' },
-  productUnit: { fontSize: 10, color: '#9CA3AF' },
+  productPrice: { fontSize: 14, fontWeight: '700', color: '#7C3AED' },
+  productUnit: { fontSize: 10, color: COLORS.textLight },
   stockBadge: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981',
     borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1, marginTop: 3, gap: 2,
@@ -703,18 +704,18 @@ const styles = StyleSheet.create({
 
   // Empty
   emptyWrap: { alignItems: 'center', marginTop: 60 },
-  emptyText: { fontSize: 14, color: '#9CA3AF', marginTop: 12 },
+  emptyText: { fontSize: 14, color: COLORS.textLight, marginTop: 12 },
 
   // Product Detail Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '85%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', flex: 1, marginRight: 12 },
-  modalImage: { width: '100%', height: 220, borderRadius: 12, marginTop: 12, backgroundColor: '#F9FAFB' },
-  modalImagePlaceholder: { width: '100%', height: 160, borderRadius: 12, marginTop: 12, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  detailSection: { marginTop: 16, backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14 },
-  detailSectionTitle: { fontSize: 13, fontWeight: '700', color: '#6B7280', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '85%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, flex: 1, marginRight: 12 },
+  modalImage: { width: '100%', height: 220, borderRadius: 12, marginTop: 12, backgroundColor: COLORS.bgAlt },
+  modalImagePlaceholder: { width: '100%', height: 160, borderRadius: 12, marginTop: 12, backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center' },
+  detailSection: { marginTop: 16, backgroundColor: COLORS.bgAlt, borderRadius: 12, padding: 14 },
+  detailSectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textMuted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  detailLabel: { fontSize: 13, color: '#6B7280', flex: 1 },
-  detailValue: { fontSize: 14, fontWeight: '600', color: '#1F2937', textAlign: 'right', flex: 1 },
+  detailLabel: { fontSize: 13, color: COLORS.textMuted, flex: 1 },
+  detailValue: { fontSize: 14, fontWeight: '600', color: COLORS.text, textAlign: 'right', flex: 1 },
 });

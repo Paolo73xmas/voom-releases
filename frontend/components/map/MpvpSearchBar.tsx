@@ -28,6 +28,7 @@ import {
   type MpvpCustomerResult,
   type PlaceSuggestion,
 } from '../../lib/api/mpvp-customer-search';
+import { COLORS } from '../../lib/theme';
 
 interface Props {
   visible: boolean;
@@ -141,12 +142,12 @@ export function MpvpSearchBar({
       <View style={s.container}>
         {/* Input row */}
         <View style={s.inputRow}>
-          <Ionicons name="search" size={20} color="#C2410C" />
+          <Ionicons name="search" size={20} color="#7C3AED" />
           <TextInput
             ref={inputRef}
             style={s.input}
             placeholder="Cliente, P.IVA, città, via..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={COLORS.textLight}
             value={searchText}
             onChangeText={handleChange}
             returnKeyType="search"
@@ -154,7 +155,7 @@ export function MpvpSearchBar({
             autoCapitalize="none"
             autoCorrect={false}
           />
-          {isLoading && <ActivityIndicator size="small" color="#C2410C" />}
+          {isLoading && <ActivityIndicator size="small" color="#7C3AED" />}
           {!isLoading && searchText.length > 0 && (
             <TouchableOpacity onPress={clearText} hitSlop={8}>
               <Ionicons name="close-circle" size={20} color="#9CA3AF" />
@@ -176,7 +177,7 @@ export function MpvpSearchBar({
 
             {isLoading && !hasResults && (
               <View style={s.emptyRow}>
-                <ActivityIndicator size="small" color="#C2410C" />
+                <ActivityIndicator size="small" color="#7C3AED" />
                 <Text style={[s.emptyText, { marginLeft: 8 }]}>Ricerca in corso...</Text>
               </View>
             )}
@@ -189,8 +190,8 @@ export function MpvpSearchBar({
               {/* Sezione CLIENTI */}
               {customerResults.length > 0 && (
                 <View>
-                  <View style={[s.sectionHeader, { backgroundColor: '#FFF7ED', borderBottomColor: '#FFF7ED' }]}>
-                    <Ionicons name="storefront" size={13} color="#C2410C" />
+                  <View style={[s.sectionHeader, { backgroundColor: COLORS.primarySoft, borderBottomColor: '#F5F3FF' }]}>
+                    <Ionicons name="storefront" size={13} color="#7C3AED" />
                     <Text style={[s.sectionHeaderText, { color: '#6D28D9' }]}>Clienti / Punti vendita</Text>
                   </View>
                   {customerResults.map((c) => (
@@ -200,8 +201,8 @@ export function MpvpSearchBar({
                       onPress={() => handleSelectCustomer(c)}
                       activeOpacity={0.7}
                     >
-                      <View style={[s.iconBubble, { backgroundColor: '#FFF7ED' }]}>
-                        <Ionicons name="storefront" size={14} color="#C2410C" />
+                      <View style={[s.iconBubble, { backgroundColor: COLORS.primarySoft }]}>
+                        <Ionicons name="storefront" size={14} color="#7C3AED" />
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <View style={s.resultTitleRow}>
@@ -275,7 +276,7 @@ const s = StyleSheet.create({
   container: {
     marginHorizontal: 12,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
@@ -290,12 +291,12 @@ const s = StyleSheet.create({
     paddingVertical: Platform.OS === 'ios' ? 12 : 8,
     gap: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: '#1F2937',
+    color: COLORS.text,
     paddingVertical: Platform.OS === 'ios' ? 4 : 6,
   },
   closeBtn: {
@@ -304,11 +305,11 @@ const s = StyleSheet.create({
   },
   closeText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     fontWeight: '600',
   },
   dropdown: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
   },
   emptyRow: {
     flexDirection: 'row',
@@ -318,7 +319,7 @@ const s = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -360,10 +361,10 @@ const s = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   matchBadge: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: COLORS.primarySoft,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,
@@ -371,12 +372,12 @@ const s = StyleSheet.create({
   matchBadgeText: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#C2410C',
+    color: '#7C3AED',
     letterSpacing: 0.3,
   },
   resultSub: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   pivaRow: {
@@ -387,13 +388,13 @@ const s = StyleSheet.create({
   },
   pivaText: {
     fontSize: 10,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     fontWeight: '500',
   },
   placeLabel: {
     flex: 1,
     fontSize: 13,
-    color: '#374151',
+    color: COLORS.textSecondary,
     lineHeight: 18,
   },
 });

@@ -1,0 +1,49 @@
+{
+  "summary": "E2E frontend visual/theming test del retheme AI Tour (viola #7C3AED chiaro + tema scuro splash #0B0714) su https://voom-ios.preview.emergentagent.com, agente gdeintinis@gmail.com, viewport 390x844. FLUSSO: Splash → Privacy gate (3 checkbox + Accetta) → Login (input viola scuro rgb(91,33,182)=primaryDark) → Dashboard (icone viola, KPI '25 Clienti / 41 Ordini / 7 Visite / 26 In attesa', card 'VENDUTO AGOSTO 2026' con gradiente viola, tab bar attiva viola su Dashboard/Mappa/Clienti/Altro) ✓. LIGHT: scansione DOM su rgb(194,65,12)/rgb(234,88,12)/rgb(217,119,6)/#C2410C/#EA580C/#D97706 su Dashboard, Calendario, AI Tour, Scadenziario, Profilo → 0 hit su tutti. Solo residuo terracotta: gradient 'sunset' ['#FB923C','#EA580C'] in lib/theme.ts L115 (usato SOLO per getAvatarGradient — corretto, non brand). Profilo sezione 'ASPETTO' con toggle 'Chiaro'/'Scuro' visibile e cliccabile. TOGGLE DARK: click 'Scuro' su /profile → localStorage['@voom_theme_mode']='dark' salvato → location.reload → tutte le schermate scure verificate: Profilo (header viola/body #0B0714/card #171221/testo bianco), Calendario (header viola/body scuro/dropdown Settimana pill viola chiaro leggibile), AI Tour form (body scuro/tab pills scure/chip Oggi selezionato viola/Automatica (AI) selezionato viola scuro), Scadenziario (skeleton dark), Ordini (skeleton dark), Altro (dark). Header top bar rimane LIGHT PURPLE (#7C3AED) anche in dark — INTENZIONALE per brand splash. TOGGLE RITORNO LIGHT: click 'Chiaro' su /profile → localStorage='light' salvato → reload → app torna chiara ✓. AI Tour form completo verificato in entrambi i temi: Data (Oggi/Domani/Gio/Ven/Sab), Ora inizio/fine 08:00-18:00, Tipo giornata 4 opzioni (Giro Clienti/Sviluppo Territorio/Giornata Mista/Decidi tu AI), Partenza (Posizione corrente/Indirizzo/Casa/Sede), Rientro (Nessuno/Partenza/Indirizzo/Casa/Sede), Area (Automatica AI/Provincia/Comune/Raggio km), campo Visite obbligatorie, bottone PIANIFICA GIORNATA. Nessun errore console rosso (solo warning shadow*/pointerEvents pre-esistenti). Feature retheme funzionante al 100% sui percorsi testati; nessun crash, nessun schermata bianca, nessun residuo terracotta nel chiaro, nessun bug di contrasto critico nel scuro.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Root/body layer (tutte)", "issues": ["Il DIV più esterno (root RN-web) ha background costante rgb(242,242,242) (#F2F2F7 = surface2 light) sia in light che in dark. Non impatta visivamente perché sopra sta il container tema-consapevole (bg #0B0714 in dark), ma può causare micro-flash chiaro durante le transizioni di route o resize. Consiglio: passare anche il background del root html/body via applyThemeMode() (document.documentElement.style.backgroundColor su web + rootView backgroundColor su native)."]},
+      {"screen": "PrivacyGate", "issues": ["Il modale/schermata 'Informativa Privacy e Termini di Utilizzo' NON rispetta il tema scuro (fondo grigio chiaro, testo scuro, card bianche). Impatto BASSO: il gate compare solo prima del login o dopo clear storage, quindi normalmente non è co-presente con dark mode attivo. Ma se un utente disinstalla/reinstalla o cambia device con tema='dark' già salvato lato server (in futuro), vedrà il gate in stile light. Consiglio: tokenizzare anche PrivacyGate con DS/COLORS."]},
+      {"screen": "Header top bar (tutte le schermate)", "issues": ["La bar superiore (con titolo tipo 'Profilo'/'Calendario'/'Ordini') resta viola #7C3AED anche in dark. E' coerente con la richiesta 'stile splash con accento viola' e il contrasto testo-bianco su viola è OK (WCAG AA con testo 16px+). NON è un bug, ma se in futuro si vuole un dark 'pieno' anche del header, andrebbe cambiato a surface DS.surface in dark."]}
+    ],
+    "react_native_issues": [
+      {"component": "shadow* / pointerEvents (pre-esistenti, non nuovi)", "issue": "Warning react-native-web: 'shadow*' style props deprecated (usare 'boxShadow'), 'props.pointerEvents is deprecated' (usare style.pointerEvents). Cosmetici, già segnalati in iteration_9/10."}
+    ]
+  },
+  "test_report_links": [
+    "/tmp/theme_test/03_login.png (Light: login viola)",
+    "/tmp/theme_test/04_after_login.png (Light: dashboard viola con KPI 25/41/7/26)",
+    "/tmp/theme_test/L_profile.png (Light: profilo con toggle Chiaro selezionato)",
+    "/tmp/theme_test/L_aitour.png (Light: AI Tour form completo viola)",
+    "/tmp/theme_test/L_calendar.png (Light: Calendario header viola)",
+    "/tmp/theme_test/L_scad.png (Light: Scadenziario skeleton)",
+    "/tmp/theme_test/D_profile.png (Dark: profilo scuro con toggle Scuro selezionato)",
+    "/tmp/theme_test/D_aitour.png (Dark: AI Tour form scuro con accenti viola)",
+    "/tmp/theme_test/D_calendar.png (Dark: Calendario body scuro)",
+    "/tmp/theme_test/D_orders.png (Dark: Ordini skeleton scuro)",
+    "/tmp/theme_test/D_scad.png (Dark: Scadenziario scuro)",
+    "/tmp/theme_test/back_to_light_profile.png (Ritorno Light: profilo chiaro)"
+  ],
+  "action_items": [
+    "OPZIONALE (nice to have, non bloccante): applyThemeMode() dovrebbe aggiornare anche document.documentElement.style.backgroundColor (web) e il root RN-web wrapper, per eliminare il residuo rgb(242,242,242) del root layer visibile durante le transizioni.",
+    "OPZIONALE: tokenizzare la schermata PrivacyGate (attualmente hard-coded in stile light). Impatto basso perché mostrata solo pre-login.",
+    "NESSUNA REGRESSIONE DA FIXARE sul retheme richiesto: chiaro + toggle scuro + ritorno chiaro tutti funzionanti; nessun residuo terracotta/arancio-brand nei componenti principali (solo 1 hit in lib/theme.ts:115 nel gradient 'sunset' usato SOLO per avatar getAvatarGradient, corretto)."
+  ],
+  "critical_code_review_comments": [
+    "lib/theme.ts: architettura corretta — token mutabili COLORS/DS applicati sync via applyThemeMode(); su web viene inizializzato SUBITO da localStorage prima che qualsiasi StyleSheet catturi i valori (L262-267) — questo è la chiave del funzionamento senza flash. Su native il gate async in app/_layout gestisce la stessa cosa.",
+    "app/(tabs)/profile.tsx: toggle 'Aspetto' correttamente collegato a setStoredThemeMode + applyThemeMode + reload (web: location.reload, native: expo-updates.reloadAsync). Verificato: click 'Scuro'→localStorage='dark'→reload; click 'Chiaro'→localStorage='light'→reload. Persistenza OK.",
+    "app/login.tsx: usa DS.brand (viola #7C3AED) per il fondo pagina e DS.brandDark (#5B21B6) per il pulsante Accedi — coerente con palette AI Tour.",
+    "COLORS.sunset gradient rimane ['#FB923C','#EA580C'] in lib/theme.ts L115 — CORRETTO perché usato solo in getAvatarGradient (avatar 7-color palette), non è brand.",
+    "0 errori console durante l'intera sessione dark→light→dark; solo warning shadow*/pointerEvents pre-esistenti."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skip backend richiesto)", "frontend": "5/5 aree richieste OK — TEMA CHIARO (login/dashboard/mappa/clienti/altro/ordini/calendario/ai-tour/scadenziario) verificato senza residui terracotta; TOGGLE DARK verificato con reload; DARK screens (profilo/dashboard/clienti/ordini/calendario/ai-tour/altro/scadenziario) senza white-on-white o dark-on-dark; TOGGLE RITORNO LIGHT verificato; SPLASH/flusso critico (login→dashboard 25/41 KPI→AI Tour form completo) non regredito."},
+  "seed_data_creation": "Nessun dato creato (frontend visual test only). Nessun tour AI generato (già verificato in iteration_10).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Setup: viewport 390x844. Privacy gate: 20x mouse.wheel(0,900), 3 click su text=/Dichiaro/, click 'Accetta e Continua'. Login: 2 input (email/password) + click 'Accedi' (get_by_text exact=True .last). Toggle tema DARK forzato SEMPRE via: localStorage.setItem('@voom_theme_mode','dark') + page.reload() — è più affidabile del click UI su RN-web. Toggle UI su /profile funziona comunque con click(force=True) su get_by_text('Scuro',exact=True).first. Verifica persistenza con: page.evaluate(\"() => localStorage.getItem('@voom_theme_mode')\"). Per scansione terracotta usare bad=['rgb(194,65,12)','rgb(234,88,12)','rgb(217,119,6)']. NB: uno scanner di contrasto basato su parent-traversal produce falsi positivi perché il root RN-web ha bg rgb(242,242,242) costante — fidarsi degli SCREENSHOT più che dei numeri.",
+  "rca_of_issue": "n/a — nessun bug bloccante trovato sul retheme. Le 3 design_issues segnalate sono minor/opzionali (root layer light-costante, PrivacyGate non tokenizzato, header top bar viola anche in dark = coerente con design brief)."
+}

@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity } from 'react
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { openNavigation } from './shared';
+import { COLORS } from '../../lib/theme';
 
 let WebView: any = null;
 if (Platform.OS !== 'web') {
@@ -53,7 +54,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
   .pp-badge { display:inline-block; font-size:10px; font-weight:600; border-radius:5px; padding:1px 6px; border:1px solid; margin-right:4px; }
   .pp-line { font-size:11px; color:#334155; margin-top:3px; }
   .pp-reason { font-size:11px; font-style:italic; color:#6D28D9; border-left:2px solid #C4B5FD; padding-left:6px; margin-top:5px; }
-  .pp-nav { display:inline-block; margin-top:7px; background:#2563EB; color:#fff; font-size:11px; font-weight:600; border-radius:7px; padding:5px 12px; text-decoration:none; }
+  .pp-nav { display:inline-block; margin-top:7px; background:#7C3AED; color:#fff; font-size:11px; font-weight:600; border-radius:7px; padding:5px 12px; text-decoration:none; }
 </style>
 </head>
 <body>
@@ -92,7 +93,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
 
   // Percorso pianificato
   if (DATA.geometry && DATA.geometry.length > 1) {
-    L.polyline(DATA.geometry, { color: '#2563eb', weight: 4, opacity: 0.75 }).addTo(map);
+    L.polyline(DATA.geometry, { color: '#7C3AED', weight: 4, opacity: 0.75 }).addTo(map);
   }
 
   // Partenza / rientro
@@ -209,9 +210,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: COLORS.border,
     marginTop: 10,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: COLORS.bg,
   },
   expandBtn: {
     position: 'absolute',
@@ -220,12 +221,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     paddingHorizontal: 12,
     minHeight: 44,
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: COLORS.border,
     shadowColor: '#000',
     shadowOpacity: 0.18,
     shadowRadius: 5,
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   expandText: { fontSize: 12, fontWeight: '700', color: '#0f172a' },
-  fullRoot: { flex: 1, backgroundColor: '#F2F2F7' },
+  fullRoot: { flex: 1, backgroundColor: COLORS.bg },
   reduceBtn: {
     position: 'absolute',
     right: 12,

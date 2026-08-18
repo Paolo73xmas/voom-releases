@@ -25,6 +25,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { uploadVisitPhotos } from '../lib/api/photos';
 import { usePhotoStamper } from '../components/PhotoStamper';
+import { COLORS } from '../lib/theme';
 
 // type CustomerType non più hardcoded: ora viene letto dinamicamente da customer_types table
 
@@ -615,9 +616,9 @@ export default function AnagraficaScreen() {
               <Ionicons name="camera" size={28} color="#6B7280" />
               <Text style={styles.photoAddText}>Scatta</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.photoAdd, { borderColor: '#C2410C' }]} onPress={handlePickFromGallery}>
-              <Ionicons name="images" size={28} color="#C2410C" />
-              <Text style={[styles.photoAddText, { color: '#C2410C' }]}>Galleria</Text>
+            <TouchableOpacity style={[styles.photoAdd, { borderColor: '#7C3AED' }]} onPress={handlePickFromGallery}>
+              <Ionicons name="images" size={28} color="#7C3AED" />
+              <Text style={[styles.photoAddText, { color: '#7C3AED' }]}>Galleria</Text>
             </TouchableOpacity>
           </View>
           {photos.length < 2 && (
@@ -633,7 +634,7 @@ export default function AnagraficaScreen() {
       <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Search Tabaccheria Button */}
         <TouchableOpacity style={styles.searchTabBtn} onPress={() => setShowSearch(true)}>
-          <Ionicons name="search" size={18} color="#C2410C" />
+          <Ionicons name="search" size={18} color="#7C3AED" />
           <Text style={styles.searchTabBtnText}>Cerca Tabaccheria</Text>
         </TouchableOpacity>
 
@@ -704,7 +705,7 @@ export default function AnagraficaScreen() {
             const selected = customerTypes.find(t => t.value === form.customerType);
             return (
               <>
-                <Ionicons name="business" size={18} color="#C2410C" />
+                <Ionicons name="business" size={18} color="#7C3AED" />
                 <Text style={styles.projectPickerText}>
                   {selected?.label || (customerTypes.length === 0 ? 'Caricamento...' : 'Seleziona tipo')}
                 </Text>
@@ -716,7 +717,7 @@ export default function AnagraficaScreen() {
 
         <Text style={styles.sectionTitle}>Note *</Text>
         <TextInput style={styles.textArea} multiline numberOfLines={4} textAlignVertical="top"
-          value={form.notes} onChangeText={v => updateField('notes', v)} placeholder="Note sulla visita..." placeholderTextColor="#9CA3AF" />
+          value={form.notes} onChangeText={v => updateField('notes', v)} placeholder="Note sulla visita..." placeholderTextColor={COLORS.textLight} />
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -745,10 +746,10 @@ export default function AnagraficaScreen() {
       {/* Follow-up */}
       <Text style={styles.sectionTitle}>Follow-up</Text>
       <View style={styles.phoneToggleRow}>
-        <Ionicons name="calendar" size={20} color="#C2410C" />
+        <Ionicons name="calendar" size={20} color="#7C3AED" />
         <Text style={styles.phoneToggleLabel}>Pianifica appuntamento</Text>
         <Switch value={scheduleAppointment} onValueChange={setScheduleAppointment}
-          trackColor={{ false: '#E5E7EB', true: '#FED7AA' }} thumbColor={scheduleAppointment ? '#C2410C' : '#9CA3AF'} />
+          trackColor={{ false: '#E5E7EB', true: '#DDD6FE' }} thumbColor={scheduleAppointment ? '#7C3AED' : '#9CA3AF'} />
       </View>
       {scheduleAppointment && (
         <View>
@@ -838,20 +839,20 @@ export default function AnagraficaScreen() {
             <View style={styles.searchInputRow}>
               <Ionicons name="location" size={18} color="#9CA3AF" />
               <TextInput style={styles.searchInput} placeholder="Comune *..." value={searchCity}
-                onChangeText={setSearchCity} placeholderTextColor="#9CA3AF" autoCapitalize="characters" />
+                onChangeText={setSearchCity} placeholderTextColor={COLORS.textLight} autoCapitalize="characters" />
             </View>
             <View style={styles.searchInputRow}>
               <Ionicons name="home" size={18} color="#9CA3AF" />
               <TextInput style={styles.searchInput} placeholder="Indirizzo (opzionale)..." value={searchAddress}
-                onChangeText={setSearchAddress} placeholderTextColor="#9CA3AF" autoCapitalize="characters" />
+                onChangeText={setSearchAddress} placeholderTextColor={COLORS.textLight} autoCapitalize="characters" />
             </View>
             <View style={styles.searchInputRow}>
               <Ionicons name="list-outline" size={18} color="#9CA3AF" />
               <TextInput style={styles.searchInput} placeholder="N. Ordinale (opzionale)..." value={searchNumOrdinale}
-                onChangeText={setSearchNumOrdinale} placeholderTextColor="#9CA3AF" keyboardType="numeric" />
+                onChangeText={setSearchNumOrdinale} placeholderTextColor={COLORS.textLight} keyboardType="numeric" />
             </View>
             {searchLoading ? (
-              <ActivityIndicator style={{ marginTop: 20 }} color="#C2410C" size="large" />
+              <ActivityIndicator style={{ marginTop: 20 }} color="#7C3AED" size="large" />
             ) : (
               <FlatList
                 data={searchResults}
@@ -921,7 +922,7 @@ export default function AnagraficaScreen() {
           <View style={styles.projectSheet}>
             <Text style={styles.projectSheetTitle}>Seleziona Tipo Cliente</Text>
             {customerTypes.length === 0 ? (
-              <Text style={{ textAlign: 'center', color: '#9CA3AF', paddingVertical: 16 }}>
+              <Text style={{ textAlign: 'center', color: COLORS.textLight, paddingVertical: 16 }}>
                 Caricamento tipi cliente...
               </Text>
             ) : (
@@ -931,7 +932,7 @@ export default function AnagraficaScreen() {
                   style={[styles.projectItem, form.customerType === t.value && styles.projectItemActive]}
                   onPress={() => { setForm(prev => ({ ...prev, customerType: t.value })); setShowCustomerTypePicker(false); }}
                 >
-                  <Ionicons name="business-outline" size={18} color="#C2410C" />
+                  <Ionicons name="business-outline" size={18} color="#7C3AED" />
                   <Text style={styles.projectItemText}>{t.label}</Text>
                   {form.customerType === t.value && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
                 </TouchableOpacity>
@@ -958,7 +959,7 @@ function FormField({ label, value, field, onChange, error, ...props }: {
         style={[styles.fieldInput, error ? styles.fieldInputError : null]}
         value={value}
         onChangeText={v => onChange(field, v)}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={COLORS.textLight}
         {...props}
       />
       {error ? <Text style={styles.fieldError}>{error}</Text> : null}
@@ -976,92 +977,92 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  container: { flex: 1, backgroundColor: COLORS.bgAlt },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   backBtn: { flexDirection: 'row', alignItems: 'center', height: 44, paddingRight: 8, gap: 4 },
-  backBtnText: { fontSize: 15, color: '#1F2937', fontWeight: '500' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
+  backBtnText: { fontSize: 15, color: COLORS.text, fontWeight: '500' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
   stepper: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 16, gap: 24 },
   stepItem: { alignItems: 'center', gap: 4 },
-  stepCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' },
+  stepCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
   stepDone: { backgroundColor: '#10B981' },
-  stepActive: { backgroundColor: '#C2410C' },
-  stepNum: { fontSize: 12, fontWeight: '700', color: '#9CA3AF' },
+  stepActive: { backgroundColor: '#7C3AED' },
+  stepNum: { fontSize: 12, fontWeight: '700', color: COLORS.textLight },
   stepNumActive: { color: '#FFF' },
-  stepLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
-  stepLabelActive: { color: '#C2410C', fontWeight: '700' },
+  stepLabel: { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
+  stepLabelActive: { color: '#7C3AED', fontWeight: '700' },
   stepContent: { flex: 1, paddingHorizontal: 16 },
   // Phone toggle
   phoneToggleRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, gap: 10, marginBottom: 12 },
-  phoneToggleLabel: { flex: 1, fontSize: 14, color: '#C2410C', fontWeight: '600' },
+  phoneToggleLabel: { flex: 1, fontSize: 14, color: '#7C3AED', fontWeight: '600' },
   infoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#DBEAFE', borderRadius: 10, padding: 12, gap: 8, marginBottom: 12 },
-  infoBoxText: { flex: 1, fontSize: 12, color: '#C2410C' },
+  infoBoxText: { flex: 1, fontSize: 12, color: '#7C3AED' },
   // GPS
   gpsButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#3B82F6', borderRadius: 12, paddingVertical: 14, gap: 8, marginBottom: 12 },
   gpsButtonText: { color: '#FFF', fontSize: 15, fontWeight: '600' },
   gpsBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ECFDF5', borderRadius: 8, padding: 10, gap: 6, marginBottom: 12 },
   gpsBadgeText: { fontSize: 12, color: '#065F46' },
   // Photos
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#374151', marginTop: 16, marginBottom: 8 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textSecondary, marginTop: 16, marginBottom: 8 },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 8 },
   photoItem: { width: 90, height: 90, borderRadius: 10, overflow: 'hidden', position: 'relative' },
   photoThumb: { width: '100%', height: '100%' },
   photoRemove: { position: 'absolute', top: -4, right: -4 },
   photoAdd: { width: 90, height: 90, borderRadius: 10, borderWidth: 2, borderColor: '#D1D5DB', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
-  photoAddText: { fontSize: 11, color: '#6B7280', marginTop: 2 },
+  photoAddText: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
   photoHint: { fontSize: 12, color: '#EF4444', marginBottom: 8 },
   // Form fields
   row: { flexDirection: 'row' },
   fieldWrap: { marginBottom: 12 },
-  fieldLabel: { fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 4 },
-  fieldInput: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: '#1F2937' },
+  fieldLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted, marginBottom: 4 },
+  fieldInput: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: COLORS.text },
   fieldInputError: { borderColor: '#EF4444' },
   fieldError: { fontSize: 11, color: '#EF4444', marginTop: 2 },
   validationHint: { fontSize: 12, color: '#D97706', marginBottom: 8 },
   typeRow: { flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' },
-  typeBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
-  typeBtnActive: { backgroundColor: '#C2410C', borderColor: '#C2410C' },
-  typeBtnText: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
+  typeBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border },
+  typeBtnActive: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  typeBtnText: { fontSize: 13, fontWeight: '600', color: COLORS.textMuted },
   typeBtnTextActive: { color: '#FFF' },
-  textArea: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: '#1F2937', minHeight: 80 },
+  textArea: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: COLORS.text, minHeight: 80 },
   // Search button
-  searchTabBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF7ED', borderRadius: 12, paddingVertical: 14, gap: 8, marginBottom: 12, marginTop: 4 },
-  searchTabBtnText: { fontSize: 14, fontWeight: '600', color: '#C2410C' },
+  searchTabBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primarySoft, borderRadius: 12, paddingVertical: 14, gap: 8, marginBottom: 12, marginTop: 4 },
+  searchTabBtnText: { fontSize: 14, fontWeight: '600', color: '#7C3AED' },
   // Summary
-  summaryCard: { backgroundColor: '#FFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB' },
+  summaryCard: { backgroundColor: COLORS.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: COLORS.border },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  summaryLabel: { fontSize: 12, color: '#6B7280', fontWeight: '600' },
-  summaryValue: { fontSize: 12, color: '#1F2937', fontWeight: '500', flex: 1, textAlign: 'right', marginLeft: 12 },
+  summaryLabel: { fontSize: 12, color: COLORS.textMuted, fontWeight: '600' },
+  summaryValue: { fontSize: 12, color: COLORS.text, fontWeight: '500', flex: 1, textAlign: 'right', marginLeft: 12 },
   // Bottom bar
-  bottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#E5E7EB', backgroundColor: '#FFF' },
+  bottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border, backgroundColor: COLORS.surface },
   prevBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 12, paddingHorizontal: 16 },
-  prevBtnText: { fontSize: 14, color: '#6B7280', fontWeight: '600' },
-  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#C2410C', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },
+  prevBtnText: { fontSize: 14, color: COLORS.textMuted, fontWeight: '600' },
+  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#7C3AED', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },
   nextBtnDisabled: { opacity: 0.4 },
   nextBtnText: { fontSize: 14, fontWeight: '600', color: '#FFF' },
   submitBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#10B981', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },
   submitBtnText: { fontSize: 14, fontWeight: '600', color: '#FFF' },
   // Search Modal
-  searchModalFull: { flex: 1, backgroundColor: '#FFF', paddingHorizontal: 16 },
+  searchModalFull: { flex: 1, backgroundColor: COLORS.surface, paddingHorizontal: 16 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingTop: 8 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  searchInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8, marginBottom: 8 },
-  searchInput: { flex: 1, fontSize: 14, color: '#1F2937', paddingVertical: 0 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  searchInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8, marginBottom: 8 },
+  searchInput: { flex: 1, fontSize: 14, color: COLORS.text, paddingVertical: 0 },
   searchResultItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  searchResultName: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
-  searchResultAddr: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  searchResultName: { fontSize: 14, fontWeight: '600', color: COLORS.text },
+  searchResultAddr: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   registeredBadge: { backgroundColor: '#FEE2E2', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   registeredBadgeText: { fontSize: 10, color: '#991B1B', fontWeight: '600' },
   assignedBadge: { backgroundColor: '#FEF3C7', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   assignedBadgeText: { fontSize: 10, color: '#92400E', fontWeight: '600' },
-  emptySearch: { textAlign: 'center', color: '#9CA3AF', marginTop: 24, fontSize: 14 },
+  emptySearch: { textAlign: 'center', color: COLORS.textLight, marginTop: 24, fontSize: 14 },
 
   // ✅ Web parity: Project picker styles
   projectPicker: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: '#D1D5DB',
     borderRadius: 10,
@@ -1070,20 +1071,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   projectDot: { width: 14, height: 14, borderRadius: 7 },
-  projectPickerText: { flex: 1, fontSize: 15, color: '#1F2937', fontWeight: '500' },
+  projectPickerText: { flex: 1, fontSize: 15, color: COLORS.text, fontWeight: '500' },
   projectOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
   projectSheet: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
     paddingBottom: 32,
   },
-  projectSheetTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 12, textAlign: 'center' },
+  projectSheetTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 12, textAlign: 'center' },
   projectItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1093,5 +1094,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   projectItemActive: { backgroundColor: '#F0FDF4' },
-  projectItemText: { flex: 1, fontSize: 15, color: '#1F2937', fontWeight: '500' },
+  projectItemText: { flex: 1, fontSize: 15, color: COLORS.text, fontWeight: '500' },
 });

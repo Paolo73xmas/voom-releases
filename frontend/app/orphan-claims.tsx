@@ -12,6 +12,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { getAgentOrphanClaims, OrphanClaimWithDetails } from '../lib/api/orphan-claims';
+import { COLORS } from '../lib/theme';
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
   pending: { label: 'In Attesa', color: '#92400E', bg: '#FEF3C7', icon: 'time-outline' },
@@ -106,7 +107,7 @@ export default function OrphanClaimsScreen() {
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#C2410C" />
+          <ActivityIndicator size="large" color="#7C3AED" />
         </View>
       ) : (
         <FlashList
@@ -118,8 +119,8 @@ export default function OrphanClaimsScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
               <Ionicons name="flag-outline" size={48} color="#D1D5DB" />
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#6B7280', marginTop: 12 }}>Nessun reclamo</Text>
-              <Text style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4, textAlign: 'center' }}>Reclama clienti orfani dalla Mappa</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMuted, marginTop: 12 }}>Nessun reclamo</Text>
+              <Text style={{ fontSize: 13, color: COLORS.textLight, marginTop: 4, textAlign: 'center' }}>Reclama clienti orfani dalla Mappa</Text>
             </View>
           }
         />
@@ -129,22 +130,22 @@ export default function OrphanClaimsScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#C2410C', paddingHorizontal: 16, paddingVertical: 12 },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#7C3AED', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },
   statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
   statCard: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center' },
   statNum: { fontSize: 24, fontWeight: '800' },
   statLabel: { fontSize: 11, fontWeight: '600', marginTop: 2 },
-  card: { backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E5E7EB' },
+  card: { backgroundColor: COLORS.surface, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  cardCustomer: { fontSize: 14, fontWeight: '700', color: '#1F2937', flex: 1, marginRight: 8 },
+  cardCustomer: { fontSize: 14, fontWeight: '700', color: COLORS.text, flex: 1, marginRight: 8 },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 11, fontWeight: '700' },
-  cardAddress: { fontSize: 12, color: '#6B7280', marginBottom: 6 },
+  cardAddress: { fontSize: 12, color: COLORS.textMuted, marginBottom: 6 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardDate: { fontSize: 11, color: '#9CA3AF' },
-  cardAgent: { fontSize: 11, color: '#6B7280' },
+  cardDate: { fontSize: 11, color: COLORS.textLight },
+  cardAgent: { fontSize: 11, color: COLORS.textMuted },
   orderBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingVertical: 10, marginTop: 10 },
-  reviewDate: { fontSize: 10, color: '#9CA3AF', marginTop: 6, fontStyle: 'italic' },
+  reviewDate: { fontSize: 10, color: COLORS.textLight, marginTop: 6, fontStyle: 'italic' },
 });

@@ -27,6 +27,7 @@ import {
   getRimborsoStatoLabel, getRimborsoStatoColor,
   type Rimborso, type RimborsoCategoria, type RimborsoStato,
 } from '../lib/api/rimborsi';
+import { COLORS } from '../lib/theme';
 
 const STATI: { value: 'all' | RimborsoStato; label: string }[] = [
   { value: 'all', label: 'Tutti' },
@@ -411,7 +412,7 @@ export default function RimborsiScreen() {
   if (loading) {
     return (
       <View style={s.loading}>
-        <ActivityIndicator size="large" color="#C2410C" />
+        <ActivityIndicator size="large" color="#7C3AED" />
       </View>
     );
   }
@@ -484,8 +485,8 @@ export default function RimborsiScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
               <Ionicons name="receipt-outline" size={48} color="#D1D5DB" />
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#6B7280', marginTop: 12 }}>Nessun rimborso</Text>
-              <Text style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>Premi + per creare una richiesta</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMuted, marginTop: 12 }}>Nessun rimborso</Text>
+              <Text style={{ fontSize: 13, color: COLORS.textLight, marginTop: 4 }}>Premi + per creare una richiesta</Text>
             </View>
           }
         />
@@ -527,7 +528,7 @@ export default function RimborsiScreen() {
                   <TextInput
                     style={s.input}
                     placeholder="0,00"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={COLORS.textLight}
                     value={formImporto}
                     onChangeText={setFormImporto}
                     keyboardType="decimal-pad"
@@ -538,7 +539,7 @@ export default function RimborsiScreen() {
                   <TextInput
                     style={[s.input, { height: 80, textAlignVertical: 'top' }]}
                     placeholder="Dettagli della spesa..."
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={COLORS.textLight}
                     value={formDescrizione}
                     onChangeText={setFormDescrizione}
                     multiline
@@ -567,9 +568,9 @@ export default function RimborsiScreen() {
                         disabled={processingPhoto}
                       >
                         {processingPhoto ? (
-                          <ActivityIndicator size="small" color="#C2410C" />
+                          <ActivityIndicator size="small" color="#7C3AED" />
                         ) : (
-                          <Ionicons name="camera" size={20} color="#C2410C" />
+                          <Ionicons name="camera" size={20} color="#7C3AED" />
                         )}
                         <Text style={s.photoBtnTxt}>
                           {processingPhoto ? 'Elaborazione...' : 'Scatta Foto'}
@@ -581,9 +582,9 @@ export default function RimborsiScreen() {
                         disabled={processingPhoto}
                       >
                         {processingPhoto ? (
-                          <ActivityIndicator size="small" color="#C2410C" />
+                          <ActivityIndicator size="small" color="#7C3AED" />
                         ) : (
-                          <Ionicons name="images" size={20} color="#C2410C" />
+                          <Ionicons name="images" size={20} color="#7C3AED" />
                         )}
                         <Text style={s.photoBtnTxt}>
                           {processingPhoto ? 'Elaborazione...' : 'Galleria'}
@@ -615,7 +616,7 @@ export default function RimborsiScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: { flex: 1, backgroundColor: COLORS.bg },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   permBanner: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7',
@@ -632,42 +633,42 @@ const s = StyleSheet.create({
   },
   gpsActiveTxt: { fontSize: 11, color: '#065F46', marginLeft: 6, fontWeight: '600' },
   statsBanner: {
-    flexDirection: 'row', backgroundColor: '#FFF', margin: 16, marginBottom: 8,
+    flexDirection: 'row', backgroundColor: COLORS.surface, margin: 16, marginBottom: 8,
     borderRadius: 12, padding: 14,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
   statBox: { flex: 1, alignItems: 'center' },
-  statLbl: { fontSize: 12, color: '#6B7280' },
+  statLbl: { fontSize: 12, color: COLORS.textMuted },
   statVal: { fontSize: 18, fontWeight: '700', marginTop: 4 },
-  divider: { width: 1, backgroundColor: '#E5E7EB' },
+  divider: { width: 1, backgroundColor: COLORS.border },
   filters: { maxHeight: 44, marginBottom: 4 },
   chip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: '#FFF',
-    marginRight: 8, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: COLORS.surface,
+    marginRight: 8, borderWidth: 1, borderColor: COLORS.border,
   },
-  chipActive: { backgroundColor: '#C2410C', borderColor: '#C2410C' },
-  chipTxt: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  chipActive: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  chipTxt: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
   chipTxtActive: { color: '#FFF' },
   card: {
-    backgroundColor: '#FFF', borderRadius: 12, padding: 16, marginBottom: 12,
+    backgroundColor: COLORS.surface, borderRadius: 12, padding: 16, marginBottom: 12,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  categoria: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
-  dateText: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
+  categoria: { fontSize: 14, fontWeight: '600', color: COLORS.text },
+  dateText: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
   statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 4 },
   statusText: { fontSize: 11, fontWeight: '600' },
-  amount: { fontSize: 24, fontWeight: '700', color: '#C2410C', marginVertical: 6 },
-  desc: { fontSize: 13, color: '#4B5563', marginTop: 4 },
-  attRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', borderRadius: 8, padding: 8, marginTop: 10 },
-  attImg: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#E5E7EB' },
-  attLbl: { fontSize: 12, fontWeight: '500', color: '#374151' },
-  gpsLbl: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
+  amount: { fontSize: 24, fontWeight: '700', color: '#7C3AED', marginVertical: 6 },
+  desc: { fontSize: 13, color: COLORS.textSecondary, marginTop: 4 },
+  attRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgAlt, borderRadius: 8, padding: 8, marginTop: 10 },
+  attImg: { width: 40, height: 40, borderRadius: 6, backgroundColor: COLORS.border },
+  attLbl: { fontSize: 12, fontWeight: '500', color: COLORS.textSecondary },
+  gpsLbl: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
   noteAdmin: {
     flexDirection: 'row', backgroundColor: '#EFF6FF', borderRadius: 8, padding: 8, marginTop: 10, gap: 6,
   },
-  noteAdminTxt: { fontSize: 12, color: '#C2410C', flex: 1 },
+  noteAdminTxt: { fontSize: 12, color: '#7C3AED', flex: 1 },
   deleteBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingVertical: 8, marginTop: 10, gap: 6, borderRadius: 8,
@@ -681,21 +682,21 @@ const s = StyleSheet.create({
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: {
-    backgroundColor: '#FFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%',
+    backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%',
   },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  formLbl: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 8 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  formLbl: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 6, marginTop: 8 },
   input: {
-    backgroundColor: '#F9FAFB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15,
-    borderWidth: 1, borderColor: '#E5E7EB', color: '#1F2937',
+    backgroundColor: COLORS.bgAlt, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15,
+    borderWidth: 1, borderColor: COLORS.border, color: COLORS.text,
   },
   catChip: {
-    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 18, backgroundColor: '#F3F4F6',
-    marginRight: 8, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 18, backgroundColor: COLORS.bg,
+    marginRight: 8, borderWidth: 1, borderColor: COLORS.border,
   },
   catChipActive: { backgroundColor: '#10B981', borderColor: '#10B981' },
-  catChipTxt: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  catChipTxt: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
   catChipTxtActive: { color: '#FFF' },
   photoBox: { borderRadius: 12, overflow: 'hidden', position: 'relative' },
   photoPreview: { width: '100%', height: 200 },
@@ -707,10 +708,10 @@ const s = StyleSheet.create({
   gpsBadgeTxt: { fontSize: 11, color: '#FFF' },
   photoBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 12, borderRadius: 10, backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#FED7AA',
+    paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.primarySoft, borderWidth: 1, borderColor: '#DDD6FE',
   },
-  photoBtnDisabled: { opacity: 0.6, backgroundColor: '#F3F4F6', borderColor: '#D1D5DB' },
-  photoBtnTxt: { fontSize: 14, fontWeight: '600', color: '#C2410C' },
+  photoBtnDisabled: { opacity: 0.6, backgroundColor: COLORS.bg, borderColor: '#D1D5DB' },
+  photoBtnTxt: { fontSize: 14, fontWeight: '600', color: '#7C3AED' },
   submitBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#10B981', paddingVertical: 14, borderRadius: 12, marginTop: 16,

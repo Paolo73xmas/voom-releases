@@ -12,10 +12,45 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
+import {
+  COLORS,
+  currentThemeMode,
+  setStoredThemeMode,
+  applyThemeMode,
+  type ThemeMode,
+} from '../../lib/theme';
+
+/** Riavvio soft per applicare il tema (gli StyleSheet sono statici per modulo) */
+async function reloadApp() {
+  if (Platform.OS === 'web') {
+    (globalThis as unknown as Window).location?.reload();
+    return;
+  }
+  try {
+    const Updates = await import('expo-updates');
+    await Updates.reloadAsync();
+  } catch {
+    try {
+      const { DevSettings } = await import('react-native');
+      DevSettings.reload();
+    } catch {
+      Alert.alert('Tema salvato', "Chiudi e riapri l'app per applicare il nuovo tema.");
+    }
+  }
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, profile, logout } = useAuthStore();
+  const [themeMode, setThemeMode] = React.useState<ThemeMode>(currentThemeMode);
+
+  const handleThemeChange = async (mode: ThemeMode) => {
+    if (mode === themeMode) return;
+    setThemeMode(mode);
+    await setStoredThemeMode(mode);
+    applyThemeMode(mode);
+    await reloadApp();
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -95,6 +130,37 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Aspetto Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Aspetto</Text>
+        <View style={styles.card}>
+          <View style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name={themeMode === 'dark' ? 'moon' : 'sunny'} size={20} color="#8B5CF6" />
+            </View>
+            <Text style={styles.menuLabel}>Tema</Text>
+            <View style={styles.themeToggle}>
+              <TouchableOpacity
+                style={[styles.themeOption, themeMode === 'light' && styles.themeOptionActive]}
+                onPress={() => handleThemeChange('light')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="sunny" size={14} color={themeMode === 'light' ? '#FFF' : COLORS.textMuted} />
+                <Text style={[styles.themeOptionText, themeMode === 'light' && styles.themeOptionTextActive]}>Chiaro</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionActive]}
+                onPress={() => handleThemeChange('dark')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="moon" size={14} color={themeMode === 'dark' ? '#FFF' : COLORS.textMuted} />
+                <Text style={[styles.themeOptionText, themeMode === 'dark' && styles.themeOptionTextActive]}>Scuro</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
       {/* Support Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Supporto</Text>
@@ -109,7 +175,7 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/privacy-terms?readOnly=true')}>
             <View style={styles.menuIconContainer}>
-              <Ionicons name="shield-checkmark-outline" size={20} color="#C2410C" />
+              <Ionicons name="shield-checkmark-outline" size={20} color="#7C3AED" />
             </View>
             <Text style={styles.menuLabel}>Privacy e Termini</Text>
             <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
@@ -140,14 +206,14 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   content: {
     padding: 16,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 24,
     marginBottom: 24,
@@ -161,7 +227,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -174,16 +240,16 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 22,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
     marginBottom: 4,
   },
   email: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginBottom: 12,
   },
   roleBadge: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: COLORS.primarySoft,
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 20,
@@ -199,13 +265,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginBottom: 8,
     marginLeft: 4,
     textTransform: 'uppercase',
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -222,7 +288,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -230,11 +296,11 @@ const styles = StyleSheet.create({
   menuLabel: {
     flex: 1,
     fontSize: 16,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     marginLeft: 64,
   },
   logoutButton: {
@@ -255,7 +321,33 @@ const styles = StyleSheet.create({
   version: {
     textAlign: 'center',
     fontSize: 12,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginBottom: 24,
+  },
+  themeToggle: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.bg,
+    borderRadius: 10,
+    padding: 3,
+    gap: 3,
+  },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  themeOptionActive: {
+    backgroundColor: COLORS.primary,
+  },
+  themeOptionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+  },
+  themeOptionTextActive: {
+    color: '#FFF',
   },
 });

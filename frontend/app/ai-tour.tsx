@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { DS, JAKARTA, SHADOWS } from '../lib/theme';
+import { DS, JAKARTA, SHADOWS, COLORS } from '../lib/theme';
 import { hap } from '../lib/haptics';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
@@ -41,7 +41,7 @@ import type { WeekDayPlan } from '../lib/aitour/week';
 
 const PRIORITY_COLORS: Record<PriorityClass, string> = {
   Urgente: '#DC2626',
-  Alta: '#EA580C',
+  Alta: '#8B5CF6',
   Media: '#D97706',
   Bassa: '#64748B',
 };
@@ -111,7 +111,7 @@ const TOUR_TYPE_LABELS: Record<string, string> = {
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   planned: { label: 'Pianificato', color: '#1D4ED8', bg: '#DBEAFE' },
   active: { label: 'In corso', color: '#047857', bg: '#D1FAE5' },
-  completed: { label: 'Completato', color: '#374151', bg: '#E5E7EB' },
+  completed: { label: 'Completato', color: COLORS.textSecondary, bg: '#E5E7EB' },
   cancelled: { label: 'Annullato', color: '#991B1B', bg: '#FEE2E2' },
 };
 
@@ -1082,7 +1082,7 @@ export default function AITourScreen() {
         ) : null}
         {plan.aiSummary ? (
           <View style={[styles.alertBox, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
-            <Ionicons name="sparkles" size={14} color="#2563EB" />
+            <Ionicons name="sparkles" size={14} color="#7C3AED" />
             <Text style={[styles.alertText, { color: '#1E3A8A' }]}>{plan.aiSummary}</Text>
           </View>
         ) : null}
@@ -1666,7 +1666,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#7C3AED',
     borderRadius: 7,
     paddingVertical: 5,
     paddingHorizontal: 10,

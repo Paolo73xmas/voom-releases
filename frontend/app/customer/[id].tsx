@@ -18,6 +18,7 @@ import { supabase } from '../../lib/supabase';
 import { Customer } from '../../types';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { COLORS } from '../../lib/theme';
 
 interface CustomerOrder {
   id: string;
@@ -132,21 +133,21 @@ export default function CustomerDetailScreen() {
       case 'shipped': return { label: 'Spedito', bg: '#DBEAFE', color: '#1D4ED8' };
       case 'delivered': return { label: 'Consegnato', bg: '#D1FAE5', color: '#065F46' };
       case 'cancelled': return { label: 'Annullato', bg: '#FEE2E2', color: '#991B1B' };
-      default: return { label: status, bg: '#E5E7EB', color: '#374151' };
+      default: return { label: status, bg: '#E5E7EB', color: COLORS.textSecondary };
     }
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: '#C2410C' }]} edges={['top']}>
-        <View style={styles.centered}><ActivityIndicator size="large" color="#C2410C" /></View>
+      <SafeAreaView style={[styles.container, { backgroundColor: '#7C3AED' }]} edges={['top']}>
+        <View style={styles.centered}><ActivityIndicator size="large" color="#7C3AED" /></View>
       </SafeAreaView>
     );
   }
 
   if (!customer) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: '#C2410C' }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: '#7C3AED' }]} edges={['top']}>
         <View style={styles.centered}>
           <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
           <Text style={styles.errorText}>Cliente non trovato</Text>
@@ -159,7 +160,7 @@ export default function CustomerDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#C2410C' }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: '#7C3AED' }]} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       {/* Header */}
       <View style={styles.header}>
@@ -379,7 +380,7 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: { flex: 1, backgroundColor: COLORS.bg },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorText: { fontSize: 16, color: '#EF4444', marginTop: 12 },
   linkText: { fontSize: 14, color: '#3B82F6', marginTop: 8 },
@@ -389,59 +390,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderBottomWidth: 1,
-    borderBottomColor: '#9A3412',
+    borderBottomColor: '#5B21B6',
   },
   backBtn: { padding: 4, marginRight: 8 },
   headerCenter: { flex: 1 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  headerSub: { fontSize: 11, color: '#FED7AA' },
+  headerSub: { fontSize: 11, color: '#DDD6FE' },
   catBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   catBadgeText: { fontSize: 10, fontWeight: '600' },
   clientBg: { backgroundColor: 'rgba(255,255,255,0.2)' },
   prospectBg: { backgroundColor: 'rgba(255,255,255,0.15)' },
   clientColor: { color: '#FFFFFF' },
-  prospectColor: { color: '#FED7AA' },
+  prospectColor: { color: '#DDD6FE' },
 
-  body: { flex: 1, backgroundColor: '#F3F4F6' },
+  body: { flex: 1, backgroundColor: COLORS.bg },
   bodyContent: { padding: 16 },
 
   // Quick Actions
   actionsBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 8,
     marginBottom: 16,
   },
   actionCircle: { alignItems: 'center', gap: 4 },
-  actionCircleLabel: { fontSize: 10, color: '#6B7280', fontWeight: '500' },
+  actionCircleLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: '500' },
 
   // Stats
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   statCard: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center' },
   statInner: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  statValue: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
-  statLabel: { fontSize: 10, color: '#6B7280', marginTop: 2 },
+  statValue: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  statLabel: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
 
   daysRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 10,
     marginBottom: 16,
   },
   daysItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  daysText: { fontSize: 11, color: '#6B7280' },
+  daysText: { fontSize: 11, color: COLORS.textMuted },
 
   // Sections
   section: { marginBottom: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#4B5563', textTransform: 'uppercase', marginBottom: 8, marginLeft: 2 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', marginBottom: 8, marginLeft: 2 },
   seeAllLink: { fontSize: 12, color: '#3B82F6', fontWeight: '600' },
 
   // Order cards
@@ -449,13 +450,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 12,
     marginBottom: 6,
   },
   orderCardLeft: { gap: 4 },
-  orderDate: { fontSize: 13, fontWeight: '600', color: '#1F2937' },
+  orderDate: { fontSize: 13, fontWeight: '600', color: COLORS.text },
   orderStatusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, alignSelf: 'flex-start' },
   orderStatusText: { fontSize: 10, fontWeight: '600' },
   orderCardRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -465,7 +466,7 @@ const styles = StyleSheet.create({
   visitCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     padding: 12,
     marginBottom: 6,
@@ -474,13 +475,13 @@ const styles = StyleSheet.create({
   visitDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6', marginTop: 5 },
   visitContent: { flex: 1 },
   visitRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  visitDate: { fontSize: 13, fontWeight: '600', color: '#1F2937' },
+  visitDate: { fontSize: 13, fontWeight: '600', color: COLORS.text },
   visitTypeBadge: { backgroundColor: '#EEF2FF', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   visitTypeText: { fontSize: 10, fontWeight: '600', color: '#3B82F6' },
-  visitNotes: { fontSize: 12, color: '#6B7280', marginTop: 4 },
+  visitNotes: { fontSize: 12, color: COLORS.textMuted, marginTop: 4 },
 
   // Info cards
-  infoCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 4 },
+  infoCard: { backgroundColor: COLORS.surface, borderRadius: 12, padding: 4 },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -489,17 +490,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F9FAFB',
   },
-  infoLabel: { fontSize: 13, color: '#6B7280', marginLeft: 10, width: 70 },
-  infoValue: { flex: 1, fontSize: 13, color: '#1F2937', textAlign: 'right' },
+  infoLabel: { fontSize: 13, color: COLORS.textMuted, marginLeft: 10, width: 70 },
+  infoValue: { flex: 1, fontSize: 13, color: COLORS.text, textAlign: 'right' },
 
-  notesText: { fontSize: 13, color: '#4B5563', padding: 12, lineHeight: 20 },
+  notesText: { fontSize: 13, color: COLORS.textSecondary, padding: 12, lineHeight: 20 },
 
   emptyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyText: { fontSize: 13, color: '#9CA3AF', marginTop: 8 },
+  emptyText: { fontSize: 13, color: COLORS.textLight, marginTop: 8 },
 });

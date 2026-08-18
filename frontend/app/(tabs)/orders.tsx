@@ -20,6 +20,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { SkeletonList } from '../../components/Skeleton';
 import { EmptyState } from '../../components/EmptyState';
 import { hap } from '../../lib/haptics';
+import { COLORS } from '../../lib/theme';
 
 const formatDate = (dateString: string) => {
   try {
@@ -166,7 +167,7 @@ export default function OrdersScreen() {
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={18} color="#9CA3AF" />
-            <View style={{ flex: 1, marginLeft: 8, height: 14, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+            <View style={{ flex: 1, marginLeft: 8, height: 14, backgroundColor: COLORS.border, borderRadius: 4 }} />
           </View>
         </View>
         <SkeletonList count={6} height={130} />
@@ -183,7 +184,7 @@ export default function OrdersScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Cerca per cliente (min. 3 caratteri)..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={COLORS.textLight}
             value={searchText}
             onChangeText={setSearchText}
             autoCorrect={false}
@@ -248,7 +249,7 @@ export default function OrdersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   loadingContainer: {
     flex: 1,
@@ -263,35 +264,35 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   searchHint: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginTop: 4,
     marginLeft: 4,
   },
   searchResult: {
     fontSize: 12,
-    color: '#C2410C',
+    color: '#7C3AED',
     fontWeight: '600',
     marginTop: 4,
     marginLeft: 4,
   },
   statsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     margin: 16,
     borderRadius: 12,
     padding: 16,
@@ -308,23 +309,23 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   statLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 4,
   },
   statDivider: {
     width: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.border,
   },
   listContent: {
     padding: 16,
     paddingTop: 0,
   },
   orderCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -343,11 +344,11 @@ const styles = StyleSheet.create({
   orderNumber: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   orderDate: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   statusBadge: {
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
   },
   customerName: {
     fontSize: 14,
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     marginLeft: 8,
     flex: 1,
   },
@@ -385,7 +386,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginLeft: 6,
   },
   orderFooter: {
@@ -398,12 +399,12 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   totalAmount: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#C2410C',
+    color: '#7C3AED',
   },
   chevron: {
     position: 'absolute',
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginTop: 12,
   },
 });

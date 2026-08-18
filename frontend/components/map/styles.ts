@@ -1,9 +1,10 @@
 import { StyleSheet } from 'react-native';
+import { COLORS } from '../../lib/theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   webview: {
     flex: 1,
@@ -12,18 +13,18 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   loadingBadge: {
     position: 'absolute',
@@ -31,7 +32,7 @@ export const styles = StyleSheet.create({
     marginLeft: -60,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -45,12 +46,12 @@ export const styles = StyleSheet.create({
   },
   loadingBadgeText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   counterBadge: {
     position: 'absolute',
     left: 12,
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -64,7 +65,7 @@ export const styles = StyleSheet.create({
   counterText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: COLORS.textSecondary,
   },
   // Filters
   filterRow: {
@@ -76,7 +77,7 @@ export const styles = StyleSheet.create({
     zIndex: 1000,
   },
   filterBtn: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -92,7 +93,7 @@ export const styles = StyleSheet.create({
   filterBtnText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: COLORS.textSecondary,
   },
   filterBtnTextActive: {
     color: '#FFF',
@@ -103,7 +104,7 @@ export const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
@@ -116,7 +117,7 @@ export const styles = StyleSheet.create({
   // Legend
   legendBox: {
     position: 'absolute',
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 12,
     elevation: 4,
@@ -136,7 +137,7 @@ export const styles = StyleSheet.create({
   legendTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#374151',
+    color: COLORS.textSecondary,
   },
   legendItem: {
     flexDirection: 'row',
@@ -151,7 +152,7 @@ export const styles = StyleSheet.create({
   },
   legendLabel: {
     fontSize: 11,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   // Popup (Inline Bottom Sheet - no Modal)
   popupOverlayInline: {
@@ -172,7 +173,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
   },
   popupSheet: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
@@ -207,16 +208,16 @@ export const styles = StyleSheet.create({
   popupName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   popupAddress: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   popupStatus: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginTop: 4,
   },
   popupCloseBtn: {
@@ -225,7 +226,7 @@ export const styles = StyleSheet.create({
   popupContactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -235,7 +236,7 @@ export const styles = StyleSheet.create({
   popupContactText: {
     flex: 1,
     fontSize: 13,
-    color: '#374151',
+    color: COLORS.textSecondary,
   },
   popupCallBtn: {
     flexDirection: 'row',
@@ -271,7 +272,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#10B981',
   },
   actionBtnSecondary: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   actionBtnText: {
     fontSize: 14,
@@ -286,7 +287,7 @@ export const styles = StyleSheet.create({
   },
   grayInfoText: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
   },
   // Order Data Modal
   modalOverlay: {
@@ -296,7 +297,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   orderDataModal: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     width: '85%',
@@ -311,7 +312,7 @@ export const styles = StyleSheet.create({
   orderDataTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   orderDataContent: {
     gap: 12,
@@ -323,11 +324,11 @@ export const styles = StyleSheet.create({
   },
   orderDataLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   orderDataValue: {
     fontSize: 14,
-    color: '#1F2937',
+    color: COLORS.text,
     fontWeight: '500',
   },
   orderDataValueBold: {
@@ -337,7 +338,7 @@ export const styles = StyleSheet.create({
   },
   orderDataEmpty: {
     textAlign: 'center',
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     fontSize: 14,
     marginVertical: 20,
   },

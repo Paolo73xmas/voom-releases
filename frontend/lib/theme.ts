@@ -1,14 +1,25 @@
 /**
  * Design Tokens — VOOM Crm
  * Centralized colors, spacing, typography for consistency
+ *
+ * Palette "AI Tour" (ago 2026): viola primario + arancio accento + teal live,
+ * con doppio tema Chiaro/Scuro selezionabile dal Profilo.
+ * NOTA: i PDF (lib/pdf, preventivi, manuali) NON usano questi token e restano invariati.
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const COLORS = {
-  // Brand — Terracotta (restyling giu 2026)
-  primary: '#C2410C',
-  primaryDark: '#9A3412',
-  primaryLight: '#EA580C',
-  primarySoft: '#FFF7ED',
+export type ThemeMode = 'light' | 'dark';
+export const THEME_MODE_KEY = '@voom_theme_mode';
+
+// ─────────────────────────────────────────────────────────────────
+// Palette CHIARA (default) — sfondi iOS chiari, accenti splash AI Tour
+// ─────────────────────────────────────────────────────────────────
+const COLORS_LIGHT = {
+  // Brand — Viola AI Tour
+  primary: '#7C3AED',
+  primaryDark: '#5B21B6',
+  primaryLight: '#8B5CF6',
+  primarySoft: '#F5F3FF',
 
   // Semantic
   success: '#10B981',
@@ -28,6 +39,8 @@ export const COLORS = {
   teal: '#14B8A6',
   tealSoft: '#CCFBF1',
   amber: '#F59E0B',
+  orange: '#F97316',
+  orangeSoft: '#FFF7ED',
 
   // Neutrals
   white: '#FFFFFF',
@@ -45,8 +58,54 @@ export const COLORS = {
   textPlaceholder: '#D1D5DB',
 };
 
+// ─────────────────────────────────────────────────────────────────
+// Palette SCURA — stile splash AI Tour (#0B0714 + viola/arancio/teal)
+// ─────────────────────────────────────────────────────────────────
+const COLORS_DARK: typeof COLORS_LIGHT = {
+  primary: '#8B5CF6',
+  primaryDark: '#7C3AED',
+  primaryLight: '#A78BFA',
+  primarySoft: '#2A2044',
+
+  success: '#34D399',
+  successSoft: '#0E3A2C',
+  warning: '#FBBF24',
+  warningSoft: '#3D2E0A',
+  danger: '#F87171',
+  dangerSoft: '#431418',
+  info: '#38BDF8',
+  infoSoft: '#0B2C3D',
+
+  purple: '#A78BFA',
+  purpleSoft: '#2A2044',
+  pink: '#F472B6',
+  pinkSoft: '#3D1230',
+  teal: '#2DD4BF',
+  tealSoft: '#0B322E',
+  amber: '#FBBF24',
+  orange: '#FB923C',
+  orangeSoft: '#3A2410',
+
+  white: '#FFFFFF',
+  black: '#000000',
+  bg: '#0B0714',
+  bgAlt: '#110C1D',
+  surface: '#171221',
+  border: '#2A2440',
+  borderLight: '#231C36',
+
+  text: '#F5F3F9',
+  textSecondary: '#D6D1E0',
+  textMuted: '#A29BB3',
+  textLight: '#7A7390',
+  textPlaceholder: '#554E6B',
+};
+
+/** Token colore correnti (mutati da applyThemeMode all'avvio/toggle) */
+export const COLORS = { ...COLORS_LIGHT };
+
 export const GRADIENTS: Record<string, [string, string]> = {
-  primary: ['#EA580C', '#C2410C'],
+  primary: ['#8B5CF6', '#6D28D9'],
   success: ['#10B981', '#059669'],
   warning: ['#F59E0B', '#D97706'],
   danger: ['#EF4444', '#DC2626'],
@@ -125,15 +184,21 @@ export const ANIM_DURATION = {
 };
 
 /**
- * DS — Nuovo design system "iOS-Native Clean" (restyling giu 2026)
- * Brand: Terracotta #C2410C — blueprint completo in /app/design_guidelines.json
+ * DS — Design system "iOS-Native Clean" con palette AI Tour (ago 2026)
+ * Brand: Viola #7C3AED — tema Chiaro/Scuro via applyThemeMode
  */
-export const DS = {
+const DS_LIGHT = {
   // Brand
-  brand: '#C2410C',
-  brandDark: '#9A3412',
-  brandSoft: '#F9E0D4',
-  brandTint: '#FFF7ED',
+  brand: '#7C3AED',
+  brandDark: '#5B21B6',
+  brandSoft: '#EDE9FE',
+  brandTint: '#F5F3FF',
+  // Accento arancio (dal poster AI Tour)
+  accent: '#F97316',
+  accentSoft: '#FFF7ED',
+  // Teal live
+  live: '#0D9488',
+  liveSoft: '#CCFBF1',
   // Superfici (scala iOS)
   surface: '#FFFFFF',
   surface2: '#F2F2F7',
@@ -150,6 +215,81 @@ export const DS = {
   warning: '#B45309',
   error: '#991B1B',
 };
+
+const DS_DARK: typeof DS_LIGHT = {
+  brand: '#8B5CF6',
+  brandDark: '#A78BFA',
+  brandSoft: '#2A2044',
+  brandTint: '#1D1630',
+  accent: '#FB923C',
+  accentSoft: '#3A2410',
+  live: '#2DD4BF',
+  liveSoft: '#0B322E',
+  surface: '#171221',
+  surface2: '#0B0714',
+  surface3: '#241D33',
+  ink: '#F5F3F9',
+  ink2: '#D6D1E0',
+  inkMuted: '#938DA3',
+  border: '#2A2440',
+  borderStrong: '#3A3153',
+  success: '#34D399',
+  warning: '#FBBF24',
+  error: '#F87171',
+};
+
+/** Token DS correnti (mutati da applyThemeMode all'avvio/toggle) */
+export const DS = { ...DS_LIGHT };
+
+/** Modo tema corrente (aggiornato da applyThemeMode) */
+export let currentThemeMode: ThemeMode = 'light';
+
+/**
+ * Applica la palette al set di token condivisi. Gli StyleSheet catturano i
+ * valori al primo import del modulo: va chiamata PRIMA di renderizzare le
+ * route (gate in app/_layout) e richiede un reload per il cambio a runtime.
+ */
+export function applyThemeMode(mode: ThemeMode): void {
+  currentThemeMode = mode;
+  Object.assign(DS, mode === 'dark' ? DS_DARK : DS_LIGHT);
+  Object.assign(COLORS, mode === 'dark' ? COLORS_DARK : COLORS_LIGHT);
+  // Web: allinea anche il background del documento (evita flash chiaro in dark)
+  try {
+    const doc = (globalThis as { document?: { documentElement?: { style: { backgroundColor: string } }; body?: { style: { backgroundColor: string } } } }).document;
+    if (doc?.documentElement) doc.documentElement.style.backgroundColor = COLORS.bg;
+    if (doc?.body) doc.body.style.backgroundColor = COLORS.bg;
+  } catch {
+    // native: nessun document
+  }
+}
+
+// WEB: applica SUBITO il tema salvato in modo sincrono (AsyncStorage su web usa
+// localStorage con la stessa chiave). Questo modulo viene valutato prima di
+// qualunque StyleSheet che usa i token, quindi l'ordine è garantito.
+// Su native localStorage non esiste: ci pensa il gate async in app/_layout.
+try {
+  const ls = (globalThis as { localStorage?: { getItem: (k: string) => string | null } }).localStorage;
+  if (ls && ls.getItem(THEME_MODE_KEY) === 'dark') applyThemeMode('dark');
+} catch {
+  // ambiente senza localStorage (native/SSR): ignora
+}
+
+export async function getStoredThemeMode(): Promise<ThemeMode> {
+  try {
+    const v = await AsyncStorage.getItem(THEME_MODE_KEY);
+    return v === 'dark' ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
+}
+
+export async function setStoredThemeMode(mode: ThemeMode): Promise<void> {
+  try {
+    await AsyncStorage.setItem(THEME_MODE_KEY, mode);
+  } catch {
+    // best effort
+  }
+}
 
 /** Font Plus Jakarta Sans (caricati localmente via expo-font in _layout) */
 export const JAKARTA = {

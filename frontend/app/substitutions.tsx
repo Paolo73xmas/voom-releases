@@ -16,6 +16,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { fetchCustomers } from '../lib/api/customers';
 import { fetchSubstitutions, createSubstitution, deleteSubstitution, SubstitutionWithDetails } from '../lib/api/substitutions';
+import { COLORS } from '../lib/theme';
 
 const STATUS_OPTS = [
   { value: 'all', label: 'Tutti' },
@@ -231,7 +232,7 @@ export default function SubstitutionsScreen() {
             <View style={st.modalHandle} />
             <ScrollView style={{ paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <View><Text style={{ fontSize: 18, fontWeight: '800', color: '#1F2937' }}>{selectedSub.substitution_number}</Text>
+                <View><Text style={{ fontSize: 18, fontWeight: '800', color: COLORS.text }}>{selectedSub.substitution_number}</Text>
                   <View style={[st.statusBadge, { backgroundColor: cfg.bg, marginTop: 4 }]}><Ionicons name={cfg.icon as any} size={12} color={cfg.color} /><Text style={[st.statusText, { color: cfg.color }]}>{cfg.label}</Text></View>
                 </View>
                 <TouchableOpacity onPress={() => setSelectedSub(null)} style={{ padding: 8 }}><Ionicons name="close" size={24} color="#6B7280" /></TouchableOpacity>
@@ -248,12 +249,12 @@ export default function SubstitutionsScreen() {
                 <View style={st.infoRow}><Text style={st.infoLabel}>Data</Text><Text style={st.infoValue}>{new Date(selectedSub.created_at).toLocaleDateString('it-IT')}</Text></View>
                 {selectedSub.reason && <View style={st.infoRow}><Text style={st.infoLabel}>Motivo</Text><Text style={st.infoValue}>{selectedSub.reason}</Text></View>}
                 {selectedSub.notes && <View style={st.infoRow}><Text style={st.infoLabel}>Note</Text><Text style={st.infoValue}>{selectedSub.notes}</Text></View>}
-                {selectedSub.admin_notes && <View style={[st.infoRow, { backgroundColor: '#FFF7ED' }]}><Text style={st.infoLabel}>Note Admin</Text><Text style={[st.infoValue, { color: '#EA580C' }]}>{selectedSub.admin_notes}</Text></View>}
+                {selectedSub.admin_notes && <View style={[st.infoRow, { backgroundColor: COLORS.primarySoft }]}><Text style={st.infoLabel}>Note Admin</Text><Text style={[st.infoValue, { color: '#8B5CF6' }]}>{selectedSub.admin_notes}</Text></View>}
               </View>
 
               {/* Workflow */}
               <View style={st.infoCard}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 8 }}>Stato Avanzamento</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8 }}>Stato Avanzamento</Text>
                 <View style={st.wfRow}><Ionicons name={selectedSub.is_approved ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={selectedSub.is_approved ? '#059669' : '#D1D5DB'} /><Text style={[st.wfText, selectedSub.is_approved && st.wfDone]}>Approvata</Text></View>
                 {replItems.length > 0 && <View style={st.wfRow}><Ionicons name={selectedSub.is_sent ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={selectedSub.is_sent ? '#059669' : '#D1D5DB'} /><Text style={[st.wfText, selectedSub.is_sent && st.wfDone]}>Merce sostitutiva inviata</Text></View>}
                 {origItems.length > 0 && <View style={st.wfRow}><Ionicons name={selectedSub.is_returned ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={selectedSub.is_returned ? '#059669' : '#D1D5DB'} /><Text style={[st.wfText, selectedSub.is_returned && st.wfDone]}>Merce originale ritirata</Text></View>}
@@ -265,8 +266,8 @@ export default function SubstitutionsScreen() {
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#DC2626', marginTop: 8, marginBottom: 6 }}>Prodotti da Ritirare ({origItems.length})</Text>
                 {origItems.map((it, i) => (
                   <View key={it.id || i} style={[st.itemCard, { borderLeftWidth: 3, borderLeftColor: '#DC2626' }]}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#1F2937' }}>{it.original_product?.short_description || it.original_product?.name || 'N/D'}</Text>
-                    <Text style={{ fontSize: 11, color: '#6B7280' }}>Qtà: {it.original_quantity ?? it.quantity} · {formatCurrency(getProductPrice(it.original_product_id))}/pz</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.text }}>{it.original_product?.short_description || it.original_product?.name || 'N/D'}</Text>
+                    <Text style={{ fontSize: 11, color: COLORS.textMuted }}>Qtà: {it.original_quantity ?? it.quantity} · {formatCurrency(getProductPrice(it.original_product_id))}/pz</Text>
                   </View>
                 ))}
               </>)}
@@ -276,8 +277,8 @@ export default function SubstitutionsScreen() {
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#059669', marginTop: 8, marginBottom: 6 }}>Prodotti da Inviare ({replItems.length})</Text>
                 {replItems.map((it, i) => (
                   <View key={it.id || i} style={[st.itemCard, { borderLeftWidth: 3, borderLeftColor: '#059669' }]}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#1F2937' }}>{it.replacement_product?.short_description || it.replacement_product?.name || 'N/D'}</Text>
-                    <Text style={{ fontSize: 11, color: '#6B7280' }}>Qtà: {it.replacement_quantity ?? it.quantity} · {formatCurrency(getProductPrice(it.replacement_product_id))}/pz</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.text }}>{it.replacement_product?.short_description || it.replacement_product?.name || 'N/D'}</Text>
+                    <Text style={{ fontSize: 11, color: COLORS.textMuted }}>Qtà: {it.replacement_quantity ?? it.quantity} · {formatCurrency(getProductPrice(it.replacement_product_id))}/pz</Text>
                   </View>
                 ))}
               </>)}
@@ -300,17 +301,17 @@ export default function SubstitutionsScreen() {
             {cards.length > 1 && <TouchableOpacity onPress={() => setCards(cards.filter((_, i) => i !== idx))}><Ionicons name="close-circle" size={18} color="#DC2626" /></TouchableOpacity>}
           </View>
           <TouchableOpacity style={st.pickerBtn} onPress={() => openPicker(type, idx)}>
-            <Text style={card.product_id ? { fontSize: 13, fontWeight: '600', color: '#1F2937', flex: 1 } : { fontSize: 13, color: '#9CA3AF', flex: 1 }} numberOfLines={1}>
+            <Text style={card.product_id ? { fontSize: 13, fontWeight: '600', color: COLORS.text, flex: 1 } : { fontSize: 13, color: COLORS.textLight, flex: 1 }} numberOfLines={1}>
               {card.product_id ? getProductName(card.product_id) : 'Seleziona prodotto...'}
             </Text>
             <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            <Text style={{ fontSize: 12, color: '#6B7280' }}>Qtà:</Text>
+            <Text style={{ fontSize: 12, color: COLORS.textMuted }}>Qtà:</Text>
             <TouchableOpacity style={st.qtyBtn} onPress={() => { const u = [...cards]; u[idx] = { ...u[idx], quantity: Math.max(1, card.quantity - 1) }; setCards(u); }}><Ionicons name="remove" size={16} color="#374151" /></TouchableOpacity>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937', minWidth: 24, textAlign: 'center' }}>{card.quantity}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: COLORS.text, minWidth: 24, textAlign: 'center' }}>{card.quantity}</Text>
             <TouchableOpacity style={st.qtyBtn} onPress={() => { const u = [...cards]; u[idx] = { ...u[idx], quantity: card.quantity + 1 }; setCards(u); }}><Ionicons name="add" size={16} color="#374151" /></TouchableOpacity>
-            {card.product_id && <Text style={{ fontSize: 12, color: '#6B7280', marginLeft: 'auto' }}>{formatCurrency(getProductPrice(card.product_id) * card.quantity)}</Text>}
+            {card.product_id && <Text style={{ fontSize: 12, color: COLORS.textMuted, marginLeft: 'auto' }}>{formatCurrency(getProductPrice(card.product_id) * card.quantity)}</Text>}
           </View>
         </View>
       ))}
@@ -327,7 +328,7 @@ export default function SubstitutionsScreen() {
 
   const renderCreateWizard = () => (
     <Modal visible={showCreate} animationType="slide" onRequestClose={() => setShowCreate(false)}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, paddingTop: insets.top, backgroundColor: '#F3F4F6' }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, paddingTop: insets.top, backgroundColor: COLORS.bg }}>
         <View style={st.wizHeader}>
           <TouchableOpacity onPress={() => setShowCreate(false)} style={{ padding: 4 }}><Ionicons name="close" size={24} color="#FFF" /></TouchableOpacity>
           <Text style={st.wizTitle}>Nuova Sostituzione</Text>
@@ -339,7 +340,7 @@ export default function SubstitutionsScreen() {
 
         {/* Value badges from step 1+ */}
         {createStep >= 1 && (
-          <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
+          <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border }}>
             <View style={{ flex: 1, alignItems: 'center', backgroundColor: '#FEE2E2', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Ionicons name="arrow-up-circle" size={14} color="#DC2626" />
@@ -364,29 +365,29 @@ export default function SubstitutionsScreen() {
         <ScrollView style={{ flex: 1, padding: 16 }} keyboardShouldPersistTaps="handled">
           {createStep === 0 && (<>
             <Text style={st.formLabel}>Seleziona Cliente</Text>
-            <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca cliente..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor="#9CA3AF" /></View>
-            {selectedCustomer && <View style={st.selectedPill}><Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#C2410C' }}>{selectedCustomer.business_name}</Text><TouchableOpacity onPress={() => setSelectedCustomer(null)}><Ionicons name="close-circle" size={18} color="#C2410C" /></TouchableOpacity></View>}
+            <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca cliente..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor={COLORS.textLight} /></View>
+            {selectedCustomer && <View style={st.selectedPill}><Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#7C3AED' }}>{selectedCustomer.business_name}</Text><TouchableOpacity onPress={() => setSelectedCustomer(null)}><Ionicons name="close-circle" size={18} color="#7C3AED" /></TouchableOpacity></View>}
             <FlatList data={(customerSearch.length >= 2 ? customers.filter(c => c.business_name.toLowerCase().includes(customerSearch.toLowerCase())) : customers).slice(0, 30)} keyExtractor={c => c.id} scrollEnabled={false}
-              renderItem={({ item: c }) => (<TouchableOpacity style={[st.listItem, selectedCustomer?.id === c.id && st.listItemSelected]} onPress={() => setSelectedCustomer(c)}><Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>{c.business_name}</Text><Text style={{ fontSize: 11, color: '#9CA3AF' }}>{c.city}{c.province ? ` (${c.province})` : ''}</Text></TouchableOpacity>)} />
+              renderItem={({ item: c }) => (<TouchableOpacity style={[st.listItem, selectedCustomer?.id === c.id && st.listItemSelected]} onPress={() => setSelectedCustomer(c)}><Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.text }}>{c.business_name}</Text><Text style={{ fontSize: 11, color: COLORS.textLight }}>{c.city}{c.province ? ` (${c.province})` : ''}</Text></TouchableOpacity>)} />
           </>)}
           {createStep === 1 && (<>
             <Text style={st.formLabel}>Prodotti da Ritirare</Text>
-            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 10 }}>Prodotti che verranno ritirati dal cliente (opzionale)</Text>
+            <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>Prodotti che verranno ritirati dal cliente (opzionale)</Text>
             {renderProductCards(retrieveCards, setRetrieveCards, 'retrieve')}
           </>)}
           {createStep === 2 && (<>
             <Text style={st.formLabel}>Prodotti da Inviare</Text>
-            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 10 }}>Prodotti sostitutivi che verranno inviati al cliente (opzionale)</Text>
+            <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>Prodotti sostitutivi che verranno inviati al cliente (opzionale)</Text>
             {renderProductCards(sendCards, setSendCards, 'send')}
           </>)}
           {createStep === 3 && (<>
             <Text style={st.formLabel}>Motivo della sostituzione *</Text>
-            <TextInput style={[st.input, { minHeight: 80, textAlignVertical: 'top' }]} placeholder="Descrivi il motivo..." value={reason} onChangeText={setReason} multiline placeholderTextColor="#9CA3AF" />
+            <TextInput style={[st.input, { minHeight: 80, textAlignVertical: 'top' }]} placeholder="Descrivi il motivo..." value={reason} onChangeText={setReason} multiline placeholderTextColor={COLORS.textLight} />
             <Text style={[st.formLabel, { marginTop: 16 }]}>Note aggiuntive</Text>
-            <TextInput style={[st.input, { minHeight: 60, textAlignVertical: 'top' }]} placeholder="Opzionale..." value={formNotes} onChangeText={setFormNotes} multiline placeholderTextColor="#9CA3AF" />
+            <TextInput style={[st.input, { minHeight: 60, textAlignVertical: 'top' }]} placeholder="Opzionale..." value={formNotes} onChangeText={setFormNotes} multiline placeholderTextColor={COLORS.textLight} />
             <View style={[st.infoCard, { marginTop: 16 }]}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 6 }}>Riepilogo</Text>
-              <Text style={{ fontSize: 13, color: '#1F2937' }}>Cliente: {selectedCustomer?.business_name}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 6 }}>Riepilogo</Text>
+              <Text style={{ fontSize: 13, color: COLORS.text }}>Cliente: {selectedCustomer?.business_name}</Text>
               <Text style={{ fontSize: 13, color: '#DC2626', marginTop: 4 }}>Prodotti Ritiro: {retrieveCards.filter(c => c.product_id).length} · {formatCurrency(totalRetrieve)}</Text>
               <Text style={{ fontSize: 13, color: '#059669', marginTop: 2 }}>Prodotti Invio: {sendCards.filter(c => c.product_id).length} · {formatCurrency(totalSend)}</Text>
             </View>
@@ -394,7 +395,7 @@ export default function SubstitutionsScreen() {
         </ScrollView>
 
         <View style={[st.wizBottom, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-          {createStep > 0 && <TouchableOpacity style={st.wizBackBtn} onPress={() => setCreateStep(createStep - 1)}><Ionicons name="arrow-back" size={18} color="#374151" /><Text style={{ color: '#374151', fontWeight: '600' }}>Indietro</Text></TouchableOpacity>}
+          {createStep > 0 && <TouchableOpacity style={st.wizBackBtn} onPress={() => setCreateStep(createStep - 1)}><Ionicons name="arrow-back" size={18} color="#374151" /><Text style={{ color: COLORS.textSecondary, fontWeight: '600' }}>Indietro</Text></TouchableOpacity>}
           <View style={{ flex: 1 }} />
           {createStep < 3 ? (
             <TouchableOpacity style={[st.wizNextBtn, !canNext[createStep] && { opacity: 0.4 }]} onPress={() => { Keyboard.dismiss(); setCreateStep(createStep + 1); }} disabled={!canNext[createStep]}>
@@ -418,18 +419,18 @@ export default function SubstitutionsScreen() {
     <Modal visible={showProductPicker} animationType="slide" transparent onRequestClose={() => setShowProductPicker(false)}>
       <View style={st.modalOverlay}><View style={[st.modalContent, { paddingBottom: insets.bottom + 16 }]}>
         <View style={st.modalHandle} />
-        <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 8 }}>Seleziona Prodotto</Text>
-          <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca prodotto (min 2 car.)..." value={pickerSearch} onChangeText={setPickerSearch} placeholderTextColor="#9CA3AF" autoFocus /></View>
+        <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border }}>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>Seleziona Prodotto</Text>
+          <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca prodotto (min 2 car.)..." value={pickerSearch} onChangeText={setPickerSearch} placeholderTextColor={COLORS.textLight} autoFocus /></View>
         </View>
         <FlatList data={filteredPicker} keyExtractor={p => p.id} style={{ maxHeight: 400 }}
           renderItem={({ item: p }) => (
             <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }} onPress={() => selectProduct(p.id)}>
-              <View style={{ flex: 1 }}><Text style={{ fontSize: 13, fontWeight: '600', color: '#1F2937' }} numberOfLines={1}>{p.short_description || p.name}</Text>{p.sku && <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{p.sku}</Text>}</View>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#C2410C' }}>{p.unit_price != null ? formatCurrency(Number(p.unit_price)) : ''}</Text>
+              <View style={{ flex: 1 }}><Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.text }} numberOfLines={1}>{p.short_description || p.name}</Text>{p.sku && <Text style={{ fontSize: 11, color: COLORS.textLight }}>{p.sku}</Text>}</View>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#7C3AED' }}>{p.unit_price != null ? formatCurrency(Number(p.unit_price)) : ''}</Text>
             </TouchableOpacity>
           )} />
-        <TouchableOpacity style={{ padding: 16, alignItems: 'center' }} onPress={() => setShowProductPicker(false)}><Text style={{ color: '#6B7280', fontWeight: '600' }}>Annulla</Text></TouchableOpacity>
+        <TouchableOpacity style={{ padding: 16, alignItems: 'center' }} onPress={() => setShowProductPicker(false)}><Text style={{ color: COLORS.textMuted, fontWeight: '600' }}>Annulla</Text></TouchableOpacity>
       </View></View>
     </Modal>
   );
@@ -440,11 +441,11 @@ export default function SubstitutionsScreen() {
       <View style={st.header}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}><Ionicons name="arrow-back" size={24} color="#FFF" /></TouchableOpacity>
         <Text style={st.headerTitle}>Sostituzioni</Text>
-        <TouchableOpacity onPress={openCreate} style={{ backgroundColor: '#FFF', borderRadius: 8, padding: 6 }}><Ionicons name="add" size={20} color="#C2410C" /></TouchableOpacity>
+        <TouchableOpacity onPress={openCreate} style={{ backgroundColor: COLORS.surface, borderRadius: 8, padding: 6 }}><Ionicons name="add" size={20} color="#7C3AED" /></TouchableOpacity>
       </View>
 
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-        <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca (min 3 car.)..." value={searchText} onChangeText={setSearchText} placeholderTextColor="#9CA3AF" />{searchText.length > 0 && <TouchableOpacity onPress={() => setSearchText('')}><Ionicons name="close-circle" size={16} color="#9CA3AF" /></TouchableOpacity>}</View>
+        <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca (min 3 car.)..." value={searchText} onChangeText={setSearchText} placeholderTextColor={COLORS.textLight} />{searchText.length > 0 && <TouchableOpacity onPress={() => setSearchText('')}><Ionicons name="close-circle" size={16} color="#9CA3AF" /></TouchableOpacity>}</View>
         {/* Status filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
           {STATUS_OPTS.map(opt => (
@@ -456,9 +457,9 @@ export default function SubstitutionsScreen() {
         </ScrollView>
       </View>
 
-      {loading ? <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#C2410C" /></View> : (
+      {loading ? <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#7C3AED" /></View> : (
         <FlashList data={filtered} renderItem={renderSubCard} keyExtractor={s => s.id} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} refreshing={refreshing} onRefresh={onRefresh}
-          ListEmptyComponent={<View style={{ alignItems: 'center', marginTop: 60 }}><Ionicons name="swap-horizontal-outline" size={48} color="#D1D5DB" /><Text style={{ fontSize: 16, fontWeight: '600', color: '#6B7280', marginTop: 12 }}>Nessuna sostituzione</Text></View>} />
+          ListEmptyComponent={<View style={{ alignItems: 'center', marginTop: 60 }}><Ionicons name="swap-horizontal-outline" size={48} color="#D1D5DB" /><Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMuted, marginTop: 12 }}>Nessuna sostituzione</Text></View>} />
       )}
 
       {renderDetail()}
@@ -468,53 +469,53 @@ export default function SubstitutionsScreen() {
 }
 
 const st = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#C2410C', paddingHorizontal: 16, paddingVertical: 12 },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#7C3AED', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8, borderWidth: 1, borderColor: '#E5E7EB' },
-  searchInput: { flex: 1, fontSize: 13, color: '#1F2937' },
-  filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#FFF', marginRight: 6, borderWidth: 1, borderColor: '#E5E7EB' },
-  filterChipActive: { backgroundColor: '#C2410C', borderColor: '#C2410C' },
-  filterChipText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8, borderWidth: 1, borderColor: COLORS.border },
+  searchInput: { flex: 1, fontSize: 13, color: COLORS.text },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: COLORS.surface, marginRight: 6, borderWidth: 1, borderColor: COLORS.border },
+  filterChipActive: { backgroundColor: '#7C3AED', borderColor: '#7C3AED' },
+  filterChipText: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
   filterChipTextActive: { color: '#FFF' },
-  card: { backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E5E7EB' },
+  card: { backgroundColor: COLORS.surface, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  cardNumber: { fontSize: 14, fontWeight: '800', color: '#1F2937' },
+  cardNumber: { fontSize: 14, fontWeight: '800', color: COLORS.text },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 11, fontWeight: '700' },
-  cardCustomer: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  cardCustomer: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 },
-  cardDate: { fontSize: 11, color: '#9CA3AF' },
+  cardDate: { fontSize: 11, color: COLORS.textLight },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%' },
+  modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%' },
   modalHandle: { width: 36, height: 4, backgroundColor: '#D1D5DB', borderRadius: 2, alignSelf: 'center', marginVertical: 10 },
   totalBox: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1 },
-  infoCard: { backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, marginBottom: 8 },
+  infoCard: { backgroundColor: COLORS.bgAlt, borderRadius: 12, padding: 14, marginBottom: 8 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  infoLabel: { fontSize: 12, color: '#6B7280', flex: 0.4 },
-  infoValue: { fontSize: 13, fontWeight: '600', color: '#1F2937', flex: 0.6, textAlign: 'right' },
+  infoLabel: { fontSize: 12, color: COLORS.textMuted, flex: 0.4 },
+  infoValue: { fontSize: 13, fontWeight: '600', color: COLORS.text, flex: 0.6, textAlign: 'right' },
   wfRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 },
-  wfText: { fontSize: 13, color: '#9CA3AF' },
+  wfText: { fontSize: 13, color: COLORS.textLight },
   wfDone: { color: '#059669', fontWeight: '600' },
-  itemCard: { backgroundColor: '#FFF', borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: '#E5E7EB' },
-  itemFormCard: { backgroundColor: '#FFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E5E7EB' },
-  pickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F9FAFB', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 12, paddingVertical: 12 },
-  qtyBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  addItemBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB', marginTop: 6 },
-  wizHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#C2410C', paddingHorizontal: 16, paddingVertical: 12 },
+  itemCard: { backgroundColor: COLORS.surface, borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: COLORS.border },
+  itemFormCard: { backgroundColor: COLORS.surface, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border },
+  pickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.bgAlt, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 12 },
+  qtyBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center' },
+  addItemBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.bgAlt, marginTop: 6 },
+  wizHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#7C3AED', paddingHorizontal: 16, paddingVertical: 12 },
   wizTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-  stepIndicators: { flexDirection: 'row', justifyContent: 'center', gap: 10, paddingVertical: 12, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  stepDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-  stepDotActive: { backgroundColor: '#C2410C' },
-  stepDotText: { fontSize: 12, fontWeight: '700', color: '#9CA3AF' },
+  stepIndicators: { flexDirection: 'row', justifyContent: 'center', gap: 10, paddingVertical: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  stepDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  stepDotActive: { backgroundColor: '#7C3AED' },
+  stepDotText: { fontSize: 12, fontWeight: '700', color: COLORS.textLight },
   stepDotTextActive: { color: '#FFF' },
-  formLabel: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 8 },
-  input: { backgroundColor: '#FFF', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#1F2937' },
-  selectedPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFF7ED', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10, borderWidth: 1, borderColor: '#FED7AA' },
-  listItem: { backgroundColor: '#FFF', borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: '#E5E7EB' },
-  listItemSelected: { borderColor: '#C2410C', backgroundColor: '#FFF7ED' },
-  wizBottom: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
+  formLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8 },
+  input: { backgroundColor: COLORS.surface, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.text },
+  selectedPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.primarySoft, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10, borderWidth: 1, borderColor: '#DDD6FE' },
+  listItem: { backgroundColor: COLORS.surface, borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: COLORS.border },
+  listItemSelected: { borderColor: '#7C3AED', backgroundColor: COLORS.primarySoft },
+  wizBottom: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
   wizBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 12 },
-  wizNextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#C2410C', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 12 },
+  wizNextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#7C3AED', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 12 },
   wizSubmitBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 12 },
 });

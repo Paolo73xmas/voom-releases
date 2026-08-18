@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { COLORS } from '../lib/theme';
 
 const PRIVACY_ACCEPTED_KEY = '@privacy_terms_accepted';
 const PRIVACY_ACCEPTED_DATE_KEY = '@privacy_terms_accepted_date';
@@ -271,14 +272,14 @@ export default function PrivacyTermsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   header: {
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 20,
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
   },
   introText: {
     fontSize: 14,
-    color: '#374151',
+    color: COLORS.textSecondary,
     lineHeight: 22,
     fontStyle: 'italic',
     marginBottom: 8,
@@ -333,7 +334,7 @@ const styles = StyleSheet.create({
   partTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#C2410C',
+    color: '#7C3AED',
     marginBottom: 2,
     letterSpacing: 1,
   },
@@ -347,13 +348,13 @@ const styles = StyleSheet.create({
   },
   legalText: {
     fontSize: 13,
-    color: '#374151',
+    color: COLORS.textSecondary,
     lineHeight: 21,
   },
   acceptanceSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: COLORS.border,
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: Platform.OS === 'ios' ? 24 : 20,
@@ -381,7 +382,7 @@ const styles = StyleSheet.create({
   },
   scrollHintText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     fontStyle: 'italic',
   },
   checkboxRow: {
@@ -401,21 +402,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
   },
   checkboxChecked: {
-    backgroundColor: '#C2410C',
-    borderColor: '#C2410C',
+    backgroundColor: '#7C3AED',
+    borderColor: '#7C3AED',
   },
   checkboxLabel: {
     flex: 1,
     fontSize: 13,
-    color: '#374151',
+    color: COLORS.textSecondary,
     lineHeight: 20,
   },
   acceptButton: {
     flexDirection: 'row',
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -431,14 +432,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   readOnlyFooter: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: COLORS.border,
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 32 : 20,
   },
   readOnlyButton: {
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

@@ -6,6 +6,7 @@ import { View, StyleSheet, ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, interpolate, Easing,
 } from 'react-native-reanimated';
+import { COLORS } from '../lib/theme';
 
 interface Props {
   width?: number | string;
@@ -32,7 +33,7 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style 
   return (
     <Animated.View
       style={[
-        { width: width as any, height, borderRadius, backgroundColor: '#E5E7EB' },
+        { width: width as any, height, borderRadius, backgroundColor: COLORS.border },
         aStyle,
         style,
       ]}
@@ -62,7 +63,7 @@ export function SkeletonList({ count = 5, height = 80 }: { count?: number; heigh
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,

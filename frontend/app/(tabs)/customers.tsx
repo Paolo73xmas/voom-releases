@@ -18,6 +18,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { SkeletonList } from '../../components/Skeleton';
 import { EmptyState } from '../../components/EmptyState';
 import { hap } from '../../lib/haptics';
+import { COLORS } from '../../lib/theme';
 
 // Memoized card — re-renders only when props change
 const CustomerCard = memo(function CustomerCard({
@@ -138,7 +139,7 @@ export default function CustomersScreen() {
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={20} color="#6B7280" />
-            <View style={{ flex: 1, marginLeft: 12, height: 16, backgroundColor: '#E5E7EB', borderRadius: 4 }} />
+            <View style={{ flex: 1, marginLeft: 12, height: 16, backgroundColor: COLORS.border, borderRadius: 4 }} />
           </View>
         </View>
         <SkeletonList count={6} height={96} />
@@ -155,7 +156,7 @@ export default function CustomersScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Cerca cliente..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={COLORS.textLight}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCorrect={false}
@@ -207,7 +208,7 @@ export default function CustomersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   loadingContainer: {
     flex: 1,
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   statsRow: {
     flexDirection: 'row',
@@ -260,14 +261,14 @@ const styles = StyleSheet.create({
   },
   statsText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   listContent: {
     padding: 16,
     paddingTop: 8,
   },
   customerCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -302,11 +303,11 @@ const styles = StyleSheet.create({
   customerName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   customerLocation: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   categoryBadge: {
@@ -341,7 +342,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginLeft: 4,
   },
   chevron: {
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginTop: 12,
   },
 });

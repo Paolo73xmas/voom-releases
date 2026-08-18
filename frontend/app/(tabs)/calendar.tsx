@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
+import { COLORS } from '../../lib/theme';
 
 type CalendarMode = 'month' | 'week' | '3days' | 'day';
 
@@ -310,7 +311,7 @@ export default function CalendarScreen() {
           onPress={() => setShowModePicker(true)}
         >
           <Text style={styles.modeSelectorText}>{MODE_LABELS[mode]}</Text>
-          <Ionicons name="chevron-down" size={16} color="#C2410C" />
+          <Ionicons name="chevron-down" size={16} color="#7C3AED" />
         </TouchableOpacity>
 
         <View style={styles.navRow}>
@@ -338,9 +339,9 @@ export default function CalendarScreen() {
             style={{ marginLeft: 8, padding: 4 }}
           >
             {refreshing ? (
-              <ActivityIndicator size="small" color="#C2410C" />
+              <ActivityIndicator size="small" color="#7C3AED" />
             ) : (
-              <Ionicons name="refresh" size={18} color="#C2410C" />
+              <Ionicons name="refresh" size={18} color="#7C3AED" />
             )}
           </TouchableOpacity>
 
@@ -387,7 +388,7 @@ export default function CalendarScreen() {
       {/* Calendar */}
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#C2410C" />
+          <ActivityIndicator size="large" color="#7C3AED" />
           <Text style={styles.loadingText}>Caricamento calendario...</Text>
         </View>
       ) : (
@@ -421,7 +422,7 @@ export default function CalendarScreen() {
                 <Text style={[styles.modeOptionText, mode === m && styles.modeOptionTextActive]}>
                   {MODE_LABELS[m]}
                 </Text>
-                {mode === m && <Ionicons name="checkmark" size={18} color="#C2410C" />}
+                {mode === m && <Ionicons name="checkmark" size={18} color="#7C3AED" />}
               </TouchableOpacity>
             ))}
           </View>
@@ -452,9 +453,9 @@ export default function CalendarScreen() {
                       </View>
                     )}
                     {isCompleted && (
-                      <View style={[styles.eventTypeBadge, { backgroundColor: '#E5E7EB' }]}>
+                      <View style={[styles.eventTypeBadge, { backgroundColor: COLORS.border }]}>
                         <Ionicons name="checkmark-circle" size={12} color="#6B7280" />
-                        <Text style={[styles.eventTypeBadgeText, { color: '#6B7280' }]}>Completato</Text>
+                        <Text style={[styles.eventTypeBadgeText, { color: COLORS.textMuted }]}>Completato</Text>
                       </View>
                     )}
                   </View>
@@ -537,7 +538,7 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: COLORS.surface },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -545,21 +546,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.border,
   },
   modeSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF7ED',
+    backgroundColor: COLORS.primarySoft,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     gap: 4,
   },
-  modeSelectorText: { fontSize: 14, fontWeight: '600', color: '#C2410C' },
+  modeSelectorText: { fontSize: 14, fontWeight: '600', color: '#7C3AED' },
   navRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   navBtn: { padding: 6 },
-  todayBtn: { fontSize: 14, fontWeight: '600', color: '#C2410C' },
+  todayBtn: { fontSize: 14, fontWeight: '600', color: '#7C3AED' },
 
   legend: {
     flexDirection: 'row',
@@ -571,18 +572,18 @@ const styles = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 10, color: '#6B7280' },
+  legendText: { fontSize: 10, color: COLORS.textMuted },
 
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
+  loadingText: { marginTop: 12, fontSize: 14, color: COLORS.textMuted },
 
   calendarHeader: { backgroundColor: '#FAFAFA' },
-  calendarBody: { backgroundColor: '#FFFFFF' },
+  calendarBody: { backgroundColor: COLORS.surface },
 
   // Mode picker
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modePickerModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -597,12 +598,12 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
   modeOptionActive: {},
-  modeOptionText: { fontSize: 16, color: '#4B5563' },
-  modeOptionTextActive: { color: '#C2410C', fontWeight: '700' },
+  modeOptionText: { fontSize: 16, color: COLORS.textSecondary },
+  modeOptionTextActive: { color: '#7C3AED', fontWeight: '700' },
 
   // Event modal
   eventModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -627,8 +628,8 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   eventTypeBadgeText: { fontSize: 12, fontWeight: '600' },
-  eventTitle: { fontSize: 20, fontWeight: '700', color: '#1F2937', marginBottom: 16 },
-  eventTitleCompleted: { textDecorationLine: 'line-through', color: '#9CA3AF' },
+  eventTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text, marginBottom: 16 },
+  eventTitleCompleted: { textDecorationLine: 'line-through', color: COLORS.textLight },
   eventInfoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -637,8 +638,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  eventInfoText: { fontSize: 14, color: '#374151', flex: 1 },
-  eventInfoSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  eventInfoText: { fontSize: 14, color: COLORS.textSecondary, flex: 1 },
+  eventInfoSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   eventActions: { marginTop: 20 },
   doneBtn: {
     flexDirection: 'row',
@@ -654,10 +655,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     paddingVertical: 14,
     borderRadius: 12,
     gap: 8,
   },
-  undoBtnText: { fontSize: 15, fontWeight: '600', color: '#4B5563' },
+  undoBtnText: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary },
 });

@@ -145,5 +145,5 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   blurFill: { backgroundColor: 'rgba(255,255,255,0.7)' },
-  solidFill: { backgroundColor: '#FFFFFF' },
+  solidFill: { backgroundColor: COLORS.surface },
 });

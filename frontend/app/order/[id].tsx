@@ -16,6 +16,7 @@ import { fetchOrderById, getOrderStatusLabel, getOrderStatusColor } from '../../
 import { Order } from '../../types';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { COLORS } from '../../lib/theme';
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -83,7 +84,7 @@ export default function OrderDetailScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#C2410C" />
+        <ActivityIndicator size="large" color="#7C3AED" />
       </View>
     );
   }
@@ -380,7 +381,7 @@ export default function OrderDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   content: {
     padding: 16,
@@ -401,7 +402,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   headerCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
@@ -415,13 +416,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 16,
     gap: 8,
-    shadowColor: '#C2410C',
+    shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -441,11 +442,11 @@ const styles = StyleSheet.create({
   orderNumber: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   orderDate: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 4,
   },
   statusBadge: {
@@ -487,13 +488,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginBottom: 8,
     marginLeft: 4,
     textTransform: 'uppercase',
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 4,
     shadowColor: '#000',
@@ -526,16 +527,16 @@ const styles = StyleSheet.create({
   customerName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   customerAddress: {
     fontSize: 13,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
   },
   itemRow: {
     flexDirection: 'row',
@@ -554,7 +555,7 @@ const styles = StyleSheet.create({
     height: 48,
   },
   itemImagePlaceholder: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -567,18 +568,18 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
     lineHeight: 18,
   },
   itemSku: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     marginTop: 2,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   itemDetails: {
     fontSize: 13,
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     marginTop: 4,
   },
   itemDiscount: {
@@ -598,7 +599,7 @@ const styles = StyleSheet.create({
   },
   itemIvaText: {
     fontSize: 11,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   itemBadges: {
     flexDirection: 'row',
@@ -618,12 +619,12 @@ const styles = StyleSheet.create({
   itemTotal: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1F2937',
+    color: COLORS.text,
     marginLeft: 8,
   },
   noItemsText: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: COLORS.textLight,
     padding: 16,
     textAlign: 'center',
   },
@@ -634,7 +635,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   summaryLabelRow: {
     flexDirection: 'row',
@@ -642,17 +643,17 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 14,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   totalLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: COLORS.text,
   },
   totalValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#C2410C',
+    color: '#7C3AED',
   },
   shippingRow: {
     flexDirection: 'row',
@@ -661,13 +662,13 @@ const styles = StyleSheet.create({
   },
   shippingText: {
     fontSize: 14,
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     marginLeft: 12,
     flex: 1,
   },
   notesText: {
     fontSize: 14,
-    color: '#4B5563',
+    color: COLORS.textSecondary,
     padding: 12,
     lineHeight: 20,
   },

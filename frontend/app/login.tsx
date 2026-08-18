@@ -23,6 +23,7 @@ import {
   isBiometricEnabled,
   setBiometricEnabled,
 } from '../lib/secure-credentials';
+import { COLORS } from '../lib/theme';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -189,7 +190,7 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="Email"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={COLORS.textLight}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -206,7 +207,7 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="Password"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={COLORS.textLight}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -269,7 +270,7 @@ export default function LoginScreen() {
               }}
               disabled={loading || isLoading}
             >
-              <Ionicons name={biometricIcon as any} size={22} color="#C2410C" />
+              <Ionicons name={biometricIcon as any} size={22} color="#7C3AED" />
               <Text style={styles.bioButtonText}>{biometricLabel}</Text>
             </TouchableOpacity>
           )}
@@ -284,7 +285,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#9A3412',
+    backgroundColor: '#5B21B6',
   },
   content: {
     flex: 1,
@@ -309,11 +310,11 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#FDBA74',
+    color: '#C4B5FD',
     marginTop: 4,
   },
   form: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 24,
     shadowColor: '#000',
@@ -325,18 +326,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: COLORS.text,
     marginBottom: 8,
   },
   description: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
     marginBottom: 24,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.bg,
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 16,
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     fontSize: 16,
-    color: '#1F2937',
+    color: COLORS.text,
   },
   eyeButton: {
     padding: 8,
@@ -369,15 +370,15 @@ const styles = StyleSheet.create({
     borderColor: '#D1D5DB',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
   },
   rememberCheckboxChecked: {
-    backgroundColor: '#C2410C',
-    borderColor: '#C2410C',
+    backgroundColor: '#7C3AED',
+    borderColor: '#7C3AED',
   },
   rememberLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: COLORS.textMuted,
   },
   secureBadge: {
     flexDirection: 'row',
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
     color: '#059669',
   },
   button: {
-    backgroundColor: '#C2410C',
+    backgroundColor: '#7C3AED',
     borderRadius: 12,
     height: 52,
     alignItems: 'center',
@@ -402,7 +403,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   buttonDisabled: {
-    backgroundColor: '#FDBA74',
+    backgroundColor: '#C4B5FD',
   },
   buttonText: {
     color: '#FFFFFF',
@@ -414,9 +415,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: COLORS.primarySoft,
     borderWidth: 1,
-    borderColor: '#FED7AA',
+    borderColor: '#DDD6FE',
     borderRadius: 12,
     height: 48,
     marginTop: 12,
@@ -424,11 +425,11 @@ const styles = StyleSheet.create({
   bioButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#C2410C',
+    color: '#7C3AED',
   },
   footer: {
     textAlign: 'center',
-    color: '#FDBA74',
+    color: '#C4B5FD',
     marginTop: 32,
     fontSize: 12,
   },

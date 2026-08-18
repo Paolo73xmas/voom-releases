@@ -525,10 +525,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
 
       {message ? (
         <View style={styles.msgBox}>
-          <Ionicons name="sparkles" size={13} color="#2563EB" />
+          <Ionicons name="sparkles" size={13} color="#7C3AED" />
           <Text style={styles.msgText}>{message}</Text>
           <TouchableOpacity onPress={() => setMessage(null)} hitSlop={8}>
-            <Ionicons name="close" size={14} color="#2563EB" />
+            <Ionicons name="close" size={14} color="#7C3AED" />
           </TouchableOpacity>
         </View>
       ) : null}
@@ -594,7 +594,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           {/* Azioni */}
           <View style={styles.actionsGrid}>
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: '#2563EB' }]}
+              style={[styles.actionBtn, { backgroundColor: '#7C3AED' }]}
               onPress={() => {
                 hap.light();
                 openNavigation(next.candidate.lat, next.candidate.lng, next.candidate.name);
@@ -620,7 +620,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
                 <Text style={[styles.actionBtnText, { color: DS.ink2 }]}>Scheda</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#EA580C' }]} onPress={() => goExternal('order')} disabled={busy} activeOpacity={0.75}>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]} onPress={() => goExternal('order')} disabled={busy} activeOpacity={0.75}>
               <Ionicons name="cart" size={15} color="#FFF" />
               <Text style={styles.actionBtnText}>Raccolta Ordine</Text>
             </TouchableOpacity>

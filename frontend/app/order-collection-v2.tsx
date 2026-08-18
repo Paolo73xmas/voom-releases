@@ -24,6 +24,7 @@ import { saveDraft, deleteDraft, getDrafts, generateDraftId, OrderDraft } from '
 import { generateAndShareQuotePdf } from '../lib/pdf/order-quote';
 import { useVirtualBranch } from '../hooks/useVirtualBranch';
 import type { AvailableStockMap } from '../types/reservation';
+import { COLORS } from '../lib/theme';
 
 // ═══════════════════════════════════════════════════════
 // TYPES
@@ -1475,7 +1476,7 @@ export default function OrderCollectionV2() {
   // ═══════════════════════════════════════════════════
 
   const renderStepper = () => (
-    <View style={{ backgroundColor: '#FFFFFF' }}>
+    <View style={{ backgroundColor: COLORS.surface }}>
       <View style={s.stepper}>
         {STEPS.map((step, i) => (
           <React.Fragment key={i}>
@@ -1506,7 +1507,7 @@ export default function OrderCollectionV2() {
       <Text style={s.stepTitle}>Seleziona Cliente</Text>
       <View style={s.searchBar}>
         <Ionicons name="search" size={18} color="#9CA3AF" />
-        <TextInput style={s.searchInput} placeholder="Cerca cliente..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor="#9CA3AF" />
+        <TextInput style={s.searchInput} placeholder="Cerca cliente..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor={COLORS.textLight} />
         {customerSearch.length > 0 && <TouchableOpacity onPress={() => setCustomerSearch('')}><Ionicons name="close-circle" size={18} color="#9CA3AF" /></TouchableOpacity>}
       </View>
       <FlatList
@@ -1517,7 +1518,7 @@ export default function OrderCollectionV2() {
             style={[s.customerRow, selectedCustomer?.id === item.id && s.customerRowSelected]}
             onPress={() => setSelectedCustomer(item)}
           >
-            <Ionicons name={selectedCustomer?.id === item.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={selectedCustomer?.id === item.id ? '#C2410C' : '#D1D5DB'} />
+            <Ionicons name={selectedCustomer?.id === item.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={selectedCustomer?.id === item.id ? '#7C3AED' : '#D1D5DB'} />
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={s.customerName}>{item.business_name}</Text>
               {item.city && <Text style={s.customerCity}>{item.city}{item.province ? ` (${item.province})` : ''}</Text>}
@@ -1568,14 +1569,14 @@ export default function OrderCollectionV2() {
         <TouchableOpacity style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { setEditCartItem(inCart); setEditPrice(inCart.unit_price.toFixed(2)); setEditQty(inCart.quantity); } }}>
           <Text style={[
             s.prodName,
-            inCart && { color: '#C2410C' },
-            isOutOfStock && { color: '#9CA3AF' },
+            inCart && { color: '#7C3AED' },
+            isOutOfStock && { color: COLORS.textLight },
             hasConflict && { color: '#B91C1C', fontWeight: '700' },
           ]} numberOfLines={1}>
             {item.short_description || item.name}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <Text style={[s.prodPrice, isOutOfStock && { color: '#9CA3AF' }]}>{formatCurrency(inCart ? inCart.unit_price : item.unit_price)}</Text>
+            <Text style={[s.prodPrice, isOutOfStock && { color: COLORS.textLight }]}>{formatCurrency(inCart ? inCart.unit_price : item.unit_price)}</Text>
             {(item.accisa || 0) > 0 && !isEsteroDescription(item.short_description) && <Text style={s.prodAccisa}>+{formatCurrency(item.accisa || 0)} acc.</Text>}
             {isOutOfStock && (
               <View style={s.outOfStockBadge}>
@@ -1632,14 +1633,14 @@ export default function OrderCollectionV2() {
                 onPress={() => addToCart(item, 1)}
                 disabled={isOutOfStock || isMaxedOut}
               >
-                <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: '#9CA3AF' }]}>+1</Text>
+                <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: COLORS.textLight }]}>+1</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.addBtn, s.addBtn10, (isOutOfStock || isMaxedOut) && s.addBtnDisabled]}
                 onPress={() => addToCart(item, 10)}
                 disabled={isOutOfStock || isMaxedOut}
               >
-                <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: '#9CA3AF' }]}>
+                <Text style={[s.addBtnText, (isOutOfStock || isMaxedOut) && { color: COLORS.textLight }]}>
                   {!isOutOfStock && !isMaxedOut && remaining < 10 ? `+${remaining}` : '+10'}
                 </Text>
               </TouchableOpacity>
@@ -1676,8 +1677,8 @@ export default function OrderCollectionV2() {
             </TouchableOpacity>
           )}
           <TouchableOpacity style={s.headerBtn} onPress={() => { loadPackages(); setShowPackageModal(true); }}>
-            <Ionicons name="cube" size={16} color="#C2410C" />
-            <Text style={[s.headerBtnText, { color: '#C2410C' }]}>Pacchetto</Text>
+            <Ionicons name="cube" size={16} color="#7C3AED" />
+            <Text style={[s.headerBtnText, { color: '#7C3AED' }]}>Pacchetto</Text>
           </TouchableOpacity>
           {cart.length > 0 && (
             <TouchableOpacity style={s.headerBtn} onPress={clearCart}>
@@ -1748,7 +1749,7 @@ export default function OrderCollectionV2() {
 
       <View style={s.searchBar}>
         <Ionicons name="search" size={18} color="#9CA3AF" />
-        <TextInput style={s.searchInput} placeholder="Cerca prodotto..." value={productSearch} onChangeText={setProductSearch} placeholderTextColor="#9CA3AF" />
+        <TextInput style={s.searchInput} placeholder="Cerca prodotto..." value={productSearch} onChangeText={setProductSearch} placeholderTextColor={COLORS.textLight} />
         {productSearch.length > 0 && <TouchableOpacity onPress={() => setProductSearch('')}><Ionicons name="close-circle" size={18} color="#9CA3AF" /></TouchableOpacity>}
       </View>
 
@@ -1784,7 +1785,7 @@ export default function OrderCollectionV2() {
       <Text style={s.stepTitle}>Metodo di Pagamento</Text>
       {paymentMethods.map(pm => (
         <TouchableOpacity key={pm.id} style={[s.optionRow, selectedPayment === pm.id && s.optionSelected]} onPress={() => setSelectedPayment(pm.id)}>
-          <Ionicons name={selectedPayment === pm.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={selectedPayment === pm.id ? '#C2410C' : '#D1D5DB'} />
+          <Ionicons name={selectedPayment === pm.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={selectedPayment === pm.id ? '#7C3AED' : '#D1D5DB'} />
           <Text style={s.optionText}>{pm.name}</Text>
         </TouchableOpacity>
       ))}
@@ -1800,7 +1801,7 @@ export default function OrderCollectionV2() {
       <Text style={s.stepTitle}>Metodo di Spedizione</Text>
       {filteredShippingMethods.map(sm => (
         <TouchableOpacity key={sm.id} style={[s.optionRow, selectedShipping === sm.id && s.optionSelected]} onPress={() => setSelectedShipping(sm.id)}>
-          <Ionicons name={selectedShipping === sm.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={selectedShipping === sm.id ? '#C2410C' : '#D1D5DB'} />
+          <Ionicons name={selectedShipping === sm.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={selectedShipping === sm.id ? '#7C3AED' : '#D1D5DB'} />
           <View style={{ flex: 1 }}>
             <Text style={s.optionText}>{sm.name}</Text>
             {sm.cost > 0 && <Text style={s.optionSub}>{formatCurrency(sm.cost)} {!isForeignOrder && `(${formatCurrency(sm.cost * 1.22)} con IVA)`}</Text>}
@@ -1808,7 +1809,7 @@ export default function OrderCollectionV2() {
         </TouchableOpacity>
       ))}
       <Text style={[s.stepTitle, { marginTop: 20 }]}>Indirizzo di spedizione (opzionale)</Text>
-      <TextInput style={s.textArea} placeholder="Indirizzo personalizzato..." value={shippingAddress} onChangeText={setShippingAddress} multiline placeholderTextColor="#9CA3AF" />
+      <TextInput style={s.textArea} placeholder="Indirizzo personalizzato..." value={shippingAddress} onChangeText={setShippingAddress} multiline placeholderTextColor={COLORS.textLight} />
     </View>
   );
 
@@ -1936,10 +1937,10 @@ export default function OrderCollectionV2() {
               {customerCashBackBalance > 0 && cashbackEligibleItems.length > 0 ? (
                 <>
                   {/* Eligible info box */}
-                  <View style={{ flexDirection: 'row', backgroundColor: '#FFF7ED', borderRadius: 8, padding: 10, gap: 8, marginBottom: 10 }}>
-                    <Ionicons name="information-circle" size={16} color="#C2410C" />
+                  <View style={{ flexDirection: 'row', backgroundColor: COLORS.primarySoft, borderRadius: 8, padding: 10, gap: 8, marginBottom: 10 }}>
+                    <Ionicons name="information-circle" size={16} color="#7C3AED" />
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#C2410C' }}>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#7C3AED' }}>
                         Subtotale prodotti eligible: {formatCurrency(eligibleSubtotal)}
                       </Text>
                       <Text style={{ fontSize: 11, color: '#3B82F6', marginTop: 2 }}>
@@ -1960,7 +1961,7 @@ export default function OrderCollectionV2() {
                         setCashBackToUse(Math.min(v, maxCashBack));
                       }}
                       placeholder="0,00"
-                      placeholderTextColor="#9CA3AF"
+                      placeholderTextColor={COLORS.textLight}
                       returnKeyType="done"
                       onSubmitEditing={() => Keyboard.dismiss()}
                     />
@@ -2064,7 +2065,7 @@ export default function OrderCollectionV2() {
                         value={rottamazioneDescription}
                         onChangeText={setRottamazioneDescription}
                         multiline
-                        placeholderTextColor="#9CA3AF"
+                        placeholderTextColor={COLORS.textLight}
                       />
                       {!rottamazioneDescription.trim() && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FCD34D', borderRadius: 8, padding: 8, gap: 6, marginTop: 6 }}>
@@ -2076,7 +2077,7 @@ export default function OrderCollectionV2() {
                   )}
 
                   {/* Rules box */}
-                  <View style={{ backgroundColor: '#F5F3FF', borderRadius: 8, padding: 10, marginTop: 10 }}>
+                  <View style={{ backgroundColor: COLORS.primarySoft, borderRadius: 8, padding: 10, marginTop: 10 }}>
                     <Text style={{ fontSize: 11, color: '#5B21B6', marginBottom: 2 }}>• Imponibile attuale: {formatCurrency(cartTotals.imponibile)}</Text>
                     {rottamazioneEligibleSubtotal < cartTotals.imponibile && (
                       <Text style={{ fontSize: 11, color: '#5B21B6', fontWeight: '700', marginBottom: 2 }}>• Imponibile eligible (esclusi "Rott. No"): {formatCurrency(rottamazioneEligibleSubtotal)}</Text>
@@ -2086,20 +2087,20 @@ export default function OrderCollectionV2() {
                       <>
                         <Text style={{ fontSize: 11, color: '#5B21B6', marginBottom: 2 }}>• Importo lordo (IVA incl.): {formatCurrency(rottamazioneAmount)}</Text>
                         <Text style={{ fontSize: 11, color: '#5B21B6', fontWeight: '700', marginBottom: 2 }}>• Netto da spalmare (scorporo IVA {Math.round((rottamazioneIvaRate - 1) * 100)}%): {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
-                        <Text style={{ fontSize: 10, color: '#C2410C', fontStyle: 'italic', marginTop: 4 }}>Lo sconto netto verrà spalmato solo sui prodotti eligible alla rottamazione</Text>
+                        <Text style={{ fontSize: 10, color: '#7C3AED', fontStyle: 'italic', marginTop: 4 }}>Lo sconto netto verrà spalmato solo sui prodotti eligible alla rottamazione</Text>
                       </>
                     )}
                   </View>
 
                   {/* Summary box */}
                   {rottamazioneAmount > 0 && (
-                    <View style={{ backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#FB923C', borderRadius: 10, padding: 12, marginTop: 8 }}>
+                    <View style={{ backgroundColor: COLORS.primarySoft, borderWidth: 1, borderColor: '#FB923C', borderRadius: 10, padding: 12, marginTop: 8 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text style={{ fontSize: 12, color: '#9A3412', flex: 1 }}>Rottamazione (lordo IVA incl.):</Text>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#EA580C' }}>{formatCurrency(rottamazioneAmount)}</Text>
+                        <Text style={{ fontSize: 12, color: '#5B21B6', flex: 1 }}>Rottamazione (lordo IVA incl.):</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#8B5CF6' }}>{formatCurrency(rottamazioneAmount)}</Text>
                       </View>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={{ fontSize: 12, color: '#9A3412', flex: 1 }}>Sconto netto spalmato (scorporo IVA {Math.round((rottamazioneIvaRate - 1) * 100)}%):</Text>
+                        <Text style={{ fontSize: 12, color: '#5B21B6', flex: 1 }}>Sconto netto spalmato (scorporo IVA {Math.round((rottamazioneIvaRate - 1) * 100)}%):</Text>
                         <Text style={{ fontSize: 14, fontWeight: '700', color: '#DC2626' }}>-{formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}</Text>
                       </View>
                     </View>
@@ -2107,8 +2108,8 @@ export default function OrderCollectionV2() {
 
                   {/* Preview prezzi spalmati */}
                   {rottamazioneAmount > 0 && (
-                    <View style={{ backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#FDBA74', borderRadius: 10, padding: 12, marginTop: 8 }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#C2410C', marginBottom: 6 }}>
+                    <View style={{ backgroundColor: COLORS.primarySoft, borderWidth: 1, borderColor: '#C4B5FD', borderRadius: 10, padding: 12, marginTop: 8 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#7C3AED', marginBottom: 6 }}>
                         Preview prezzi con Rottamazione (netto {formatCurrency(getRottamazioneNetAmount(rottamazioneAmount))}):
                       </Text>
                       {getSpreadedPrices().map((item) => (
@@ -2148,7 +2149,7 @@ export default function OrderCollectionV2() {
                   <Text style={{ fontSize: 12, color: '#92400E', marginBottom: 8 }}>
                     Sconto del 25% sull'imponibile dei prodotti eligible alla rottamazione
                   </Text>
-                  <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>
+                  <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 4 }}>
                     Prodotti eligible: {rottamazioneEligibleItems.length}/{cart.length} · Imponibile: {formatCurrency(rottamazioneEligibleSubtotal)}
                   </Text>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: '#D97706', marginBottom: 8 }}>
@@ -2185,20 +2186,20 @@ export default function OrderCollectionV2() {
         {/* Notes */}
         <View style={s.summaryCard}>
           <Text style={s.summaryLabel}>Note</Text>
-          <TextInput style={s.textArea} placeholder="Note per l'ordine..." value={notes} onChangeText={setNotes} multiline placeholderTextColor="#9CA3AF" />
+          <TextInput style={s.textArea} placeholder="Note per l'ordine..." value={notes} onChangeText={setNotes} multiline placeholderTextColor={COLORS.textLight} />
         </View>
 
         {/* ═══ PDF Preventivo ═══ */}
-        <View style={[s.summaryCard, { borderWidth: 1, borderColor: '#FED7AA', backgroundColor: '#FFF7ED' }]}>
+        <View style={[s.summaryCard, { borderWidth: 1, borderColor: '#DDD6FE', backgroundColor: COLORS.primarySoft }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <Ionicons name="document-attach-outline" size={18} color="#C2410C" />
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#9A3412' }}>Preventivo PDF</Text>
+            <Ionicons name="document-attach-outline" size={18} color="#7C3AED" />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#5B21B6' }}>Preventivo PDF</Text>
           </View>
-          <Text style={{ fontSize: 12, color: '#9A3412', lineHeight: 17, marginBottom: 10 }}>
+          <Text style={{ fontSize: 12, color: '#5B21B6', lineHeight: 17, marginBottom: 10 }}>
             Genera un PDF con questo riepilogo da consegnare al cliente. Potrai poi creare l&apos;ordine subito oppure salvarlo in bozza (pulsante “Bozza” in alto) e confermarlo in un secondo momento.
           </Text>
           <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#C2410C', borderRadius: 10, paddingVertical: 13, opacity: isGeneratingPdf ? 0.7 : 1 }}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#7C3AED', borderRadius: 10, paddingVertical: 13, opacity: isGeneratingPdf ? 0.7 : 1 }}
             onPress={handleGenerateQuotePdf}
             disabled={isGeneratingPdf}
           >
@@ -2232,7 +2233,7 @@ export default function OrderCollectionV2() {
           </View>
           <View style={[s.searchBar, { marginHorizontal: 16 }]}>
             <Ionicons name="search" size={18} color="#9CA3AF" />
-            <TextInput style={s.searchInput} placeholder="Cerca pacchetto..." value={packageSearch} onChangeText={setPackageSearch} placeholderTextColor="#9CA3AF" />
+            <TextInput style={s.searchInput} placeholder="Cerca pacchetto..." value={packageSearch} onChangeText={setPackageSearch} placeholderTextColor={COLORS.textLight} />
           </View>
           <FlatList
             data={packages.filter(p => !packageSearch.trim() || p.name.toLowerCase().includes(packageSearch.toLowerCase()))}
@@ -2306,7 +2307,7 @@ export default function OrderCollectionV2() {
 
             <ScrollView style={{ padding: 16 }} keyboardShouldPersistTaps="handled">
               {/* Product name */}
-              <Text style={{ fontSize: 15, fontWeight: '700', color: '#1F2937', marginBottom: 4 }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 4 }}>
                 {editCartItem.product.short_description || editCartItem.product.name}
               </Text>
               <Text style={s.summarySubLabel}>
@@ -2322,7 +2323,7 @@ export default function OrderCollectionV2() {
                   onPress={() => { Keyboard.dismiss(); setEditQty(Math.max(1, editQty - 1)); }}
                   disabled={editQty <= 1}
                 >
-                  <Ionicons name="remove" size={22} color={editQty <= 1 ? '#D1D5DB' : '#C2410C'} />
+                  <Ionicons name="remove" size={22} color={editQty <= 1 ? '#D1D5DB' : '#7C3AED'} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[s.qtyBtn, editQty <= 1 && s.qtyBtnDisabled]}
@@ -2349,7 +2350,7 @@ export default function OrderCollectionV2() {
                   onPress={() => { Keyboard.dismiss(); setEditQty(Math.min(stock, editQty + 1)); }}
                   disabled={editQty >= stock}
                 >
-                  <Ionicons name="add" size={22} color={editQty >= stock ? '#D1D5DB' : '#C2410C'} />
+                  <Ionicons name="add" size={22} color={editQty >= stock ? '#D1D5DB' : '#7C3AED'} />
                 </TouchableOpacity>
               </View>
 
@@ -2363,13 +2364,13 @@ export default function OrderCollectionV2() {
                   value={editPrice}
                   onChangeText={setEditPrice}
                   placeholder="0"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={COLORS.textLight}
                   selectTextOnFocus
                   returnKeyType="done"
                   onSubmitEditing={() => Keyboard.dismiss()}
                 />
                 <TouchableOpacity
-                  style={[s.headerBtn, { backgroundColor: '#F3F4F6', paddingVertical: 12 }]}
+                  style={[s.headerBtn, { backgroundColor: COLORS.bg, paddingVertical: 12 }]}
                   onPress={() => {
                     Keyboard.dismiss();
                     setEditPrice(editCartItem.product.unit_price.toFixed(2));
@@ -2430,8 +2431,8 @@ export default function OrderCollectionV2() {
     return (
       <View style={[s.container, { paddingTop: insets.top }]}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#C2410C" />
-          <Text style={{ marginTop: 12, color: '#6B7280' }}>Caricamento...</Text>
+          <ActivityIndicator size="large" color="#7C3AED" />
+          <Text style={{ marginTop: 12, color: COLORS.textMuted }}>Caricamento...</Text>
         </View>
       </View>
     );
@@ -2514,76 +2515,76 @@ export default function OrderCollectionV2() {
 // STYLES
 // ═══════════════════════════════════════════════════════
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#C2410C', paddingHorizontal: 16, paddingVertical: 12 },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#7C3AED', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#FFFFFF' },
-  stepDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.surface },
+  stepDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
   stepDotDone: { backgroundColor: '#10B981' },
-  stepDotCurrent: { backgroundColor: '#C2410C' },
-  stepNum: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  stepDotCurrent: { backgroundColor: '#7C3AED' },
+  stepNum: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
   stepNumActive: { color: '#FFFFFF' },
-  stepLine: { flex: 1, height: 2, backgroundColor: '#E5E7EB', marginHorizontal: 4 },
+  stepLine: { flex: 1, height: 2, backgroundColor: COLORS.border, marginHorizontal: 4 },
   stepLineDone: { backgroundColor: '#10B981' },
-  stepperLabel: { textAlign: 'center', fontSize: 12, fontWeight: '600', color: '#8E8E93', paddingBottom: 8 },
+  stepperLabel: { textAlign: 'center', fontSize: 12, fontWeight: '600', color: COLORS.textMuted, paddingBottom: 8 },
   stepContent: { flex: 1, paddingTop: 12 },
-  stepTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 12 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8, gap: 8 },
-  searchInput: { flex: 1, fontSize: 14, color: '#1F2937' },
-  customerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 10, padding: 14, marginBottom: 6 },
-  customerRowSelected: { borderWidth: 2, borderColor: '#C2410C', backgroundColor: '#FFF7ED' },
-  customerName: { fontSize: 15, fontWeight: '600', color: '#1F2937' },
-  customerCity: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  headerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
-  headerBtnText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  prodRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 8, padding: 8, marginBottom: 4, gap: 8 },
-  prodRowInCart: { backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#FED7AA' },
-  prodRowDisabled: { backgroundColor: '#F9FAFB', opacity: 0.7 },
+  stepTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: 12 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8, gap: 8 },
+  searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
+  customerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 10, padding: 14, marginBottom: 6 },
+  customerRowSelected: { borderWidth: 2, borderColor: '#7C3AED', backgroundColor: COLORS.primarySoft },
+  customerName: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  customerCity: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.bg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  headerBtnText: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
+  prodRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 8, padding: 8, marginBottom: 4, gap: 8 },
+  prodRowInCart: { backgroundColor: COLORS.primarySoft, borderWidth: 1, borderColor: '#DDD6FE' },
+  prodRowDisabled: { backgroundColor: COLORS.bgAlt, opacity: 0.7 },
   prodRowConflict: { backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#DC2626' },
   prodIcon: { width: 40, height: 40, borderRadius: 6, overflow: 'hidden' },
   prodImg: { width: 40, height: 40, borderRadius: 6 },
-  prodImgPlaceholder: { width: 40, height: 40, borderRadius: 6, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  prodImgPlaceholder: { width: 40, height: 40, borderRadius: 6, backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center' },
   cartBadge: { position: 'absolute', top: -6, right: -6, backgroundColor: '#DC2626', borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, borderWidth: 2, borderColor: '#FFFFFF', zIndex: 10 },
   cartBadgeText: { fontSize: 10, fontWeight: '800', color: '#FFFFFF' },
   prodInfo: { flex: 1 },
-  prodName: { fontSize: 13, fontWeight: '500', color: '#1F2937' },
+  prodName: { fontSize: 13, fontWeight: '500', color: COLORS.text },
   prodPrice: { fontSize: 12, fontWeight: '600', color: '#059669' },
-  prodAccisa: { fontSize: 10, color: '#9CA3AF' },
-  stockBadge: { backgroundColor: '#F3F4F6', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, alignItems: 'center', minWidth: 36 },
+  prodAccisa: { fontSize: 10, color: COLORS.textLight },
+  stockBadge: { backgroundColor: COLORS.bg, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, alignItems: 'center', minWidth: 36 },
   stockGreen: { backgroundColor: '#ECFDF5' },
   stockAmber: { backgroundColor: '#FEF3C7' },
   stockRed: { backgroundColor: '#FEE2E2' },
   outOfStockBadge: { backgroundColor: '#FEE2E2', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   outOfStockText: { fontSize: 9, fontWeight: '800', color: '#DC2626', letterSpacing: 0.5 },
   stockText: { fontSize: 11, fontWeight: '700', color: '#059669' },
-  stockReserved: { fontSize: 9, color: '#9CA3AF', marginTop: 1 },
+  stockReserved: { fontSize: 9, color: COLORS.textLight, marginTop: 1 },
   prodActions: { flexDirection: 'row', gap: 4 },
-  addBtn: { backgroundColor: '#FED7AA', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 8, minWidth: 36, alignItems: 'center' },
-  addBtn10: { backgroundColor: '#FDBA74' },
-  addBtnDisabled: { backgroundColor: '#E5E7EB', opacity: 0.5 },
-  addBtnText: { fontSize: 12, fontWeight: '700', color: '#C2410C' },
+  addBtn: { backgroundColor: '#DDD6FE', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 8, minWidth: 36, alignItems: 'center' },
+  addBtn10: { backgroundColor: '#C4B5FD' },
+  addBtnDisabled: { backgroundColor: COLORS.border, opacity: 0.5 },
+  addBtnText: { fontSize: 12, fontWeight: '700', color: '#7C3AED' },
   fixBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#DC2626', paddingHorizontal: 10, paddingVertical: 8 },
   fixBtnText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
   conflictInlineBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#DC2626', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   conflictInlineText: { fontSize: 9, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.3 },
-  cartBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#C2410C', borderRadius: 10, padding: 12, marginTop: 8 },
-  cartBarText: { color: '#FDBA74', fontSize: 13, fontWeight: '600' },
+  cartBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#7C3AED', borderRadius: 10, padding: 12, marginTop: 8 },
+  cartBarText: { color: '#C4B5FD', fontSize: 13, fontWeight: '600' },
   cartBarTotal: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  cartBarDetail: { color: '#FDBA74', fontSize: 10 },
-  optionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 10, padding: 14, marginBottom: 6, gap: 10 },
-  optionSelected: { borderWidth: 2, borderColor: '#C2410C', backgroundColor: '#FFF7ED' },
-  optionText: { fontSize: 15, fontWeight: '500', color: '#1F2937' },
-  optionSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  textInput: { backgroundColor: '#FFFFFF', borderRadius: 8, padding: 12, fontSize: 14, color: '#1F2937', borderWidth: 1, borderColor: '#E5E7EB' },
-  textArea: { backgroundColor: '#FFFFFF', borderRadius: 8, padding: 12, fontSize: 14, color: '#1F2937', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 80, textAlignVertical: 'top' },
-  summaryCard: { backgroundColor: '#FFFFFF', borderRadius: 10, padding: 14, marginBottom: 10 },
-  summaryLabel: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
-  summarySubLabel: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
-  summaryValue: { fontSize: 15, fontWeight: '600', color: '#1F2937', marginTop: 2 },
+  cartBarDetail: { color: '#C4B5FD', fontSize: 10 },
+  optionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 10, padding: 14, marginBottom: 6, gap: 10 },
+  optionSelected: { borderWidth: 2, borderColor: '#7C3AED', backgroundColor: COLORS.primarySoft },
+  optionText: { fontSize: 15, fontWeight: '500', color: COLORS.text },
+  optionSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  textInput: { backgroundColor: COLORS.surface, borderRadius: 8, padding: 12, fontSize: 14, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border },
+  textArea: { backgroundColor: COLORS.surface, borderRadius: 8, padding: 12, fontSize: 14, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border, minHeight: 80, textAlignVertical: 'top' },
+  summaryCard: { backgroundColor: COLORS.surface, borderRadius: 10, padding: 14, marginBottom: 10 },
+  summaryLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textMuted },
+  summarySubLabel: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
+  summaryValue: { fontSize: 15, fontWeight: '600', color: COLORS.text, marginTop: 2 },
   summaryItemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, gap: 8 },
-  summaryItemName: { flex: 1, fontSize: 13, color: '#374151' },
-  summaryItemQty: { fontSize: 12, color: '#6B7280', width: 30 },
-  summaryItemPrice: { fontSize: 13, fontWeight: '600', color: '#1F2937', width: 70, textAlign: 'right' },
+  summaryItemName: { flex: 1, fontSize: 13, color: COLORS.textSecondary },
+  summaryItemQty: { fontSize: 12, color: COLORS.textMuted, width: 30 },
+  summaryItemPrice: { fontSize: 13, fontWeight: '600', color: COLORS.text, width: 70, textAlign: 'right' },
 
   // ✅ Sconto Cartone
   cartonHintAmber: { fontSize: 10.5, color: '#B45309', fontWeight: '500', marginTop: 2 },
@@ -2595,23 +2596,23 @@ const s = StyleSheet.create({
   channelRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
   channelBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF',
+    borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.surface,
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 6,
   },
   channelBtnVisita: { borderColor: '#15803D', backgroundColor: '#F0FDF4' },
   channelBtnRemoto: { borderColor: '#1D4ED8', backgroundColor: '#EFF6FF' },
-  channelBtnText: { fontSize: 12, fontWeight: '600', color: '#9CA3AF', flexShrink: 1, textAlign: 'center' },
-  channelHint: { fontSize: 11, color: '#6B7280', marginTop: 8 },
+  channelBtnText: { fontSize: 12, fontWeight: '600', color: COLORS.textLight, flexShrink: 1, textAlign: 'center' },
+  channelHint: { fontSize: 11, color: COLORS.textMuted, marginTop: 8 },
   summaryTotalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  summaryGrandTotal: { borderTopWidth: 1, borderTopColor: '#E5E7EB', marginTop: 6, paddingTop: 8 },
-  summaryGrandLabel: { fontSize: 16, fontWeight: '800', color: '#C2410C' },
-  summaryGrandValue: { fontSize: 16, fontWeight: '800', color: '#C2410C' },
-  lotChip: { backgroundColor: '#F3F4F6', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8 },
-  lotChipActive: { backgroundColor: '#C2410C' },
-  lotChipText: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  summaryGrandTotal: { borderTopWidth: 1, borderTopColor: COLORS.border, marginTop: 6, paddingTop: 8 },
+  summaryGrandLabel: { fontSize: 16, fontWeight: '800', color: '#7C3AED' },
+  summaryGrandValue: { fontSize: 16, fontWeight: '800', color: '#7C3AED' },
+  lotChip: { backgroundColor: COLORS.bg, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8 },
+  lotChipActive: { backgroundColor: '#7C3AED' },
+  lotChipText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   lotChipTextActive: { color: '#FFFFFF' },
   rottamazioneNet: { fontSize: 12, color: '#059669', fontWeight: '600', marginBottom: 8 },
-  maxBtn: { backgroundColor: '#C2410C', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  maxBtn: { backgroundColor: '#7C3AED', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12 },
   maxBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   cashbackBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#ECFDF5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 8, borderWidth: 1, borderColor: '#A7F3D0' },
 
@@ -2636,28 +2637,28 @@ const s = StyleSheet.create({
   },
   conflictBtnText: { color: '#FFF', fontWeight: '700', fontSize: 12 },
   cashbackBadgeText: { fontSize: 12, fontWeight: '600', color: '#059669' },
-  confirmPriceBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#C2410C', borderRadius: 10, paddingVertical: 14 },
+  confirmPriceBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#7C3AED', borderRadius: 10, paddingVertical: 14 },
   confirmPriceBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   qtyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  qtyBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#FFF7ED', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#FED7AA' },
-  qtyBtnDisabled: { backgroundColor: '#F9FAFB', borderColor: '#E5E7EB' },
-  qtyBtnLabel: { fontSize: 13, fontWeight: '700', color: '#C2410C' },
-  qtyDisplay: { minWidth: 56, height: 48, borderRadius: 12, backgroundColor: '#C2410C', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  qtyBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#DDD6FE' },
+  qtyBtnDisabled: { backgroundColor: COLORS.bgAlt, borderColor: COLORS.border },
+  qtyBtnLabel: { fontSize: 13, fontWeight: '700', color: '#7C3AED' },
+  qtyDisplay: { minWidth: 56, height: 48, borderRadius: 12, backgroundColor: '#7C3AED', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   qtyDisplayText: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
-  bottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' },
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#F3F4F6' },
-  backBtnText: { fontSize: 14, fontWeight: '600', color: '#374151' },
-  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#C2410C', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 },
+  bottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: COLORS.bg },
+  backBtnText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
+  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#7C3AED', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 },
   nextBtnDisabled: { backgroundColor: '#9CA3AF' },
   nextBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   submitBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '80%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', flex: 1 },
-  packageCard: { backgroundColor: '#F9FAFB', borderRadius: 10, padding: 14, marginBottom: 8 },
-  packageName: { fontSize: 15, fontWeight: '600', color: '#1F2937' },
-  packageDetail: { fontSize: 12, color: '#6B7280', marginTop: 4 },
-  packageApplyBtn: { backgroundColor: '#C2410C', borderRadius: 8, paddingVertical: 8, alignItems: 'center', marginTop: 10 },
+  modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, flex: 1 },
+  packageCard: { backgroundColor: COLORS.bgAlt, borderRadius: 10, padding: 14, marginBottom: 8 },
+  packageName: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  packageDetail: { fontSize: 12, color: COLORS.textMuted, marginTop: 4 },
+  packageApplyBtn: { backgroundColor: '#7C3AED', borderRadius: 8, paddingVertical: 8, alignItems: 'center', marginTop: 10 },
   packageApplyText: { color: '#FFFFFF', fontWeight: '600', fontSize: 13 },
 });

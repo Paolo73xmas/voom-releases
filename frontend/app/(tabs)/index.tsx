@@ -27,7 +27,7 @@ import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
 import { Avatar } from '../../components/Avatar';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
 import { Skeleton } from '../../components/Skeleton';
-import { DS, JAKARTA, getTimeGreeting } from '../../lib/theme';
+import { DS, JAKARTA, getTimeGreeting, COLORS } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
 
 export default function Dashboard() {
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
   },
   statIconChip: {
     width: 34, height: 34, borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 10,
   },
@@ -775,7 +775,7 @@ const styles = StyleSheet.create({
   },
   actionIconChip: {
     width: 40, height: 40, borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     alignItems: 'center', justifyContent: 'center',
   },
   actionTitle: {

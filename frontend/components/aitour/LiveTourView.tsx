@@ -8,9 +8,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DS, JAKARTA, SHADOWS } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
 import { AI_PURPLE, AI_PURPLE_SOFT, openNavigation } from './shared';
-import { EsitoModal } from './EsitoModal';
+import { EsitoModal, type EsitoExtras } from './EsitoModal';
 import { SkipModal } from './SkipModal';
 import { TourMapView, type TourMapStop } from './TourMapView';
+import { createTourInspection } from '../../lib/api/inspections';
+import { supabase } from '../../lib/supabase';
 import type { LiveState, LiveStop } from '../../lib/aitour/live';
 import {
   nowMin, getCurrentPos, markArrived, completeStop, skipStop, cancelStopByRecalc,
@@ -327,12 +329,13 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             );
             setStops(updated);
             const nk = info.nextKind || 'inspection';
-            const ctx: ExternalCtx = { tourId: tour.id, stopId: stop.id, customerId: custId, kind: nk, startedAt: new Date().toISOString() };
-            await AsyncStorage.setItem(EXTERNAL_KEY, JSON.stringify(ctx));
             setMessage(`Prospect creato: "${stop.candidate.name}" collegato alla tappa`);
             if (nk === 'inspection') {
-              router.push({ pathname: '/inspection/new', params: { customerId: custId } });
+              // Ispezione unificata: al rientro dall'acquisizione si apre direttamente l'esito
+              setEsitoOpen(true);
             } else {
+              const ctx: ExternalCtx = { tourId: tour.id, stopId: stop.id, customerId: custId, kind: nk, startedAt: new Date().toISOString() };
+              await AsyncStorage.setItem(EXTERNAL_KEY, JSON.stringify(ctx));
               router.push({ pathname: '/order-collection-v2', params: { customerId: custId, customerName: stop.candidate.name } });
             }
             return;
@@ -376,11 +379,41 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     buildTourReport(tour.id).then(setReport).catch(() => {});
   }, [recapOpen, tour.id]);
 
-  const handleEsito = async (outcome: string, note: string, followUpDate: string | null, followUpTime: string | null) => {
+  const handleEsito = async (outcome: string, note: string, followUpDate: string | null, followUpTime: string | null, extras: EsitoExtras) => {
     if (!next) return;
     setBusy(true);
     try {
       await completeStop(tour, next, { outcome, note, followUpDate, followUpTime });
+      const customerId = next.candidate.customerId;
+      if (customerId) {
+        // Contatti punto vendita -> scheda cliente
+        const contactUpdates: Record<string, string> = {};
+        if (extras.mobile) contactUpdates.contact_mobile = extras.mobile;
+        if (extras.email) contactUpdates.contact_email = extras.email;
+        if (Object.keys(contactUpdates).length > 0) {
+          const { error: cErr } = await supabase.from('customers').update(contactUpdates).eq('id', customerId);
+          if (cErr) setMessage('Contatti non salvati sulla scheda cliente');
+        }
+        // Foto -> ispezione nella sezione Ispezioni (bucket inspection_photos)
+        if (extras.photos.length > 0) {
+          try {
+            const pos = await getCurrentPos();
+            const gps = pos ? { lat: pos.lat, lon: pos.lng } : { lat: next.candidate.lat, lon: next.candidate.lng };
+            await createTourInspection({
+              customer_id: customerId,
+              agent_id: tour.agent_id,
+              notes: `[AI Tour] Esito: ${outcome}${note ? ` — ${note}` : ''}`,
+              latitude: gps.lat,
+              longitude: gps.lon,
+              photos: extras.photos,
+              gps,
+            });
+          } catch (err) {
+            console.warn('[AITour][live] registrazione ispezione con foto fallita:', err);
+            setMessage('Foto non salvate nella sezione Ispezioni (esito comunque registrato)');
+          }
+        }
+      }
       const updated = stops.map((s) => (s.id === next.id ? { ...s, status: 'completed' as const, outcome } : s));
       setStops(updated);
       setEsitoOpen(false);
@@ -640,21 +673,18 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               <Ionicons name="cart" size={15} color="#FFF" />
               <Text style={styles.actionBtnText}>Raccolta Ordine</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#0284C7' }]} onPress={() => goExternal('inspection')} disabled={busy} activeOpacity={0.75}>
-              <Ionicons name="clipboard" size={15} color="#FFF" />
-              <Text style={styles.actionBtnText}>Ispezione</Text>
-            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: '#059669' }]}
               onPress={() => {
                 hap.light();
-                setEsitoOpen(true);
+                if (next.candidate.customerId) setEsitoOpen(true);
+                else setAcquireKind('inspection');
               }}
               disabled={busy}
               activeOpacity={0.75}
             >
-              <Ionicons name="checkmark-circle" size={15} color="#FFF" />
-              <Text style={styles.actionBtnText}>Visita terminata</Text>
+              <Ionicons name="clipboard" size={15} color="#FFF" />
+              <Text style={styles.actionBtnText}>Ispezione</Text>
             </TouchableOpacity>
             {!next.mandatory && (
               <TouchableOpacity
@@ -726,7 +756,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         </View>
       )}
 
-      <EsitoModal visible={esitoOpen} stopName={next?.candidate.name || ''} saving={busy} onClose={() => setEsitoOpen(false)} onConfirm={handleEsito} />
+      <EsitoModal visible={esitoOpen} stopName={next?.candidate.name || ''} customerId={next?.candidate.customerId || null} saving={busy} onClose={() => setEsitoOpen(false)} onConfirm={handleEsito} />
       <SkipModal visible={skipOpen} stopName={next?.candidate.name || ''} saving={busy} onClose={() => setSkipOpen(false)} onConfirm={handleSkip} />
 
       {/* Acquisizione prospect */}

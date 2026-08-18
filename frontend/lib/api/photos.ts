@@ -37,7 +37,8 @@ export async function ensurePhotoBucket(): Promise<boolean> {
  */
 export async function uploadSinglePhoto(
   uri: string,
-  storagePath: string
+  storagePath: string,
+  bucket: string = BUCKET_NAME
 ): Promise<string | null> {
   try {
     let arrayBuffer: ArrayBuffer;
@@ -58,7 +59,7 @@ export async function uploadSinglePhoto(
     }
 
     const { data, error } = await supabase.storage
-      .from(BUCKET_NAME)
+      .from(bucket)
       .upload(storagePath, arrayBuffer, {
         contentType: 'image/jpeg',
         upsert: true,
@@ -70,7 +71,7 @@ export async function uploadSinglePhoto(
     }
 
     const { data: urlData } = supabase.storage
-      .from(BUCKET_NAME)
+      .from(bucket)
       .getPublicUrl(data.path);
 
     console.log('[Photos] Uploaded:', storagePath, '- Size:', arrayBuffer.byteLength, 'bytes');

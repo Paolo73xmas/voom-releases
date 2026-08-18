@@ -1,7 +1,11 @@
-// Modale esito visita (Modalità Live AI Tour) — parità con EsitoDialog web
+// Modale esito ispezione (Modalità Live AI Tour) — parità con EsitoDialog web:
+// esito + foto (bucket Ispezioni) + contatti punto vendita salvati sulla scheda cliente
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Image, Alert, Linking } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA } from '../../lib/theme';
+import { supabase } from '../../lib/supabase';
 import { AI_PURPLE, AI_PURPLE_SOFT } from './shared';
 
 export const ESITO_OPTIONS = [
@@ -38,31 +42,101 @@ function dateInDays(days: number): string {
 interface Props {
   visible: boolean;
   stopName: string;
+  customerId?: string | null;
   saving: boolean;
   onClose: () => void;
-  onConfirm: (outcome: string, note: string, followUpDate: string | null, followUpTime: string | null) => void;
+  onConfirm: (outcome: string, note: string, followUpDate: string | null, followUpTime: string | null, extras: EsitoExtras) => void;
 }
 
-export function EsitoModal({ visible, stopName, saving, onClose, onConfirm }: Props) {
+export interface EsitoExtras {
+  photos: { uri: string }[];
+  mobile: string;
+  email: string;
+}
+
+export function EsitoModal({ visible, stopName, customerId, saving, onClose, onConfirm }: Props) {
   const [outcome, setOutcome] = useState('');
   const [note, setNote] = useState('');
   const [followUpDays, setFollowUpDays] = useState<number | null>(null);
   const [followUpTime, setFollowUpTime] = useState('09:00');
+  const [photos, setPhotos] = useState<{ uri: string }[]>([]);
+  const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
-    if (visible) {
-      setOutcome('');
-      setNote('');
-      setFollowUpDays(null);
-      setFollowUpTime('09:00');
+    if (!visible) return;
+    setOutcome('');
+    setNote('');
+    setFollowUpDays(null);
+    setFollowUpTime('09:00');
+    setPhotos([]);
+    setMobile('');
+    setEmail('');
+    if (customerId) {
+      supabase.from('customers').select('contact_mobile, contact_email').eq('id', customerId).single()
+        .then(({ data }) => {
+          if (data) {
+            setMobile(data.contact_mobile || '');
+            setEmail(data.contact_email || '');
+          }
+        });
     }
-  }, [visible]);
+  }, [visible, customerId]);
+
+  const takePhoto = async () => {
+    if (photos.length >= 2) return;
+    try {
+      let perm = await ImagePicker.getCameraPermissionsAsync();
+      if (!perm.granted && perm.canAskAgain) {
+        perm = await ImagePicker.requestCameraPermissionsAsync();
+      }
+      if (!perm.granted) {
+        Alert.alert(
+          'Fotocamera non consentita',
+          "Per allegare le foto dell'ispezione serve l'accesso alla fotocamera.",
+          perm.canAskAgain
+            ? [{ text: 'OK' }]
+            : [
+                { text: 'Annulla', style: 'cancel' },
+                { text: 'Apri Impostazioni', onPress: () => Linking.openSettings() },
+              ]
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({ allowsEditing: false, quality: 0.7 });
+      if (!result.canceled && result.assets?.[0]) {
+        const uri = result.assets[0].uri;
+        setPhotos((prev) => (prev.length >= 2 ? prev : [...prev, { uri }]));
+      }
+    } catch (err) {
+      console.warn('[EsitoModal] takePhoto:', err);
+    }
+  };
+
+  const removePhoto = (idx: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleConfirm = () => {
+    const em = email.trim();
+    if (em && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(em)) {
+      Alert.alert('Email non valida', 'Controlla l\u2019indirizzo email del punto vendita.');
+      return;
+    }
+    onConfirm(
+      outcome,
+      note,
+      followUpDays != null ? dateInDays(followUpDays) : null,
+      followUpDays != null ? followUpTime : null,
+      { photos, mobile: mobile.trim(), email: em }
+    );
+  };
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>Esito visita</Text>
+          <Text style={styles.title}>Ispezione</Text>
           <Text style={styles.subtitle} numberOfLines={1}>{stopName}</Text>
           <ScrollView style={{ maxHeight: 420 }} keyboardShouldPersistTaps="handled">
             <View style={styles.grid}>
@@ -77,6 +151,48 @@ export function EsitoModal({ visible, stopName, saving, onClose, onConfirm }: Pr
                 </TouchableOpacity>
               ))}
             </View>
+            <Text style={styles.label}>Foto ispezione ({photos.length}/2, facoltative)</Text>
+            <View style={styles.photoRow}>
+              {photos.map((p, i) => (
+                <View key={p.uri} style={styles.photoWrap}>
+                  <Image source={{ uri: p.uri }} style={styles.photoThumb} />
+                  <TouchableOpacity style={styles.photoRemove} onPress={() => removePhoto(i)} activeOpacity={0.7}>
+                    <Ionicons name="close" size={12} color="#FFF" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {photos.length < 2 && (
+                <TouchableOpacity style={styles.photoAdd} onPress={takePhoto} activeOpacity={0.7}>
+                  <Ionicons name="camera-outline" size={20} color={DS.inkMuted} />
+                  <Text style={styles.photoAddText}>Scatta</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {photos.length > 0 && <Text style={styles.followUpHint}>Le foto verranno salvate nella sezione Ispezioni.</Text>}
+            {customerId ? (
+              <>
+                <Text style={styles.label}>Contatti punto vendita (salvati sulla scheda cliente)</Text>
+                <View style={styles.contactRow}>
+                  <TextInput
+                    style={[styles.input, styles.contactInput]}
+                    value={mobile}
+                    onChangeText={setMobile}
+                    placeholder="Cellulare"
+                    placeholderTextColor={DS.inkMuted}
+                    keyboardType="phone-pad"
+                  />
+                  <TextInput
+                    style={[styles.input, styles.contactInput]}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="Email"
+                    placeholderTextColor={DS.inkMuted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+              </>
+            ) : null}
             <Text style={styles.label}>Note (facoltative)</Text>
             <TextInput
               style={styles.input}
@@ -132,7 +248,7 @@ export function EsitoModal({ visible, stopName, saving, onClose, onConfirm }: Pr
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.confirmBtn, (!outcome || saving) && { opacity: 0.5 }]}
-              onPress={() => onConfirm(outcome, note, followUpDays != null ? dateInDays(followUpDays) : null, followUpDays != null ? followUpTime : null)}
+              onPress={handleConfirm}
               disabled={!outcome || saving}
               activeOpacity={0.7}
             >
@@ -181,6 +297,33 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: JAKARTA.medium, fontSize: 11, color: DS.ink2 },
   chipTextActive: { color: '#FFF' },
   followUpHint: { fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted, marginTop: 6 },
+  photoRow: { flexDirection: 'row', gap: 8 },
+  photoWrap: { position: 'relative' },
+  photoThumb: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: DS.border },
+  photoRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#DC2626',
+    borderRadius: 999,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoAdd: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: DS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoAddText: { fontFamily: JAKARTA.medium, fontSize: 9, color: DS.inkMuted, marginTop: 2 },
+  contactRow: { flexDirection: 'row', gap: 8 },
+  contactInput: { flex: 1, minHeight: 40 },
   footer: { flexDirection: 'row', gap: 10, marginTop: 16 },
   cancelBtn: {
     flex: 1,

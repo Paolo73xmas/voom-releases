@@ -92,7 +92,7 @@ html = f"""<!DOCTYPE html>
   <h1><span class="spark">✦</span> AI Tour</h1>
   <div class="sub">Manuale operativo per l'agente — flussi, logica e apprendimento dell'AI</div>
   <div class="box">AI Tour è il tuo assistente commerciale sull'app: analizza ogni giorno il portafoglio, decide chi conviene visitare, costruisce il percorso ottimale e <strong>impara dai tuoi risultati reali</strong> per pianificare sempre meglio. Questo manuale spiega come usarlo dal telefono, passo per passo, e come "allenarlo".</div>
-  <div class="badge">Versione 1.1 · {today} · Documento riservato agli agenti VOOM</div>
+  <div class="badge">Versione 1.2 · {today} · Documento riservato agli agenti VOOM</div>
   <div class="foot">VOOM crm — Manuale AI Tour app mobile per l'agente</div>
 </div>
 
@@ -116,7 +116,7 @@ html = f"""<!DOCTYPE html>
 <!-- ═══════════ CAP 1 ═══════════ -->
 <h2 class="chapter">1 · Che cos'è AI Tour e cosa vedi tu</h2>
 <p><strong>AI Tour</strong> pianifica i tuoi giri visita combinando tre cose: il <strong>valore commerciale</strong> di ogni punto vendita, la <strong>geografia</strong> (dove si trovano e dove sei tu) e il <strong>tempo reale</strong> (orari di lavoro, tempi di guida su strade vere, durata delle visite). Sull'app la trovi in due punti: la card <strong>AI Tour</strong> tra le azioni rapide della Dashboard e la voce <strong>AI Tour</strong> nella sezione Altro → Strumenti.</p>
-{figrow(fig("ai01-dashboard", "La card AI Tour tra le azioni rapide della Dashboard"), fig("ai02-genera-form", "La schermata AI Tour con le 4 schede in alto"))}
+{figrow(fig("ai01-dashboard", "La card AI Tour tra le azioni rapide (Vendite) della Dashboard"), fig("ai02-genera-form", "La schermata AI Tour con le 4 schede in alto"))}
 <h3>Le schede che usi come agente</h3>
 <table class="legend">
   <tr><th>Scheda</th><th>A cosa serve</th></tr>
@@ -127,6 +127,16 @@ html = f"""<!DOCTYPE html>
 </table>
 <div class="info">ℹ️ <strong>Territorio e Impostazioni</strong> (orari di lavoro, durate visita, casa/sede, zone del territorio) sono gestiti dallo staff dalla web app. Se ti serve una modifica, chiedi al tuo responsabile: l'app la userà automaticamente.</div>
 <p>Se lo staff ha disegnato delle <strong>zone di territorio</strong> per te, l'AI le usa come area di lavoro predefinita ("Territorio assegnato"): dentro ci finiscono i tuoi clienti, gli orfani e le tabaccherie da acquisire comprese nel perimetro.</p>
+<h3>Il nuovo look: splash animato e tema Scuro/Chiaro</h3>
+<p>All'avvio l'app si presenta con il nuovo <strong>splash animato AI Tour</strong>: il percorso del giro si disegna tappa per tappa, con il badge <strong>TOUR LIVE</strong> e i KPI della giornata. Tutta l'app usa ora la <strong>palette viola di AI Tour</strong> e parte di default in <strong>tema Scuro</strong>; se preferisci il chiaro hai due strade:</p>
+<ul>
+  <li>il <strong>toggle rapido sole/luna</strong> nell'header della Dashboard (accanto al logout) inverte il tema al volo;</li>
+  <li>il selettore <strong>Aspetto: Chiaro / Scuro</strong> nel <strong>Profilo</strong> imposta il tema in modo permanente.</li>
+</ul>
+<p>La scelta viene <strong>ricordata</strong>: al prossimo avvio l'app riparte con il tema che hai scelto.</p>
+{figrow(fig("ai23-splash", "Il nuovo splash animato AI Tour all'avvio dell'app"), fig("ai24-dashboard-dark", "La Dashboard in tema Scuro: toggle sole/luna nell'header"))}
+{figrow(fig("ai27-profilo-aspetto", "Il selettore «Aspetto» nel Profilo: Chiaro o Scuro, persistito"))}
+<div class="info">🌓 Le schermate di questo manuale possono mostrare l'app in tema chiaro o scuro: contenuti e funzioni sono identici nei due temi.</div>
 
 <!-- ═══════════ CAP 2 ═══════════ -->
 <h2 class="chapter">2 · Avvio rapido: il tuo primo tour in 60 secondi</h2>
@@ -137,7 +147,7 @@ html = f"""<!DOCTYPE html>
   <li><strong>Tipo giornata:</strong> lascia <em>Decidi tu AI</em>.</li>
   <li><strong>Area:</strong> lascia <em>Territorio assegnato</em> (se configurato) o <em>Automatica (AI)</em>.</li>
   <li>Premi <strong>GENERA CON AI</strong> e attendi qualche secondo.</li>
-  <li>Controlla il piano proposto, tocca <strong>Salva</strong> e poi <strong>Avvia Tour</strong> per partire in Live.</li>
+  <li>Controlla il piano proposto, tocca <strong>Salva</strong> e poi <strong>Avvia Tour</strong> — il tasto violetto <strong>in alto nell'header</strong> — per partire in Live.</li>
 </ol>
 {figrow(fig("ai04-generazione", "L'AI al lavoro: selezione → clustering → pianificazione"), fig("ai05-risultato", "Il piano generato: KPI, strategia dell'AI e prima fermata"))}
 <div class="tip">💡 Prima di avviare il giro leggi il <strong>riquadro con la strategia dell'AI</strong> e apri le <strong>"Visite escluse"</strong> in fondo: capisci perché l'AI ha scelto proprio quelle visite e chi è rimasto fuori (sarà candidato per il giro successivo).</div>
@@ -152,8 +162,10 @@ html = f"""<!DOCTYPE html>
   <li><strong>Rientro</strong> — facoltativo: <em>Nessuno</em>, ritorno alla <em>Partenza</em>, un <em>Indirizzo</em>, <em>Casa</em> o <em>Sede</em>. Se impostato, l'AI riserva il tempo di rientro entro l'ora di fine.</li>
   <li><strong>Tipo giornata</strong> — vedi tabella sotto.</li>
   <li><strong>Area</strong> — <em>Territorio assegnato</em> (se hai zone), <em>Automatica (AI)</em> (l'AI sceglie il cluster migliore entro 120 km dalla partenza), <em>Provincia</em>, <em>Comune</em> o <em>Raggio km</em>.</li>
+  <li><strong>Zone del giro</strong> — se il tuo territorio è composto da <strong>più zone</strong>, con area <em>Territorio assegnato</em> compaiono i <strong>chips delle zone</strong>, ciascuno con il nome (o l'<strong>alias</strong> assegnato dallo staff, es. "Centro", "Litorale"). Tocca un chip per <strong>includere/escludere</strong> quella zona (almeno una deve restare attiva): la generazione, le tabaccherie libere e l'intensificazione lavorano <strong>solo sulle zone selezionate</strong>, e l'etichetta dell'area nel risultato mostra le zone scelte (es. "Centro + Litorale").</li>
   <li><strong>Visite obbligatorie</strong> — cerca e aggiungi clienti/prospect che DEVONO entrare nel giro, anche fuori area. Compaiono con la ★ e non sono saltabili in Live.</li>
 </ul>
+{figrow(fig("ai25-zone-chips", "Le zone del territorio come chips: tocca per includere/escludere (qui con gli alias)"))}
 <h3>I quattro tipi di giornata</h3>
 <table class="legend">
   <tr><th>Tipo</th><th>Chi entra nel giro</th><th>Quando usarlo</th></tr>
@@ -236,14 +248,15 @@ html = f"""<!DOCTYPE html>
 
 <!-- ═══════════ CAP 6 ═══════════ -->
 <h2 class="chapter">6 · Il Tour Live passo per passo</h2>
-<p>Dal risultato di un tour (o da un tour salvato in "I miei Tour") tocca <strong>Avvia Tour</strong>: entri in modalità <strong>Live</strong>. Se chiudi l'app e la riapri, il tour in corso <strong>riprende da solo</strong>. Se avvii oggi un tour generato per un altro giorno, la data del tour viene <strong>riallineata a oggi</strong>: report e storici restano corretti.</p>
-{figrow(fig("ai08-live", "Il Live: badge TOUR LIVE, progresso e prossima visita con le azioni"), fig("ai09-live-arrivato", "Dopo «Sono arrivato»: sei sul posto"))}
+<p>Dal risultato di un tour (o da un tour salvato in "I miei Tour") tocca <strong>Avvia Tour</strong> — il tasto violetto sempre visibile <strong>in alto nell'header</strong> della schermata AI Tour: entri in modalità <strong>Live</strong>. Se chiudi l'app e la riapri, il tour in corso <strong>riprende da solo</strong>. Se avvii oggi un tour generato per un altro giorno, la data del tour viene <strong>riallineata a oggi</strong>: report e storici restano corretti.</p>
+{figrow(fig("ai26-avvia-header", "Il tasto «Avvia Tour» nell'header, sempre a portata di pollice sul piano generato"), fig("ai08-live", "Il Live: badge TOUR LIVE, progresso e prossima visita con le azioni"))}
+{figrow(fig("ai09-live-arrivato", "Dopo «Sono arrivato»: sei sul posto"))}
 <ol class="steps">
   <li><strong>Avvia Tour.</strong> La tua posizione GPS viene salvata periodicamente per chilometraggio e sicurezza (con app aperta).</li>
   <li>Per ogni tappa vedi <strong>distanza, orario previsto di arrivo, durata stimata</strong> e il motivo per cui l'AI l'ha scelta. In alto, il conteggio <em>fatte · saltate · rimanenti</em> e l'indicatore <em>Ritardo/Anticipo</em>.</li>
   <li><strong>Navigatore</strong> apre le mappe del telefono già puntate sulla tappa. Con <strong>"Mappa del giro"</strong> (sopra la prossima visita) vedi invece tutte le tappe sulla mappa: numerate le rimanenti nell'ordine attuale, <strong>✓ verdi</strong> le completate, <strong>✕ grigie</strong> le saltate.</li>
   <li><strong>"Sono arrivato"</strong>: registra l'orario di arrivo reale (serve per le durate apprese!).</li>
-  <li>Fai il tuo lavoro: <strong>Raccolta Ordine</strong> o <strong>Ispezione</strong>. Al salvataggio torni al tour e la tappa si <strong>chiude da sola</strong> con l'esito giusto (ordine/ispezione). <strong>Ricorda: l'ispezione è sempre obbligatoria durante la visita</strong> — non serve solo se il cliente fa l'ordine o se salti la tappa.</li>
+  <li>Fai il tuo lavoro: <strong>Raccolta Ordine</strong> o <strong>Ispezione</strong>. Al salvataggio torni al tour e la tappa si <strong>chiude da sola</strong> con l'esito giusto (ordine/ispezione). <strong>Ricorda: l'ispezione è sempre obbligatoria durante la visita</strong> — non serve solo se il cliente fa l'ordine o se salti la tappa. 💡 <em>Ricerca per parole:</em> nella Raccolta Ordine cerchi clienti e prodotti scrivendo <strong>più parole separate da spazio</strong> — ogni parola deve comparire nel risultato (es. <em>"tab recc"</em> trova "TABACCHERIA DI RECCAGNI LUCA", <em>"mes pea"</em> trova "MESH MINI PEACH ICE 20").</li>
   <li><strong>Tappa senza scheda cliente</strong> (tabaccheria da acquisire): toccando Ordine o Ispezione parte la <strong>Prima Visita</strong> con i dati della tabaccheria precompilati — solo se il GPS conferma che sei sul posto (entro 500 m). Al termine il nuovo prospect è collegato alla tappa e prosegui.</li>
   <li><strong>"Visita terminata"</strong>: registra l'<strong>esito</strong>, una nota e l'eventuale follow-up con <strong>data e ora</strong> (scegli l'orario tra le proposte: l'appuntamento viene creato in <strong>Calendario</strong> nel giorno e all'ora scelti). Usalo per chiudere la tappa quando l'ispezione o l'ordine non sono stati possibili (es. chiuso, titolare assente). L'esito viene registrato anche come <strong>visita nel CRM</strong> del cliente.</li>
   <li><strong>"Salta visita"</strong>: se non puoi fermarti, indica il motivo (chiuso, titolare assente...). Le visite obbligatorie (★) non si possono saltare.</li>
@@ -325,7 +338,7 @@ html = f"""<!DOCTYPE html>
   <tr><td><strong>Visita obbligatoria (★)</strong></td><td>Tappa che hai imposto tu: entra sempre e non è saltabile.</td></tr>
 </table>
 
-<div class="footer-note">VOOM crm · Manuale AI Tour app mobile per l'agente v1.0 · generato il {today} · Le schermate sono esemplificative: i dati mostrati non sono reali. Per domande o segnalazioni rivolgiti al tuo responsabile.</div>
+<div class="footer-note">VOOM crm · Manuale AI Tour app mobile per l'agente v1.2 · generato il {today} · Le schermate sono esemplificative: i dati mostrati non sono reali. Per domande o segnalazioni rivolgiti al tuo responsabile.</div>
 
 </body>
 </html>"""

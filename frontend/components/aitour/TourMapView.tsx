@@ -1,7 +1,9 @@
 // Mappa del tour AI (parità web TourMap): marker numerati per tipo, percorso, partenza/rientro,
-// popup con dettagli e Naviga. WebView su nativo, iframe su web.
-import React, { useMemo, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+// popup con dettagli e Naviga. WebView su nativo, iframe su web. Tasto schermo intero.
+import React, { useMemo, useEffect, useCallback, useState } from 'react';
+import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { openNavigation } from './shared';
 
 let WebView: any = null;
@@ -127,6 +129,8 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
 
 export function TourMapView({ stops, geometry, start, end, height = 420 }: Props) {
   const html = useMemo(() => buildHtml(stops, geometry, start, end), [stops, geometry, start, end]);
+  const [fullscreen, setFullscreen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleMessage = useCallback((raw: string) => {
     try {
@@ -147,21 +151,16 @@ export function TourMapView({ stops, geometry, start, end, height = 420 }: Props
     return () => (globalThis as unknown as Window).removeEventListener?.('message', listener);
   }, [handleMessage]);
 
-  if (Platform.OS === 'web') {
+  const renderMap = () => {
+    if (Platform.OS === 'web') {
+      return React.createElement('iframe', {
+        srcDoc: html,
+        style: { width: '100%', height: '100%', border: 'none' },
+        title: 'Mappa del tour',
+      });
+    }
+    if (!WebView) return null;
     return (
-      <View style={[styles.box, { height }]}>
-        {React.createElement('iframe', {
-          srcDoc: html,
-          style: { width: '100%', height: '100%', border: 'none' },
-          title: 'Mappa del tour',
-        })}
-      </View>
-    );
-  }
-
-  if (!WebView) return null;
-  return (
-    <View style={[styles.box, { height }]}>
       <WebView
         source={{ html }}
         style={{ flex: 1 }}
@@ -170,7 +169,38 @@ export function TourMapView({ stops, geometry, start, end, height = 420 }: Props
         domStorageEnabled
         originWhitelist={['*']}
       />
-    </View>
+    );
+  };
+
+  return (
+    <>
+      <View style={[styles.box, { height }]}>
+        {renderMap()}
+        <TouchableOpacity
+          style={styles.expandBtn}
+          onPress={() => setFullscreen(true)}
+          activeOpacity={0.8}
+          accessibilityLabel="Mappa a schermo intero"
+        >
+          <Ionicons name="expand" size={17} color="#0f172a" />
+          <Text style={styles.expandText}>Schermo intero</Text>
+        </TouchableOpacity>
+      </View>
+      <Modal visible={fullscreen} animationType="fade" onRequestClose={() => setFullscreen(false)}>
+        <View style={styles.fullRoot}>
+          {fullscreen && renderMap()}
+          <TouchableOpacity
+            style={[styles.reduceBtn, { top: insets.top + 10 }]}
+            onPress={() => setFullscreen(false)}
+            activeOpacity={0.8}
+            accessibilityLabel="Riduci la mappa"
+          >
+            <Ionicons name="contract" size={18} color="#FFF" />
+            <Text style={styles.reduceText}>Riduci</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -183,4 +213,43 @@ const styles = StyleSheet.create({
     marginTop: 10,
     backgroundColor: '#F2F2F7',
   },
+  expandBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  expandText: { fontSize: 12, fontWeight: '700', color: '#0f172a' },
+  fullRoot: { flex: 1, backgroundColor: '#F2F2F7' },
+  reduceBtn: {
+    position: 'absolute',
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    minHeight: 46,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    zIndex: 10,
+  },
+  reduceText: { fontSize: 13, fontWeight: '700', color: '#FFF' },
 });

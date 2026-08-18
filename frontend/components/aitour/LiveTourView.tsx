@@ -97,6 +97,12 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         setMessage('Tutte le visite sono state gestite: puoi terminare il tour.');
         return;
       }
+      // Guardia: oltre l'orario di fine tour il ricalcolo azzererebbe il giro (tutte
+      // le tappe risulterebbero "fuori orario"). Non tocchiamo nulla: l'agente decide.
+      if (nowMin() >= initial.endMin) {
+        setMessage(`Sei oltre l'orario di fine tour (${minToTime(initial.endMin)}): il giro non viene ricalcolato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
+        return;
+      }
       setRecalcing(true);
       try {
         const pos = (await getCurrentPos()) || fallbackPos();
@@ -117,6 +123,12 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         });
         const keptKeys = new Set(plan.stops.map((p) => p.candidate.key));
         const dropped = remaining.filter((s) => !keptKeys.has(s.candidate.key));
+        // Guardia anti-azzeramento: se l'AI scarterebbe TUTTE le tappe rimanenti,
+        // non cancellare nulla (tempo residuo insufficiente: decide l'agente).
+        if (plan.stops.length === 0) {
+          setMessage(`Tempo residuo insufficiente per ripianificare entro le ${minToTime(initial.endMin)}: il giro non viene modificato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
+          return;
+        }
         for (const d of dropped) await cancelStopByRecalc(tour.id, d.id);
 
         const stopByKey = new Map(remaining.map((s) => [s.candidate.key, s]));
@@ -175,6 +187,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   useEffect(() => {
     const iv = setInterval(() => {
       if (busy || recalcing || esitoOpen || skipOpen || recapOpen || acquireKind) return;
+      if (nowMin() >= initial.endMin) return; // oltre fine tour: il ricalcolo azzererebbe il giro
       const current = stopsRef.current;
       const nx = current.find((s) => s.status === 'planned' || s.status === 'arrived');
       if (!nx || nx.status !== 'planned' || !nx.plannedArrival) return;
@@ -184,7 +197,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       }
     }, 60000);
     return () => clearInterval(iv);
-  }, [busy, recalcing, esitoOpen, skipOpen, recapOpen, acquireKind, runRecalc]);
+  }, [busy, recalcing, esitoOpen, skipOpen, recapOpen, acquireKind, runRecalc, initial.endMin]);
 
   const handleArrived = async () => {
     if (!next) return;

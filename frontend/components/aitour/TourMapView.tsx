@@ -61,7 +61,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
 <div id="map"></div>
 <script>
   var DATA = ${payload};
-  var map = L.map('map', { zoomControl: true, attributionControl: false });
+  var map = L.map('map', { zoomControl: true, attributionControl: false, zoomSnap: 0.25, zoomDelta: 0.5 });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
   function sendMessage(msg) {
@@ -117,12 +117,27 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
     m.bindPopup(html, { maxWidth: 260 });
   });
 
-  // Fit bounds
+  // Fit bounds — robusto anche a schermo intero: il contenitore può cambiare
+  // dimensione dopo il load (Modal/animazioni), quindi re-fit ritardato + su resize,
+  // finché l'utente non interagisce con la mappa.
   var pts = [[DATA.start.lat, DATA.start.lng]];
   DATA.stops.forEach(function(s) { pts.push([s.lat, s.lng]); });
   if (DATA.end) pts.push([DATA.end.lat, DATA.end.lng]);
-  if (pts.length > 1) { map.fitBounds(L.latLngBounds(pts), { padding: [36, 36] }); }
-  else { map.setView(pts[0], 12); }
+  var fitting = false, userTouched = false;
+  function fitAll() {
+    fitting = true;
+    map.invalidateSize();
+    if (pts.length > 1) { map.fitBounds(L.latLngBounds(pts), { padding: [36, 36] }); }
+    else { map.setView(pts[0], 12); }
+    setTimeout(function() { fitting = false; }, 400);
+  }
+  map.on('dragstart zoomstart', function() { if (!fitting) userTouched = true; });
+  fitAll();
+  setTimeout(function() { if (!userTouched) fitAll(); }, 300);
+  setTimeout(function() { if (!userTouched) fitAll(); }, 900);
+  window.addEventListener('resize', function() {
+    if (!userTouched) setTimeout(function() { if (!userTouched) fitAll(); }, 120);
+  });
 </script>
 </body>
 </html>`;

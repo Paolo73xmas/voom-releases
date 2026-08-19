@@ -109,11 +109,19 @@ export async function loadLiveState(tour: SavedTour): Promise<LiveState> {
     const sb = (b as { actual_sequence?: number | null }).actual_sequence ?? b.planned_sequence;
     return sa - sb;
   });
+  // Nome commerciale della scheda CRM collegata (se leggibile via RLS): mostrato quando
+  // la denominazione del registro sulla tappa differisce dal nome commerciale
+  const crmNames = new Map<string, string>();
+  const linkedIds = [...new Set(ordered.map((s) => s.customer_id).filter((x): x is string => !!x))];
+  if (linkedIds.length > 0) {
+    const { data: linked } = await supabase.from('customers').select('id, business_name').in('id', linkedIds);
+    for (const c of linked || []) crmNames.set(c.id as string, (c.business_name as string) || '');
+  }
   return {
     tour,
     stops: ordered.map((s) => ({
       id: s.id,
-      candidate: stopToCandidate(s),
+      candidate: { ...stopToCandidate(s), crmName: s.customer_id ? crmNames.get(s.customer_id) || null : null },
       status: (s.status as LiveStopStatus) || 'planned',
       mandatory: s.mandatory,
       plannedArrival: s.planned_arrival,
@@ -329,10 +337,13 @@ export async function findTabCustomer(tabaccheriaId: string): Promise<string | n
   return (data?.customer_id as string | null) || null;
 }
 
-export async function updateStopCustomer(stopId: string, customerId: string): Promise<void> {
+export async function updateStopCustomer(stopId: string, customerId: string, entityType?: string): Promise<void> {
+  // Solo i punti vendita "da acquisire" diventano prospect; gli orfani mantengono il loro tipo
+  const patch: Record<string, unknown> = { customer_id: customerId };
+  if (entityType === 'free' || entityType === 'never') patch.entity_type = 'prospect';
   await supabase
     .from('ai_tour_stops')
-    .update({ customer_id: customerId, entity_type: 'prospect' })
+    .update(patch)
     .eq('id', stopId);
 }
 

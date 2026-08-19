@@ -31,6 +31,10 @@ export interface OsrmRoute {
   totalKm: number;
   totalMin: number;
   fallback: boolean;
+  /** Ripartizione km per ciclo dalla velocita' dei segmenti OSRM (null se fallback) */
+  kmUrban: number | null;
+  kmExtra: number | null;
+  kmHighway: number | null;
 }
 
 interface LatLng { lat: number; lng: number }
@@ -85,15 +89,34 @@ export async function getRoute(points: LatLng[]): Promise<OsrmRoute> {
       totalKm,
       totalMin: legs.reduce((s, l) => s + l.durationMin, 0),
       fallback: true,
+      kmUrban: null,
+      kmExtra: null,
+      kmHighway: null,
     };
   };
-  if (points.length < 2) return { latlngs: [], legs: [], totalKm: 0, totalMin: 0, fallback: false };
+  if (points.length < 2) return { latlngs: [], legs: [], totalKm: 0, totalMin: 0, fallback: false, kmUrban: null, kmExtra: null, kmHighway: null };
   try {
-    const url = `${OSRM_BASE}/route/v1/driving/${coordStr(points)}?overview=full&geometries=geojson&steps=false`;
+    const url = `${OSRM_BASE}/route/v1/driving/${coordStr(points)}?overview=full&geometries=geojson&steps=false&annotations=duration,distance`;
     const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: timeoutSignal(15000) });
     const body = await res.json();
     if (!res.ok || body.code !== 'Ok' || !body.routes?.length) throw new Error(body.message || `HTTP ${res.status}`);
     const route = body.routes[0];
+    // Ripartizione km per ciclo: velocita' stimata di ogni segmento OSRM
+    // (>=95 km/h autostrada, 48-95 extraurbano, <48 urbano)
+    let kmU = 0, kmE = 0, kmH = 0, annotated = false;
+    for (const leg of route.legs as { annotation?: { distance?: number[]; duration?: number[] } }[]) {
+      const dist = leg.annotation?.distance;
+      const dur = leg.annotation?.duration;
+      if (!dist || !dur || dist.length !== dur.length) continue;
+      annotated = true;
+      for (let i = 0; i < dist.length; i++) {
+        const km = dist[i] / 1000;
+        const speed = dur[i] > 0 ? km / (dur[i] / 3600) : 0;
+        if (speed >= 95) kmH += km;
+        else if (speed >= 48) kmE += km;
+        else kmU += km;
+      }
+    }
     return {
       latlngs: (route.geometry.coordinates as [number, number][]).map((c) => [c[1], c[0]] as [number, number]),
       legs: (route.legs as { duration: number; distance: number }[]).map((l) => ({
@@ -103,6 +126,9 @@ export async function getRoute(points: LatLng[]): Promise<OsrmRoute> {
       totalKm: route.distance / 1000,
       totalMin: route.duration / 60,
       fallback: false,
+      kmUrban: annotated ? Math.round(kmU * 10) / 10 : null,
+      kmExtra: annotated ? Math.round(kmE * 10) / 10 : null,
+      kmHighway: annotated ? Math.round(kmH * 10) / 10 : null,
     };
   } catch (err) {
     console.warn('[AITour][osrm] Percorso non disponibile, uso stima haversine:', err);

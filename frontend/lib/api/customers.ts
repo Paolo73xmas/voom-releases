@@ -110,11 +110,25 @@ export async function searchCustomers(
 
     if (searchTerm && searchTerm.trim().length > 0) {
       const term = searchTerm.trim();
+      // Match anche sulla denominazione ufficiale del registro tabaccherie collegato
+      // (es. cercando "Fossati" si trova la scheda CRM "Tabacchi Rozzano iper")
+      let tabIdsClause = '';
+      try {
+        const { data: tabMatches } = await supabase
+          .from('tabaccherie')
+          .select('id')
+          .ilike('denominazione', `%${term}%`)
+          .not('customer_id', 'is', null)
+          .limit(150);
+        const tabIds = (tabMatches || []).map((t) => t.id).join(',');
+        if (tabIds) tabIdsClause = `,tabaccheria_id.in.(${tabIds})`;
+      } catch { /* la ricerca base resta valida */ }
       query = query.or(
         `business_name.ilike.%${term}%,` +
         `city.ilike.%${term}%,` +
         `contact_name.ilike.%${term}%,` +
-        `contact_phone.ilike.%${term}%`
+        `contact_phone.ilike.%${term}%` +
+        tabIdsClause
       );
     }
 

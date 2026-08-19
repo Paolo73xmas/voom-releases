@@ -19,6 +19,8 @@ export interface TourCandidate {
   historyCustomerId?: string | null;
   tabaccheriaId: string | null;
   name: string;
+  /** Nome commerciale della scheda cliente CRM quando differisce dalla denominazione del registro */
+  crmName?: string | null;
   address: string;
   city: string;
   province: string;
@@ -74,6 +76,10 @@ export interface TourPlan {
   resolvedDayType: Exclude<DayType, 'ai'>;
   areaLabel: string;
   totalKm: number;
+  /** Ripartizione km per ciclo (da OSRM; null se non calcolabile) */
+  kmUrban?: number | null;
+  kmExtra?: number | null;
+  kmHighway?: number | null;
   driveMin: number;
   visitMin: number;
   bufferMin: number;

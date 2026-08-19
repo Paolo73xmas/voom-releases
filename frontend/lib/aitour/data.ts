@@ -236,20 +236,29 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
       console.warn('[AITour][data] tabaccherie orfane:', tabErr);
       continue;
     }
+    // Nome commerciale della scheda CRM collegata (se leggibile: RLS puo' filtrare i clienti altrui)
+    const linkedIds = (tabs || []).map((t) => t.customer_id as string | null).filter((x): x is string => !!x);
+    const crmNames = new Map<string, string>();
+    if (linkedIds.length > 0) {
+      const { data: linked } = await supabase.from('customers').select('id, business_name').in('id', linkedIds);
+      for (const c of linked || []) crmNames.set(c.id as string, (c.business_name as string) || '');
+    }
     for (const t of tabs || []) {
       const status = orphanMap.get(t.id) || null;
       const lat = Number(t.gps_lat);
       const lng = Number(t.gps_lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      const linkedCustomerId = (t.customer_id as string | null) || null;
       orphans.push({
         key: `orphan:${t.id}`,
         entityType: 'orphan',
-        customerId: null,
+        customerId: linkedCustomerId,
         // Cliente di altro agente (invisibile via RLS): id usato SOLO per lo
         // storico ordini del badge Orfano (RPC SECURITY DEFINER a dato minimo)
         historyCustomerId: t.customer_id || null,
         tabaccheriaId: t.id,
         name: t.denominazione || `Tabaccheria Riv. ${t.codice_rivendita || ''}`.trim(),
+        crmName: linkedCustomerId ? crmNames.get(linkedCustomerId) || null : null,
         address: t.indirizzo || '',
         city: t.comune || '',
         province: t.provincia || '',

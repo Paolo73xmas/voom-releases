@@ -208,7 +208,7 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     ...optimized.map((i) => ({ lat: pool[i - 1].lat, lng: pool[i - 1].lng })),
     ...(end ? [{ lat: end.lat, lng: end.lng }] : []),
   ];
-  const route = optimized.length > 0 ? await getRoute(routePoints) : { latlngs: [], legs: [], totalKm: 0, totalMin: 0, fallback: matrix.fallback };
+  const route = optimized.length > 0 ? await getRoute(routePoints) : { latlngs: [], legs: [], totalKm: 0, totalMin: 0, fallback: matrix.fallback, kmUrban: null, kmExtra: null, kmHighway: null };
 
   // Timeline
   const stops: PlannedStop[] = [];
@@ -268,6 +268,9 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     resolvedDayType: input.resolvedDayType,
     areaLabel: '',
     totalKm: route.totalKm,
+    kmUrban: route.kmUrban,
+    kmExtra: route.kmExtra,
+    kmHighway: route.kmHighway,
     driveMin,
     visitMin,
     bufferMin: Math.max(0, endMin - finishMin),
@@ -344,6 +347,9 @@ export async function planFixedOrder(ordered: TourCandidate[], base: TourPlan): 
     stops,
     geometry: route.latlngs,
     totalKm: route.totalKm,
+    kmUrban: route.kmUrban,
+    kmExtra: route.kmExtra,
+    kmHighway: route.kmHighway,
     driveMin,
     visitMin,
     bufferMin: Math.max(0, base.endMin - t),

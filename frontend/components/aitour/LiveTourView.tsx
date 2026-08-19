@@ -324,9 +324,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               setMessage(`Prospect non creato per "${stop.candidate.name}": la tappa resta aperta`);
               return;
             }
-            await updateStopCustomer(stop.id, custId);
+            await updateStopCustomer(stop.id, custId, stop.candidate.entityType);
+            const newType = stop.candidate.entityType === 'free' || stop.candidate.entityType === 'never' ? 'prospect' : stop.candidate.entityType;
             const updated = current.map((s): LiveStop =>
-              s.id === stop.id ? { ...s, candidate: { ...s.candidate, customerId: custId, entityType: 'prospect' } } : s
+              s.id === stop.id ? { ...s, candidate: { ...s.candidate, customerId: custId, entityType: newType } } : s
             );
             setStops(updated);
             const nk = info.nextKind || 'inspection';
@@ -536,6 +537,17 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           {tour.start_time?.slice(0, 5)}–{tour.end_time?.slice(0, 5)}
         </Text>
         <TouchableOpacity
+          style={styles.exitBtn}
+          onPress={() => {
+            hap.light();
+            onExit();
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={13} color={DS.ink2} />
+          <Text style={styles.exitBtnText}>Esci</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={styles.finishBtn}
           onPress={() => {
             hap.light();
@@ -585,6 +597,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               label: isPending ? String(stopNumbers.get(s.id)) : '',
               mandatory: s.mandatory,
               name: s.candidate.name,
+              crmName: s.candidate.crmName,
               entity: ENTITY_LABELS[s.candidate.entityType],
               line1:
                 s.status === 'completed'
@@ -643,6 +656,11 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             )}
           </View>
           <Text style={styles.nextName}>{next.candidate.name}</Text>
+          {next.candidate.crmName && next.candidate.crmName !== next.candidate.name ? (
+            <Text style={styles.nextCrmName}>
+              Scheda CRM: <Text style={{ fontFamily: JAKARTA.bold }}>{next.candidate.crmName}</Text>
+            </Text>
+          ) : null}
           <Text style={styles.nextAddress}>
             <Ionicons name="location-outline" size={12} color={DS.inkMuted} /> {next.candidate.address}
             {next.candidate.city ? `, ${next.candidate.city}` : ''}
@@ -929,6 +947,19 @@ const styles = StyleSheet.create({
   },
   liveBadgeText: { fontFamily: JAKARTA.bold, fontSize: 10, color: '#FFF', letterSpacing: 0.5 },
   headerTime: { fontFamily: JAKARTA.medium, fontSize: 12, color: DS.ink2 },
+  exitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: DS.surface2,
+    borderWidth: 1,
+    borderColor: DS.border,
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 11,
+    marginLeft: 'auto',
+  },
+  exitBtnText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: DS.ink2 },
   finishBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -937,7 +968,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 11,
-    marginLeft: 'auto',
   },
   finishBtnText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: '#FFF' },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 7, flexWrap: 'wrap' },
@@ -995,6 +1025,7 @@ const styles = StyleSheet.create({
   mandBadge: { backgroundColor: '#DC2626', borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 },
   mandBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 9, color: '#FFF' },
   nextName: { fontFamily: JAKARTA.bold, fontSize: 17, color: DS.ink, marginTop: 5 },
+  nextCrmName: { fontFamily: JAKARTA.medium, fontSize: 11, color: '#3B82F6', marginTop: 2 },
   nextAddress: { fontFamily: JAKARTA.regular, fontSize: 12, color: DS.inkMuted, marginTop: 3 },
   nextMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 7, flexWrap: 'wrap' },
   entityBadge: { borderWidth: 1, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },

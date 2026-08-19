@@ -21,6 +21,8 @@ export interface TourMapStop {
   label: string; // numero sequenza o simbolo
   mandatory: boolean;
   name: string;
+  /** Nome commerciale della scheda CRM quando differisce dalla denominazione del registro */
+  crmName?: string | null;
   entity: string;
   line1: string; // es. "Arrivo 10:30 · visita 25 min"
   line2?: string; // es. "Dal punto precedente: 12 min · 5.4 km"
@@ -108,6 +110,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
   DATA.stops.forEach(function(s) {
     var m = L.marker([s.lat, s.lng], { icon: numberedIcon(s.label, s.color, s.mandatory, s.status) }).addTo(map);
     var html = '<div class="pp-name">' + s.name + '</div>' +
+      (s.crmName && s.crmName !== s.name ? '<div class="pp-line" style="color:#2563eb">Scheda CRM: <b>' + s.crmName + '</b></div>' : '') +
       '<span class="pp-badge" style="border-color:' + s.color + ';color:' + s.color + '">' + s.entity + '</span>' +
       (s.mandatory ? '<span class="pp-badge" style="border-color:#dc2626;color:#fff;background:#dc2626">Obbligatoria</span>' : '') +
       '<div class="pp-line">' + s.line1 + '</div>' +

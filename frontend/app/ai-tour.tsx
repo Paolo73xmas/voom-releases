@@ -108,6 +108,10 @@ const TOUR_TYPE_LABELS: Record<string, string> = {
   ai: 'AI',
 };
 
+// Uscita volontaria dalla vista live (per tour id): niente rientro automatico
+// finché l'utente non tocca "Riprendi vista live" (flag di sessione app)
+const liveExitFlags = new Set<string>();
+
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   planned: { label: 'Pianificato', color: '#1D4ED8', bg: '#DBEAFE' },
   active: { label: 'In corso', color: '#047857', bg: '#D1FAE5' },
@@ -151,6 +155,7 @@ export default function AITourScreen() {
   const [tab, setTab] = useState<'genera' | 'settimana' | 'mensile' | 'tours'>('genera');
   const [phase, setPhase] = useState<'form' | 'result'>('form');
   const [liveState, setLiveState] = useState<LiveState | null>(null);
+  const [activePausedTour, setActivePausedTour] = useState<SavedTour | null>(null);
   const [starting, setStarting] = useState(false);
   const [weekPreset, setWeekPreset] = useState<WeekPreset | null>(null);
   const [settings, setSettings] = useState<AiTourSettings>({ ...DEFAULT_SETTINGS });
@@ -211,14 +216,21 @@ export default function AITourScreen() {
         }
       })
       .catch(() => setAgentZones([]));
-    // Riprendi automaticamente un tour live in corso
+    // Riprendi automaticamente un tour live in corso (a meno che l'utente non sia uscito volontariamente)
     getActiveTour(agentId).then(async (t) => {
       if (t) {
-        try {
-          setLiveState(await loadLiveState(t));
-        } catch (err) {
-          console.warn('[AITour] resume live:', err);
+        if (liveExitFlags.has(t.id)) {
+          setActivePausedTour(t);
+        } else {
+          setActivePausedTour(null);
+          try {
+            setLiveState(await loadLiveState(t));
+          } catch (err) {
+            console.warn('[AITour] resume live:', err);
+          }
         }
+      } else {
+        setActivePausedTour(null);
       }
     });
   }, [agentId]);
@@ -617,12 +629,32 @@ export default function AITourScreen() {
     }
   };
 
-  const exitLive = () => {
+  const exitLive = async () => {
+    const t = liveState?.tour;
     setLiveState(null);
     setPhase('form');
     setSavedTourId(null);
     setPlan(null);
     if (tab === 'tours') loadSavedTours();
+    // Uscita volontaria: il giro resta attivo, niente rientro automatico
+    if (t) liveExitFlags.add(t.id);
+    if (agentId) {
+      const still = await getActiveTour(agentId);
+      setActivePausedTour(still);
+    }
+  };
+
+  const resumeLive = async () => {
+    if (!activePausedTour) return;
+    hap.medium();
+    liveExitFlags.delete(activePausedTour.id);
+    try {
+      setLiveState(await loadLiveState(activePausedTour));
+      setActivePausedTour(null);
+    } catch (err) {
+      console.error('[AITour] resumeLive:', err);
+      setErrMsg('Errore nel caricamento del tour live');
+    }
   };
 
   // Dalla Vista Settimanale: genera il tour ottimizzato di un singolo giorno
@@ -665,7 +697,9 @@ export default function AITourScreen() {
     // Tour in corso: riprendi direttamente la Modalità Live
     if (tour.status === 'active') {
       try {
+        liveExitFlags.delete(tour.id);
         setLiveState(await loadLiveState(tour));
+        setActivePausedTour(null);
         return;
       } catch (err) {
         console.warn('[AITour] resume live from list:', err);
@@ -1160,6 +1194,7 @@ export default function AITourScreen() {
                 label: String(s.sequence),
                 mandatory: s.mandatory,
                 name: s.candidate.name,
+                crmName: s.candidate.crmName,
                 entity: ENTITY_LABELS[s.candidate.entityType],
                 line1: `Arrivo ${minToTime(s.arrivalMin)} · visita ${s.candidate.visitMinutes} min · ${s.candidate.score}/100`,
                 line2: `Dal punto precedente: ${Math.round(s.travelMinFromPrev)} min · ${s.travelKmFromPrev.toFixed(1)} km`,
@@ -1373,6 +1408,22 @@ export default function AITourScreen() {
             ))}
           </View>
 
+      {/* Tour live in corso ma vista live chiusa volontariamente */}
+      {activePausedTour ? (
+        <View style={styles.pausedBanner}>
+          <View style={styles.pausedBadge}>
+            <Text style={styles.pausedBadgeText}>TOUR LIVE</Text>
+          </View>
+          <Text style={styles.pausedText}>
+            Tour in corso ({fmtTourDate(activePausedTour.tour_date)} · {activePausedTour.start_time?.slice(0, 5)}–{activePausedTour.end_time?.slice(0, 5)}): sei uscito dalla vista live, il giro resta attivo.
+          </Text>
+          <TouchableOpacity style={styles.pausedResumeBtn} onPress={resumeLive} activeOpacity={0.8}>
+            <Ionicons name="play" size={13} color="#FFF" />
+            <Text style={styles.pausedResumeText}>Riprendi vista live</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
       {errMsg ? (
         <View style={styles.errBanner}>
           <Ionicons name="alert-circle" size={14} color="#991B1B" />
@@ -1465,6 +1516,33 @@ const styles = StyleSheet.create({
   segmentActive: { backgroundColor: DS.surface, ...SHADOWS.sm },
   segmentText: { fontFamily: JAKARTA.semibold, fontSize: 13, color: DS.inkMuted },
   segmentTextActive: { color: DS.ink },
+  pausedBanner: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 12,
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#DC2626',
+    backgroundColor: DS.surface,
+  },
+  pausedBadge: { backgroundColor: '#DC2626', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
+  pausedBadgeText: { fontFamily: JAKARTA.bold, fontSize: 10, color: '#FFF', letterSpacing: 0.5 },
+  pausedText: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 11.5, color: DS.ink2, minWidth: 160, lineHeight: 16 },
+  pausedResumeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginLeft: 'auto',
+  },
+  pausedResumeText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: '#FFF' },
   content: { padding: 12 },
   label: { fontFamily: JAKARTA.semibold, fontSize: 12, color: DS.ink2, marginTop: 14, marginBottom: 6 },
   zonesHint: { fontFamily: JAKARTA.medium, fontSize: 10.5, color: DS.inkMuted, marginTop: 8, marginBottom: 6 },

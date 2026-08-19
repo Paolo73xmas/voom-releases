@@ -6,7 +6,7 @@ import edge_tts
 import imageio_ffmpeg
 
 VOICE = 'it-IT-DiegoNeural'
-RATES = {}  # es. {'v3_s4': '+10%'} se una scena sfora la finestra
+RATES = {'v3_s4': '+8%'}  # velocizzazione per-scena se una scena sfora troppo la finestra video
 
 OUT = '/app/manual/video/audio'
 os.makedirs(OUT, exist_ok=True)
@@ -34,7 +34,7 @@ SCENES = {
     'v3_s1': "E ora si parte davvero. Tocca Avvia Tour: entri in modalità Tour Live. In alto vedi il progresso della giornata, l'indicatore di ritardo o anticipo, e il tasto Termina.",
     'v3_s2': "La card Prossima Visita è il tuo centro di comando. Navigatore apre le mappe del telefono già puntate sulla tappa. Sono arrivato registra l'orario reale di arrivo, che alimenta le durate apprese. Raccolta Ordine apre la raccolta con il cliente già selezionato.",
     'v3_s3': "E poi il tasto verde Ispezione. L'ispezione è obbligatoria a ogni visita, e ora si fa tutto in un passaggio: scegli l'esito, scatta le due foto obbligatorie del punto vendita — senza foto la conferma resta bloccata — e controlla cellulare ed email, già precompilati: se li modifichi, vengono salvati sulla scheda cliente. Puoi anche fissare un follow-up con data e ora: l'appuntamento finisce dritto nel tuo Calendario.",
-    'v3_s4': "Attenzione a questa novità: i clienti ORFANI. Se la tappa è un cliente orfano e sei fisicamente sul posto, con il GPS che ti conferma entro cinquecento metri, alla conferma dell'ispezione il cliente viene riassegnato automaticamente a te. L'app te lo annuncia con l'avviso: Cliente riassegnato a te. E da quel momento lo trovi tra i tuoi clienti. Non solo: dopo l'ispezione, l'orfano torna Cliente se ha già ordinato, o Prospect se non ha mai ordinato. In breve: chi visita, vince.",
+    'v3_s4': "Attenzione ai clienti ORFANI. Se la tappa è un orfano e sei fisicamente sul posto, con il GPS che ti conferma entro cinquecento metri, alla conferma dell'ispezione il cliente passa automaticamente a te: l'app lo annuncia con l'avviso Cliente riassegnato a te. E siccome risulta ispezionato da poco, l'AI non lo proporrà più nei giri degli altri agenti. Ma attenzione: l'ispezione da sola non lo fa uscire dallo stato di orfano — per quello serve un acquisto. Appena il cliente ordina, la scheda torna Cliente a tutti gli effetti. In breve: chi visita vince, chi vende conquista.",
     'v3_s5': "Se non puoi fermarti, usa Salta visita indicando il motivo. Dopo ogni esito o salto, l'AI ricalcola il giro dalla tua posizione attuale; e se sei in anticipo può proporti una tabaccheria vicina da aggiungere. Oltre l'orario di fine, invece, il giro non viene più toccato: le tappe restanti rimangono attive, e decidi tu.",
     'v3_s6': "Nella Mappa del giro segui tutto in tempo reale: verdi le completate, grigie le saltate, numerate le rimanenti.",
     'v3_s7': "A fine giornata tocca Termina: il consuntivo riassume tappe completate, ordini, ispezioni, follow-up e chilometri. Tocca Termina definitivamente, e la giornata è in archivio. Buone vendite con AI Tour!",

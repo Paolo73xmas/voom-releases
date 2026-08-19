@@ -165,6 +165,8 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
 
 - **Allineamento origin/main (ago 2026, commit 943c6c8 + db839da + 1d98212)**: 1) ripartizione km per ciclo (urbano/extraurbano/autostrada) da annotazioni OSRM salvata alla pianificazione (osrm.ts, planner.ts, tours.ts → colonne km_urban/km_extra/km_highway, per report Costi Operativi admin web); 2) tasto "Esci" nella vista Tour Live (il giro resta attivo) + flag di sessione anti-rientro automatico + banner "TOUR LIVE — Riprendi vista live" (LiveTourView.tsx, ai-tour.tsx) — testato E2E con tour sintetico poi rimosso; 3) ricerca Clienti estesa alla denominazione del registro tabaccherie collegato (lib/api/customers.ts), tappe orfano da registro con customer_id + riga "Scheda CRM: <nome commerciale>" nella card Prossima Visita del Live e nel popup mappa (data.ts, live.ts con lookup crmName in loadLiveState, LiveTourView, TourMapView), fix: l'esito non riclassifica più gli orfani come prospect (updateStopCustomer con guardia entityType).
 
+- **Aggiornamento narrazione orfani (ago 2026)**: scena v3_s4 del tutorial riscritta su richiesta utente — ora spiega che con l'ispezione l'orfano passa all'agente, che l'AI non lo propone più ad altri agenti perché "ispezionato da poco", ma che per uscire dallo stato di orfano serve un acquisto. Audio Diego rigenerato con rate +8% (37.7s) per restare nel limite x1.25 di rallentamento; riassemblati video 3 e video completo (6:25).
+
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)
 - Camera integration for photo uploads in anagrafica visits

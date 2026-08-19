@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -72,6 +72,24 @@ async def get_manual_aitour():
         media_type="application/pdf",
         filename="Manuale-AI-Tour-Agente-VOOM-crm.pdf",
     )
+
+# Video tutorial AI Tour (generati in /app/manual/video)
+VIDEO_DIR = "/app/manual/video"
+VIDEO_FILES = {
+    "1": ("aitour-tutorial-1-genera.mp4", "Tutorial-1-Genera-Tour.mp4"),
+    "2": ("aitour-tutorial-2-risultato.mp4", "Tutorial-2-Mappa-Risultato.mp4"),
+    "3": ("aitour-tutorial-3-live.mp4", "Tutorial-3-Live-Orfani.mp4"),
+}
+
+@api_router.get("/video-tutorial/{num}")
+async def get_video_tutorial(num: str):
+    if num not in VIDEO_FILES:
+        raise HTTPException(status_code=404, detail="Video non trovato")
+    src, name = VIDEO_FILES[num]
+    path = f"{VIDEO_DIR}/{src}"
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Video non ancora generato")
+    return FileResponse(path, media_type="video/mp4", filename=name)
 
 # Include the router in the main app
 app.include_router(api_router)

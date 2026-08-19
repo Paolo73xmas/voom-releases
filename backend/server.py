@@ -79,6 +79,7 @@ VIDEO_FILES = {
     "1": ("aitour-tutorial-1-genera.mp4", "Tutorial-1-Genera-Tour.mp4"),
     "2": ("aitour-tutorial-2-risultato.mp4", "Tutorial-2-Mappa-Risultato.mp4"),
     "3": ("aitour-tutorial-3-live.mp4", "Tutorial-3-Live-Orfani.mp4"),
+    "completo": ("aitour-tutorial-completo.mp4", "Tutorial-AI-Tour-Completo.mp4"),
 }
 
 @api_router.get("/voice-sample/{name}")

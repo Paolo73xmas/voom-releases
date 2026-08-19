@@ -1,10 +1,12 @@
-"""Genera la voce narrante (onyx, italiano) per i 3 video tutorial AI Tour.
-Output: /app/manual/video/audio/vN_sM.mp3 + durations.json"""
+"""Genera la voce narrante (it-IT-DiegoNeural, italiano madrelingua) per i 3 video tutorial AI Tour.
+Output: /app/manual/video/audio/vN_sM.mp3 + durations.json
+RATES: velocizzazione per-scena per far rientrare l'audio nella finestra video."""
 import asyncio, os, json, subprocess
-from dotenv import load_dotenv
-load_dotenv('/app/backend/.env')
-from emergentintegrations.llm.openai import OpenAITextToSpeech
+import edge_tts
 import imageio_ffmpeg
+
+VOICE = 'it-IT-DiegoNeural'
+RATES = {}  # es. {'v3_s4': '+10%'} se una scena sfora la finestra
 
 OUT = '/app/manual/video/audio'
 os.makedirs(OUT, exist_ok=True)
@@ -45,14 +47,12 @@ def mp3_duration(path):
     return int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
 
 async def main():
-    tts = OpenAITextToSpeech(api_key=os.getenv("EMERGENT_LLM_KEY"))
     durations = {}
     for key, text in SCENES.items():
         path = f'{OUT}/{key}.mp3'
         if not os.path.exists(path):
-            audio = await tts.generate_speech(text=text, model='tts-1-hd', voice='onyx')
-            with open(path, 'wb') as f:
-                f.write(audio)
+            c = edge_tts.Communicate(text, VOICE, rate=RATES.get(key, '+0%'))
+            await c.save(path)
         durations[key] = round(mp3_duration(path), 2)
         print(f'{key}: {durations[key]}s')
     with open(f'{OUT}/durations.json', 'w') as f:

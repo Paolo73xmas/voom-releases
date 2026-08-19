@@ -81,6 +81,15 @@ VIDEO_FILES = {
     "3": ("aitour-tutorial-3-live.mp4", "Tutorial-3-Live-Orfani.mp4"),
 }
 
+@api_router.get("/voice-sample/{name}")
+async def get_voice_sample(name: str):
+    if not name.replace("_", "").replace("-", "").isalnum():
+        raise HTTPException(status_code=404, detail="Non trovato")
+    path = f"{VIDEO_DIR}/sample_{name}.mp3"
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Campione non trovato")
+    return FileResponse(path, media_type="audio/mpeg", filename=f"campione-voce-{name}.mp3")
+
 @api_router.get("/video-tutorial/{num}")
 async def get_video_tutorial(num: str):
     if num not in VIDEO_FILES:

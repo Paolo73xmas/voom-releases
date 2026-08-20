@@ -82,6 +82,10 @@ VIDEO_FILES = {
     "completo": ("aitour-tutorial-completo.mp4", "Tutorial-AI-Tour-Completo.mp4"),
 }
 
+@api_router.get("/sim-mai-visitato")
+async def get_sim_mai_visitato():
+    return FileResponse("/app/manual/sim/sim-mai-visitato.png", media_type="image/png", filename="Simulazione-Mai-Visitato.png")
+
 @api_router.get("/voice-sample/{name}")
 async def get_voice_sample(name: str):
     if not name.replace("_", "").replace("-", "").isalnum():

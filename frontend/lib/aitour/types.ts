@@ -10,6 +10,14 @@ export interface GeoPoint {
   label: string;
 }
 
+export interface PreferredVisitSlot {
+  id: string;
+  label: string;
+  start: number;
+  end: number;
+  strict?: boolean;
+}
+
 export interface TourCandidate {
   key: string;
   entityType: EntityType;
@@ -51,6 +59,8 @@ export interface TourCandidate {
   nextSuggestedVisit: string | null;
   visitMinutes: number;
   visitLearnedSamples?: number;
+  /** Fasce orarie in cui il cliente preferisce ricevere le visite */
+  preferredSlots?: PreferredVisitSlot[] | null;
   potentialValue: number;
 }
 
@@ -61,6 +71,10 @@ export interface PlannedStop {
   departureMin: number;
   travelMinFromPrev: number;
   travelKmFromPrev: number;
+  /** Attesa per rientrare nella fascia oraria preferita del cliente */
+  waitMin?: number;
+  /** Arrivo fuori dalla fascia preferita (con tolleranza) */
+  outsideWindow?: boolean;
   mandatory: boolean;
 }
 

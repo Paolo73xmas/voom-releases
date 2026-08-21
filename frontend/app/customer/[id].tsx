@@ -19,6 +19,8 @@ import { Customer } from '../../types';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { COLORS } from '../../lib/theme';
+import { VisitSlotWheel } from '../../components/customers/VisitSlotWheel';
+import { getVisitSlots, slotsFromIds, type VisitSlot } from '../../lib/visit-slots';
 
 interface CustomerOrder {
   id: string;
@@ -56,6 +58,40 @@ export default function CustomerDetailScreen() {
     totalOrders: 0, totalRevenue: 0, avgOrderValue: 0,
     totalVisits: 0, daysSinceLastOrder: null, daysSinceLastVisit: null,
   });
+  // Fascia oraria visite preferita (AI Tour)
+  const [slotDefs, setSlotDefs] = useState<VisitSlot[]>([]);
+  const [slotsEditing, setSlotsEditing] = useState(false);
+  const [slotsDraft, setSlotsDraft] = useState<string[]>([]);
+  const [slotsSaving, setSlotsSaving] = useState(false);
+  const customerSlots = Array.isArray((customer as (Customer & { preferred_visit_slots?: string[] | null }) | null)?.preferred_visit_slots)
+    ? ((customer as Customer & { preferred_visit_slots?: string[] | null }).preferred_visit_slots as string[])
+    : [];
+
+  useEffect(() => {
+    getVisitSlots().then(setSlotDefs);
+  }, []);
+
+  useEffect(() => {
+    if (slotsEditing) setSlotsDraft(customerSlots);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slotsEditing]);
+
+  const saveSlots = async () => {
+    if (!customer) return;
+    setSlotsSaving(true);
+    try {
+      const value = slotsDraft.length > 0 ? slotsDraft : null;
+      const { error } = await supabase.from('customers').update({ preferred_visit_slots: value }).eq('id', customer.id);
+      if (error) throw error;
+      setCustomer({ ...(customer as Customer), preferred_visit_slots: value } as Customer);
+      setSlotsEditing(false);
+    } catch (err) {
+      console.error('[CustomerDetail] saveSlots:', err);
+      Alert.alert('Errore', 'Fasce non salvate. Riprova.');
+    } finally {
+      setSlotsSaving(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -323,6 +359,41 @@ export default function CustomerDetailScreen() {
           )}
         </View>
 
+        {/* Fascia oraria visite preferita (AI Tour) */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Fascia Visite (AI Tour)</Text>
+            <TouchableOpacity onPress={() => setSlotsEditing((v) => !v)}>
+              <Text style={styles.seeAllLink}>{slotsEditing ? 'Annulla' : 'Modifica'}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.infoCard}>
+            {slotsEditing ? (
+              <View style={{ alignItems: 'center', gap: 10 }}>
+                <VisitSlotWheel value={slotsDraft} onChange={setSlotsDraft} size={200} />
+                <TouchableOpacity
+                  style={[styles.slotsSaveBtn, slotsSaving && { opacity: 0.6 }]}
+                  onPress={saveSlots}
+                  disabled={slotsSaving}
+                  activeOpacity={0.75}
+                >
+                  {slotsSaving ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.slotsSaveText}>Salva fasce</Text>}
+                </TouchableOpacity>
+              </View>
+            ) : customerSlots.length > 0 ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {slotsFromIds(customerSlots, slotDefs).map((s) => (
+                  <View key={s.id} style={styles.slotChip}>
+                    <Text style={styles.slotChipText}>{s.label}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.slotsEmpty}>Nessuna preferenza indicata</Text>
+            )}
+          </View>
+        </View>
+
         {/* Contact Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contatto</Text>
@@ -444,6 +515,17 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   sectionTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', marginBottom: 8, marginLeft: 2 },
   seeAllLink: { fontSize: 12, color: '#3B82F6', fontWeight: '600' },
+  slotChip: { borderWidth: 1, borderColor: '#7C3AED', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  slotChipText: { fontSize: 11.5, fontWeight: '600', color: '#7C3AED' },
+  slotsEmpty: { fontSize: 12, color: COLORS.textLight },
+  slotsSaveBtn: {
+    backgroundColor: '#7C3AED',
+    borderRadius: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+  },
+  slotsSaveText: { fontSize: 13, fontWeight: '700', color: '#FFF' },
 
   // Order cards
   orderCard: {

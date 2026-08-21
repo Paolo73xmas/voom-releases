@@ -35,7 +35,7 @@ import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
 import { CandidateEntityBadge } from '../components/aitour/OrphanHistoryBadge';
 import { AI_PURPLE, AI_PURPLE_SOFT, openNavigation } from '../components/aitour/shared';
-import type { TourPlan, GeoPoint, AiTourSettings, DayType, EntityType, PriorityClass } from '../lib/aitour/types';
+import type { TourPlan, GeoPoint, AiTourSettings, DayType, EntityType, PriorityClass, TourCandidate } from '../lib/aitour/types';
 import { DEFAULT_SETTINGS, timeToMin, minToTime, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS } from '../lib/aitour/types';
 import type { WeekDayPlan } from '../lib/aitour/week';
 
@@ -739,6 +739,7 @@ export default function AITourScreen() {
             reason: s.ai_reason || '',
             nextSuggestedVisit: null,
             visitMinutes: s.planned_duration_minutes || 20,
+            preferredSlots: ((s as unknown as { preferred_slots?: TourCandidate['preferredSlots'] }).preferred_slots) || null,
             potentialValue: 0,
           },
           sequence: s.planned_sequence,
@@ -1243,6 +1244,7 @@ export default function AITourScreen() {
               <View style={styles.stopTimeBox}>
                 <Text style={styles.stopArrival}>{minToTime(s.arrivalMin)}</Text>
                 <Text style={styles.stopDeparture}>→ {minToTime(s.departureMin)}</Text>
+                {(s.waitMin || 0) > 0 && <Text style={styles.stopWait}>attesa {s.waitMin}m</Text>}
               </View>
             </View>
             <View style={styles.stopBadges}>
@@ -1252,6 +1254,14 @@ export default function AITourScreen() {
                   {s.candidate.priorityClass} · {s.candidate.score}/100
                 </Text>
               </View>
+              {(s.candidate.preferredSlots?.length || 0) > 0 && (
+                <View style={[styles.slotBadge, s.outsideWindow && styles.slotBadgeWarn]}>
+                  <Ionicons name="time-outline" size={10} color={s.outsideWindow ? '#DC2626' : '#B45309'} />
+                  <Text style={[styles.slotBadgeText, s.outsideWindow ? { color: '#DC2626' } : null]}>
+                    {(s.candidate.preferredSlots || []).map((x) => x.label).join(', ')}{s.outsideWindow ? ' ⚠' : ''}
+                  </Text>
+                </View>
+              )}
               <TouchableOpacity
                 style={styles.navBtn}
                 onPress={() => {
@@ -1791,6 +1801,19 @@ const styles = StyleSheet.create({
   stopTimeBox: { alignItems: 'flex-end' },
   stopArrival: { fontFamily: JAKARTA.bold, fontSize: 15, color: DS.ink },
   stopDeparture: { fontFamily: JAKARTA.regular, fontSize: 10, color: DS.inkMuted, marginTop: 1 },
+  stopWait: { fontFamily: JAKARTA.medium, fontSize: 9.5, color: '#B45309', marginTop: 1 },
+  slotBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderWidth: 1,
+    borderColor: '#B45309',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  slotBadgeWarn: { borderColor: '#DC2626' },
+  slotBadgeText: { fontFamily: JAKARTA.medium, fontSize: 9.5, color: '#B45309' },
   stopBadges: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 9, flexWrap: 'wrap' },
   priorityBadge: { borderRadius: 6, paddingVertical: 3, paddingHorizontal: 7 },
   priorityBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 10 },

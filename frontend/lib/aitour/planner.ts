@@ -4,6 +4,36 @@ import type { TourCandidate, TourPlan, PlannedStop, GeoPoint, DayType } from './
 import { haversineKm } from './types';
 import { getMatrix, getRoute } from './osrm';
 import { pointInZones, type TerritoryZone } from './territories';
+import { VISIT_SLOT_TOLERANCE_MIN } from '../visit-slots';
+
+// Finestre di arrivo ammesse dalla fascia preferita del cliente:
+// tolleranza ±30 minuti su tutte le fasce TRANNE quelle "strict" (pranzo 11.30-14.30)
+function allowedWindows(c: TourCandidate): { earliest: number; latest: number }[] | null {
+  const slots = c.preferredSlots;
+  if (!slots || slots.length === 0) return null;
+  return slots.map((s) => s.strict
+    ? { earliest: s.start, latest: s.end }
+    : { earliest: s.start - VISIT_SLOT_TOLERANCE_MIN, latest: s.end + VISIT_SLOT_TOLERANCE_MIN });
+}
+
+// Arrivo effettivo rispettando la fascia: attende se in anticipo, outside=true se tutte superate
+function windowArrival(c: TourCandidate, rawArrival: number): { arrival: number; wait: number; outside: boolean } {
+  const wins = allowedWindows(c);
+  if (!wins) return { arrival: rawArrival, wait: 0, outside: false };
+  let best: number | null = null;
+  for (const w of wins) {
+    if (rawArrival <= w.latest) {
+      const eff = Math.max(rawArrival, w.earliest);
+      if (best === null || eff < best) best = eff;
+    }
+  }
+  if (best === null) return { arrival: rawArrival, wait: 0, outside: true };
+  return { arrival: best, wait: best - rawArrival, outside: false };
+}
+
+function slotLabelsOf(c: TourCandidate): string {
+  return (c.preferredSlots || []).map((s) => s.label).join(', ');
+}
 
 export interface AreaFilter {
   mode: 'auto' | 'territory' | 'province' | 'city' | 'radius';
@@ -153,12 +183,7 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   let clock = startMin;
   const mandatoryIdx = new Set(mandatory.map((_, i) => i + 1));
 
-  const fits = (from: number, to: number, visitMin: number, at: number) => {
-    const travel = durMin(from, to);
-    const after = at + travel + visitMin;
-    const backHome = end ? durMin(to, endIdx) : 0;
-    return after + backHome <= usableUntil;
-  };
+  const windowBlockedKeys = new Set<string>();
 
   // Prima le obbligatorie (in ordine greedy tra loro), incluse anche se sforano (con warning)
   const mandatoryLeft = new Set(mandatoryIdx);
@@ -170,37 +195,65 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
       if (t < bestT) { bestT = t; bestI = i; }
     }
     const cand = pool[bestI - 1];
-    if (!fits(currentIdx, bestI, cand.visitMinutes, clock)) {
+    const waM = windowArrival(cand, clock + durMin(currentIdx, bestI));
+    if (waM.outside) {
+      warnings.push(`"${cand.name}": arrivo fuori dalla fascia oraria preferita (${slotLabelsOf(cand)})`);
+    }
+    const backHomeM = end ? durMin(bestI, endIdx) : 0;
+    if (waM.arrival + cand.visitMinutes + backHomeM > usableUntil) {
       warnings.push(`La visita obbligatoria "${cand.name}" porta il giro oltre l'orario pianificabile`);
     }
-    clock += durMin(currentIdx, bestI) + cand.visitMinutes;
+    clock = waM.arrival + cand.visitMinutes;
     selected.push(bestI);
     inTour.add(bestI);
     currentIdx = bestI;
     mandatoryLeft.delete(bestI);
   }
 
-  // Poi le opzionali: score - 1.3*minuti viaggio
+  // Poi le opzionali: score - 1.3*minuti viaggio - 0.5*minuti attesa fascia
   for (;;) {
     let bestI = -1;
     let bestVal = -Infinity;
     for (let i = 1; i <= pool.length; i++) {
       if (inTour.has(i)) continue;
       const cand = pool[i - 1];
-      if (!fits(currentIdx, i, cand.visitMinutes, clock)) continue;
-      const val = cand.score - durMin(currentIdx, i) * 1.3;
+      const wa = windowArrival(cand, clock + durMin(currentIdx, i));
+      if (wa.outside) { windowBlockedKeys.add(cand.key); continue; }
+      if (wa.wait > 60) { windowBlockedKeys.add(cand.key); continue; } // attesa eccessiva ora: riconsiderato piu' avanti nel giro
+      const backHome = end ? durMin(i, endIdx) : 0;
+      if (wa.arrival + cand.visitMinutes + backHome > usableUntil) continue;
+      const val = cand.score - durMin(currentIdx, i) * 1.3 - wa.wait * 0.5;
       if (val > bestVal) { bestVal = val; bestI = i; }
     }
     if (bestI === -1) break;
     const cand = pool[bestI - 1];
-    clock += durMin(currentIdx, bestI) + cand.visitMinutes;
+    const wa = windowArrival(cand, clock + durMin(currentIdx, bestI));
+    windowBlockedKeys.delete(cand.key);
+    clock = wa.arrival + cand.visitMinutes;
     selected.push(bestI);
     inTour.add(bestI);
     currentIdx = bestI;
   }
 
-  // Miglioramento 2-opt sulla sequenza (start fisso, end fisso se presente)
-  const optimized = selected.length > 2 ? twoOpt(selected, matrix.durations, !!end, endIdx) : selected;
+  // Miglioramento 2-opt sulla sequenza (start fisso, end fisso se presente).
+  // Se il riordino viola le fasce orarie preferite, si mantiene la sequenza greedy.
+  const violatesWindows = (order: number[]): boolean => {
+    let tt = startMin;
+    let cur = 0;
+    for (const idx of order) {
+      const cand = pool[idx - 1];
+      const wa = windowArrival(cand, tt + durMin(cur, idx));
+      if (wa.outside) return true;
+      tt = wa.arrival + cand.visitMinutes;
+      cur = idx;
+    }
+    return false;
+  };
+  let optimized = selected.length > 2 ? twoOpt(selected, matrix.durations, !!end, endIdx) : selected;
+  const anyWindows = selected.some((i) => (pool[i - 1].preferredSlots?.length || 0) > 0);
+  if (anyWindows && optimized !== selected && violatesWindows(optimized) && !violatesWindows(selected)) {
+    optimized = selected;
+  }
 
   // Percorso finale per geometria e tempi reali
   const routePoints = [
@@ -218,10 +271,11 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   optimized.forEach((idx, i) => {
     const cand = pool[idx - 1];
     const leg = route.legs[i] || { durationMin: durMin(i === 0 ? 0 : optimized[i - 1], idx), distanceKm: 0 };
-    t += leg.durationMin;
     driveMin += leg.durationMin;
-    const arrival = t;
-    t += cand.visitMinutes;
+    const wa = windowArrival(cand, t + leg.durationMin);
+    if (wa.outside) warnings.push(`"${cand.name}": arrivo previsto fuori dalla fascia oraria preferita (${slotLabelsOf(cand)})`);
+    const arrival = wa.arrival;
+    t = arrival + cand.visitMinutes;
     visitMin += cand.visitMinutes;
     stops.push({
       candidate: cand,
@@ -230,6 +284,8 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
       departureMin: t,
       travelMinFromPrev: leg.durationMin,
       travelKmFromPrev: leg.distanceKm,
+      waitMin: Math.round(wa.wait),
+      outsideWindow: wa.outside,
       mandatory: input.mandatoryKeys.has(cand.key),
     });
   });
@@ -252,7 +308,9 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     .slice(0, 12)
     .map(({ c }) => ({
       candidate: c,
-      why: c.score >= 60 ? 'Non rientrava nell\'orario disponibile' : 'Priorita\' piu\' bassa rispetto alle visite scelte',
+      why: windowBlockedKeys.has(c.key)
+        ? 'Fascia oraria preferita non compatibile con il giro'
+        : c.score >= 60 ? 'Non rientrava nell\'orario disponibile' : 'Priorita\' piu\' bassa rispetto alle visite scelte',
     }));
 
   const scores = stops.map((s) => s.candidate.score);
@@ -313,12 +371,14 @@ export async function planFixedOrder(ordered: TourCandidate[], base: TourPlan): 
   let driveMin = 0;
   let visitMin = 0;
   const mandatorySet = new Set(base.stops.filter((s) => s.mandatory).map((s) => s.candidate.key));
+  const windowWarnings: string[] = [];
   ordered.forEach((cand, i) => {
     const leg = route.legs[i] || { durationMin: 0, distanceKm: 0 };
-    t += leg.durationMin;
     driveMin += leg.durationMin;
-    const arrival = t;
-    t += cand.visitMinutes;
+    const wa = windowArrival(cand, t + leg.durationMin);
+    if (wa.outside) windowWarnings.push(`"${cand.name}": arrivo fuori dalla fascia oraria preferita (${slotLabelsOf(cand)})`);
+    const arrival = wa.arrival;
+    t = arrival + cand.visitMinutes;
     visitMin += cand.visitMinutes;
     stops.push({
       candidate: cand,
@@ -327,6 +387,8 @@ export async function planFixedOrder(ordered: TourCandidate[], base: TourPlan): 
       departureMin: t,
       travelMinFromPrev: leg.durationMin,
       travelKmFromPrev: leg.distanceKm,
+      waitMin: Math.round(wa.wait),
+      outsideWindow: wa.outside,
       mandatory: mandatorySet.has(cand.key),
     });
   });
@@ -339,7 +401,7 @@ export async function planFixedOrder(ordered: TourCandidate[], base: TourPlan): 
     driveMin += returnMin;
     t += returnMin;
   }
-  const warnings: string[] = [];
+  const warnings: string[] = [...windowWarnings];
   if (t > base.endMin) warnings.push('La sequenza manuale termina oltre l\'orario di fine configurato');
   const scores = stops.map((s) => s.candidate.score);
   return {

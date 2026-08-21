@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 import { getOrphanConfig, fetchOrphanMap } from '../api/orphan-claims';
 import type { TourCandidate, EntityType, AiTourSettings } from './types';
 import { daysSince } from './types';
+import { getVisitSlots, resolveSlots, type VisitSlot } from '../visit-slots';
 
 interface OrderStats {
   customer_id: string;
@@ -29,6 +30,7 @@ interface CustomerRow {
   estimated_revenue: number | null;
   tabaccheria_id: string | null;
   project_type: string | null;
+  preferred_visit_slots: unknown;
 }
 
 // Progetti Speciali: slug -> nome visualizzato
@@ -127,6 +129,7 @@ function toCandidate(
   projects?: Map<string, string>,
   remote?: { date: string; amount: number },
   learned?: LearnedDuration,
+  slotDefs?: VisitSlot[],
 ): TourCandidate {
   const lastOrder = stats?.last_order_date || c.last_order_date || null;
   const projectType = c.project_type && c.project_type !== 'nessun_progetto' ? c.project_type : null;
@@ -176,6 +179,7 @@ function toCandidate(
     nextSuggestedVisit: null,
     visitMinutes,
     visitLearnedSamples,
+    preferredSlots: resolveSlots(c.preferred_visit_slots, slotDefs || []),
     potentialValue: 0,
   };
 }
@@ -189,7 +193,7 @@ export interface CandidatePool {
 export async function loadCandidates(agentId: string, settings: AiTourSettings): Promise<CandidatePool> {
   const { data: customers, error } = await supabase
     .from('customers')
-    .select('id, business_name, category, address, city, province, latitude, longitude, last_visit_date, last_order_date, notes, estimated_revenue, tabaccheria_id, project_type')
+    .select('id, business_name, category, address, city, province, latitude, longitude, last_visit_date, last_order_date, notes, estimated_revenue, tabaccheria_id, project_type, preferred_visit_slots')
     .eq('agent_id', agentId)
     .not('latitude', 'is', null)
     .not('longitude', 'is', null);
@@ -201,13 +205,14 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
   const clientRows = rows.filter((r) => r.category === 'client');
   const prospectRows = rows.filter((r) => r.category === 'prospect' || r.category === 'lead');
 
-  const [stats, appointments, orphanConfig, projects, remoteOrders, learnedDurations] = await Promise.all([
+  const [stats, appointments, orphanConfig, projects, remoteOrders, learnedDurations, slotDefs] = await Promise.all([
     fetchOrderStats(clientRows.map((r) => r.id)),
     fetchUpcomingAppointments(agentId),
     getOrphanConfig(),
     fetchProjectsMap(),
     fetchLastRemoteOrders(agentId),
     fetchLearnedDurations(agentId),
+    getVisitSlots(),
   ]);
   const orphanMap = await fetchOrphanMap(orphanConfig);
 
@@ -217,7 +222,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
   for (const r of clientRows) {
     const status = r.tabaccheria_id ? orphanMap.get(r.tabaccheria_id) : undefined;
     if (status) {
-      orphans.push(toCandidate(r, 'orphan', stats.get(r.id), appointments.get(r.id) || null, settings, status, projects, remoteOrders.get(r.id), learnedDurations.get(r.id)));
+      orphans.push(toCandidate(r, 'orphan', stats.get(r.id), appointments.get(r.id) || null, settings, status, projects, remoteOrders.get(r.id), learnedDurations.get(r.id), slotDefs));
       if (r.tabaccheria_id) ownOrphanKeys.add(r.tabaccheria_id);
     }
   }
@@ -239,9 +244,13 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
     // Nome commerciale della scheda CRM collegata (se leggibile: RLS puo' filtrare i clienti altrui)
     const linkedIds = (tabs || []).map((t) => t.customer_id as string | null).filter((x): x is string => !!x);
     const crmNames = new Map<string, string>();
+    const crmSlots = new Map<string, unknown>();
     if (linkedIds.length > 0) {
-      const { data: linked } = await supabase.from('customers').select('id, business_name').in('id', linkedIds);
-      for (const c of linked || []) crmNames.set(c.id as string, (c.business_name as string) || '');
+      const { data: linked } = await supabase.from('customers').select('id, business_name, preferred_visit_slots').in('id', linkedIds);
+      for (const c of linked || []) {
+        crmNames.set(c.id as string, (c.business_name as string) || '');
+        crmSlots.set(c.id as string, (c as { preferred_visit_slots?: unknown }).preferred_visit_slots);
+      }
     }
     for (const t of tabs || []) {
       const status = orphanMap.get(t.id) || null;
@@ -259,6 +268,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
         tabaccheriaId: t.id,
         name: t.denominazione || `Tabaccheria Riv. ${t.codice_rivendita || ''}`.trim(),
         crmName: linkedCustomerId ? crmNames.get(linkedCustomerId) || null : null,
+        preferredSlots: linkedCustomerId ? resolveSlots(crmSlots.get(linkedCustomerId), slotDefs) : null,
         address: t.indirizzo || '',
         city: t.comune || '',
         province: t.provincia || '',
@@ -292,8 +302,8 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
   return {
     clients: clientRows
       .filter((r) => !orphanCustomerIds.has(r.id))
-      .map((r) => toCandidate(r, 'client', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, remoteOrders.get(r.id), learnedDurations.get(r.id))),
-    prospects: prospectRows.map((r) => toCandidate(r, 'prospect', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, undefined, learnedDurations.get(r.id))),
+      .map((r) => toCandidate(r, 'client', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, remoteOrders.get(r.id), learnedDurations.get(r.id), slotDefs)),
+    prospects: prospectRows.map((r) => toCandidate(r, 'prospect', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, undefined, learnedDurations.get(r.id), slotDefs)),
     orphans,
   };
 }

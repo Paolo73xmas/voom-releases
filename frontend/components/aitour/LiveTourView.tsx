@@ -409,9 +409,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           }
         }
         // 2) Contatti punto vendita -> scheda cliente (solo se modificati)
-        const contactUpdates: Record<string, string> = {};
+        const contactUpdates: Record<string, unknown> = {};
         if (extras.mobile) contactUpdates.contact_mobile = extras.mobile;
         if (extras.email) contactUpdates.contact_email = extras.email;
+        if (extras.visitSlots) contactUpdates.preferred_visit_slots = extras.visitSlots.length > 0 ? extras.visitSlots : null;
         if (Object.keys(contactUpdates).length > 0) {
           const { error: cErr } = await supabase.from('customers').update(contactUpdates).eq('id', customerId);
           if (cErr) setMessage('Contatti non salvati sulla scheda cliente');
@@ -665,6 +666,11 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             <Ionicons name="location-outline" size={12} color={DS.inkMuted} /> {next.candidate.address}
             {next.candidate.city ? `, ${next.candidate.city}` : ''}
           </Text>
+          {(next.candidate.preferredSlots?.length || 0) > 0 ? (
+            <Text style={styles.nextSlots}>
+              <Ionicons name="time-outline" size={11} color="#B45309" /> Fascia visite preferita: {(next.candidate.preferredSlots || []).map((s) => s.label).join(', ')}
+            </Text>
+          ) : null}
           <View style={styles.nextMetaRow}>
             <View style={[styles.entityBadge, { borderColor: ENTITY_TEXT_COLORS[next.candidate.entityType] }]}>
               <Text style={[styles.entityBadgeText, { color: ENTITY_TEXT_COLORS[next.candidate.entityType] }]}>
@@ -1027,6 +1033,7 @@ const styles = StyleSheet.create({
   nextName: { fontFamily: JAKARTA.bold, fontSize: 17, color: DS.ink, marginTop: 5 },
   nextCrmName: { fontFamily: JAKARTA.medium, fontSize: 11, color: '#3B82F6', marginTop: 2 },
   nextAddress: { fontFamily: JAKARTA.regular, fontSize: 12, color: DS.inkMuted, marginTop: 3 },
+  nextSlots: { fontFamily: JAKARTA.medium, fontSize: 11, color: '#B45309', marginTop: 3 },
   nextMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 7, flexWrap: 'wrap' },
   entityBadge: { borderWidth: 1, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },
   entityBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 10 },

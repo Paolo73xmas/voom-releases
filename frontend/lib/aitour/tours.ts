@@ -105,6 +105,7 @@ export async function saveTour(agentId: string, plan: TourPlan): Promise<string>
     mandatory: s.mandatory,
     status: 'planned',
     ai_reason: s.candidate.reason,
+    preferred_slots: s.candidate.preferredSlots || null,
   }));
   const { error: stopsErr } = await supabase.from('ai_tour_stops').insert(stops);
   if (stopsErr) throw stopsErr;

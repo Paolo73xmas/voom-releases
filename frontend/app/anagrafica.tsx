@@ -26,6 +26,7 @@ import { useAuthStore } from '../store/authStore';
 import { uploadVisitPhotos } from '../lib/api/photos';
 import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
+import { VisitSlotWheel } from '../components/customers/VisitSlotWheel';
 
 // type CustomerType non più hardcoded: ora viene letto dinamicamente da customer_types table
 
@@ -141,6 +142,7 @@ export default function AnagraficaScreen() {
     // ✅ Web parity (nuove modifiche): progetto associato + IBAN cliente
     projectType: 'nessun_progetto', // slug del progetto, default = nessun_progetto
     iban: '',
+    preferredVisitSlots: [] as string[],
   });
 
   // ✅ Web parity: lista progetti disponibili (caricata da Supabase)
@@ -453,6 +455,7 @@ export default function AnagraficaScreen() {
           // ✅ Web parity: nuove modifiche - progetto e IBAN
           project_type: form.projectType || 'nessun_progetto',
           iban: form.iban ? form.iban.trim().toUpperCase() : null,
+          preferred_visit_slots: form.preferredVisitSlots.length > 0 ? form.preferredVisitSlots : null,
           first_visit_date: new Date().toISOString(),
           last_visit_date: new Date().toISOString(),
         })
@@ -692,6 +695,16 @@ export default function AnagraficaScreen() {
             );
           })()}
         </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Fascia oraria visite preferita (facoltativa)</Text>
+        <Text style={styles.validationHint}>Usata dall&apos;AI Tour per pianificare l&apos;arrivo nella fascia giusta (±30 min, pranzo rigido)</Text>
+        <View style={{ alignItems: 'center', marginTop: 6 }}>
+          <VisitSlotWheel
+            value={form.preferredVisitSlots}
+            onChange={(ids) => setForm((f) => ({ ...f, preferredVisitSlots: ids }))}
+            size={210}
+          />
+        </View>
 
         <Text style={styles.sectionTitle}>Tipo Cliente</Text>
         {/* ✅ Web parity: dropdown dinamico dal database (tabella customer_types).

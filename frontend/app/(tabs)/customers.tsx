@@ -175,6 +175,10 @@ export default function CustomersScreen() {
         <Text style={styles.statsText}>
           {filteredCustomers.length} di {customers.length} clienti
         </Text>
+        <TouchableOpacity style={styles.bulkSlotsBtn} onPress={() => router.push('/bulk-visit-slots')}>
+          <Ionicons name="time-outline" size={16} color="#7C3AED" />
+          <Text style={styles.bulkSlotsBtnText}>Agg. Massivo</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.newClientBtn} onPress={() => router.push('/anagrafica')}>
           <Ionicons name="add-circle" size={18} color="#FFF" />
           <Text style={styles.newClientBtnText}>Nuovo Cliente</Text>
@@ -253,6 +257,22 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     gap: 6,
+  },
+  bulkSlotsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#7C3AED',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 5,
+    marginRight: 8,
+  },
+  bulkSlotsBtnText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#7C3AED',
   },
   newClientBtnText: {
     fontSize: 13,

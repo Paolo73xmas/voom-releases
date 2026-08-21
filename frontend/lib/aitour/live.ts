@@ -82,6 +82,7 @@ export function stopToCandidate(s: SavedStop & { outcome?: string | null; follow
     reason: s.ai_reason || '',
     nextSuggestedVisit: null,
     visitMinutes: s.planned_duration_minutes || 20,
+    preferredSlots: ((s as { preferred_slots?: TourCandidate['preferredSlots'] }).preferred_slots) || null,
     potentialValue: 0,
   };
 }

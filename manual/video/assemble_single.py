@@ -16,6 +16,7 @@ dur = json.load(open(f'{AUDIO}/durations.json'))
 RECS = [
     ('rec1', [(20, 40, 400, 125, 0, 18.6)]),  # blur nome header dashboard
     ('rec2', []),
+    ('rec4', []),  # fascia oraria preferita + Agg. Massivo
     ('rec3', []),
 ]
 

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { DS, JAKARTA, SHADOWS, COLORS, currentThemeMode } from '../lib/theme';
@@ -1458,11 +1459,12 @@ export default function AITourScreen() {
           <Text style={styles.generatingHint}>Selezione commerciale → clustering → pianificazione temporale</Text>
         </View>
       ) : (
-        <ScrollView
+        <KeyboardAwareScrollView
           style={{ flex: 1 }}
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          bottomOffset={170}
           refreshControl={
             tab === 'tours' ? <RefreshControl refreshing={loadingTours} onRefresh={loadSavedTours} tintColor={AI_PURPLE} /> : undefined
           }
@@ -1490,7 +1492,7 @@ export default function AITourScreen() {
             />
           )}
           {tab === 'tours' && renderSavedTours()}
-        </ScrollView>
+        </KeyboardAwareScrollView>
       )}
         </>
       )}

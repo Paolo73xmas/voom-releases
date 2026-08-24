@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import {
   useFonts,
   Inter_400Regular,
@@ -70,7 +71,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <KeyboardProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -119,6 +120,6 @@ export default function RootLayout() {
           options={{ headerShown: false, presentation: 'card' }}
         />
       </Stack>
-    </>
+    </KeyboardProvider>
   );
 }

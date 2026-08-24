@@ -175,6 +175,8 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
 
 - **Video tutorial: capitolo Operazioni Live (ago 2026)**: nuovo capitolo 5 registrato (rec5, record_video5.py con tour sintetico poi eliminato) e inserito nel video unico DOPO il capitolo Tour Live (ora 9:18) — 5 scene: i 3 bottoni Pausa Pranzo/Tappa/Ordine, riordino tappe con frecce + conferma, ripasso in giornata (motivo+orario+badge), aggiunta tappa (ricerca + Falla ORA), pausa pranzo (countdown + Riprendi ora + regola una volta al giorno, chiude con "Buone vendite con AI Tour!"). La scena v3_s7 (Termina) riscritta senza il saluto finale, con transizione "le novità non finiscono qui" (rallenta x1.196, entro il limite x1.25). Anche video singolo /api/video-tutorial/5 (aitour-tutorial-5-liveops.mp4, 1:45, zero freeze). Voce Diego (edge-tts). QA frame + volumedetect OK, endpoint 5 e completo HTTP 200.
 
+- **Fix download video tutorial (ago 2026)**: l'endpoint /api/video-tutorial/{num} ignorava l'header Range (Safari/iOS lo esige per i video: bytes=0-1 → 206) e rispondeva 405 alle HEAD. Riscritto in server.py: supporto HEAD (200 + Content-Length), Range parziali/aperti (206 + Content-Range, streaming a chunk 512KB, 416 se fuori misura), Accept-Ranges: bytes anche sul GET pieno. Verificato: GET 200 completo, HEAD 200, bytes=0-1 → 206, range aperto → 206 con resume.
+
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)
 - Camera integration for photo uploads in anagrafica visits

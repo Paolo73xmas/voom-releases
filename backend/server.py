@@ -1,10 +1,11 @@
-from fastapi import FastAPI, APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, APIRouter, HTTPException, Request
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import re
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List
@@ -97,15 +98,65 @@ async def get_voice_sample(name: str):
         raise HTTPException(status_code=404, detail="Campione non trovato")
     return FileResponse(path, media_type="audio/mpeg", filename=f"campione-voce-{name}.mp3")
 
-@api_router.get("/video-tutorial/{num}")
-async def get_video_tutorial(num: str):
+@api_router.api_route("/video-tutorial/{num}", methods=["GET", "HEAD"])
+async def get_video_tutorial(num: str, request: Request):
     if num not in VIDEO_FILES:
         raise HTTPException(status_code=404, detail="Video non trovato")
     src, name = VIDEO_FILES[num]
     path = f"{VIDEO_DIR}/{src}"
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Video non ancora generato")
-    return FileResponse(path, media_type="video/mp4", filename=name)
+
+    file_size = os.path.getsize(path)
+    common_headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Disposition": f'attachment; filename="{name}"',
+    }
+
+    if request.method == "HEAD":
+        return Response(
+            status_code=200,
+            media_type="video/mp4",
+            headers={**common_headers, "Content-Length": str(file_size)},
+        )
+
+    range_header = request.headers.get("range")
+    if range_header:
+        # es. "bytes=0-1023" oppure "bytes=1024-" — richiesto da Safari/iOS per i video
+        m = re.match(r"bytes=(\d*)-(\d*)", range_header)
+        if m:
+            start = int(m.group(1)) if m.group(1) else 0
+            end = int(m.group(2)) if m.group(2) else file_size - 1
+            end = min(end, file_size - 1)
+            if start > end or start >= file_size:
+                return Response(
+                    status_code=416,
+                    headers={"Content-Range": f"bytes */{file_size}"},
+                )
+
+            def iter_range(p, s, e, chunk=1024 * 512):
+                with open(p, "rb") as f:
+                    f.seek(s)
+                    remaining = e - s + 1
+                    while remaining > 0:
+                        data = f.read(min(chunk, remaining))
+                        if not data:
+                            break
+                        remaining -= len(data)
+                        yield data
+
+            return StreamingResponse(
+                iter_range(path, start, end),
+                status_code=206,
+                media_type="video/mp4",
+                headers={
+                    **common_headers,
+                    "Content-Range": f"bytes {start}-{end}/{file_size}",
+                    "Content-Length": str(end - start + 1),
+                },
+            )
+
+    return FileResponse(path, media_type="video/mp4", filename=name, headers={"Accept-Ranges": "bytes"})
 
 # Include the router in the main app
 app.include_router(api_router)

@@ -80,6 +80,7 @@ VIDEO_FILES = {
     "2": ("aitour-tutorial-2-risultato.mp4", "Tutorial-2-Mappa-Risultato.mp4"),
     "3": ("aitour-tutorial-3-live.mp4", "Tutorial-3-Live-Orfani.mp4"),
     "4": ("aitour-tutorial-4-fasce.mp4", "Tutorial-4-Fasce-Orarie.mp4"),
+    "5": ("aitour-tutorial-5-liveops.mp4", "Tutorial-5-Operazioni-Live.mp4"),
     "completo": ("aitour-tutorial-completo.mp4", "Tutorial-AI-Tour-Completo.mp4"),
 }
 

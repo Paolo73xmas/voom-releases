@@ -18,6 +18,7 @@ RECS = [
     ('rec2', []),
     ('rec4', []),  # fascia oraria preferita + Agg. Massivo
     ('rec3', []),
+    ('rec5', []),  # operazioni live: Ordine / Ripasso / Tappa / Pausa Pranzo
 ]
 
 inputs = []

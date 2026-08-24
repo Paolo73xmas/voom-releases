@@ -2,6 +2,7 @@
 import type { TourCandidate, AiTourSettings } from './types';
 import { haversineKm, timeToMin } from './types';
 import { cadenceWeeksFor } from './scoring';
+import { isoWeekday } from '../visit-slots';
 
 export interface WeekDayPlan {
   offset: number;
@@ -251,12 +252,54 @@ export function buildWeekPlan(opts: WeekOptions): WeekPlan {
     };
   });
 
+  // Giorni esclusi dal cliente (es. mercoledì mercato): sposta chi e' capitato
+  // in un giorno in cui non riceve verso un altro giorno compatibile della settimana
+  const isDayExcluded = (c: TourCandidate, date: string) =>
+    Array.isArray(c.excludedDays) && c.excludedDays.includes(isoWeekday(date));
+  const misplaced: TourCandidate[] = [];
+  for (const d of days) {
+    const keep = d.candidates.filter((c) => {
+      if (!isDayExcluded(c, d.date)) return true;
+      misplaced.push(c);
+      return false;
+    });
+    if (keep.length !== d.candidates.length) {
+      d.candidates = keep;
+      const est = estimateRoute(keep, start);
+      d.estVisitMin = keep.reduce((s, c) => s + c.visitMinutes, 0);
+      d.estDriveMin = Math.round(est.driveMin);
+      d.estKm = Math.round(est.km);
+      d.dueCount = keep.filter((c) => dueKeys.has(c.key)).length;
+      d.label = topCities(keep);
+    }
+  }
+  for (const c of misplaced.sort((a, b) => b.score - a.score)) {
+    let placed = false;
+    for (const d of days) {
+      if (isDayExcluded(c, d.date)) continue;
+      const est = estimateRoute([...d.candidates, c], start);
+      const visitMin = d.estVisitMin + c.visitMinutes;
+      if (visitMin + est.driveMin > usable) continue;
+      d.candidates.push(c);
+      d.candidates.sort((a, b) => b.score - a.score);
+      d.estVisitMin = visitMin;
+      d.estDriveMin = Math.round(est.driveMin);
+      d.estKm = Math.round(est.km);
+      if (dueKeys.has(c.key)) d.dueCount += 1;
+      d.label = topCities(d.candidates);
+      placed = true;
+      break;
+    }
+    if (!placed) overflow.push(c);
+  }
+
   // Backfill: reinserisce i clienti in scadenza scartati nei giorni geograficamente compatibili con budget residuo
   const remainingDue: TourCandidate[] = [];
   for (const c of droppedDue.sort((a, b) => b.score - a.score)) {
     let placed = false;
     for (const d of days) {
       if (d.candidates.length === 0) continue;
+      if (isDayExcluded(c, d.date)) continue;
       const cen = centroidOf(d.candidates);
       if (haversineKm(cen.lat, cen.lng, c.lat, c.lng) > 45) continue;
       const est = estimateRoute([...d.candidates, c], start);

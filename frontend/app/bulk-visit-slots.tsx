@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { getVisitSlots, slotsFromIds, type VisitSlot } from '../lib/visit-slots';
 import { VisitSlotWheel } from '../components/customers/VisitSlotWheel';
+import { ExcludedDaysPicker } from '../components/customers/ExcludedDaysPicker';
 import { openNavigation } from '../components/aitour/shared';
 import { DS, JAKARTA } from '../lib/theme';
 
@@ -59,6 +60,7 @@ export default function BulkVisitSlotsScreen() {
   const [scope, setScope] = useState<'senza' | 'tutti'>('senza');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [slots, setSlots] = useState<string[]>([]);
+  const [excludedDays, setExcludedDays] = useState<number[]>([]);
   const [slotDefs, setSlotDefs] = useState<VisitSlot[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -130,17 +132,20 @@ export default function BulkVisitSlotsScreen() {
     setSaving(true);
     try {
       const ids = [...selectedIds];
+      const payload: { preferred_visit_slots: string[]; excluded_visit_days?: number[] } = { preferred_visit_slots: slots };
+      if (excludedDays.length > 0) payload.excluded_visit_days = excludedDays;
       for (let i = 0; i < ids.length; i += 200) {
         const batch = ids.slice(i, i + 200);
         const { error } = await supabase
           .from('customers')
-          .update({ preferred_visit_slots: slots })
+          .update(payload)
           .in('id', batch);
         if (error) throw error;
       }
-      Alert.alert('Fasce assegnate', `Fascia oraria salvata su ${ids.length} clienti.`);
+      Alert.alert('Preferenze assegnate', `Preferenze salvate su ${ids.length} clienti.`);
       setSelectedIds(new Set());
       setSlots([]);
+      setExcludedDays([]);
       await load();
     } catch (err) {
       console.error('[BulkVisitSlots] save:', err);
@@ -248,8 +253,9 @@ export default function BulkVisitSlotsScreen() {
       <View style={styles.footer}>
         <VisitSlotWheel value={slots} onChange={setSlots} size={150} />
         <View style={{ flex: 1, gap: 8 }}>
+          <ExcludedDaysPicker value={excludedDays} onChange={setExcludedDays} showLabel={false} />
           <Text style={styles.footerInfo}>
-            {selectedIds.size} clienti selezionati{slots.length > 0 ? ` · ${slots.length} fasce scelte` : ''}
+            {selectedIds.size} clienti selezionati{slots.length > 0 ? ` · ${slots.length} fasce scelte` : ''}{excludedDays.length > 0 ? ` · ${excludedDays.length} giorn${excludedDays.length === 1 ? 'o' : 'i'} esclus${excludedDays.length === 1 ? 'o' : 'i'}` : ''}
           </Text>
           <TouchableOpacity
             style={[styles.saveBtn, (selectedIds.size === 0 || slots.length === 0 || saving) && { opacity: 0.5 }]}

@@ -8,6 +8,7 @@ import { DS, JAKARTA, currentThemeMode } from '../../lib/theme';
 import { supabase } from '../../lib/supabase';
 import { AI_PURPLE, AI_PURPLE_SOFT } from './shared';
 import { VisitSlotWheel } from '../customers/VisitSlotWheel';
+import { ExcludedDaysPicker } from '../customers/ExcludedDaysPicker';
 
 const ALERT_RED = currentThemeMode === 'dark' ? '#F87171' : '#DC2626';
 
@@ -58,6 +59,8 @@ export interface EsitoExtras {
   email: string;
   /** Fasce orarie preferite aggiornate; null = non modificate */
   visitSlots: string[] | null;
+  /** Giorni esclusi (1=lun..6=sab) aggiornati; null = non modificati */
+  excludedDays: number[] | null;
 }
 
 export function EsitoModal({ visible, stopName, stopId, customerId, saving, onClose, onConfirm }: Props) {
@@ -69,8 +72,10 @@ export function EsitoModal({ visible, stopName, stopId, customerId, saving, onCl
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
   const [visitSlots, setVisitSlots] = useState<string[]>([]);
+  const [excludedDays, setExcludedDays] = useState<number[]>([]);
   const initialContacts = useRef({ mobile: '', email: '' });
   const initialSlots = useRef<string[]>([]);
+  const initialExcluded = useRef<number[]>([]);
 
   useEffect(() => {
     if (!visible) return;
@@ -82,8 +87,10 @@ export function EsitoModal({ visible, stopName, stopId, customerId, saving, onCl
     setMobile('');
     setEmail('');
     setVisitSlots([]);
+    setExcludedDays([]);
     initialContacts.current = { mobile: '', email: '' };
     initialSlots.current = [];
+    initialExcluded.current = [];
     if (customerId && stopId) {
       // RPC dedicato: legge i contatti anche per clienti di altri agenti (orfani), RLS-safe
       supabase.rpc('ai_tour_stop_customer_contacts', { p_stop_id: stopId })
@@ -99,6 +106,9 @@ export function EsitoModal({ visible, stopName, stopId, customerId, saving, onCl
             const vs = Array.isArray(row.preferred_visit_slots) ? (row.preferred_visit_slots as string[]) : [];
             setVisitSlots(vs);
             initialSlots.current = vs;
+            const ex = Array.isArray(row.excluded_visit_days) ? (row.excluded_visit_days as number[]) : [];
+            setExcludedDays(ex);
+            initialExcluded.current = ex;
           }
         });
     }
@@ -146,6 +156,7 @@ export function EsitoModal({ visible, stopName, stopId, customerId, saving, onCl
     }
     const m = mobile.trim();
     const slotsChanged = JSON.stringify([...visitSlots].sort()) !== JSON.stringify([...initialSlots.current].sort());
+    const excludedChanged = JSON.stringify([...excludedDays].sort()) !== JSON.stringify([...initialExcluded.current].sort());
     onConfirm(
       outcome,
       note,
@@ -157,6 +168,7 @@ export function EsitoModal({ visible, stopName, stopId, customerId, saving, onCl
         mobile: m !== initialContacts.current.mobile ? m : '',
         email: em !== initialContacts.current.email ? em : '',
         visitSlots: slotsChanged ? visitSlots : null,
+        excludedDays: excludedChanged ? excludedDays : null,
       }
     );
   };
@@ -224,6 +236,9 @@ export function EsitoModal({ visible, stopName, stopId, customerId, saving, onCl
                 <Text style={styles.label}>Fascia oraria visite preferita dal cliente (salvata sulla scheda)</Text>
                 <View style={{ alignItems: 'center', marginTop: 2 }}>
                   <VisitSlotWheel value={visitSlots} onChange={setVisitSlots} size={185} />
+                </View>
+                <View style={{ marginTop: 10 }}>
+                  <ExcludedDaysPicker value={excludedDays} onChange={setExcludedDays} />
                 </View>
               </>
             ) : null}

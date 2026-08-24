@@ -1,0 +1,13 @@
+import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+const env = fs.readFileSync('/app/frontend/.env', 'utf8');
+const url = env.match(/EXPO_PUBLIC_SUPABASE_URL=(.+)/)[1].trim();
+const key = env.match(/EXPO_PUBLIC_SUPABASE_ANON_KEY=(.+)/)[1].trim();
+const supabase = createClient(url, key);
+await supabase.auth.signInWithPassword({ email: 'tadini@voomweb.it', password: 'Tadini2025!' });
+const uid = (await supabase.auth.getUser()).data.user.id;
+const { data } = await supabase.from('ai_tours').select('id,status,start_label,created_at').eq('agent_id', uid).order('created_at', {ascending:false}).limit(5);
+console.log('remaining recent tours for tadini:');
+for (const t of data||[]) console.log(' ', t.id.slice(0,8), t.status, JSON.stringify(t.start_label), t.created_at?.slice(0,19));
+const synth = (data||[]).find(t => t.start_label === 'TEST SINTETICO OPS');
+console.log('SYNTHETIC REMAINING:', synth ? 'YES (FAIL)' : 'NO (OK)');

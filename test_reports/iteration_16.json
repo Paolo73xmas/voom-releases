@@ -1,0 +1,44 @@
+{
+  "summary": "RE-TEST post-cleanup Fasi 1-4 Tour Live AI + assenza Chip Stamina — TUTTO PASS. Con account tadini@voomweb.it e tour sintetico 'TEST SINTETICO OPS' creato via scripts/synthetic_tour_ops.mjs. Auto-resume del tour attivo più recente FUNZIONA: la vista TOUR LIVE si carica in ~2s dopo la navigazione a /ai-tour. STEP1 (bottoni operazioni): 'Pausa Pranzo', 'Tappa', 'Ordine' visibili. STEP2 (RIORDINO): freccia testID reorder-down-0 + 'Conferma nuovo ordine' → messaggio 'Ordine tappe aggiornato' + evento DB manual_reorder + recalc. STEP3 (RIPASSO): 'Salta visita' → 'Chiuso' → chip testID revisit-chip-* (15:30) → 'Ripassa alle 15:30' → badge 'Ripasso 15:30' + evento DB revisit_scheduled. STEP4 (AGGIUNGI TAPPA): 'Tappa' → AddStopModal → primo risultato → 'Falla ORA' → 'Aggiungi al giro' → messaggio 'aggiunta al giro' + riga ai_tour_stops added_live=true + eventi added_live + recalc. STEP5 (PAUSA PRANZO): 'Pausa Pranzo' → 'Inizia pausa' → banner countdown 'Pausa pranzo in corso — riprendi tra 30:31' → 'Riprendi ora' (immediato al primo tentativo) → banner 'Pausa terminata dopo 1 min: gli orari delle tappe restano validi' → header TOUR LIVE ancora visibile (status = 'active', NESSUN evento finished inatteso). STEP6 (CHIP STAMINA ASSENTE): RPC agent_own_stamina(p_day=2026-08-24) ritorna {visible:false}, nella vista live NON compare alcun chip stamina (selettore [data-testid='own-stamina-chip'] non trovato), NESSUN crash/pageerror da OwnStaminaChip nei console log. CLEANUP FINALE eseguito con successo: tour sintetico eliminato, i 2 tour reali attivi di tadini (ff971c0f 'Posizione corrente' e c3958f70 'Casa') restano intatti. Nessun record inserito in agent_contribution_settings. NOTA operativa: il selettore Playwright corretto per il bottone 'Accedi' è page.get_by_text('Accedi', exact=True).nth(1) — usare .first colpisce l'header, non il Pressable (che non è esposto con role='button' su RN-Web). Con .first il click era silente e il login non partiva.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "shadow* style props (RN-Web deprecation)", "issue": "Console warning 'shadow*' style props are deprecated. Use 'boxShadow'. Non-blocking. Reference: lib/theme.ts (SHADOWS) and/or altre StyleSheet."},
+      {"component": "props.pointerEvents (RN-Web deprecation)", "issue": "Console warning 'props.pointerEvents is deprecated. Use style.pointerEvents'. Non-blocking. Origine da verificare."}
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_16.json",
+    "/app/frontend/scripts/synthetic_tour_ops.mjs",
+    "/app/frontend/scripts/diag_tadini_tours.mjs",
+    "/app/frontend/scripts/diag_synth_events.mjs",
+    "/app/frontend/scripts/verify_no_synth.mjs",
+    "/app/frontend/scripts/rpc_stamina_check.mjs"
+  ],
+  "action_items": [
+    "Nessun fix richiesto sul codice testato: tutte le 6 verifiche del re-test (auto-resume, 3 bottoni operazioni, riordino, ripasso, aggiunta tappa, pausa pranzo con permanenza status='active', chip stamina assente) PASSANO.",
+    "Suggerimento (non-blocking) per testabilità del login headless: esporre il Pressable 'Accedi' con accessibilityRole='button' (in Login screen), così page.get_by_role('button', name='Accedi') funzionerebbe. Attualmente Playwright riconosce solo il Text 'Accedi' (header + label del Pressable) → serve nth(1).",
+    "Migrazione RN-Web deprecations (non-blocking): sostituire i shadow* con boxShadow e props.pointerEvents con style.pointerEvents nei componenti coinvolti."
+  ],
+  "critical_code_review_comments": [
+    "lib/aitour/live.ts:92-106 getActiveTour: ordina per created_at DESC + limit 1 → OK, il tour sintetico più recente vince rispetto a Posizione corrente/Casa (verificato).",
+    "app/ai-tour.tsx:220-234 useEffect auto-resume: setLiveState(await loadLiveState(t)) chiamato correttamente quando agentId è disponibile e non è in liveExitFlags. Timing: ~2s dal navigation a /ai-tour a TOUR LIVE (misurato).",
+    "lib/aitour/contribution.ts:6-11 fetchOwnStamina: quando RPC ritorna {visible:false} → return null. Il component che ne usa il valore evita il render se null. Verificato lato DB (RPC ritorna proprio {visible:false}) e lato UI (chip assente, nessun crash).",
+    "lib/aitour/live.ts:260-277 scheduleRevisit + revisitSlotFor: aggiornamento preferred_slots + logEvent 'revisit_scheduled'. Verificato: evento presente nel DB con created_at coerente."
+  ],
+  "updated_files": [
+    "/app/frontend/scripts/diag_tadini_tours.mjs (nuovo — diagnostic)",
+    "/app/frontend/scripts/diag_synth_events.mjs (nuovo — diagnostic)",
+    "/app/frontend/scripts/verify_no_synth.mjs (nuovo — cleanup verification)",
+    "/app/frontend/scripts/rpc_stamina_check.mjs (nuovo — RPC probe)"
+  ],
+  "success_rate": {"backend": "N/A (skip su richiesta)", "frontend": "100% (6/6 verifiche passate)"},
+  "seed_data_creation": "Creato e ELIMINATO il tour sintetico 'TEST SINTETICO OPS' (id iniziale f838106e-…, ricreato come 0ce20bc0-… per re-test dello step ripasso su tour fresco). Cleanup finale eseguito e verificato: 0 tour sintetici residui, i 2 tour reali attivi di tadini (ff971c0f e c3958f70) intatti. Nessun record aggiunto in agent_contribution_settings (chip stamina resta hidden).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Se serve rieseguire il flow: (1) creare tour sintetico con `cd /app/frontend && node scripts/synthetic_tour_ops.mjs create`; (2) navigare autenticati a /ai-tour (login → Accedi via get_by_text('Accedi', exact=True).nth(1) con force=True, e privacy gate se richiesto); (3) attendere il TOUR LIVE (~2s); (4) usare i selettori dello script /app/manual/video/e2e_live_ops.py + scroll_into_view_if_needed su 'Chiuso' e sui chip revisit; (5) verificare eventi via /app/frontend/scripts/diag_synth_events.mjs; (6) cleanup obbligatorio con `node scripts/synthetic_tour_ops.mjs delete`. NB: il pulsante 'Accedi' è un Pressable RN senza accessibilityRole → get_by_role('button') fallisce. Selettore alternativo funzionante: page.locator('div:has-text(\"Accedi\")').last  o  get_by_text('Accedi', exact=True).nth(-1)/.nth(1) su un login con 2 occorrenze (header + button label).",
+  "rca_of_issue": "Nessun bug prodotto. UNICO issue tecnico incontrato durante il testing (falso positivo): il primo tentativo di login usava get_by_text('Accedi').first che colpiva l'header del box (non il Pressable), quindi signInWithPassword non veniva mai invocato — nessun evento SIGNED_IN nei log, session vuota in localStorage, e /ai-tour renderizzava la form 'Genera' invece della vista LIVE (nessun agentId → useEffect auto-resume esce presto). Risolto passando a get_by_text('Accedi', exact=True).nth(1). Con la sessione corretta ottenuta, tutti gli step funzionano al primo tentativo (compreso il resume della pausa pranzo, nessuna necessità di retry del bottone 'Riprendi ora')."
+}

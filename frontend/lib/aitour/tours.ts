@@ -47,6 +47,9 @@ export interface SavedTour {
   potential_value: number | null;
   ai_summary: string | null;
   created_at: string;
+  lunch_break_start?: string | null;
+  lunch_break_end?: string | null;
+  lunch_break_minutes?: number | null;
 }
 
 export async function saveTour(agentId: string, plan: TourPlan): Promise<string> {
@@ -121,7 +124,7 @@ export async function saveTour(agentId: string, plan: TourPlan): Promise<string>
 export async function listTours(agentId: string): Promise<SavedTour[]> {
   const { data, error } = await supabase
     .from('ai_tours')
-    .select('id, agent_id, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at')
+    .select('id, agent_id, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at, lunch_break_start, lunch_break_end, lunch_break_minutes')
     .eq('agent_id', agentId)
     .order('tour_date', { ascending: false })
     .order('created_at', { ascending: false })
@@ -150,6 +153,8 @@ export interface SavedStop {
   mandatory: boolean;
   status: string;
   ai_reason: string | null;
+  added_live?: boolean;
+  added_by_admin?: boolean;
 }
 
 export async function loadTourStops(tourId: string): Promise<{ stops: SavedStop[]; geometry: [number, number][] }> {

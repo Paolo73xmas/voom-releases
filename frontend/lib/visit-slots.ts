@@ -57,3 +57,19 @@ export function resolveSlots(ids: unknown, defs: VisitSlot[]): VisitSlot[] | nul
 export function slotsFromIds(ids: unknown, defs: VisitSlot[]): VisitSlot[] {
   return resolveSlots(ids, defs) || [];
 }
+
+// Giorni della settimana (ISO: 1=lunedì .. 6=sabato) per l'esclusione visite per cliente
+export const WEEKDAYS: { id: number; label: string }[] = [
+  { id: 1, label: 'Lun' }, { id: 2, label: 'Mar' }, { id: 3, label: 'Mer' },
+  { id: 4, label: 'Gio' }, { id: 5, label: 'Ven' }, { id: 6, label: 'Sab' },
+];
+
+export const WEEKDAY_NAMES: Record<number, string> = {
+  1: 'lunedì', 2: 'martedì', 3: 'mercoledì', 4: 'giovedì', 5: 'venerdì', 6: 'sabato', 7: 'domenica',
+};
+
+/** Giorno ISO (1=lun..7=dom) di una data YYYY-MM-DD */
+export function isoWeekday(dateStr: string): number {
+  const g = new Date(dateStr + 'T12:00:00').getDay();
+  return g === 0 ? 7 : g;
+}

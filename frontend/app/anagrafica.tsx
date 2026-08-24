@@ -27,6 +27,7 @@ import { uploadVisitPhotos } from '../lib/api/photos';
 import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
 import { VisitSlotWheel } from '../components/customers/VisitSlotWheel';
+import { ExcludedDaysPicker } from '../components/customers/ExcludedDaysPicker';
 
 // type CustomerType non più hardcoded: ora viene letto dinamicamente da customer_types table
 
@@ -143,6 +144,7 @@ export default function AnagraficaScreen() {
     projectType: 'nessun_progetto', // slug del progetto, default = nessun_progetto
     iban: '',
     preferredVisitSlots: [] as string[],
+    excludedVisitDays: [] as number[],
   });
 
   // ✅ Web parity: lista progetti disponibili (caricata da Supabase)
@@ -456,6 +458,7 @@ export default function AnagraficaScreen() {
           project_type: form.projectType || 'nessun_progetto',
           iban: form.iban ? form.iban.trim().toUpperCase() : null,
           preferred_visit_slots: form.preferredVisitSlots.length > 0 ? form.preferredVisitSlots : null,
+          excluded_visit_days: form.excludedVisitDays.length > 0 ? form.excludedVisitDays : null,
           first_visit_date: new Date().toISOString(),
           last_visit_date: new Date().toISOString(),
         })
@@ -703,6 +706,12 @@ export default function AnagraficaScreen() {
             value={form.preferredVisitSlots}
             onChange={(ids) => setForm((f) => ({ ...f, preferredVisitSlots: ids }))}
             size={210}
+          />
+        </View>
+        <View style={{ marginTop: 10 }}>
+          <ExcludedDaysPicker
+            value={form.excludedVisitDays}
+            onChange={(days) => setForm((f) => ({ ...f, excludedVisitDays: days }))}
           />
         </View>
 

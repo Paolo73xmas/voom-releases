@@ -31,6 +31,7 @@ interface CustomerRow {
   tabaccheria_id: string | null;
   project_type: string | null;
   preferred_visit_slots: unknown;
+  excluded_visit_days: unknown;
 }
 
 // Progetti Speciali: slug -> nome visualizzato
@@ -180,6 +181,7 @@ function toCandidate(
     visitMinutes,
     visitLearnedSamples,
     preferredSlots: resolveSlots(c.preferred_visit_slots, slotDefs || []),
+    excludedDays: Array.isArray(c.excluded_visit_days) && c.excluded_visit_days.length > 0 ? (c.excluded_visit_days as number[]) : null,
     potentialValue: 0,
   };
 }
@@ -193,7 +195,7 @@ export interface CandidatePool {
 export async function loadCandidates(agentId: string, settings: AiTourSettings): Promise<CandidatePool> {
   const { data: customers, error } = await supabase
     .from('customers')
-    .select('id, business_name, category, address, city, province, latitude, longitude, last_visit_date, last_order_date, notes, estimated_revenue, tabaccheria_id, project_type, preferred_visit_slots')
+    .select('id, business_name, category, address, city, province, latitude, longitude, last_visit_date, last_order_date, notes, estimated_revenue, tabaccheria_id, project_type, preferred_visit_slots, excluded_visit_days')
     .eq('agent_id', agentId)
     .not('latitude', 'is', null)
     .not('longitude', 'is', null);
@@ -245,11 +247,13 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
     const linkedIds = (tabs || []).map((t) => t.customer_id as string | null).filter((x): x is string => !!x);
     const crmNames = new Map<string, string>();
     const crmSlots = new Map<string, unknown>();
+    const crmExDays = new Map<string, unknown>();
     if (linkedIds.length > 0) {
-      const { data: linked } = await supabase.from('customers').select('id, business_name, preferred_visit_slots').in('id', linkedIds);
+      const { data: linked } = await supabase.from('customers').select('id, business_name, preferred_visit_slots, excluded_visit_days').in('id', linkedIds);
       for (const c of linked || []) {
         crmNames.set(c.id as string, (c.business_name as string) || '');
         crmSlots.set(c.id as string, (c as { preferred_visit_slots?: unknown }).preferred_visit_slots);
+        crmExDays.set(c.id as string, (c as { excluded_visit_days?: unknown }).excluded_visit_days);
       }
     }
     for (const t of tabs || []) {
@@ -269,6 +273,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
         name: t.denominazione || `Tabaccheria Riv. ${t.codice_rivendita || ''}`.trim(),
         crmName: linkedCustomerId ? crmNames.get(linkedCustomerId) || null : null,
         preferredSlots: linkedCustomerId ? resolveSlots(crmSlots.get(linkedCustomerId), slotDefs) : null,
+        excludedDays: linkedCustomerId && Array.isArray(crmExDays.get(linkedCustomerId)) && (crmExDays.get(linkedCustomerId) as number[]).length > 0 ? (crmExDays.get(linkedCustomerId) as number[]) : null,
         address: t.indirizzo || '',
         city: t.comune || '',
         province: t.provincia || '',

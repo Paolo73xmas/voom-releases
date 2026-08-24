@@ -1,0 +1,11 @@
+import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+const env = fs.readFileSync('/app/frontend/.env', 'utf8');
+const url = env.match(/EXPO_PUBLIC_SUPABASE_URL=(.+)/)[1].trim();
+const key = env.match(/EXPO_PUBLIC_SUPABASE_ANON_KEY=(.+)/)[1].trim();
+const supabase = createClient(url, key);
+await supabase.auth.signInWithPassword({ email: 'tadini@voomweb.it', password: 'Tadini2025!' });
+const d = new Date();
+const day = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const { data, error } = await supabase.rpc('agent_own_stamina', { p_day: day });
+console.log('RPC agent_own_stamina(p_day='+day+') => data:', JSON.stringify(data), 'err:', error?.message);

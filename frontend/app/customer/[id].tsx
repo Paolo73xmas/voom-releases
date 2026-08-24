@@ -20,7 +20,8 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { COLORS } from '../../lib/theme';
 import { VisitSlotWheel } from '../../components/customers/VisitSlotWheel';
-import { getVisitSlots, slotsFromIds, type VisitSlot } from '../../lib/visit-slots';
+import { getVisitSlots, slotsFromIds, WEEKDAY_NAMES, type VisitSlot } from '../../lib/visit-slots';
+import { ExcludedDaysPicker } from '../../components/customers/ExcludedDaysPicker';
 
 interface CustomerOrder {
   id: string;
@@ -62,9 +63,13 @@ export default function CustomerDetailScreen() {
   const [slotDefs, setSlotDefs] = useState<VisitSlot[]>([]);
   const [slotsEditing, setSlotsEditing] = useState(false);
   const [slotsDraft, setSlotsDraft] = useState<string[]>([]);
+  const [excludedDraft, setExcludedDraft] = useState<number[]>([]);
   const [slotsSaving, setSlotsSaving] = useState(false);
   const customerSlots = Array.isArray((customer as (Customer & { preferred_visit_slots?: string[] | null }) | null)?.preferred_visit_slots)
     ? ((customer as Customer & { preferred_visit_slots?: string[] | null }).preferred_visit_slots as string[])
+    : [];
+  const customerExcluded = Array.isArray((customer as (Customer & { excluded_visit_days?: number[] | null }) | null)?.excluded_visit_days)
+    ? ((customer as Customer & { excluded_visit_days?: number[] | null }).excluded_visit_days as number[])
     : [];
 
   useEffect(() => {
@@ -72,7 +77,10 @@ export default function CustomerDetailScreen() {
   }, []);
 
   useEffect(() => {
-    if (slotsEditing) setSlotsDraft(customerSlots);
+    if (slotsEditing) {
+      setSlotsDraft(customerSlots);
+      setExcludedDraft(customerExcluded);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slotsEditing]);
 
@@ -81,13 +89,14 @@ export default function CustomerDetailScreen() {
     setSlotsSaving(true);
     try {
       const value = slotsDraft.length > 0 ? slotsDraft : null;
-      const { error } = await supabase.from('customers').update({ preferred_visit_slots: value }).eq('id', customer.id);
+      const exValue = excludedDraft.length > 0 ? excludedDraft : null;
+      const { error } = await supabase.from('customers').update({ preferred_visit_slots: value, excluded_visit_days: exValue }).eq('id', customer.id);
       if (error) throw error;
-      setCustomer({ ...(customer as Customer), preferred_visit_slots: value } as Customer);
+      setCustomer({ ...(customer as Customer), preferred_visit_slots: value, excluded_visit_days: exValue } as Customer);
       setSlotsEditing(false);
     } catch (err) {
       console.error('[CustomerDetail] saveSlots:', err);
-      Alert.alert('Errore', 'Fasce non salvate. Riprova.');
+      Alert.alert('Errore', 'Preferenze non salvate. Riprova.');
     } finally {
       setSlotsSaving(false);
     }
@@ -371,25 +380,44 @@ export default function CustomerDetailScreen() {
             {slotsEditing ? (
               <View style={{ alignItems: 'center', gap: 10 }}>
                 <VisitSlotWheel value={slotsDraft} onChange={setSlotsDraft} size={200} />
+                <View style={{ alignSelf: 'stretch' }}>
+                  <ExcludedDaysPicker value={excludedDraft} onChange={setExcludedDraft} />
+                </View>
                 <TouchableOpacity
                   style={[styles.slotsSaveBtn, slotsSaving && { opacity: 0.6 }]}
                   onPress={saveSlots}
                   disabled={slotsSaving}
                   activeOpacity={0.75}
                 >
-                  {slotsSaving ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.slotsSaveText}>Salva fasce</Text>}
+                  {slotsSaving ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.slotsSaveText}>Salva preferenze</Text>}
                 </TouchableOpacity>
               </View>
-            ) : customerSlots.length > 0 ? (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {slotsFromIds(customerSlots, slotDefs).map((s) => (
-                  <View key={s.id} style={styles.slotChip}>
-                    <Text style={styles.slotChipText}>{s.label}</Text>
-                  </View>
-                ))}
-              </View>
             ) : (
-              <Text style={styles.slotsEmpty}>Nessuna preferenza indicata</Text>
+              <>
+                {customerSlots.length > 0 ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {slotsFromIds(customerSlots, slotDefs).map((s) => (
+                      <View key={s.id} style={styles.slotChip}>
+                        <Text style={styles.slotChipText}>{s.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.slotsEmpty}>Nessuna preferenza indicata</Text>
+                )}
+                <Text style={styles.excludedLabel}>Giorni esclusi dalle visite</Text>
+                {customerExcluded.length > 0 ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {customerExcluded.map((d) => (
+                      <View key={d} style={styles.excludedChip}>
+                        <Text style={styles.excludedChipText}>{WEEKDAY_NAMES[d] || d}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.slotsEmpty}>Nessun giorno escluso</Text>
+                )}
+              </>
             )}
           </View>
         </View>
@@ -518,6 +546,9 @@ const styles = StyleSheet.create({
   slotChip: { borderWidth: 1, borderColor: '#7C3AED', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   slotChipText: { fontSize: 11.5, fontWeight: '600', color: '#7C3AED' },
   slotsEmpty: { fontSize: 12, color: COLORS.textLight },
+  excludedLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textLight, marginTop: 10, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.3 },
+  excludedChip: { backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 6, paddingVertical: 4, paddingHorizontal: 9 },
+  excludedChipText: { fontSize: 11.5, fontWeight: '600', color: '#B91C1C', textDecorationLine: 'line-through' },
   slotsSaveBtn: {
     backgroundColor: '#7C3AED',
     borderRadius: 8,

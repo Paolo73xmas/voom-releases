@@ -61,6 +61,8 @@ export interface TourCandidate {
   visitLearnedSamples?: number;
   /** Fasce orarie in cui il cliente preferisce ricevere le visite */
   preferredSlots?: PreferredVisitSlot[] | null;
+  /** Giorni ISO (1=lun..6=sab) in cui il cliente NON riceve visite */
+  excludedDays?: number[] | null;
   potentialValue: number;
 }
 
@@ -122,6 +124,7 @@ export interface AiTourSettings {
   buffer_max_min: number;
   cadence_weeks_active: number;
   cadence_weeks_low: number;
+  lunch_break_minutes: number;
   home_address: string | null;
   home_lat: number | null;
   home_lng: number | null;
@@ -142,6 +145,7 @@ export const DEFAULT_SETTINGS: AiTourSettings = {
   buffer_max_min: 60,
   cadence_weeks_active: 5,
   cadence_weeks_low: 8,
+  lunch_break_minutes: 30,
   home_address: null,
   home_lat: null,
   home_lng: null,

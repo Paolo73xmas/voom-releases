@@ -21,6 +21,8 @@ export interface LiveStop {
   actualArrival: string | null;
   outcome: string | null;
   skipReason: string | null;
+  addedLive: boolean;
+  addedByAdmin: boolean;
 }
 
 export interface LiveState {
@@ -90,7 +92,7 @@ export function stopToCandidate(s: SavedStop & { outcome?: string | null; follow
 export async function getActiveTour(agentId: string): Promise<SavedTour | null> {
   const { data, error } = await supabase
     .from('ai_tours')
-    .select('id, agent_id, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at')
+    .select('id, agent_id, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at, lunch_break_start, lunch_break_end, lunch_break_minutes')
     .eq('agent_id', agentId)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -131,6 +133,8 @@ export async function loadLiveState(tour: SavedTour): Promise<LiveState> {
       actualArrival: (s as { actual_arrival?: string | null }).actual_arrival || null,
       outcome: (s as { outcome?: string | null }).outcome || null,
       skipReason: (s as { skip_reason?: string | null }).skip_reason || null,
+      addedLive: !!(s as { added_live?: boolean }).added_live,
+      addedByAdmin: !!(s as { added_by_admin?: boolean }).added_by_admin,
     })),
     geometry,
     endPoint: tour.end_lat != null ? { lat: tour.end_lat, lng: tour.end_lng as number, label: tour.end_label || 'Rientro' } : null,
@@ -141,6 +145,8 @@ export async function loadLiveState(tour: SavedTour): Promise<LiveState> {
 async function logEvent(tourId: string, eventType: string, stopId: string | null, details: Record<string, unknown> = {}) {
   await supabase.from('ai_tour_events').insert({ tour_id: tourId, stop_id: stopId, event_type: eventType, details });
 }
+
+export const logTourEvent = logEvent;
 
 export async function startLiveTour(tourId: string): Promise<void> {
   // Il giorno di esecuzione reale e' OGGI: riallinea tour_date (es. tour generato
@@ -248,6 +254,54 @@ export async function skipStop(tourId: string, stopId: string, reason: string, n
   await logEvent(tourId, 'skipped', stopId, { reason, note });
 }
 
+// Ripasso in giornata: la tappa resta nel giro con una finestra oraria attorno
+// all'ora scelta (l'AI la riposiziona al prossimo ricalcolo). Non viene mai
+// rimossa dai ricalcoli (guardia isRevisitCandidate lato client).
+export function revisitSlotFor(time: string): { id: string; label: string; start: number; end: number; strict: boolean } {
+  const [h, m] = time.split(':').map(Number);
+  const start = h * 60 + (m || 0);
+  // strict: nessuna tolleranza ±30 del planner, l'arrivo resta in [ora-15, ora+45]
+  return { id: `ripasso_${time.replace(':', '')}`, label: `Ripasso ${time}`, start: Math.max(0, start - 15), end: start + 45, strict: true };
+}
+
+export const isRevisitCandidate = (c: TourCandidate): boolean =>
+  (c.preferredSlots || []).some((s) => s.id.startsWith('ripasso_'));
+
+export async function scheduleRevisit(tourId: string, stopId: string, time: string, reason: string): Promise<void> {
+  const { error } = await supabase
+    .from('ai_tour_stops')
+    .update({ status: 'planned', actual_arrival: null, preferred_slots: [revisitSlotFor(time)], skip_reason: null })
+    .eq('id', stopId);
+  if (error) throw error;
+  await logEvent(tourId, 'revisit_scheduled', stopId, { time, reason });
+}
+
+// Pausa Pranzo: utilizzabile una sola volta al giorno; registrata sul tour per Monitoring/storico
+export async function startLunchBreak(tourId: string, agentId: string, minutes: number): Promise<void> {
+  const d = new Date();
+  const localToday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const { data: used, error: checkErr } = await supabase
+    .from('ai_tours')
+    .select('id')
+    .eq('agent_id', agentId)
+    .eq('tour_date', localToday)
+    .not('lunch_break_start', 'is', null)
+    .limit(1);
+  if (checkErr) throw checkErr;
+  if ((used || []).length > 0) throw new Error('La Pausa Pranzo è già stata utilizzata oggi');
+  const { error } = await supabase
+    .from('ai_tours')
+    .update({ lunch_break_start: new Date().toISOString(), lunch_break_end: null, lunch_break_minutes: minutes })
+    .eq('id', tourId);
+  if (error) throw error;
+  await logEvent(tourId, 'lunch_break_started', null, { minutes });
+}
+
+export async function endLunchBreak(tourId: string, actualMinutes: number): Promise<void> {
+  await supabase.from('ai_tours').update({ lunch_break_end: new Date().toISOString() }).eq('id', tourId);
+  await logEvent(tourId, 'lunch_break_ended', null, { actual_minutes: actualMinutes });
+}
+
 export async function cancelStopByRecalc(tourId: string, stopId: string): Promise<void> {
   const { error } = await supabase
     .from('ai_tour_stops')
@@ -270,7 +324,14 @@ export async function updateLiveSequence(
   await logEvent(tourId, 'recalc', null, { stops: updates.length });
 }
 
-export async function addLiveStop(tour: SavedTour, cand: TourCandidate, seq: number): Promise<string> {
+export interface AddStopOpts {
+  mandatory?: boolean;
+  byAdmin?: boolean;
+  adminName?: string;
+  placement?: string;
+}
+
+export async function addLiveStop(tour: SavedTour, cand: TourCandidate, seq: number, opts: AddStopOpts = {}): Promise<string> {
   const { data, error } = await supabase
     .from('ai_tour_stops')
     .insert({
@@ -289,14 +350,22 @@ export async function addLiveStop(tour: SavedTour, cand: TourCandidate, seq: num
       planned_duration_minutes: cand.visitMinutes,
       priority_score: cand.score,
       priority_class: cand.priorityClass,
-      mandatory: false,
+      mandatory: !!opts.mandatory,
       status: 'planned',
       ai_reason: cand.reason,
+      preferred_slots: cand.preferredSlots || null,
+      added_live: true,
+      added_by_admin: !!opts.byAdmin,
     })
     .select('id')
     .single();
   if (error) throw error;
-  await logEvent(tour.id, 'added_live', data.id, { name: cand.name });
+  await logEvent(tour.id, opts.byAdmin ? 'added_by_admin' : 'added_live', data.id, {
+    name: cand.name,
+    placement: opts.placement || null,
+    mandatory: !!opts.mandatory,
+    ...(opts.adminName ? { admin_name: opts.adminName } : {}),
+  });
   return data.id as string;
 }
 

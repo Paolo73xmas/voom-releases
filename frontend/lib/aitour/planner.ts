@@ -4,7 +4,7 @@ import type { TourCandidate, TourPlan, PlannedStop, GeoPoint, DayType } from './
 import { haversineKm } from './types';
 import { getMatrix, getRoute } from './osrm';
 import { pointInZones, type TerritoryZone } from './territories';
-import { VISIT_SLOT_TOLERANCE_MIN } from '../visit-slots';
+import { VISIT_SLOT_TOLERANCE_MIN, WEEKDAY_NAMES, isoWeekday } from '../visit-slots';
 
 // Finestre di arrivo ammesse dalla fascia preferita del cliente:
 // tolleranza ±30 minuti su tutte le fasce TRANNE quelle "strict" (pranzo 11.30-14.30)
@@ -56,6 +56,8 @@ export interface PlanInput {
   bufferPct: number;
   bufferMaxMin?: number;
   area: AreaFilter;
+  /** Replan live: non applicare l'esclusione dei giorni (tappe già confermate nel giro) */
+  skipDayExclusion?: boolean;
 }
 
 const MAX_MATRIX_POINTS = 40; // start + max 38 candidati + end (demo OSRM regge fino a ~100)
@@ -160,8 +162,22 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   const bufferReserve = Math.min(Math.round((availableMin * bufferPct) / 100), input.bufferMaxMin ?? 60);
   const usableUntil = endMin - bufferReserve;
 
+  // Giorni esclusi dal cliente (es. mercoledì mercato): fuori dal giro di quel giorno
+  const tourDow = isoWeekday(input.tourDate);
+  const tourDayName = WEEKDAY_NAMES[tourDow] || '';
+  const dayExcluded: { candidate: TourCandidate; why: string }[] = [];
+  const dayCandidates = input.skipDayExclusion ? input.candidates : input.candidates.filter((c) => {
+    if (!Array.isArray(c.excludedDays) || !c.excludedDays.includes(tourDow)) return true;
+    if (input.mandatoryKeys.has(c.key)) {
+      warnings.push(`"${c.name}": il cliente non riceve visite il ${tourDayName}, mantenuta perche' obbligatoria`);
+      return true;
+    }
+    dayExcluded.push({ candidate: c, why: `Il cliente non riceve visite il ${tourDayName}` });
+    return false;
+  });
+
   // Ordina per punteggio, obbligatorie sempre incluse, cap per matrice OSRM
-  const sorted = [...input.candidates].sort((a, b) => b.score - a.score);
+  const sorted = [...dayCandidates].sort((a, b) => b.score - a.score);
   const mandatory = sorted.filter((c) => input.mandatoryKeys.has(c.key));
   const optional = sorted.filter((c) => !input.mandatoryKeys.has(c.key));
   const capOptional = Math.max(0, MAX_MATRIX_POINTS - 2 - mandatory.length);
@@ -312,6 +328,7 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
         ? 'Fascia oraria preferita non compatibile con il giro'
         : c.score >= 60 ? 'Non rientrava nell\'orario disponibile' : 'Priorita\' piu\' bassa rispetto alle visite scelte',
     }));
+  const allExcluded = [...dayExcluded, ...excluded];
 
   const scores = stops.map((s) => s.candidate.score);
   return {
@@ -337,7 +354,7 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     finishMin,
     potentialValue: stops.reduce((s, x) => s + x.candidate.potentialValue, 0),
     avgScore: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
-    excluded,
+    excluded: allExcluded,
     aiSummary: '',
     aiRecommendation: null,
     warnings,
@@ -372,11 +389,15 @@ export async function planFixedOrder(ordered: TourCandidate[], base: TourPlan): 
   let visitMin = 0;
   const mandatorySet = new Set(base.stops.filter((s) => s.mandatory).map((s) => s.candidate.key));
   const windowWarnings: string[] = [];
+  const fixedDow = isoWeekday(base.tourDate);
   ordered.forEach((cand, i) => {
     const leg = route.legs[i] || { durationMin: 0, distanceKm: 0 };
     driveMin += leg.durationMin;
     const wa = windowArrival(cand, t + leg.durationMin);
     if (wa.outside) windowWarnings.push(`"${cand.name}": arrivo fuori dalla fascia oraria preferita (${slotLabelsOf(cand)})`);
+    if (Array.isArray(cand.excludedDays) && cand.excludedDays.includes(fixedDow)) {
+      windowWarnings.push(`"${cand.name}": il cliente non riceve visite il ${WEEKDAY_NAMES[fixedDow] || 'giorno scelto'}`);
+    }
     const arrival = wa.arrival;
     t = arrival + cand.visitMinutes;
     visitMin += cand.visitMinutes;

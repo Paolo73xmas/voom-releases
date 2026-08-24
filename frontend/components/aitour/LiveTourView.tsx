@@ -1,7 +1,7 @@
 // Modalità Live AI Tour mobile: prossima visita, sono arrivato, esito, salta, ricalcolo automatico,
 // integrazione Raccolta Ordine/Ispezione/Prima Visita con chiusura automatica della tappa al ritorno.
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,8 +17,13 @@ import type { LiveState, LiveStop } from '../../lib/aitour/live';
 import {
   nowMin, getCurrentPos, markArrived, completeStop, skipStop, cancelStopByRecalc,
   updateLiveSequence, addLiveStop, finishLiveTour, suggestNearby, findExternalResult, updateTourPosition,
-  findTabCustomer, updateStopCustomer, recordTrackPoint,
+  findTabCustomer, updateStopCustomer, recordTrackPoint, loadLiveState,
+  scheduleRevisit, revisitSlotFor, isRevisitCandidate, startLunchBreak, endLunchBreak,
 } from '../../lib/aitour/live';
+import { insertLiveStop, reorderLiveStops, type PlacementChoice, type ReplanContext } from '../../lib/aitour/liveops';
+import { AddStopModal } from './AddStopModal';
+import { ReorderStopsModal } from './ReorderStopsModal';
+import { OwnStaminaChip } from './OwnStaminaChip';
 import { planTour } from '../../lib/aitour/planner';
 import { buildTourReport, type TourReport } from '../../lib/aitour/report';
 import type { TourCandidate, AiTourSettings, GeoPoint, DayType } from '../../lib/aitour/types';
@@ -57,9 +62,23 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [recalcing, setRecalcing] = useState(false);
   const [report, setReport] = useState<TourReport | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [reorderOpen, setReorderOpen] = useState(false);
   const tour = initial.tour;
   const stopsRef = useRef(stops);
   stopsRef.current = stops;
+
+  // Pausa Pranzo: una sola volta al giorno; se si rientra nella vista durante la pausa, riprende il countdown
+  const lunchMinutes = Math.max(5, Number(settings.lunch_break_minutes) || 30);
+  const [lunch, setLunch] = useState<{ start: number; minutes: number } | null>(() => {
+    if (!initial.tour.lunch_break_start || initial.tour.lunch_break_end) return null;
+    const start = new Date(initial.tour.lunch_break_start).getTime();
+    const mins = initial.tour.lunch_break_minutes || 30;
+    return Date.now() < start + mins * 60000 ? { start, minutes: mins } : null;
+  });
+  const [lunchUsed, setLunchUsed] = useState<boolean>(!!initial.tour.lunch_break_start);
+  const [lunchOpen, setLunchOpen] = useState(false);
+  const [lunchTick, setLunchTick] = useState(Date.now());
 
   // Battito posizione: GPS al Monitoring admin subito e poi ogni 60s + traccia percorso reale
   useEffect(() => {
@@ -79,6 +98,40 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     };
   }, [tour.id, tour.agent_id]);
 
+  // Sincronizzazione con l'admin (60s): chiusura giro dal Monitoring o tappa
+  // obbligatoria inserita dall'admin -> avviso e riallineamento della vista live.
+  useEffect(() => {
+    let stopped = false;
+    const sync = async () => {
+      try {
+        const { data: t } = await supabase.from('ai_tours').select('status').eq('id', tour.id).maybeSingle();
+        if (stopped || !t) return;
+        if (t.status !== 'active') {
+          Alert.alert('Giro chiuso', "Il giro è stato chiuso dall'amministratore.");
+          onExit();
+          return;
+        }
+        const { data: ids } = await supabase.from('ai_tour_stops').select('id').eq('tour_id', tour.id);
+        if (stopped || !ids) return;
+        const known = new Set(stopsRef.current.map((s) => s.id));
+        if (ids.some((r) => !known.has(r.id as string))) {
+          const st = await loadLiveState(tour);
+          if (stopped) return;
+          setStops(st.stops);
+          setMessage("L'amministratore ha aggiunto una tappa al tuo giro: percorso aggiornato");
+        }
+      } catch {
+        // sync silenziosa: riprova al prossimo giro
+      }
+    };
+    const iv = setInterval(sync, 60000);
+    return () => {
+      stopped = true;
+      clearInterval(iv);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tour.id]);
+
   const pending = useMemo(() => stops.filter((s) => s.status === 'planned' || s.status === 'arrived'), [stops]);
   const next = pending[0] || null;
   // Numerazione STABILE del giro: ogni tappa mantiene il proprio numero progressivo
@@ -97,7 +150,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const delayMin = next?.plannedArrival && next.status === 'planned' ? nowMin() - timeToMin(next.plannedArrival) : 0;
 
   const runRecalc = useCallback(
-    async (currentStops: LiveStop[], reasonPrefix?: string) => {
+    async (currentStops: LiveStop[], reasonPrefix?: string, startOffsetMin = 0) => {
       const remaining = currentStops.filter((s) => s.status === 'planned');
       if (remaining.length === 0) {
         setMessage('Tutte le visite sono state gestite: puoi terminare il tour.');
@@ -105,7 +158,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       }
       // Guardia: oltre l'orario di fine tour il ricalcolo azzererebbe il giro (tutte
       // le tappe risulterebbero "fuori orario"). Non tocchiamo nulla: l'agente decide.
-      if (nowMin() >= initial.endMin) {
+      if (nowMin() + startOffsetMin >= initial.endMin) {
         setMessage(`Sei oltre l'orario di fine tour (${minToTime(initial.endMin)}): il giro non viene ricalcolato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
         return;
       }
@@ -119,16 +172,18 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           start,
           end: initial.endPoint,
           tourDate: tour.tour_date,
-          startMin: nowMin(),
+          startMin: nowMin() + startOffsetMin,
           endMin: initial.endMin,
           dayType: tour.tour_type as DayType,
           resolvedDayType: (tour.resolved_tour_type || 'mista') as Exclude<DayType, 'ai'>,
           bufferPct: 5,
           bufferMaxMin: settings.buffer_max_min,
           area: { mode: 'auto' },
+          skipDayExclusion: true,
         });
         const keptKeys = new Set(plan.stops.map((p) => p.candidate.key));
-        const dropped = remaining.filter((s) => !keptKeys.has(s.candidate.key));
+        // I "ripassi in giornata" non vengono mai rimossi dal ricalcolo
+        const dropped = remaining.filter((s) => !keptKeys.has(s.candidate.key) && !isRevisitCandidate(s.candidate));
         // Guardia anti-azzeramento: se l'AI scarterebbe TUTTE le tappe rimanenti,
         // non cancellare nulla (tempo residuo insufficiente: decide l'agente).
         if (plan.stops.length === 0) {
@@ -192,7 +247,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const AUTO_RECALC_DELAY_MIN = 15;
   useEffect(() => {
     const iv = setInterval(() => {
-      if (busy || recalcing || esitoOpen || skipOpen || recapOpen || acquireKind) return;
+      if (busy || recalcing || esitoOpen || skipOpen || recapOpen || acquireKind || addOpen || reorderOpen) return;
+      if (lunch) return; // in pausa pranzo: il ritardo e' voluto, niente ricalcolo automatico
       if (nowMin() >= initial.endMin) return; // oltre fine tour: il ricalcolo azzererebbe il giro
       const current = stopsRef.current;
       const nx = current.find((s) => s.status === 'planned' || s.status === 'arrived');
@@ -203,7 +259,69 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       }
     }, 60000);
     return () => clearInterval(iv);
-  }, [busy, recalcing, esitoOpen, skipOpen, recapOpen, acquireKind, runRecalc, initial.endMin]);
+  }, [busy, recalcing, esitoOpen, skipOpen, recapOpen, acquireKind, addOpen, reorderOpen, lunch, runRecalc, initial.endMin]);
+
+  // Countdown pausa pranzo: al termine naturale registra la fine e riparte
+  useEffect(() => {
+    if (!lunch) return;
+    const iv = setInterval(() => {
+      const now = Date.now();
+      setLunchTick(now);
+      if (now >= lunch.start + lunch.minutes * 60000) {
+        setLunch(null);
+        endLunchBreak(tour.id, lunch.minutes).catch((err) => console.warn('[AITour][live] fine pausa:', err));
+        setMessage('Pausa pranzo terminata: si riparte!');
+      }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [lunch, tour.id]);
+
+  const handleLunchStart = async () => {
+    setBusy(true);
+    try {
+      await startLunchBreak(tour.id, tour.agent_id, lunchMinutes);
+      setLunchUsed(true);
+      setLunch({ start: Date.now(), minutes: lunchMinutes });
+      setLunchOpen(false);
+      hap.success();
+      // Se il giro è in anticipo e la pausa rientra nel margine, gli orari restano validi (mai anticiparli)
+      const nextPlanned = stopsRef.current.find((s) => s.status === 'planned');
+      const fitsInSlack = nextPlanned?.plannedArrival ? nowMin() + lunchMinutes <= timeToMin(nextPlanned.plannedArrival) : false;
+      if (fitsInSlack) {
+        setMessage(`Pausa pranzo di ${lunchMinutes} min: rientra nel margine disponibile, gli orari delle tappe restano invariati.`);
+      } else {
+        await runRecalc(stopsRef.current, 'Pausa pranzo', lunchMinutes);
+      }
+    } catch (err) {
+      console.error('[AITour][live] pausa pranzo:', err);
+      setLunchOpen(false);
+      setMessage(err instanceof Error && err.message.includes('già') ? err.message : "Errore nell'avvio della pausa");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleLunchResume = async () => {
+    if (!lunch) return;
+    setBusy(true);
+    try {
+      const actual = Math.max(1, Math.floor((Date.now() - lunch.start) / 60000));
+      await endLunchBreak(tour.id, actual);
+      setLunch(null);
+      const nextPlanned = stopsRef.current.find((s) => s.status === 'planned');
+      const stillOk = nextPlanned?.plannedArrival ? nowMin() <= timeToMin(nextPlanned.plannedArrival) : true;
+      if (stillOk) {
+        setMessage(`Pausa terminata dopo ${actual} min: gli orari delle tappe restano validi.`);
+      } else {
+        await runRecalc(stopsRef.current, 'Ripresa dalla pausa');
+      }
+    } catch (err) {
+      console.error('[AITour][live] ripresa pausa:', err);
+      setMessage('Errore nella ripresa dalla pausa');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleArrived = async () => {
     if (!next) return;
@@ -413,6 +531,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         if (extras.mobile) contactUpdates.contact_mobile = extras.mobile;
         if (extras.email) contactUpdates.contact_email = extras.email;
         if (extras.visitSlots) contactUpdates.preferred_visit_slots = extras.visitSlots.length > 0 ? extras.visitSlots : null;
+        if (extras.excludedDays) contactUpdates.excluded_visit_days = extras.excludedDays.length > 0 ? extras.excludedDays : null;
         if (Object.keys(contactUpdates).length > 0) {
           const { error: cErr } = await supabase.from('customers').update(contactUpdates).eq('id', customerId);
           if (cErr) setMessage('Contatti non salvati sulla scheda cliente');
@@ -460,10 +579,23 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     }
   };
 
-  const handleSkip = async (reason: string, note: string) => {
+  const handleSkip = async (reason: string, note: string, revisitTime: string | null) => {
     if (!next) return;
     setBusy(true);
     try {
+      if (revisitTime) {
+        // Ripasso in giornata: la tappa resta nel giro con finestra oraria attorno all'ora scelta
+        await scheduleRevisit(tour.id, next.id, revisitTime, reason);
+        const slot = revisitSlotFor(revisitTime);
+        const updated = stops.map((s) => (s.id === next.id
+          ? { ...s, status: 'planned' as const, actualArrival: null, candidate: { ...s.candidate, preferredSlots: [slot] } }
+          : s));
+        setStops(updated);
+        setSkipOpen(false);
+        hap.success();
+        await runRecalc(updated, `Ripasso "${next.candidate.name}" alle ${revisitTime}`);
+        return;
+      }
       await skipStop(tour.id, next.id, reason, note);
       const updated = stops.map((s) => (s.id === next.id ? { ...s, status: 'skipped' as const, skipReason: reason } : s));
       setStops(updated);
@@ -493,6 +625,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         actualArrival: null,
         outcome: null,
         skipReason: null,
+        addedLive: true,
+        addedByAdmin: false,
       };
       const updated = [...stops, newStop];
       setStops(updated);
@@ -501,6 +635,62 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     } catch (err) {
       console.error('[AITour][live] add suggestion:', err);
       setMessage("Errore nell'aggiunta della visita");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Contesto di ripianificazione per le operazioni live (aggiunta tappa / riordino)
+  const buildCtx = async (): Promise<ReplanContext> => ({
+    tour,
+    startPos: (await getCurrentPos()) || fallbackPos(),
+    endPoint: initial.endPoint,
+    startMin: nowMin(),
+    endMin: initial.endMin,
+    settings,
+    seqBase: stops.filter((s) => s.status !== 'planned').length,
+  });
+
+  const reloadFromDb = async () => {
+    const st = await loadLiveState(tour);
+    setStops(st.stops);
+  };
+
+  const handleAddStop = async (cand: TourCandidate, placement: PlacementChoice, mandatory: boolean) => {
+    setBusy(true);
+    try {
+      const ctx = await buildCtx();
+      const pendingPlanned = stops.filter((s) => s.status === 'planned');
+      const res = await insertLiveStop(ctx, pendingPlanned, cand, placement, { mandatory });
+      await reloadFromDb();
+      setAddOpen(false);
+      hap.success();
+      const parts: string[] = [`"${cand.name}" aggiunta al giro.`];
+      if (res.droppedNames.length > 0) parts.push(`Per restare nei tempi ho rimosso: ${res.droppedNames.join(', ')}.`);
+      parts.push(...res.warnings);
+      setMessage(parts.join(' '));
+    } catch (err) {
+      console.error('[AITour][live] aggiunta tappa:', err);
+      setMessage("Errore nell'aggiunta della tappa");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleReorder = async (orderedIds: string[]) => {
+    setBusy(true);
+    try {
+      const ctx = await buildCtx();
+      const byId = new Map(stops.map((s) => [s.id, s]));
+      const ordered = orderedIds.map((id) => byId.get(id)).filter((s): s is LiveStop => !!s);
+      const res = await reorderLiveStops(ctx, ordered);
+      await reloadFromDb();
+      setReorderOpen(false);
+      hap.success();
+      setMessage(res.warnings.length > 0 ? `Ordine tappe aggiornato. ${res.warnings.join(' ')}` : 'Ordine tappe aggiornato: percorso e orari ricalcolati.');
+    } catch (err) {
+      console.error('[AITour][live] riordino tappe:', err);
+      setMessage('Errore nel riordino delle tappe');
     } finally {
       setBusy(false);
     }
@@ -564,6 +754,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         <Text style={styles.progressText}>
           {doneCount} fatte · {skipCount} saltate · {pending.length} rimanenti
         </Text>
+        <OwnStaminaChip />
         {next && Math.abs(delayMin) > 5 && (
           <View style={[styles.delayBadge, { backgroundColor: delayMin > 0 ? '#FEE2E2' : '#D1FAE5' }]}>
             <Text style={[styles.delayText, { color: delayMin > 0 ? '#991B1B' : '#047857' }]}>
@@ -572,6 +763,70 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           </View>
         )}
       </View>
+
+      {/* Operazioni live sul giro: pausa pranzo, aggiungi tappa, riordina */}
+      <View style={styles.liveOpsRow}>
+        {!lunchUsed && !lunch && (
+          <TouchableOpacity
+            style={[styles.opsBtn, { borderColor: '#FDBA74' }]}
+            onPress={() => {
+              hap.light();
+              setLunchOpen(true);
+            }}
+            disabled={busy}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="cafe-outline" size={14} color="#EA580C" />
+            <Text style={[styles.opsBtnText, { color: '#EA580C' }]}>Pausa Pranzo</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
+          style={styles.opsBtn}
+          onPress={() => {
+            hap.light();
+            setAddOpen(true);
+          }}
+          disabled={busy}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="add" size={15} color={AI_PURPLE} />
+          <Text style={styles.opsBtnText}>Tappa</Text>
+        </TouchableOpacity>
+        {stops.filter((s) => s.status === 'planned').length > 1 && (
+          <TouchableOpacity
+            style={styles.opsBtn}
+            onPress={() => {
+              hap.light();
+              setReorderOpen(true);
+            }}
+            disabled={busy}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="swap-vertical" size={14} color={AI_PURPLE} />
+            <Text style={styles.opsBtnText}>Ordine</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Pausa pranzo in corso: countdown + ripresa anticipata */}
+      {lunch && (
+        <View style={styles.lunchBanner}>
+          <Ionicons name="cafe" size={15} color="#EA580C" />
+          <Text style={styles.lunchText}>
+            <Text style={{ fontFamily: JAKARTA.bold }}>Pausa pranzo in corso</Text> — riprendi tra{' '}
+            <Text style={{ fontFamily: JAKARTA.bold }}>
+              {(() => {
+                const ms = Math.max(0, lunch.start + lunch.minutes * 60000 - lunchTick);
+                return `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')}`;
+              })()}
+            </Text>
+            . Il giro riprende alla fine della pausa.
+          </Text>
+          <TouchableOpacity style={styles.lunchResumeBtn} onPress={handleLunchResume} disabled={busy} activeOpacity={0.7}>
+            <Text style={styles.lunchResumeText}>Riprendi ora</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Mappa del giro */}
       <TouchableOpacity
@@ -650,11 +905,28 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         <View style={styles.nextCard}>
           <View style={styles.nextHeader}>
             <Text style={styles.nextLabel}>PROSSIMA VISITA{next.status === 'arrived' ? ' — SEI SUL POSTO' : ''}</Text>
-            {next.mandatory && (
-              <View style={styles.mandBadge}>
-                <Text style={styles.mandBadgeText}>Obbligatoria</Text>
-              </View>
-            )}
+            <View style={styles.nextBadges}>
+              {next.mandatory && (
+                <View style={styles.mandBadge}>
+                  <Text style={styles.mandBadgeText}>Obbligatoria</Text>
+                </View>
+              )}
+              {next.addedByAdmin && (
+                <View style={[styles.mandBadge, { backgroundColor: '#EA580C' }]}>
+                  <Text style={styles.mandBadgeText}>Inserita dall&apos;admin</Text>
+                </View>
+              )}
+              {next.addedLive && !next.addedByAdmin && (
+                <View style={[styles.mandBadge, { backgroundColor: '#0D9488' }]}>
+                  <Text style={styles.mandBadgeText}>Aggiunta live</Text>
+                </View>
+              )}
+              {isRevisitCandidate(next.candidate) && (
+                <View style={[styles.mandBadge, { backgroundColor: '#2563EB' }]}>
+                  <Text style={styles.mandBadgeText}>{(next.candidate.preferredSlots || [])[0]?.label || 'Ripasso'}</Text>
+                </View>
+              )}
+            </View>
           </View>
           <Text style={styles.nextName}>{next.candidate.name}</Text>
           {next.candidate.crmName && next.candidate.crmName !== next.candidate.name ? (
@@ -776,13 +1048,28 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         <View style={styles.listSection}>
           <Text style={styles.listTitle}>VISITE RIMANENTI</Text>
           {pending.map((s, i) => (
-            <View key={s.id} style={[styles.listRow, i === 0 && styles.listRowNext]}>
-              <View style={[styles.listSeq, { backgroundColor: ENTITY_COLORS[s.candidate.entityType] }]}>
+            <View key={s.id} style={[styles.listRow, i === 0 && styles.listRowNext, s.addedByAdmin && styles.listRowAdmin]}>
+              <View style={[styles.listSeq, { backgroundColor: s.addedByAdmin ? '#EA580C' : ENTITY_COLORS[s.candidate.entityType] }]}>
                 <Text style={styles.listSeqText}>{stopNumbers.get(s.id)}</Text>
               </View>
               <Text style={styles.listName} numberOfLines={1}>
                 {s.candidate.name}
               </Text>
+              {s.addedByAdmin && (
+                <View style={[styles.tinyBadge, { backgroundColor: '#EA580C' }]}>
+                  <Text style={styles.tinyBadgeText}>admin</Text>
+                </View>
+              )}
+              {s.addedLive && !s.addedByAdmin && (
+                <View style={[styles.tinyBadge, { backgroundColor: '#0D9488' }]}>
+                  <Text style={styles.tinyBadgeText}>live</Text>
+                </View>
+              )}
+              {isRevisitCandidate(s.candidate) && (
+                <View style={[styles.tinyBadge, { backgroundColor: '#2563EB' }]}>
+                  <Text style={styles.tinyBadgeText}>{(s.candidate.preferredSlots || [])[0]?.label || 'ripasso'}</Text>
+                </View>
+              )}
               <Text style={styles.listTime}>{s.plannedArrival ? s.plannedArrival.slice(0, 5) : ''}</Text>
             </View>
           ))}
@@ -834,7 +1121,55 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           </View>
         </View>
       </Modal>
-      <SkipModal visible={skipOpen} stopName={next?.candidate.name || ''} saving={busy} onClose={() => setSkipOpen(false)} onConfirm={handleSkip} />
+      <SkipModal visible={skipOpen} stopName={next?.candidate.name || ''} saving={busy} endMin={initial.endMin} onClose={() => setSkipOpen(false)} onConfirm={handleSkip} />
+
+      {/* Aggiungi tappa a giro avviato */}
+      <AddStopModal
+        visible={addOpen}
+        onClose={() => setAddOpen(false)}
+        agentId={tour.agent_id}
+        settings={settings}
+        center={fallbackPos()}
+        excludeCustomerIds={new Set(stops.map((s) => s.candidate.customerId).filter((x): x is string => !!x))}
+        excludeTabIds={new Set(stops.map((s) => s.candidate.tabaccheriaId).filter((x): x is string => !!x))}
+        pendingStops={stops.filter((s) => s.status === 'planned').map((s) => ({ id: s.id, name: s.candidate.name }))}
+        saving={busy}
+        onConfirm={handleAddStop}
+      />
+
+      {/* Riordino manuale delle tappe rimanenti */}
+      <ReorderStopsModal
+        visible={reorderOpen}
+        onClose={() => setReorderOpen(false)}
+        items={stops.filter((s) => s.status === 'planned').map((s) => ({ id: s.id, name: s.candidate.name, arrival: s.plannedArrival, mandatory: s.mandatory, addedByAdmin: s.addedByAdmin }))}
+        saving={busy}
+        onConfirm={handleReorder}
+      />
+
+      {/* Conferma Pausa Pranzo */}
+      <Modal visible={lunchOpen} animationType="fade" transparent onRequestClose={() => setLunchOpen(false)}>
+        <View style={styles.centerBackdrop}>
+          <View style={styles.dialog}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <Ionicons name="cafe" size={17} color="#EA580C" />
+              <Text style={styles.dialogTitle}>Pausa Pranzo</Text>
+            </View>
+            <Text style={styles.dialogText}>
+              Metti in pausa il giro per <Text style={{ fontFamily: JAKARTA.bold }}>{lunchMinutes} minuti</Text>: se necessario gli orari delle tappe
+              rimanenti vengono ricalcolati (mai anticipati). Puoi riprendere in anticipo quando vuoi.
+            </Text>
+            <Text style={styles.lunchOnceText}>La Pausa Pranzo è utilizzabile una sola volta al giorno.</Text>
+            <View style={styles.dialogFooter}>
+              <TouchableOpacity style={styles.dialogCancel} onPress={() => setLunchOpen(false)} activeOpacity={0.7}>
+                <Text style={styles.dialogCancelText}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.dialogConfirm, { backgroundColor: '#EA580C' }]} onPress={handleLunchStart} disabled={busy} activeOpacity={0.7}>
+                {busy ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.dialogConfirmText}>Inizia pausa ({lunchMinutes} min)</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Acquisizione prospect */}
       <Modal visible={!!acquireKind} animationType="fade" transparent onRequestClose={() => setAcquireKind(null)}>
@@ -980,6 +1315,34 @@ const styles = StyleSheet.create({
   progressText: { fontFamily: JAKARTA.medium, fontSize: 11, color: DS.inkMuted },
   delayBadge: { borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },
   delayText: { fontFamily: JAKARTA.semibold, fontSize: 10 },
+  liveOpsRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 9, flexWrap: 'wrap' },
+  opsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: DS.surface,
+    borderWidth: 1,
+    borderColor: '#C4B5FD',
+    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+  },
+  opsBtnText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: AI_PURPLE },
+  lunchBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FDBA74',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+  },
+  lunchText: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 11, color: '#9A3412', lineHeight: 16 },
+  lunchResumeBtn: { backgroundColor: '#EA580C', borderRadius: 8, paddingVertical: 7, paddingHorizontal: 10 },
+  lunchResumeText: { fontFamily: JAKARTA.bold, fontSize: 11, color: '#FFF' },
+  lunchOnceText: { fontFamily: JAKARTA.semibold, fontSize: 11, color: '#C2410C', marginTop: 8 },
   mapToggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1026,8 +1389,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     ...SHADOWS.sm,
   },
-  nextHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  nextHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 },
   nextLabel: { fontFamily: JAKARTA.bold, fontSize: 10, color: AI_PURPLE, letterSpacing: 0.4 },
+  nextBadges: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
   mandBadge: { backgroundColor: '#DC2626', borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 },
   mandBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 9, color: '#FFF' },
   nextName: { fontFamily: JAKARTA.bold, fontSize: 17, color: DS.ink, marginTop: 5 },
@@ -1107,6 +1471,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   listRowNext: { backgroundColor: AI_PURPLE_SOFT },
+  listRowAdmin: { backgroundColor: 'rgba(234,88,12,0.10)' },
+  tinyBadge: { borderRadius: 4, paddingVertical: 1.5, paddingHorizontal: 5 },
+  tinyBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 8.5, color: '#FFF' },
   listSeq: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   listSeqText: { fontFamily: JAKARTA.bold, fontSize: 10, color: '#FFF' },
   listName: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 12, color: DS.ink },

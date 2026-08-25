@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { openNavigation } from './shared';
 import { COLORS } from '../../lib/theme';
 import { tabaccheriePointsInBounds, type TabPoint } from '../../lib/api/tabaccherie';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let WebView: any = null;
 if (Platform.OS !== 'web') {
@@ -179,6 +180,21 @@ export function TourMapView({ stops, geometry, start, end, height = 420 }: Props
   // Puntini neri: tabaccherie del registro nel riquadro del percorso + ~10 km di margine.
   // Caricati una volta per composizione del giro ed embedded nell'HTML della mappa.
   const [dots, setDots] = useState<TabPoint[]>([]);
+  // Interruttore puntini (preferenza persistita, condivisa col tab Mappa)
+  const [dotsVisible, setDotsVisible] = useState(true);
+  useEffect(() => {
+    AsyncStorage.getItem('voom_dots_visible')
+      .then((v) => {
+        if (v === '0') setDotsVisible(false);
+      })
+      .catch(() => {});
+  }, []);
+  const toggleDots = useCallback(() => {
+    setDotsVisible((prev) => {
+      AsyncStorage.setItem('voom_dots_visible', prev ? '0' : '1').catch(() => {});
+      return !prev;
+    });
+  }, []);
   useEffect(() => {
     let alive = true;
     const lats = [start.lat, ...stops.map((s) => s.lat)];
@@ -205,7 +221,10 @@ export function TourMapView({ stops, geometry, start, end, height = 420 }: Props
     };
   }, [stops, start, end]);
 
-  const html = useMemo(() => buildHtml(stops, geometry, start, end, dots), [stops, geometry, start, end, dots]);
+  const html = useMemo(
+    () => buildHtml(stops, geometry, start, end, dotsVisible ? dots : []),
+    [stops, geometry, start, end, dots, dotsVisible],
+  );
   const [fullscreen, setFullscreen] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -262,6 +281,15 @@ export function TourMapView({ stops, geometry, start, end, height = 420 }: Props
           <Ionicons name="expand" size={17} color={COLORS.text} />
           <Text style={styles.expandText}>Schermo intero</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.dotsBtn, !dotsVisible && { opacity: 0.55 }]}
+          onPress={toggleDots}
+          activeOpacity={0.8}
+          accessibilityLabel={dotsVisible ? 'Nascondi puntini tabaccherie' : 'Mostra puntini tabaccherie'}
+          testID="tourmap-dots-toggle"
+        >
+          <Ionicons name={dotsVisible ? 'ellipse' : 'ellipse-outline'} size={16} color={COLORS.text} />
+        </TouchableOpacity>
       </View>
       <Modal visible={fullscreen} animationType="fade" onRequestClose={() => setFullscreen(false)}>
         <View style={styles.fullRoot}>
@@ -274,6 +302,14 @@ export function TourMapView({ stops, geometry, start, end, height = 420 }: Props
           >
             <Ionicons name="contract" size={18} color="#FFF" />
             <Text style={styles.reduceText}>Riduci</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.dotsBtn, { top: insets.top + 66, right: 12 }, !dotsVisible && { opacity: 0.55 }]}
+            onPress={toggleDots}
+            activeOpacity={0.8}
+            accessibilityLabel={dotsVisible ? 'Nascondi puntini tabaccherie' : 'Mostra puntini tabaccherie'}
+          >
+            <Ionicons name={dotsVisible ? 'ellipse' : 'ellipse-outline'} size={16} color={COLORS.text} />
           </TouchableOpacity>
         </View>
       </Modal>
@@ -310,6 +346,25 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   expandText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  dotsBtn: {
+    position: 'absolute',
+    top: 62,
+    right: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+    zIndex: 10,
+  },
   fullRoot: { flex: 1, backgroundColor: COLORS.bg },
   reduceBtn: {
     position: 'absolute',

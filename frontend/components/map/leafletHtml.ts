@@ -180,6 +180,13 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
       }, 500);
     });
 
+    function setDotsVisible(v) {
+      try {
+        if (!dotsGroup) return;
+        if (v) { map.addLayer(dotsGroup); } else { map.removeLayer(dotsGroup); }
+      } catch (e) {}
+    }
+
     function updateMarkers(data) {
       clusterGroup.clearLayers();
       markers = [];
@@ -229,6 +236,7 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
         var msg = JSON.parse(e.data);
         if (msg.type === 'updateMarkers') updateMarkers(msg.data);
         if (msg.type === 'updateDots') updateDots(msg.data);
+        if (msg.type === 'setDotsVisible') setDotsVisible(msg.visible);
         if (msg.type === 'setCenter') setCenter(msg.lat, msg.lng, msg.zoom);
         if (msg.type === 'updateUserLocation') updateUserLocation(msg.lat, msg.lng);
       } catch(err) {}
@@ -238,6 +246,7 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
         var msg = JSON.parse(e.data);
         if (msg.type === 'updateMarkers') updateMarkers(msg.data);
         if (msg.type === 'updateDots') updateDots(msg.data);
+        if (msg.type === 'setDotsVisible') setDotsVisible(msg.visible);
         if (msg.type === 'setCenter') setCenter(msg.lat, msg.lng, msg.zoom);
         if (msg.type === 'updateUserLocation') updateUserLocation(msg.lat, msg.lng);
       } catch(err) {}

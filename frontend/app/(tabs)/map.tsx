@@ -28,6 +28,7 @@ import { Tabaccheria } from '../../types';
 import { getMarkerColor, getDisplayName, getStatusLabel, getStatusEmoji } from '../../components/map/utils';
 import { fetchOrphanMap, claimOrphanCustomer } from '../../lib/api/orphan-claims';
 import { LEAFLET_HTML } from '../../components/map/leafletHtml';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { styles } from '../../components/map/styles';
 import { COLORS } from '../../lib/theme';
 
@@ -72,6 +73,19 @@ export default function MapScreen() {
   const [dotsCount, setDotsCount] = useState<number | null>(null);
   const dotsReqRef = useRef(0);
   const leafletDotsRef = useRef<any>(null);
+  // Interruttore puntini (preferenza persistita, condivisa con la mappa del giro)
+  const [dotsVisible, setDotsVisible] = useState(true);
+  const dotsVisibleRef = useRef(true);
+  useEffect(() => {
+    AsyncStorage.getItem('voom_dots_visible')
+      .then((v) => {
+        if (v === '0') {
+          setDotsVisible(false);
+          dotsVisibleRef.current = false;
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const currentBoundsRef = useRef<{ north: number; south: number; east: number; west: number } | null>(null);
   const tabaccherieRef = useRef<Tabaccheria[]>([]);
@@ -424,6 +438,7 @@ export default function MapScreen() {
   // Puntini neri: TUTTE le tabaccherie del registro nell'area visualizzata (fino a 5000),
   // layer canvas non interattivo SOTTO i marker colorati — parità web (mappa Territorio).
   const loadTabDots = useCallback(async (bounds: { north: number; south: number; east: number; west: number }) => {
+    if (!dotsVisibleRef.current) return; // puntini disattivati dall'interruttore
     const reqId = ++dotsReqRef.current;
     try {
       const pts = await tabaccheriePointsInBounds(bounds);
@@ -464,6 +479,23 @@ export default function MapScreen() {
       console.warn('[Map] puntini registro:', e);
     }
   }, [sendToMap]);
+
+  // Interruttore puntini neri: nasconde/mostra il layer e sospende i caricamenti
+  const toggleDots = useCallback(() => {
+    const next = !dotsVisibleRef.current;
+    dotsVisibleRef.current = next;
+    setDotsVisible(next);
+    AsyncStorage.setItem('voom_dots_visible', next ? '1' : '0').catch(() => {});
+    if (Platform.OS === 'web') {
+      if (leafletDotsRef.current && leafletMapRef.current) {
+        if (next) leafletMapRef.current.addLayer(leafletDotsRef.current.group);
+        else leafletMapRef.current.removeLayer(leafletDotsRef.current.group);
+      }
+    } else {
+      sendToMap({ type: 'setDotsVisible', visible: next });
+    }
+    if (next && currentBoundsRef.current) loadTabDots(currentBoundsRef.current);
+  }, [sendToMap, loadTabDots]);
 
   const loadByBounds = useCallback(async (
     bounds: { north: number; south: number; east: number; west: number },
@@ -721,7 +753,7 @@ export default function MapScreen() {
             {' \u2022 '}
             <Text style={{ color: '#DC2626' }}>{tabaccherie.filter(t => !t.stato_visita || t.stato_visita === 'non_visitato').length}</Text>
           </Text>
-          {dotsCount != null && (
+          {dotsVisible && dotsCount != null && (
             <Text style={[styles.counterText, { color: '#111827' }]} testID="map-dots-count">
               {'\u25CF'} {dotsCount}{dotsCount >= 5000 ? '+' : ''} tabaccherie nell&apos;area
             </Text>
@@ -776,9 +808,19 @@ export default function MapScreen() {
         <Ionicons name="information-circle" size={22} color="#6B7280" />
       </TouchableOpacity>
 
+      {/* Interruttore puntini neri (registro) */}
+      <TouchableOpacity
+        style={[styles.fabButton, { bottom: insets.bottom + 212, right: 12 }, !dotsVisible && { opacity: 0.55 }]}
+        onPress={toggleDots}
+        accessibilityLabel={dotsVisible ? 'Nascondi puntini tabaccherie' : 'Mostra puntini tabaccherie'}
+        testID="map-dots-toggle"
+      >
+        <Ionicons name={dotsVisible ? 'ellipse' : 'ellipse-outline'} size={20} color="#111827" />
+      </TouchableOpacity>
+
       {/* Legend */}
       {showLegend && (
-        <View style={[styles.legendBox, { bottom: insets.bottom + 212, right: 12 }]}>
+        <View style={[styles.legendBox, { bottom: insets.bottom + 268, right: 12 }]}>
           <View style={styles.legendHeader}>
             <Text style={styles.legendTitle}>Legenda</Text>
             <TouchableOpacity onPress={() => setShowLegend(false)}>

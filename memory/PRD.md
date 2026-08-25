@@ -179,6 +179,8 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
 
 - **Fix tastiera su ricerca "Visite obbligatorie" (ago 2026)**: la tastiera copriva input e risultati nel form AI Tour. Installato react-native-keyboard-controller@1.18.5 (incluso in Expo Go per SDK 54), KeyboardProvider nel root _layout.tsx, ScrollView principale di ai-tour.tsx sostituita con KeyboardAwareScrollView (bottomOffset 170 → input + ~4 risultati visibili sopra la tastiera). Beneficia tutti i TextInput del form. Smoke test web OK (form + ricerca + risultati, zero pageerror); il comportamento tastiera reale va verificato dall'utente su dispositivo.
 
+- **Revisione narrazione pausa pranzo nel video (ago 2026, richiesta utente)**: rimossa la frase "la pausa vale una sola volta al giorno" dalla scena v5_s5; aggiunto "la durata di default è impostata a trenta minuti, ma può essere tranquillamente modificata". Rigenerato audio (23.93s, entra nella finestra 25s senza freeze) e riassemblati video 5 (1:45) e completo (9:18). Endpoint 200 verificati.
+
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)
 - Camera integration for photo uploads in anagrafica visits

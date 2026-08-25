@@ -45,7 +45,7 @@ SCENES = {
     'v5_s2': "Con Ordine decidi tu la sequenza delle visite. Sposta le tappe su o giù con le frecce, poi tocca Conferma nuovo ordine: l'AI ricalcola percorso e orari di arrivo sulla nuova sequenza, e il giro riparte esattamente come lo vuoi tu.",
     'v5_s3': "Trovi chiuso e non vuoi perdere la visita? Quando salti una tappa ora puoi programmare un ripasso in giornata: scegli il motivo, tocca uno degli orari proposti e conferma. La tappa resta nel giro con il badge Ripasso, e l'AI te la ripropone all'orario scelto.",
     'v5_s4': "Con Tappa aggiungi una nuova visita al giro già avviato: cerca il punto vendita, scegli se farla subito con Falla ORA oppure dopo una tappa specifica, e tocca Aggiungi al giro. L'AI la inserisce nel percorso e aggiorna tutti gli orari.",
-    'v5_s5': "E infine la Pausa Pranzo. Toccala quando ti fermi a mangiare: parte il conto alla rovescia con i minuti previsti per te, e le tappe si spostano di conseguenza. Quando sei pronto tocca Riprendi ora: l'AI ricalcola gli orari e il giro riparte. Ricorda: la pausa vale una sola volta al giorno. Buone vendite con AI Tour!",
+    'v5_s5': "E infine la Pausa Pranzo. Toccala quando ti fermi a mangiare: parte il conto alla rovescia, e le tappe si spostano di conseguenza. La durata di default è impostata a trenta minuti, ma può essere tranquillamente modificata. Quando sei pronto tocca Riprendi ora: l'AI ricalcola gli orari e il giro riparte. Buone vendite con AI Tour!",
 }
 
 def mp3_duration(path):

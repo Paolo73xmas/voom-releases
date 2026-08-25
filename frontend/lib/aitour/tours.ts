@@ -1,6 +1,6 @@
 // Persistenza AI Tour: impostazioni agente + salvataggio/caricamento tour.
 import { supabase } from '../supabase';
-import type { AiTourSettings, TourPlan } from './types';
+import type { AiTourSettings, TourPlan, SavedAreaFilter } from './types';
 import { DEFAULT_SETTINGS, minToTime } from './types';
 
 export async function getSettings(agentId: string): Promise<AiTourSettings> {
@@ -50,6 +50,7 @@ export interface SavedTour {
   lunch_break_start?: string | null;
   lunch_break_end?: string | null;
   lunch_break_minutes?: number | null;
+  area_filter?: SavedAreaFilter | null;
 }
 
 export async function saveTour(agentId: string, plan: TourPlan): Promise<string> {
@@ -81,6 +82,7 @@ export async function saveTour(agentId: string, plan: TourPlan): Promise<string>
       potential_value: Math.round(plan.potentialValue),
       ai_summary: plan.aiSummary,
       route_geometry: plan.geometry,
+      area_filter: plan.areaFilter ?? null,
     })
     .select('id')
     .single();
@@ -124,7 +126,7 @@ export async function saveTour(agentId: string, plan: TourPlan): Promise<string>
 export async function listTours(agentId: string): Promise<SavedTour[]> {
   const { data, error } = await supabase
     .from('ai_tours')
-    .select('id, agent_id, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at, lunch_break_start, lunch_break_end, lunch_break_minutes')
+    .select('id, agent_id, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at, lunch_break_start, lunch_break_end, lunch_break_minutes, area_filter')
     .eq('agent_id', agentId)
     .order('tour_date', { ascending: false })
     .order('created_at', { ascending: false })

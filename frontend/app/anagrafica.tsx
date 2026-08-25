@@ -28,6 +28,7 @@ import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
 import { VisitSlotWheel } from '../components/customers/VisitSlotWheel';
 import { ExcludedDaysPicker } from '../components/customers/ExcludedDaysPicker';
+import { searchCompany } from '../lib/api/openapi-company';
 
 // type CustomerType non più hardcoded: ora viene letto dinamicamente da customer_types table
 
@@ -170,6 +171,9 @@ export default function AnagraficaScreen() {
   const [searchNumOrdinale, setSearchNumOrdinale] = useState('');
   const [searchResults, setSearchResults] = useState<TabSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  // Recupera Anagrafica: lookup Openapi da P.IVA / Codice Fiscale
+  const [lookupLoading, setLookupLoading] = useState(false);
 
   // Load from map params
   useEffect(() => {
@@ -377,6 +381,56 @@ export default function AnagraficaScreen() {
     Alert.alert('Dati caricati', 'Completa i campi mancanti per procedere.');
   };
 
+  // Recupera Anagrafica: cerca su Openapi (P.IVA / C.F.) e trascrive automaticamente i dati nel form
+  const handleCompanyLookup = async () => {
+    const queryValue = form.vatNumber || form.fiscalCode;
+    if (!queryValue) {
+      Alert.alert('Recupera Anagrafica', 'Inserisci prima una Partita IVA o un Codice Fiscale');
+      return;
+    }
+    Keyboard.dismiss();
+    setLookupLoading(true);
+    try {
+      const data = await searchCompany(queryValue);
+      if (!data.start && !data.pec && !data.sdi) {
+        Alert.alert('Recupera Anagrafica', data.errors[0] || `Nessun risultato trovato per: ${queryValue}`);
+        return;
+      }
+      const updates: Partial<typeof form> = {};
+      if (data.start?.companyName) updates.businessName = data.start.companyName.toUpperCase();
+      if (data.start?.vatCode) updates.vatNumber = data.start.vatCode;
+      if (data.start?.taxCode) updates.fiscalCode = data.start.taxCode.toUpperCase();
+      if (data.pec?.pec) updates.pec = data.pec.pec.toLowerCase();
+      if (data.sdi?.sdiCode) updates.sdi = data.sdi.sdiCode.toUpperCase();
+      const addr = data.start?.address?.registeredOffice;
+      if (addr) {
+        const streetParts: string[] = [];
+        if (addr.toponym) streetParts.push(addr.toponym);
+        if (addr.street || addr.streetName) streetParts.push(addr.street || addr.streetName || '');
+        if (addr.streetNumber) streetParts.push(addr.streetNumber);
+        const formattedStreet = streetParts.join(' ').trim();
+        if (formattedStreet) updates.address = formattedStreet.toUpperCase();
+        if (addr.town) updates.city = addr.town.toUpperCase();
+        const provCode = typeof addr.province === 'string' ? addr.province : addr.province?.code;
+        if (provCode) updates.province = provCode.toUpperCase();
+        if (addr.zipCode) updates.postalCode = addr.zipCode;
+      }
+      if (Object.keys(updates).length > 0) {
+        setForm(prev => ({ ...prev, ...updates }));
+        Alert.alert(
+          'Anagrafica recuperata',
+          `Dati inseriti nel modulo.${data.errors.length > 0 ? `\n\nAlcuni dati non trovati: ${data.errors.join('; ')}` : ''}`
+        );
+      } else {
+        Alert.alert('Recupera Anagrafica', 'Nessun dato utile trovato per questa P.IVA / C.F.');
+      }
+    } catch (err) {
+      Alert.alert('Errore', 'Errore durante la ricerca: ' + (err instanceof Error ? err.message : 'Errore sconosciuto'));
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
   const updateField = (field: string, value: string) => {
     // ❌ NON applicare value.toUpperCase() qui!
     // Su Android causava input erratico (caratteri casuali, sequenze) perché
@@ -393,12 +447,13 @@ export default function AnagraficaScreen() {
     if (step === 2) {
       const required = form.businessName && form.address && form.city && form.province &&
         form.postalCode && form.contactName && form.contactSurname &&
-        form.contactPhone && form.contactEmail && form.vatNumber &&
-        form.fiscalCode && form.notes;
-      const pecOrSdi = (form.pec && form.pec.trim()) || (form.sdi && form.sdi.trim());
+        form.vatNumber && form.fiscalCode && form.notes;
+      // Telefono, Email, PEC e SDI sono facoltativi: si valida solo il formato se compilati
+      const emailOk = !form.contactEmail || emailRegex.test(form.contactEmail);
+      const sdiOk = !form.sdi || sdiRegex.test(form.sdi.toUpperCase());
       const vatOk = vatRegex.test(form.vatNumber);
       const cfOk = fiscalCodeRegex.test(form.fiscalCode.toUpperCase());
-      return !!(required && pecOrSdi && vatOk && cfOk);
+      return !!(required && emailOk && sdiOk && vatOk && cfOk);
     }
     return true;
   };
@@ -411,7 +466,6 @@ export default function AnagraficaScreen() {
       // Validate
       if (!vatRegex.test(form.vatNumber)) { Alert.alert('Errore', 'P.IVA deve essere di 11 cifre'); return; }
       if (!fiscalCodeRegex.test(form.fiscalCode.toUpperCase())) { Alert.alert('Errore', 'Codice Fiscale deve essere 16 caratteri alfanumerici'); return; }
-      if (!form.pec?.trim() && !form.sdi?.trim()) { Alert.alert('Errore', 'Almeno uno tra PEC o SDI deve essere compilato'); return; }
 
       const emailValue = form.contactEmail && emailRegex.test(form.contactEmail) ? form.contactEmail : null;
       let customerNotes = form.notes || '';
@@ -443,7 +497,7 @@ export default function AnagraficaScreen() {
           latitude, longitude,
           contact_name: form.contactName,
           contact_surname: form.contactSurname,
-          contact_phone: form.contactPhone,
+          contact_phone: form.contactPhone || null,
           contact_email: emailValue,
           vat_number: form.vatNumber,
           fiscal_code: form.fiscalCode,
@@ -652,6 +706,23 @@ export default function AnagraficaScreen() {
         <FormField label="Codice Fiscale * (16 car.)" value={form.fiscalCode} field="fiscalCode" onChange={updateField} maxLength={16} autoCapitalize="characters"
           error={form.fiscalCode && !fiscalCodeRegex.test(form.fiscalCode.toUpperCase()) ? 'Codice Fiscale: 16 caratteri alfanumerici' : ''} />
 
+        {/* Recupera Anagrafica: auto-compilazione da P.IVA / C.F. tramite Openapi */}
+        <TouchableOpacity
+          style={[styles.lookupBtn, (lookupLoading || (!form.vatNumber && !form.fiscalCode)) && { opacity: 0.5 }]}
+          onPress={handleCompanyLookup}
+          disabled={lookupLoading || (!form.vatNumber && !form.fiscalCode)}
+          activeOpacity={0.75}
+          testID="recupera-anagrafica-btn"
+        >
+          {lookupLoading ? (
+            <ActivityIndicator size="small" color="#B45309" />
+          ) : (
+            <Ionicons name="cloud-download-outline" size={18} color="#B45309" />
+          )}
+          <Text style={styles.lookupBtnText}>Recupera Anagrafica</Text>
+        </TouchableOpacity>
+        <Text style={styles.lookupHint}>Inserisci P.IVA o C.F. e recupera automaticamente ragione sociale, sede, PEC e SDI</Text>
+
         <Text style={styles.sectionTitle}>Indirizzo</Text>
         <FormField label="Indirizzo *" value={form.address} field="address" onChange={updateField} autoCapitalize="characters" />
         <View style={styles.row}>
@@ -665,16 +736,14 @@ export default function AnagraficaScreen() {
           <View style={{ flex: 1 }}><FormField label="Nome *" value={form.contactName} field="contactName" onChange={updateField} autoCapitalize="characters" /></View>
           <View style={{ flex: 1, marginLeft: 8 }}><FormField label="Cognome *" value={form.contactSurname} field="contactSurname" onChange={updateField} autoCapitalize="characters" /></View>
         </View>
-        <FormField label="Telefono *" value={form.contactPhone} field="contactPhone" onChange={updateField} keyboardType="phone-pad" />
-        <FormField label="Email *" value={form.contactEmail} field="contactEmail" onChange={updateField} keyboardType="email-address" autoCapitalize="none"
+        <FormField label="Telefono" value={form.contactPhone} field="contactPhone" onChange={updateField} keyboardType="phone-pad" />
+        <FormField label="Email" value={form.contactEmail} field="contactEmail" onChange={updateField} keyboardType="email-address" autoCapitalize="none"
           error={form.contactEmail && !emailRegex.test(form.contactEmail) ? 'Email non valida' : ''} />
 
-        <Text style={styles.sectionTitle}>Fatturazione (almeno PEC o SDI)</Text>
+        <Text style={styles.sectionTitle}>Fatturazione (facoltativa)</Text>
         <FormField label="PEC" value={form.pec} field="pec" onChange={updateField} keyboardType="email-address" autoCapitalize="none" />
-        <FormField label="SDI (7 car.)" value={form.sdi} field="sdi" onChange={updateField} maxLength={7} autoCapitalize="characters" />
-        {!form.pec?.trim() && !form.sdi?.trim() && (
-          <Text style={styles.validationHint}>Almeno uno tra PEC o SDI deve essere compilato</Text>
-        )}
+        <FormField label="SDI (7 car.)" value={form.sdi} field="sdi" onChange={updateField} maxLength={7} autoCapitalize="characters"
+          error={form.sdi && !sdiRegex.test(form.sdi.toUpperCase()) ? 'SDI: 7 caratteri alfanumerici' : ''} />
         {/* ✅ Web parity: IBAN opzionale */}
         <FormField label="IBAN (opzionale)" value={form.iban} field="iban" onChange={updateField} autoCapitalize="characters" maxLength={34} />
 
@@ -1050,6 +1119,10 @@ const styles = StyleSheet.create({
   // Search button
   searchTabBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primarySoft, borderRadius: 12, paddingVertical: 14, gap: 8, marginBottom: 12, marginTop: 4 },
   searchTabBtnText: { fontSize: 14, fontWeight: '600', color: '#7C3AED' },
+  // Recupera Anagrafica
+  lookupBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: '#FCD34D', backgroundColor: '#FFFBEB', borderRadius: 12, paddingVertical: 12, marginTop: 2 },
+  lookupBtnText: { fontSize: 14, fontWeight: '600', color: '#B45309' },
+  lookupHint: { fontSize: 11, color: COLORS.textMuted, marginTop: 6, marginBottom: 4 },
   // Summary
   summaryCard: { backgroundColor: COLORS.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: COLORS.border },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },

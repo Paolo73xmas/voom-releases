@@ -66,6 +66,15 @@ export interface TourCandidate {
   potentialValue: number;
 }
 
+/** Area scelta alla creazione del giro: le operazioni live (es. "Più Visite") la rispettano */
+export interface SavedAreaFilter {
+  mode: 'auto' | 'territory' | 'province' | 'city' | 'radius';
+  province?: string;
+  city?: string;
+  radiusKm?: number;
+  zoneIds?: string[];
+}
+
 export interface PlannedStop {
   candidate: TourCandidate;
   sequence: number;
@@ -109,6 +118,8 @@ export interface TourPlan {
   aiRecommendation: string | null;
   warnings: string[];
   routingFallback: boolean;
+  /** Filtro area del form di generazione, persistito sul tour salvato */
+  areaFilter?: SavedAreaFilter | null;
 }
 
 export interface AiTourSettings {

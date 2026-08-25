@@ -1,10 +1,11 @@
 // Modalità Live AI Tour mobile: prossima visita, sono arrivato, esito, salta, ricalcolo automatico,
 // integrazione Raccolta Ordine/Ispezione/Prima Visita con chiusura automatica della tappa al ritorno.
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert, TextInput, Vibration } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { DS, JAKARTA, SHADOWS } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
 import { AI_PURPLE, AI_PURPLE_SOFT, openNavigation } from './shared';
@@ -15,12 +16,12 @@ import { createTourInspection } from '../../lib/api/inspections';
 import { supabase } from '../../lib/supabase';
 import type { LiveState, LiveStop } from '../../lib/aitour/live';
 import {
-  nowMin, getCurrentPos, markArrived, completeStop, skipStop, cancelStopByRecalc,
-  updateLiveSequence, addLiveStop, finishLiveTour, suggestNearby, findExternalResult, updateTourPosition,
+  nowMin, getCurrentPos, markArrived, completeStop, skipStop,
+  updateLiveSequence, addLiveStop, finishLiveTour, suggestNearby, suggestNearbyProximity, findExternalResult, updateTourPosition,
   findTabCustomer, updateStopCustomer, recordTrackPoint, loadLiveState,
-  scheduleRevisit, revisitSlotFor, isRevisitCandidate, startLunchBreak, endLunchBreak,
+  scheduleRevisit, revisitSlotFor, isRevisitCandidate, startLunchBreak, endLunchBreak, extendTourEndTime, trashStop, TRASH_REASON,
 } from '../../lib/aitour/live';
-import { insertLiveStop, reorderLiveStops, type PlacementChoice, type ReplanContext } from '../../lib/aitour/liveops';
+import { insertLiveStop, reorderLiveStops, extendTourVisits, areaCheckForTour, type PlacementChoice, type ReplanContext } from '../../lib/aitour/liveops';
 import { AddStopModal } from './AddStopModal';
 import { ReorderStopsModal } from './ReorderStopsModal';
 import { OwnStaminaChip } from './OwnStaminaChip';
@@ -64,9 +65,75 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [showMap, setShowMap] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [reorderOpen, setReorderOpen] = useState(false);
+  // "Più Visite": fine giro corrente (posticipabile) + dialog visite aggiuntive
+  const [endMin, setEndMin] = useState(initial.endMin);
+  const [extendOpen, setExtendOpen] = useState(false);
+  const [extendEndTime, setExtendEndTime] = useState('');
+  const [extendError, setExtendError] = useState<string | null>(null);
+  // Cestinare una visita: conferma prima di rimuoverla dal giro
+  const [trashTarget, setTrashTarget] = useState<LiveStop | null>(null);
   const tour = initial.tour;
   const stopsRef = useRef(stops);
   stopsRef.current = stops;
+
+  // Avviso di prossimità: tabaccheria da acquisire a <3 km dalla posizione o dal percorso
+  const [proxSuggestion, setProxSuggestion] = useState<(TourCandidate & { distKm: number }) | null>(null);
+  const proxSuggestionRef = useRef(proxSuggestion);
+  proxSuggestionRef.current = proxSuggestion;
+  const proxDismissedRef = useRef<Set<string>>(new Set());
+  const proxBusyRef = useRef(false);
+  const areaCheckRef = useRef<((c: { lat: number; lng: number; province?: string; city?: string }) => boolean) | null>(null);
+  const pingPlayerRef = useRef<AudioPlayer | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(`aitour_prox_dismissed_${tour.id}`).then((raw) => {
+      if (raw) {
+        try { proxDismissedRef.current = new Set(JSON.parse(raw)); } catch { /* storage corrotto: riparte vuoto */ }
+      }
+    }).catch(() => {});
+    return () => {
+      try { pingPlayerRef.current?.remove(); } catch { /* già rilasciato */ }
+    };
+  }, [tour.id]);
+
+  // Suono + vibrazione per l'avviso di prossimità
+  const notifyProximity = () => {
+    try { Vibration.vibrate([0, 250, 120, 250]); } catch { /* non supportata */ }
+    try {
+      if (!pingPlayerRef.current) pingPlayerRef.current = createAudioPlayer(require('../../assets/sounds/proximity-ping.wav'));
+      pingPlayerRef.current.seekTo(0).catch(() => {});
+      pingPlayerRef.current.play();
+    } catch { /* audio non disponibile */ }
+  };
+
+  const checkProximity = async (pos: { lat: number; lng: number }) => {
+    if (proxBusyRef.current || proxSuggestionRef.current) return;
+    proxBusyRef.current = true;
+    try {
+      let inArea = areaCheckRef.current;
+      if (!inArea) {
+        const pendingRefs = stopsRef.current.filter((s) => s.status === 'planned').map((s) => ({ candidate: s.candidate }));
+        inArea = await areaCheckForTour(tour, pendingRefs);
+        areaCheckRef.current = inArea;
+      }
+      const exclude = new Set<string>(proxDismissedRef.current);
+      for (const s of stopsRef.current) if (s.candidate.tabaccheriaId) exclude.add(s.candidate.tabaccheriaId);
+      const route = stopsRef.current
+        .filter((s) => s.status === 'planned')
+        .map((s) => ({ lat: s.candidate.lat, lng: s.candidate.lng }));
+      const sugg = await suggestNearbyProximity(pos, route, exclude, settings, inArea);
+      if (sugg && !proxSuggestionRef.current) {
+        setProxSuggestion(sugg);
+        notifyProximity();
+      }
+    } catch (err) {
+      console.warn('[AITour][live] check prossimita:', err);
+    } finally {
+      proxBusyRef.current = false;
+    }
+  };
+  const checkProximityRef = useRef(checkProximity);
+  checkProximityRef.current = checkProximity;
 
   // Pausa Pranzo: una sola volta al giorno; se si rientra nella vista durante la pausa, riprende il countdown
   const lunchMinutes = Math.max(5, Number(settings.lunch_break_minutes) || 30);
@@ -81,6 +148,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [lunchTick, setLunchTick] = useState(Date.now());
 
   // Battito posizione: GPS al Monitoring admin subito e poi ogni 60s + traccia percorso reale
+  // + controllo di prossimità: tabaccherie da acquisire a <3 km -> avviso immediato
   useEffect(() => {
     let stopped = false;
     const beat = async () => {
@@ -88,6 +156,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       if (!stopped && pos) {
         updateTourPosition(tour.id, pos.lat, pos.lng).catch(() => {});
         recordTrackPoint(tour.agent_id, pos.lat, pos.lng).catch(() => {});
+        checkProximityRef.current(pos).catch(() => {});
       }
     };
     beat();
@@ -158,22 +227,24 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       }
       // Guardia: oltre l'orario di fine tour il ricalcolo azzererebbe il giro (tutte
       // le tappe risulterebbero "fuori orario"). Non tocchiamo nulla: l'agente decide.
-      if (nowMin() + startOffsetMin >= initial.endMin) {
-        setMessage(`Sei oltre l'orario di fine tour (${minToTime(initial.endMin)}): il giro non viene ricalcolato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
+      if (nowMin() + startOffsetMin >= endMin) {
+        setMessage(`Sei oltre l'orario di fine tour (${minToTime(endMin)}): il giro non viene ricalcolato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
         return;
       }
       setRecalcing(true);
       try {
         const pos = (await getCurrentPos()) || fallbackPos();
         const start: GeoPoint = { ...pos, label: 'Posizione attuale' };
+        // Il ricalcolo NON rimuove mai le tappe previste (tutte obbligatorie):
+        // alleggerire il giro spetta all'agente col cestino rosso o "Salta".
         const plan = await planTour({
           candidates: remaining.map((s) => s.candidate),
-          mandatoryKeys: new Set(remaining.filter((s) => s.mandatory).map((s) => s.candidate.key)),
+          mandatoryKeys: new Set(remaining.map((s) => s.candidate.key)),
           start,
           end: initial.endPoint,
           tourDate: tour.tour_date,
           startMin: nowMin() + startOffsetMin,
-          endMin: initial.endMin,
+          endMin,
           dayType: tour.tour_type as DayType,
           resolvedDayType: (tour.resolved_tour_type || 'mista') as Exclude<DayType, 'ai'>,
           bufferPct: 5,
@@ -181,16 +252,11 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           area: { mode: 'auto' },
           skipDayExclusion: true,
         });
-        const keptKeys = new Set(plan.stops.map((p) => p.candidate.key));
-        // I "ripassi in giornata" non vengono mai rimossi dal ricalcolo
-        const dropped = remaining.filter((s) => !keptKeys.has(s.candidate.key) && !isRevisitCandidate(s.candidate));
-        // Guardia anti-azzeramento: se l'AI scarterebbe TUTTE le tappe rimanenti,
-        // non cancellare nulla (tempo residuo insufficiente: decide l'agente).
+        // Guardia anti-azzeramento: se il planner non restituisce nulla non toccare il giro
         if (plan.stops.length === 0) {
-          setMessage(`Tempo residuo insufficiente per ripianificare entro le ${minToTime(initial.endMin)}: il giro non viene modificato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
+          setMessage(`Tempo residuo insufficiente per ripianificare entro le ${minToTime(endMin)}: il giro non viene modificato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
           return;
         }
-        for (const d of dropped) await cancelStopByRecalc(tour.id, d.id);
 
         const stopByKey = new Map(remaining.map((s) => [s.candidate.key, s]));
         const updates = plan.stops.map((p, i) => {
@@ -200,9 +266,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         await updateLiveSequence(tour.id, updates);
 
         const updById = new Map(updates.map((u) => [u.stopId, u]));
-        const droppedIds = new Set(dropped.map((d) => d.id));
         const merged = currentStops.map((s): LiveStop => {
-          if (droppedIds.has(s.id)) return { ...s, status: 'cancelled', skipReason: 'Rimossa dal ricalcolo AI' };
           const u = updById.get(s.id);
           if (u) return { ...s, plannedArrival: u.arrival, travelMinutes: Math.round(u.travelMin), travelKm: u.travelKm };
           return s;
@@ -215,14 +279,14 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         setStops(merged);
 
         let msg = `${reasonPrefix ? `${reasonPrefix} — ` : ''}Giro ricalcolato alle ${minToTime(nowMin())}.`;
-        if (dropped.length > 0) {
-          msg += ` Per mantenere il rientro entro le ${minToTime(initial.endMin)} ho rimosso ${dropped.map((d) => `"${d.candidate.name}" (${d.candidate.score}/100)`).join(', ')}.`;
-        }
         msg += ` ${plan.stops.length} visite rimanenti, fine prevista ${minToTime(plan.finishMin)}.`;
+        if (plan.finishMin > endMin) {
+          msg += ` Attenzione: la fine prevista supera le ${minToTime(endMin)} — nessuna tappa è stata rimossa: se vuoi alleggerire il giro usa il cestino rosso o "Salta".`;
+        }
         setMessage(msg);
 
         // Recupero tempo: se resta molto margine, proponi una visita vicina
-        const slack = initial.endMin - plan.finishMin;
+        const slack = endMin - plan.finishMin;
         if (slack >= 25) {
           const exclude = new Set(currentStops.map((s) => s.candidate.tabaccheriaId).filter((x): x is string => !!x));
           const sugg = await suggestNearby(pos, exclude, settings);
@@ -237,7 +301,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         setRecalcing(false);
       }
     },
-    [tour, initial.endMin, initial.endPoint, fallbackPos, settings]
+    [tour, endMin, initial.endPoint, fallbackPos, settings]
   );
 
   // Ricalcolo AUTOMATICO: controllo ogni minuto; se il ritardo sulla prossima tappa
@@ -249,7 +313,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     const iv = setInterval(() => {
       if (busy || recalcing || esitoOpen || skipOpen || recapOpen || acquireKind || addOpen || reorderOpen) return;
       if (lunch) return; // in pausa pranzo: il ritardo e' voluto, niente ricalcolo automatico
-      if (nowMin() >= initial.endMin) return; // oltre fine tour: il ricalcolo azzererebbe il giro
+      if (nowMin() >= endMin) return; // oltre fine tour: il ricalcolo azzererebbe il giro
       const current = stopsRef.current;
       const nx = current.find((s) => s.status === 'planned' || s.status === 'arrived');
       if (!nx || nx.status !== 'planned' || !nx.plannedArrival) return;
@@ -259,7 +323,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       }
     }, 60000);
     return () => clearInterval(iv);
-  }, [busy, recalcing, esitoOpen, skipOpen, recapOpen, acquireKind, addOpen, reorderOpen, lunch, runRecalc, initial.endMin]);
+  }, [busy, recalcing, esitoOpen, skipOpen, recapOpen, acquireKind, addOpen, reorderOpen, lunch, runRecalc, endMin]);
 
   // Countdown pausa pranzo: al termine naturale registra la fine e riparte
   useEffect(() => {
@@ -640,13 +704,126 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     }
   };
 
+  // Visita cestinata: esce dal giro, viene segnalata come tale e gli orari si ricalcolano
+  const handleTrash = async () => {
+    if (!trashTarget) return;
+    setBusy(true);
+    try {
+      await trashStop(tour.id, trashTarget.id, trashTarget.candidate.name);
+      const updated = stops.map((s): LiveStop => (s.id === trashTarget.id ? { ...s, status: 'cancelled', skipReason: TRASH_REASON } : s));
+      setStops(updated);
+      setTrashTarget(null);
+      hap.success();
+      await runRecalc(updated, `Visita "${trashTarget.candidate.name}" cestinata`);
+    } catch (err) {
+      console.error('[AITour][live] cestino:', err);
+      setMessage('Errore nella cestinatura della visita');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Avviso prossimità: aggiungi al giro o scarta (non riproposta per il resto del giro)
+  const acceptProxSuggestion = async () => {
+    if (!proxSuggestion) return;
+    setBusy(true);
+    try {
+      const id = await addLiveStop(tour, proxSuggestion, stops.length + 1);
+      const newStop: LiveStop = {
+        id,
+        candidate: proxSuggestion,
+        status: 'planned',
+        mandatory: false,
+        plannedArrival: null,
+        travelMinutes: 0,
+        travelKm: 0,
+        actualArrival: null,
+        outcome: null,
+        skipReason: null,
+        addedLive: true,
+        addedByAdmin: false,
+      };
+      const updated = [...stops, newStop];
+      setStops(updated);
+      setProxSuggestion(null);
+      hap.success();
+      await runRecalc(updated, `"${proxSuggestion.name}" aggiunta al giro`);
+    } catch (err) {
+      console.error('[AITour][live] prox add:', err);
+      setMessage("Errore nell'aggiunta della visita");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const declineProxSuggestion = () => {
+    if (!proxSuggestion) return;
+    if (proxSuggestion.tabaccheriaId) {
+      proxDismissedRef.current.add(proxSuggestion.tabaccheriaId);
+      AsyncStorage.setItem(`aitour_prox_dismissed_${tour.id}`, JSON.stringify([...proxDismissedRef.current])).catch(() => {});
+    }
+    setProxSuggestion(null);
+  };
+
+  // "Più Visite": posticipa (opzionale) la fine giro e chiede all'AI di riempire
+  // il tempo disponibile con nuove visite, senza toccare gli impegni esistenti.
+  const handleExtend = async () => {
+    const t = extendEndTime.trim();
+    if (t && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(t)) {
+      setExtendError('Formato orario non valido: usa HH:MM (es. 18:30)');
+      return;
+    }
+    const newEndMin = t ? timeToMin(t) : endMin;
+    if (newEndMin <= nowMin()) {
+      setExtendError("L'orario di fine deve essere successivo all'ora attuale");
+      return;
+    }
+    if (newEndMin < endMin) {
+      setExtendError(`Puoi solo posticipare la fine giro (attuale ${minToTime(endMin)}), non anticiparla`);
+      return;
+    }
+    setExtendError(null);
+    setBusy(true);
+    try {
+      if (newEndMin !== endMin) {
+        await extendTourEndTime(tour.id, minToTime(newEndMin));
+        setEndMin(newEndMin);
+      }
+      const ctx = { ...(await buildCtx()), endMin: newEndMin };
+      const pendingPlanned = stops.filter((s) => s.status === 'planned');
+      const res = await extendTourVisits(
+        ctx,
+        pendingPlanned,
+        new Set(stops.map((s) => s.candidate.customerId).filter((x): x is string => !!x)),
+        new Set(stops.map((s) => s.candidate.tabaccheriaId).filter((x): x is string => !!x)),
+      );
+      await reloadFromDb();
+      setExtendOpen(false);
+      if (res.addedNames.length > 0) {
+        hap.success();
+        setMessage(
+          `${res.addedNames.length === 1 ? 'Visita aggiunta' : `${res.addedNames.length} visite aggiunte`} al giro: ${res.addedNames.join(', ')}. ` +
+          `Orari rimodulati fino alle ${minToTime(newEndMin)}${res.finishMin ? `, fine prevista ${minToTime(res.finishMin)}` : ''} ` +
+          `(le tappe con vincoli orari restano nelle loro finestre).${res.warnings.length > 0 ? ` ${res.warnings.join(' ')}` : ''}`
+        );
+      } else {
+        setMessage(res.warnings[0] || 'Nessuna visita aggiunta');
+      }
+    } catch (err) {
+      console.error('[AITour][live] estensione visite:', err);
+      setMessage("Errore nell'aggiunta delle visite");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // Contesto di ripianificazione per le operazioni live (aggiunta tappa / riordino)
   const buildCtx = async (): Promise<ReplanContext> => ({
     tour,
     startPos: (await getCurrentPos()) || fallbackPos(),
     endPoint: initial.endPoint,
     startMin: nowMin(),
-    endMin: initial.endMin,
+    endMin,
     settings,
     seqBase: stops.filter((s) => s.status !== 'planned').length,
   });
@@ -725,7 +902,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           <Text style={styles.liveBadgeText}>TOUR LIVE</Text>
         </View>
         <Text style={styles.headerTime}>
-          {tour.start_time?.slice(0, 5)}–{tour.end_time?.slice(0, 5)}
+          {tour.start_time?.slice(0, 5)}–{minToTime(endMin)}
         </Text>
         <TouchableOpacity
           style={styles.exitBtn}
@@ -791,6 +968,21 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         >
           <Ionicons name="add" size={15} color={AI_PURPLE} />
           <Text style={styles.opsBtnText}>Tappa</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.opsBtn, { borderColor: '#6EE7B7' }]}
+          onPress={() => {
+            hap.light();
+            setExtendEndTime(minToTime(endMin));
+            setExtendError(null);
+            setExtendOpen(true);
+          }}
+          disabled={busy || recalcing}
+          activeOpacity={0.7}
+          testID="aitour-live-extend-btn"
+        >
+          <Ionicons name="sparkles" size={14} color="#059669" />
+          <Text style={[styles.opsBtnText, { color: '#059669' }]}>Più Visite</Text>
         </TouchableOpacity>
         {stops.filter((s) => s.status === 'planned').length > 1 && (
           <TouchableOpacity
@@ -894,6 +1086,28 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               <Text style={styles.suggAcceptText}>Aggiungi</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.suggDecline} onPress={() => setSuggestion(null)} activeOpacity={0.7}>
+              <Text style={styles.suggDeclineText}>No, grazie</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
+
+      {proxSuggestion ? (
+        <View style={styles.proxBox} testID="aitour-live-prox-suggestion">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="notifications" size={14} color="#B45309" />
+            <Text style={styles.proxTitle}>Opportunità a {proxSuggestion.distKm} km</Text>
+          </View>
+          <Text style={styles.proxText}>
+            A <Text style={{ fontFamily: JAKARTA.bold }}>{proxSuggestion.distKm} km</Text> da te o dal percorso c&apos;è{' '}
+            <Text style={{ fontFamily: JAKARTA.bold }}>{proxSuggestion.name}</Text>
+            {proxSuggestion.city ? ` (${proxSuggestion.city})` : ''}, tabaccheria da acquisire non nel giro. Vuoi aggiungerla?
+          </Text>
+          <View style={styles.suggBtns}>
+            <TouchableOpacity style={styles.proxAccept} onPress={acceptProxSuggestion} disabled={busy} activeOpacity={0.7} testID="aitour-prox-accept">
+              <Text style={styles.suggAcceptText}>Aggiungi</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.suggDecline} onPress={declineProxSuggestion} activeOpacity={0.7} testID="aitour-prox-decline">
               <Text style={styles.suggDeclineText}>No, grazie</Text>
             </TouchableOpacity>
           </View>
@@ -1071,6 +1285,18 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
                 </View>
               )}
               <Text style={styles.listTime}>{s.plannedArrival ? s.plannedArrival.slice(0, 5) : ''}</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  hap.light();
+                  setTrashTarget(s);
+                }}
+                disabled={busy || recalcing}
+                hitSlop={8}
+                style={{ padding: 2, opacity: busy || recalcing ? 0.4 : 1 }}
+                testID={`aitour-live-trash-${i + 1}`}
+              >
+                <Ionicons name="trash-outline" size={16} color="#EF4444" />
+              </TouchableOpacity>
             </View>
           ))}
         </View>
@@ -1083,15 +1309,21 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           {handled.map((s) => (
             <View key={s.id} style={styles.listRow}>
               <Ionicons
-                name={s.status === 'completed' ? 'checkmark-circle' : 'play-skip-forward'}
+                name={s.status === 'completed' ? 'checkmark-circle' : s.skipReason === TRASH_REASON ? 'trash' : 'play-skip-forward'}
                 size={15}
-                color={s.status === 'completed' ? '#059669' : DS.inkMuted}
+                color={s.status === 'completed' ? '#059669' : s.skipReason === TRASH_REASON ? '#F87171' : DS.inkMuted}
               />
               <Text style={[styles.listName, styles.listNameDone]} numberOfLines={1}>
                 {s.candidate.name}
               </Text>
               <Text style={styles.listOutcome}>
-                {s.status === 'completed' ? s.outcome || 'fatta' : s.status === 'cancelled' ? 'rimossa AI' : 'saltata'}
+                {s.status === 'completed'
+                  ? s.outcome || 'fatta'
+                  : s.status === 'cancelled'
+                    ? s.skipReason === TRASH_REASON
+                      ? 'cestinata'
+                      : 'rimossa'
+                    : 'saltata'}
               </Text>
             </View>
           ))}
@@ -1121,7 +1353,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           </View>
         </View>
       </Modal>
-      <SkipModal visible={skipOpen} stopName={next?.candidate.name || ''} saving={busy} endMin={initial.endMin} onClose={() => setSkipOpen(false)} onConfirm={handleSkip} />
+      <SkipModal visible={skipOpen} stopName={next?.candidate.name || ''} saving={busy} endMin={endMin} onClose={() => setSkipOpen(false)} onConfirm={handleSkip} />
 
       {/* Aggiungi tappa a giro avviato */}
       <AddStopModal
@@ -1197,6 +1429,92 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               </TouchableOpacity>
               <TouchableOpacity style={styles.dialogConfirm} onPress={startAcquisition} disabled={busy} activeOpacity={0.7}>
                 {busy ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.dialogConfirmText}>Verifica GPS e procedi</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Conferma cestinatura visita */}
+      <Modal visible={!!trashTarget} animationType="fade" transparent onRequestClose={() => setTrashTarget(null)}>
+        <View style={styles.centerBackdrop}>
+          <View style={styles.dialog} testID="aitour-trash-dialog">
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <Ionicons name="trash" size={17} color="#DC2626" />
+              <Text style={styles.dialogTitle}>Cestina visita</Text>
+            </View>
+            <Text style={styles.dialogText}>
+              Vuoi cestinare <Text style={{ fontFamily: JAKARTA.bold }}>{trashTarget?.candidate.name}</Text>? La visita esce dal giro,
+              viene segnalata come cestinata e gli orari delle altre tappe vengono ricalcolati.
+            </Text>
+            <View style={styles.dialogFooter}>
+              <TouchableOpacity style={styles.dialogCancel} onPress={() => setTrashTarget(null)} activeOpacity={0.7} testID="aitour-trash-cancel">
+                <Text style={styles.dialogCancelText}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.dialogConfirm, { backgroundColor: '#DC2626' }]} onPress={handleTrash} disabled={busy} activeOpacity={0.7} testID="aitour-trash-confirm">
+                {busy ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.dialogConfirmText}>Cestina</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* "Più Visite": visite aggiuntive fino all'orario di fine giro */}
+      <Modal visible={extendOpen} animationType="fade" transparent onRequestClose={() => setExtendOpen(false)}>
+        <View style={styles.centerBackdrop}>
+          <View style={styles.dialog} testID="aitour-extend-dialog">
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <Ionicons name="sparkles" size={17} color="#059669" />
+              <Text style={styles.dialogTitle}>Più visite nel giro</Text>
+            </View>
+            <Text style={styles.dialogText}>
+              L&apos;AI aggiunge visite <Text style={{ fontFamily: JAKARTA.bold }}>vicine al percorso rimanente</Text> riempiendo il tempo
+              disponibile fino all&apos;orario di fine giro. Le tappe già previste restano tutte nel giro: vengono rimodulati solo gli orari,
+              tranne quelli delle tappe con <Text style={{ fontFamily: JAKARTA.bold }}>vincoli orari</Text> (ripassi a un&apos;ora precisa e
+              fasce scelte), che restano nelle loro finestre.
+            </Text>
+            <Text style={styles.extendLabel}>Fine giro (posticipabile) — attuale {minToTime(endMin)}</Text>
+            <TextInput
+              style={styles.extendInput}
+              value={extendEndTime}
+              onChangeText={(v) => {
+                setExtendEndTime(v);
+                setExtendError(null);
+              }}
+              placeholder="HH:MM"
+              placeholderTextColor={DS.inkMuted}
+              maxLength={5}
+              testID="aitour-extend-end-time"
+            />
+            <View style={styles.extendChips}>
+              {[30, 60, 120].map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  style={styles.extendChip}
+                  onPress={() => {
+                    setExtendEndTime(minToTime(Math.min(endMin + d, 23 * 60 + 59)));
+                    setExtendError(null);
+                  }}
+                  activeOpacity={0.7}
+                  testID={`aitour-extend-plus-${d}`}
+                >
+                  <Text style={styles.extendChipText}>{d < 60 ? `+${d} min` : d === 60 ? '+1 ora' : `+${d / 60} ore`}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {extendError ? <Text style={styles.extendError}>{extendError}</Text> : null}
+            <View style={styles.dialogFooter}>
+              <TouchableOpacity style={styles.dialogCancel} onPress={() => setExtendOpen(false)} activeOpacity={0.7}>
+                <Text style={styles.dialogCancelText}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.dialogConfirm, { backgroundColor: '#059669' }]}
+                onPress={handleExtend}
+                disabled={busy || recalcing}
+                activeOpacity={0.7}
+                testID="aitour-extend-confirm"
+              >
+                {busy ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.dialogConfirmText}>Aggiungi visite</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -1534,4 +1852,24 @@ const styles = StyleSheet.create({
   reassignBoxText: { fontFamily: JAKARTA.medium, fontSize: 12, color: DS.ink, lineHeight: 17 },
   reassignBtn: { backgroundColor: '#059669', borderRadius: 10, paddingVertical: 11, alignItems: 'center', marginTop: 14, minHeight: 44, justifyContent: 'center' },
   reassignBtnText: { fontFamily: JAKARTA.bold, fontSize: 13, color: '#FFF' },
+  proxBox: { backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FCD34D', borderRadius: 10, padding: 10, marginTop: 8 },
+  proxTitle: { fontFamily: JAKARTA.bold, fontSize: 12, color: '#92400E' },
+  proxText: { fontFamily: JAKARTA.medium, fontSize: 11, color: '#78350F', lineHeight: 16, marginTop: 4 },
+  proxAccept: { backgroundColor: '#D97706', borderRadius: 8, paddingVertical: 7, paddingHorizontal: 16 },
+  extendLabel: { fontFamily: JAKARTA.semibold, fontSize: 11, color: DS.ink2, marginTop: 12 },
+  extendInput: {
+    borderWidth: 1,
+    borderColor: DS.border,
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    fontFamily: JAKARTA.semibold,
+    fontSize: 14,
+    color: DS.ink,
+    marginTop: 6,
+  },
+  extendChips: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  extendChip: { borderWidth: 1, borderColor: '#6EE7B7', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 },
+  extendChipText: { fontFamily: JAKARTA.semibold, fontSize: 11, color: '#059669' },
+  extendError: { fontFamily: JAKARTA.medium, fontSize: 11, color: '#DC2626', marginTop: 8 },
 });

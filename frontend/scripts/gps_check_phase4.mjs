@@ -1,0 +1,11 @@
+import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+const env = fs.readFileSync('/app/frontend/.env', 'utf8');
+const url = env.match(/EXPO_PUBLIC_SUPABASE_URL=(.+)/)[1].trim();
+const key = env.match(/EXPO_PUBLIC_SUPABASE_ANON_KEY=(.+)/)[1].trim();
+const supabase = createClient(url, key);
+await supabase.auth.signInWithPassword({ email: 'tadini@voomweb.it', password: 'Tadini2025!' });
+const { data: me } = await supabase.auth.getUser();
+const { data, error } = await supabase.from('app_4d4e73c9f0_gps_tracking').select('*').eq('user_id', me.user.id).order('timestamp', { ascending: false }).limit(3);
+console.log(error ? 'ERR ' + error.message : JSON.stringify(data, null, 1).slice(0, 600));
+process.exit(0);

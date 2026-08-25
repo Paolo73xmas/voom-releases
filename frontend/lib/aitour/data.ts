@@ -192,6 +192,50 @@ export interface CandidatePool {
   orphans: TourCandidate[];
 }
 
+// "Non interessato" negli ultimi 6 mesi (di qualunque agente): l'AI non ripropone
+// il punto vendita. Cache 5 minuti (il check di prossimita' live gira ogni minuto).
+export interface NoInterestBlock {
+  customers: Map<string, string>;
+  tabs: Map<string, string>;
+}
+
+let noInterestCache: { at: number; block: NoInterestBlock } | null = null;
+
+export async function getNoInterestBlock(): Promise<NoInterestBlock> {
+  if (noInterestCache && Date.now() - noInterestCache.at < 300000) return noInterestCache.block;
+  const block: NoInterestBlock = { customers: new Map(), tabs: new Map() };
+  const { data, error } = await supabase.rpc('ai_tour_no_interest_ids');
+  if (error) {
+    console.warn('[AITour][data] no-interest block:', error);
+    return block;
+  }
+  for (const r of (data || []) as { customer_id: string | null; tabaccheria_id: string | null; last_no_interest: string }[]) {
+    if (r.customer_id) {
+      const prev = block.customers.get(r.customer_id);
+      if (!prev || r.last_no_interest > prev) block.customers.set(r.customer_id, r.last_no_interest);
+    }
+    if (r.tabaccheria_id) {
+      const prev = block.tabs.get(r.tabaccheria_id);
+      if (!prev || r.last_no_interest > prev) block.tabs.set(r.tabaccheria_id, r.last_no_interest);
+    }
+  }
+  noInterestCache = { at: Date.now(), block };
+  return block;
+}
+
+// Torna proponibile prima dei 6 mesi solo se DOPO il "no" c'e' stato un ordine
+// o c'e' un appuntamento futuro fissato (segnali di interesse ritrovato).
+export function isNoInterestBlocked(c: TourCandidate, block: NoInterestBlock): boolean {
+  const dates: string[] = [];
+  if (c.customerId && block.customers.has(c.customerId)) dates.push(block.customers.get(c.customerId)!);
+  if (c.tabaccheriaId && block.tabs.has(c.tabaccheriaId)) dates.push(block.tabs.get(c.tabaccheriaId)!);
+  if (dates.length === 0) return false;
+  const last = dates.sort()[dates.length - 1];
+  if (c.appointmentAt) return false;
+  if (c.lastOrderDate && c.lastOrderDate.slice(0, 10) > last) return false;
+  return true;
+}
+
 export async function loadCandidates(agentId: string, settings: AiTourSettings): Promise<CandidatePool> {
   const { data: customers, error } = await supabase
     .from('customers')
@@ -207,7 +251,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
   const clientRows = rows.filter((r) => r.category === 'client');
   const prospectRows = rows.filter((r) => r.category === 'prospect' || r.category === 'lead');
 
-  const [stats, appointments, orphanConfig, projects, remoteOrders, learnedDurations, slotDefs] = await Promise.all([
+  const [stats, appointments, orphanConfig, projects, remoteOrders, learnedDurations, slotDefs, noBlock] = await Promise.all([
     fetchOrderStats(clientRows.map((r) => r.id)),
     fetchUpcomingAppointments(agentId),
     getOrphanConfig(),
@@ -215,6 +259,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
     fetchLastRemoteOrders(agentId),
     fetchLearnedDurations(agentId),
     getVisitSlots(),
+    getNoInterestBlock(),
   ]);
   const orphanMap = await fetchOrphanMap(orphanConfig);
 
@@ -307,9 +352,12 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
   return {
     clients: clientRows
       .filter((r) => !orphanCustomerIds.has(r.id))
-      .map((r) => toCandidate(r, 'client', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, remoteOrders.get(r.id), learnedDurations.get(r.id), slotDefs)),
-    prospects: prospectRows.map((r) => toCandidate(r, 'prospect', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, undefined, learnedDurations.get(r.id), slotDefs)),
-    orphans,
+      .map((r) => toCandidate(r, 'client', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, remoteOrders.get(r.id), learnedDurations.get(r.id), slotDefs))
+      .filter((c) => !isNoInterestBlocked(c, noBlock)),
+    prospects: prospectRows
+      .map((r) => toCandidate(r, 'prospect', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, undefined, learnedDurations.get(r.id), slotDefs))
+      .filter((c) => !isNoInterestBlocked(c, noBlock)),
+    orphans: orphans.filter((c) => !isNoInterestBlocked(c, noBlock)),
   };
 }
 
@@ -353,9 +401,11 @@ export async function loadFreeTabaccherie(
     console.warn('[AITour][data] ai_tour_free_tabaccherie:', error);
     return [];
   }
+  const noBlock = await getNoInterestBlock();
   const out: TourCandidate[] = [];
   for (const t of (data || []) as { id: string; denominazione: string | null; codice_rivendita: string | null; indirizzo: string | null; comune: string | null; provincia: string | null; lat: number; lng: number; assigned: boolean | null }[]) {
     if (excludeTabIds.has(t.id)) continue;
+    if (noBlock.tabs.has(t.id)) continue; // "non interessato" < 6 mesi: non riproporre
     const lat = Number(t.lat);
     const lng = Number(t.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;

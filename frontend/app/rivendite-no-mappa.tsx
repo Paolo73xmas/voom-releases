@@ -163,11 +163,8 @@ export default function RivenditeNoMappaScreen() {
     if (form.fiscalCode.trim() && !fiscalRegex.test(form.fiscalCode.toUpperCase())) {
       Alert.alert('Errore', 'Codice Fiscale deve essere di 16 caratteri alfanumerici'); return false;
     }
-    if (!form.contactEmail.trim() || !emailRegex.test(form.contactEmail)) {
+    if (form.contactEmail.trim() && !emailRegex.test(form.contactEmail)) {
       Alert.alert('Errore', 'Email non valida'); return false;
-    }
-    if (!form.pec.trim() && !form.sdi.trim()) {
-      Alert.alert('Errore', 'Inserisci almeno PEC o SDI'); return false;
     }
 
     // GPS check
@@ -223,7 +220,7 @@ export default function RivenditeNoMappaScreen() {
         longitude: finalLng,
         contact_name: form.contactName,
         contact_surname: form.contactSurname,
-        contact_phone: form.contactPhone,
+        contact_phone: form.contactPhone || null,
         contact_email: emailValue,
         vat_number: form.vatNumber,
         fiscal_code: form.fiscalCode.toUpperCase() || null,
@@ -439,7 +436,7 @@ export default function RivenditeNoMappaScreen() {
         <TextInput style={styles.input} value={form.contactPhone} onChangeText={v => updateForm('contactPhone', v)}
           placeholder="333 1234567" placeholderTextColor={COLORS.textLight} keyboardType="phone-pad" />
 
-        <Text style={styles.inputLabel}>Email *</Text>
+        <Text style={styles.inputLabel}>Email</Text>
         <TextInput style={styles.input} value={form.contactEmail} onChangeText={v => updateForm('contactEmail', v)}
           placeholder="email@esempio.com" placeholderTextColor={COLORS.textLight} keyboardType="email-address" autoCapitalize="none" />
 

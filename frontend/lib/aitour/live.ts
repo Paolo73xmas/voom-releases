@@ -3,7 +3,7 @@
 import { supabase } from '../supabase';
 import * as Location from 'expo-location';
 import type { TourCandidate, GeoPoint, AiTourSettings, EntityType, PriorityClass } from './types';
-import { timeToMin } from './types';
+import { timeToMin, haversineKm } from './types';
 import type { SavedTour, SavedStop } from './tours';
 import { loadTourStops } from './tours';
 import { loadFreeTabaccherie } from './data';
@@ -92,7 +92,7 @@ export function stopToCandidate(s: SavedStop & { outcome?: string | null; follow
 export async function getActiveTour(agentId: string): Promise<SavedTour | null> {
   const { data, error } = await supabase
     .from('ai_tours')
-    .select('id, agent_id, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at, lunch_break_start, lunch_break_end, lunch_break_minutes')
+    .select('id, agent_id, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at, lunch_break_start, lunch_break_end, lunch_break_minutes, area_filter')
     .eq('agent_id', agentId)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -153,6 +153,28 @@ export async function startLiveTour(tourId: string): Promise<void> {
   // per domani ma avviato oggi) cosi' Monitoring, report e storici restano coerenti.
   const d = new Date();
   const localToday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // Un agente ha un solo giro live: chiudi eventuali tour rimasti attivi (es. giro abbandonato)
+  const { data: cur } = await supabase.from('ai_tours').select('agent_id').eq('id', tourId).single();
+  if (cur?.agent_id) {
+    const { data: others } = await supabase
+      .from('ai_tours')
+      .select('id')
+      .eq('agent_id', cur.agent_id)
+      .eq('status', 'active')
+      .neq('id', tourId);
+    for (const o of others || []) {
+      await supabase
+        .from('ai_tour_stops')
+        .update({ status: 'cancelled', skip_reason: 'Giro chiuso automaticamente: avviato un nuovo tour' })
+        .eq('tour_id', o.id)
+        .in('status', ['planned', 'arrived']);
+      await supabase
+        .from('ai_tours')
+        .update({ status: 'completed', actual_end: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', o.id);
+      await logEvent(o.id, 'closed_by_new_tour', null, { new_tour_id: tourId });
+    }
+  }
   const { error } = await supabase
     .from('ai_tours')
     .update({ status: 'active', tour_date: localToday, actual_start: new Date().toISOString(), updated_at: new Date().toISOString() })
@@ -254,6 +276,18 @@ export async function skipStop(tourId: string, stopId: string, reason: string, n
   await logEvent(tourId, 'skipped', stopId, { reason, note });
 }
 
+export const TRASH_REASON = "Visita cestinata dall'agente";
+
+// Visita cestinata dall'agente: esce dal giro (il caller ricalcola) e viene segnalata come tale
+export async function trashStop(tourId: string, stopId: string, name: string): Promise<void> {
+  const { error } = await supabase
+    .from('ai_tour_stops')
+    .update({ status: 'cancelled', skip_reason: TRASH_REASON })
+    .eq('id', stopId);
+  if (error) throw error;
+  await logEvent(tourId, 'stop_trashed', stopId, { stop: name });
+}
+
 // Ripasso in giornata: la tappa resta nel giro con una finestra oraria attorno
 // all'ora scelta (l'AI la riposiziona al prossimo ricalcolo). Non viene mai
 // rimossa dai ricalcoli (guardia isRevisitCandidate lato client).
@@ -300,6 +334,13 @@ export async function startLunchBreak(tourId: string, agentId: string, minutes: 
 export async function endLunchBreak(tourId: string, actualMinutes: number): Promise<void> {
   await supabase.from('ai_tours').update({ lunch_break_end: new Date().toISOString() }).eq('id', tourId);
   await logEvent(tourId, 'lunch_break_ended', null, { actual_minutes: actualMinutes });
+}
+
+// "Più Visite": l'agente posticipa l'orario di fine giro (formato HH:MM)
+export async function extendTourEndTime(tourId: string, endTime: string): Promise<void> {
+  const { error } = await supabase.from('ai_tours').update({ end_time: endTime }).eq('id', tourId);
+  if (error) throw error;
+  await logEvent(tourId, 'end_time_extended', null, { end_time: endTime });
 }
 
 export async function cancelStopByRecalc(tourId: string, stopId: string): Promise<void> {
@@ -431,6 +472,41 @@ export async function findExternalResult(kind: 'inspection' | 'order', customerI
     return false;
   }
   return (data || []).length > 0;
+}
+
+// Livello superiore di intelligenza: tabaccherie da acquisire a MENO DI 3 KM dalla
+// posizione dell'agente o dal percorso rimanente -> avviso immediato nel Live.
+export const PROXIMITY_KM = 3;
+
+export async function suggestNearbyProximity(
+  pos: { lat: number; lng: number },
+  routePoints: { lat: number; lng: number }[],
+  excludeTabIds: Set<string>,
+  settings: AiTourSettings,
+  inArea: (c: { lat: number; lng: number; province?: string; city?: string }) => boolean,
+): Promise<(TourCandidate & { distKm: number }) | null> {
+  const d = 0.04; // box ~4 km attorno alla posizione
+  const free = await loadFreeTabaccherie(
+    { minLat: pos.lat - d, maxLat: pos.lat + d, minLng: pos.lng - d, maxLng: pos.lng + d },
+    excludeTabIds,
+    settings,
+    { refLat: pos.lat, refLng: pos.lng },
+    15,
+  );
+  let best: TourCandidate | null = null;
+  let bestKm = Infinity;
+  for (const c of free) {
+    if (!inArea(c)) continue;
+    let km = haversineKm(pos.lat, pos.lng, c.lat, c.lng);
+    for (const p of routePoints) {
+      const k = haversineKm(p.lat, p.lng, c.lat, c.lng);
+      if (k < km) km = k;
+    }
+    if (km <= PROXIMITY_KM && km < bestKm) { best = c; bestKm = km; }
+  }
+  if (!best) return null;
+  best.reason = "Tabaccheria da acquisire a meno di 3 km: opportunita' immediata";
+  return Object.assign(best, { distKm: Math.round(bestKm * 10) / 10 });
 }
 
 // Recupero tempo: cerca una tabaccheria libera vicina alla posizione corrente

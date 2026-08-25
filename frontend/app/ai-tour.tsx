@@ -574,6 +574,14 @@ export default function AITourScreen() {
       if (residualMin > 90) {
         finalPlan.warnings.push(`Restano circa ${Math.floor(residualMin / 60)}h ${residualMin % 60}m liberi: nessun altro punto raggiungibile nelle vicinanze del giro`);
       }
+      // Area scelta dall'agente: persistita sul tour, rispettata dalle operazioni live ("Più Visite")
+      finalPlan.areaFilter = {
+        mode: v.areaMode,
+        province: v.areaMode === 'province' ? v.province : undefined,
+        city: v.areaMode === 'city' ? v.city : undefined,
+        radiusKm: v.areaMode === 'radius' ? radiusKm : undefined,
+        zoneIds: v.areaMode === 'territory' ? zonesForTour.map((z) => z.id) : undefined,
+      };
 
       setProgress("L'AI sta scrivendo la strategia del giro...");
       finalPlan.aiSummary = await getStrategySummary(finalPlan);

@@ -317,6 +317,36 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   const finishMin = t;
   if (finishMin > endMin) warnings.push('Il giro termina oltre l\'orario di fine configurato');
 
+  // Avviso giro multi-zona: tappe molto distanti tra loro (es. Voghera + Lomellina).
+  // Solo in generazione (nei replan live le tappe sono gia' confermate dall'agente).
+  if (!input.skipDayExclusion && stops.length >= 2) {
+    let maxKm = 0;
+    let far: [TourCandidate, TourCandidate] | null = null;
+    for (let i = 0; i < stops.length; i++) {
+      for (let j = i + 1; j < stops.length; j++) {
+        const km = haversineKm(stops[i].candidate.lat, stops[i].candidate.lng, stops[j].candidate.lat, stops[j].candidate.lng);
+        if (km > maxKm) { maxKm = km; far = [stops[i].candidate, stops[j].candidate]; }
+      }
+    }
+    if (maxKm > 25 && far) {
+      const a = far[0].city || far[0].name;
+      const b = far[1].city || far[1].name;
+      warnings.push(`Il giro copre zone distanti ~${Math.round(maxKm)} km in linea d'aria (${a} ↔ ${b}): valuta se dividerle su giornate diverse`);
+    }
+  }
+  // Avviso giro lontano dalla partenza: cluster compatto ma a decine di km dalla base dell'agente
+  if (!input.skipDayExclusion && stops.length >= 1) {
+    let minStartKm = Infinity;
+    let nearCity = '';
+    for (const s of stops) {
+      const km = haversineKm(start.lat, start.lng, s.candidate.lat, s.candidate.lng);
+      if (km < minStartKm) { minStartKm = km; nearCity = s.candidate.city || s.candidate.name; }
+    }
+    if (minStartKm > 25) {
+      warnings.push(`Tutte le tappe sono ad almeno ~${Math.round(minStartKm)} km dalla partenza (zona ${nearCity}): trasferimento iniziale lungo, valuta un punto di partenza o un'area diversa`);
+    }
+  }
+
   const excluded = pool
     .map((c, i) => ({ c, i: i + 1 }))
     .filter(({ i }) => !inTour.has(i))

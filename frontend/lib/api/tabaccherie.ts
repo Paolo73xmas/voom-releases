@@ -16,6 +16,43 @@ function isValidCoordinate(lat: number | null, lng: number | null): boolean {
 }
 
 /**
+ * Puntini neri (parità web Territorio): TUTTE le tabaccherie del registro con GPS
+ * valido dentro il riquadro visualizzato, via RPC tabaccherie_points_in_bbox
+ * (cast SQL dei gps TEXT, righe spurie escluse). Max 5000 punti.
+ */
+export interface TabPoint { lat: number; lng: number }
+
+export async function tabaccheriePointsInBounds(
+  bounds: { north: number; south: number; east: number; west: number },
+  limit = 5000,
+): Promise<TabPoint[]> {
+  // PostgREST tronca a 1000 righe anche le RPC set-returning: paginazione con .range()
+  const out: TabPoint[] = [];
+  const PAGE = 1000;
+  for (let offset = 0; offset < limit; offset += PAGE) {
+    const { data, error } = await supabase.rpc('tabaccherie_points_in_bbox', {
+      p_min_lat: bounds.south,
+      p_max_lat: bounds.north,
+      p_min_lng: bounds.west,
+      p_max_lng: bounds.east,
+      p_limit: limit,
+    }).range(offset, offset + PAGE - 1);
+    if (error) {
+      console.warn('[tabaccherie] bbox dots:', error.message);
+      break;
+    }
+    const rows = (data || []) as { id: string; lat: number; lng: number }[];
+    for (const r of rows) {
+      const lat = Number(r.lat);
+      const lng = Number(r.lng);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) out.push({ lat, lng });
+    }
+    if (rows.length < PAGE) break;
+  }
+  return out;
+}
+
+/**
  * Fetch tabaccherie within the exact visible map bounds.
  * Paginates to overcome the Supabase 1000-row default limit.
  */

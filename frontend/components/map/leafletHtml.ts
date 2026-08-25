@@ -107,6 +107,19 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
     // così quando coincidono il cliente resta cliccabile
     userMarker = L.marker([${lat}, ${lng}], { icon: userIcon, zIndexOffset: -1000, interactive: false }).addTo(map);
 
+    // Puntini neri: tutte le tabaccherie del registro nell'area visualizzata
+    // (layer canvas non interattivo, sta sotto i marker colorati)
+    var dotsGroup = L.layerGroup().addTo(map);
+    var dotsRenderer = L.canvas({ padding: 0.2 });
+    function updateDots(data) {
+      dotsGroup.clearLayers();
+      for (var i = 0; i < data.length; i++) {
+        var p = data[i];
+        if (!p.lat || !p.lng) continue;
+        L.circleMarker([p.lat, p.lng], { renderer: dotsRenderer, radius: 2.5, color: '#111827', fillColor: '#111827', fillOpacity: 0.85, weight: 0, interactive: false }).addTo(dotsGroup);
+      }
+    }
+
     var ICONS = {
       gray: L.divIcon({ className:'custom-marker', html:'<div style="background:#475569;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);opacity:0.6;"></div>', iconSize:[14,14], iconAnchor:[7,7] }),
       red: L.divIcon({ className:'custom-marker', html:'<div style="background:#dc2626;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>', iconSize:[14,14], iconAnchor:[7,7] }),
@@ -192,6 +205,7 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
       try {
         var msg = JSON.parse(e.data);
         if (msg.type === 'updateMarkers') updateMarkers(msg.data);
+        if (msg.type === 'updateDots') updateDots(msg.data);
         if (msg.type === 'setCenter') setCenter(msg.lat, msg.lng, msg.zoom);
         if (msg.type === 'updateUserLocation') updateUserLocation(msg.lat, msg.lng);
       } catch(err) {}
@@ -200,6 +214,7 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
       try {
         var msg = JSON.parse(e.data);
         if (msg.type === 'updateMarkers') updateMarkers(msg.data);
+        if (msg.type === 'updateDots') updateDots(msg.data);
         if (msg.type === 'setCenter') setCenter(msg.lat, msg.lng, msg.zoom);
         if (msg.type === 'updateUserLocation') updateUserLocation(msg.lat, msg.lng);
       } catch(err) {}

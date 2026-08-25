@@ -19,7 +19,7 @@ let WebView: any = null;
 if (Platform.OS !== 'web') {
   WebView = require('react-native-webview').WebView;
 }
-import { fetchTabaccherieByBounds, fetchAllTabaccherie, fetchTabaccheriaById } from '../../lib/api/tabaccherie';
+import { fetchTabaccherieByBounds, fetchAllTabaccherie, fetchTabaccheriaById, tabaccheriePointsInBounds } from '../../lib/api/tabaccherie';
 import { MpvpSearchBar } from '../../components/map/MpvpSearchBar';
 import type { MpvpCustomerResult, PlaceSuggestion } from '../../lib/api/mpvp-customer-search';
 import { supabase } from '../../lib/supabase';
@@ -67,6 +67,11 @@ export default function MapScreen() {
 
   // Legend
   const [showLegend, setShowLegend] = useState(true);
+
+  // Puntini neri: tabaccherie del registro nell'area visualizzata (parità web Territorio)
+  const [dotsCount, setDotsCount] = useState<number | null>(null);
+  const dotsReqRef = useRef(0);
+  const leafletDotsRef = useRef<any>(null);
 
   const currentBoundsRef = useRef<{ north: number; south: number; east: number; west: number } | null>(null);
   const tabaccherieRef = useRef<Tabaccheria[]>([]);
@@ -255,6 +260,7 @@ export default function MapScreen() {
         leafletMapRef.current.remove();
         leafletMapRef.current = null;
         leafletReadyRef.current = false;
+        leafletDotsRef.current = null;
       }
     };
   }, [userLocation, loading]);
@@ -415,10 +421,47 @@ export default function MapScreen() {
     sendToMap({ type: 'updateMarkers', data: markers });
   }, [user?.id, userRole, sendToMap]);
 
+  // Puntini neri: TUTTE le tabaccherie del registro nell'area visualizzata (fino a 5000),
+  // layer canvas non interattivo SOTTO i marker colorati — parità web (mappa Territorio).
+  const loadTabDots = useCallback(async (bounds: { north: number; south: number; east: number; west: number }) => {
+    const reqId = ++dotsReqRef.current;
+    try {
+      const pts = await tabaccheriePointsInBounds(bounds);
+      if (reqId !== dotsReqRef.current) return; // superata da un pan/zoom successivo
+      setDotsCount(pts.length);
+      if (Platform.OS === 'web') {
+        const L = (window as any).L;
+        if (!L || !leafletMapRef.current) return;
+        if (!leafletDotsRef.current) {
+          leafletDotsRef.current = {
+            group: L.layerGroup().addTo(leafletMapRef.current),
+            renderer: L.canvas({ padding: 0.2 }),
+          };
+        }
+        const { group, renderer } = leafletDotsRef.current;
+        group.clearLayers();
+        for (const p of pts) {
+          L.circleMarker([p.lat, p.lng], {
+            renderer, radius: 2.5, color: '#111827', fillColor: '#111827', fillOpacity: 0.85, weight: 0, interactive: false,
+          }).addTo(group);
+        }
+      } else {
+        // WebView nativa: payload compatto (5 decimali ≈ 1 m)
+        sendToMap({
+          type: 'updateDots',
+          data: pts.map(p => ({ lat: Math.round(p.lat * 1e5) / 1e5, lng: Math.round(p.lng * 1e5) / 1e5 })),
+        });
+      }
+    } catch (e) {
+      console.warn('[Map] puntini registro:', e);
+    }
+  }, [sendToMap]);
+
   const loadByBounds = useCallback(async (
     bounds: { north: number; south: number; east: number; west: number },
     activeFilter?: 'all' | 'active' | 'not_visited'
   ) => {
+    loadTabDots(bounds); // in parallelo, non blocca i marker colorati
     try {
       setLoadingPoints(true);
       const data = await fetchTabaccherieByBounds(bounds, user?.id, userRole, activeFilter || 'all');
@@ -430,7 +473,7 @@ export default function MapScreen() {
     } finally {
       setLoadingPoints(false);
     }
-  }, [user?.id, userRole, updateLeafletMarkers, sendMarkersToWebView]);
+  }, [user?.id, userRole, updateLeafletMarkers, sendMarkersToWebView, loadTabDots]);
 
   const loadAll = useCallback(async () => {
     // If we have current bounds, use bounds-based loading with filter (much faster)
@@ -666,6 +709,11 @@ export default function MapScreen() {
             {' \u2022 '}
             <Text style={{ color: '#DC2626' }}>{tabaccherie.filter(t => !t.stato_visita || t.stato_visita === 'non_visitato').length}</Text>
           </Text>
+          {dotsCount != null && (
+            <Text style={[styles.counterText, { color: '#111827' }]} testID="map-dots-count">
+              {'\u25CF'} {dotsCount}{dotsCount >= 5000 ? '+' : ''} tabaccherie nell&apos;area
+            </Text>
+          )}
         </View>
       )}
 
@@ -735,6 +783,7 @@ export default function MapScreen() {
             { color: '#7C3AED', borderColor: '#15803D', label: 'Tuo cliente Orfano A' },
             { color: '#FFD600', borderColor: '#15803D', label: 'Tuo cliente Orfano B' },
             { color: '#475569', label: 'Altro agente' },
+            { color: '#111827', label: 'Tabaccheria (registro)' },
           ].map((item, i) => {
             const own = !!item.borderColor;
             const size = own ? 14 : 10;

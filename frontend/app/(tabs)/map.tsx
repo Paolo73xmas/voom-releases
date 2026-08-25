@@ -433,17 +433,23 @@ export default function MapScreen() {
       if (Platform.OS === 'web') {
         const L = (window as any).L;
         if (!L || !leafletMapRef.current) return;
+        const dotRadius = (z: number) => (z >= 13 ? 3 : z >= 11 ? 2.2 : z >= 9 ? 1.6 : 1.1);
         if (!leafletDotsRef.current) {
-          leafletDotsRef.current = {
-            group: L.layerGroup().addTo(leafletMapRef.current),
-            renderer: L.canvas({ padding: 0.2 }),
-          };
+          const group = L.layerGroup().addTo(leafletMapRef.current);
+          leafletDotsRef.current = { group, renderer: L.canvas({ padding: 0.2 }) };
+          // raggio adattivo allo zoom: da lontano i puntini restano discreti
+          leafletMapRef.current.on('zoomend', () => {
+            if (!leafletMapRef.current || !leafletDotsRef.current) return;
+            const r = dotRadius(leafletMapRef.current.getZoom());
+            leafletDotsRef.current.group.eachLayer((l: any) => l.setRadius && l.setRadius(r));
+          });
         }
         const { group, renderer } = leafletDotsRef.current;
         group.clearLayers();
+        const r0 = dotRadius(leafletMapRef.current.getZoom());
         for (const p of pts) {
           L.circleMarker([p.lat, p.lng], {
-            renderer, radius: 2.5, color: '#111827', fillColor: '#111827', fillOpacity: 0.85, weight: 0, interactive: false,
+            renderer, radius: r0, color: '#111827', fillColor: '#111827', fillOpacity: 0.75, weight: 0, interactive: false,
           }).addTo(group);
         }
       } else {

@@ -112,9 +112,15 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
     // Protetto da try/catch: un problema qui non deve rompere il resto della mappa.
     var dotsGroup = null;
     var dotsRenderer = null;
+    function dotRadius(z) { return z >= 13 ? 3 : z >= 11 ? 2.2 : z >= 9 ? 1.6 : 1.1; }
     try {
       dotsGroup = L.layerGroup().addTo(map);
       dotsRenderer = L.canvas({ padding: 0.2 });
+      map.on('zoomend', function() {
+        if (!dotsGroup) return;
+        var r = dotRadius(map.getZoom());
+        dotsGroup.eachLayer(function(l) { if (l.setRadius) l.setRadius(r); });
+      });
     } catch (e) {
       sendMessage({ type: 'jsError', where: 'dotsInit', message: String(e && e.message || e) });
     }
@@ -122,11 +128,12 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
       try {
         if (!dotsGroup) return;
         dotsGroup.clearLayers();
+        var r0 = dotRadius(map.getZoom());
         var n = 0;
         for (var i = 0; i < data.length; i++) {
           var p = data[i];
           if (!p.lat || !p.lng) continue;
-          L.circleMarker([p.lat, p.lng], { renderer: dotsRenderer, radius: 2.5, color: '#111827', fillColor: '#111827', fillOpacity: 0.85, weight: 0, interactive: false }).addTo(dotsGroup);
+          L.circleMarker([p.lat, p.lng], { renderer: dotsRenderer, radius: r0, color: '#111827', fillColor: '#111827', fillOpacity: 0.75, weight: 0, interactive: false }).addTo(dotsGroup);
           n++;
         }
         sendMessage({ type: 'dotsRendered', count: n });

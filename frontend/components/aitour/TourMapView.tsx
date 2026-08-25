@@ -1,11 +1,13 @@
 // Mappa del tour AI (parità web TourMap): marker numerati per tipo, percorso, partenza/rientro,
 // popup con dettagli e Naviga. WebView su nativo, iframe su web. Tasto schermo intero.
+// In più: puntini neri con le tabaccherie del registro intorno al percorso (opportunità).
 import React, { useMemo, useEffect, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { openNavigation } from './shared';
 import { COLORS } from '../../lib/theme';
+import { tabaccheriePointsInBounds, type TabPoint } from '../../lib/api/tabaccherie';
 
 let WebView: any = null;
 if (Platform.OS !== 'web') {
@@ -38,8 +40,14 @@ interface Props {
   height?: number;
 }
 
-function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Props['start'], end: Props['end']): string {
-  const payload = JSON.stringify({ stops, geometry, start, end: end || null });
+function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Props['start'], end: Props['end'], dots: TabPoint[]): string {
+  const payload = JSON.stringify({
+    stops,
+    geometry,
+    start,
+    end: end || null,
+    dots: dots.map((p) => ({ lat: Math.round(p.lat * 1e5) / 1e5, lng: Math.round(p.lng * 1e5) / 1e5 })),
+  });
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -92,6 +100,27 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
       iconSize: [30, 30], iconAnchor: [15, 15],
     });
   }
+
+  // Puntini neri: tabaccherie del registro intorno al percorso (canvas, non interattivi,
+  // stanno sotto i marker numerati). Raggio adattivo allo zoom per non dominare la mappa.
+  // Protetti da try/catch: mai rompere la mappa.
+  function dotRadius(z) { return z >= 13 ? 3 : z >= 11 ? 2.2 : z >= 9 ? 1.6 : 1.1; }
+  var dotMarkers = [];
+  try {
+    if (DATA.dots && DATA.dots.length) {
+      var dotsRenderer = L.canvas({ padding: 0.2 });
+      var r0 = dotRadius(map.getZoom() || 12);
+      for (var di = 0; di < DATA.dots.length; di++) {
+        var dp = DATA.dots[di];
+        if (!dp.lat || !dp.lng) continue;
+        dotMarkers.push(L.circleMarker([dp.lat, dp.lng], { renderer: dotsRenderer, radius: r0, color: '#111827', fillColor: '#111827', fillOpacity: 0.75, weight: 0, interactive: false }).addTo(map));
+      }
+      map.on('zoomend', function() {
+        var r = dotRadius(map.getZoom());
+        for (var zi = 0; zi < dotMarkers.length; zi++) dotMarkers[zi].setRadius(r);
+      });
+    }
+  } catch (e) {}
 
   // Percorso pianificato
   if (DATA.geometry && DATA.geometry.length > 1) {
@@ -147,7 +176,36 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
 }
 
 export function TourMapView({ stops, geometry, start, end, height = 420 }: Props) {
-  const html = useMemo(() => buildHtml(stops, geometry, start, end), [stops, geometry, start, end]);
+  // Puntini neri: tabaccherie del registro nel riquadro del percorso + ~10 km di margine.
+  // Caricati una volta per composizione del giro ed embedded nell'HTML della mappa.
+  const [dots, setDots] = useState<TabPoint[]>([]);
+  useEffect(() => {
+    let alive = true;
+    const lats = [start.lat, ...stops.map((s) => s.lat)];
+    const lngs = [start.lng, ...stops.map((s) => s.lng)];
+    if (end) {
+      lats.push(end.lat);
+      lngs.push(end.lng);
+    }
+    const latMargin = 10 / 111; // ~10 km
+    const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+    const lngMargin = 10 / (111 * Math.max(0.2, Math.cos((midLat * Math.PI) / 180)));
+    tabaccheriePointsInBounds({
+      north: Math.max(...lats) + latMargin,
+      south: Math.min(...lats) - latMargin,
+      east: Math.max(...lngs) + lngMargin,
+      west: Math.min(...lngs) - lngMargin,
+    })
+      .then((pts) => {
+        if (alive) setDots(pts);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [stops, start, end]);
+
+  const html = useMemo(() => buildHtml(stops, geometry, start, end, dots), [stops, geometry, start, end, dots]);
   const [fullscreen, setFullscreen] = useState(false);
   const insets = useSafeAreaInsets();
 

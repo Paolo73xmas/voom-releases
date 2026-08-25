@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Image, Alert, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA, currentThemeMode } from '../../lib/theme';
 import { supabase } from '../../lib/supabase';
@@ -41,6 +42,22 @@ function dateInDays(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Riduce la foto a max 1600px lato lungo e la ricomprime: le foto full-resolution
+ * (anche 50MP sui device recenti) saturano la memoria durante il Tour Live (mappa+GPS attivi)
+ * e Android può terminare l'app. Riduce anche drasticamente il peso dell'upload.
+ */
+async function shrinkPhoto(uri: string): Promise<string> {
+  try {
+    const image = await ImageManipulator.manipulate(uri).resize({ width: 1600 }).renderAsync();
+    const saved = await image.saveAsync({ compress: 0.7, format: SaveFormat.JPEG });
+    return saved.uri;
+  } catch (err) {
+    console.warn('[EsitoModal] shrinkPhoto:', err);
+    return uri;
+  }
 }
 
 interface Props {
@@ -114,6 +131,20 @@ export function EsitoModal({ visible, stopName, stopId, customerId, saving, onCl
     }
   }, [visible, customerId, stopId]);
 
+  // Android: se il sistema ha terminato l'app mentre la fotocamera era aperta,
+  // recupera la foto scattata alla riapertura del modale (getPendingResultAsync).
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'android') return;
+    ImagePicker.getPendingResultAsync()
+      .then(async (pending) => {
+        if (!pending || !('assets' in pending) || pending.canceled || !pending.assets?.[0]?.uri) return;
+        const uri = await shrinkPhoto(pending.assets[0].uri);
+        setPhotos((prev) => (prev.length >= 2 ? prev : [...prev, { uri }]));
+        Alert.alert('Foto recuperata', "La foto scattata prima della chiusura dell'app è stata recuperata e allegata all'ispezione.");
+      })
+      .catch(() => {});
+  }, [visible]);
+
   const takePhoto = async () => {
     if (photos.length >= 2) return;
     try {
@@ -136,7 +167,7 @@ export function EsitoModal({ visible, stopName, stopId, customerId, saving, onCl
       }
       const result = await ImagePicker.launchCameraAsync({ allowsEditing: false, quality: 0.7 });
       if (!result.canceled && result.assets?.[0]) {
-        const uri = result.assets[0].uri;
+        const uri = await shrinkPhoto(result.assets[0].uri);
         setPhotos((prev) => (prev.length >= 2 ? prev : [...prev, { uri }]));
       }
     } catch (err) {

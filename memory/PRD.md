@@ -181,6 +181,8 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
 
 - **Revisione narrazione pausa pranzo nel video (ago 2026, richiesta utente)**: rimossa la frase "la pausa vale una sola volta al giorno" dalla scena v5_s5; aggiunto "la durata di default è impostata a trenta minuti, ma può essere tranquillamente modificata". Rigenerato audio (23.93s, entra nella finestra 25s senza freeze) e riassemblati video 5 (1:45) e completo (9:18). Endpoint 200 verificati.
 
+- **Fix crash foto ispezione Tour Live su Android (ago 2026, segnalato da agente Valentina Lomartire, build produzione)**: l'app si chiudeva allo scatto delle 2 foto nell'EsitoModal. Causa più probabile: OOM — Android termina il processo quando la fotocamera si apre sopra il Tour Live (mappa+GPS) e le foto full-res (fino a 50MP) saturano la memoria (nelle altre sezioni senza mappa le foto funzionano). Fix in EsitoModal.tsx: (1) shrinkPhoto() con expo-image-manipulator (nuova API ImageManipulator.manipulate → resize 1600px + compress 0.7) subito dopo lo scatto → meno memoria per thumbnail/upload; (2) recupero foto dopo process-death con ImagePicker.getPendingResultAsync() alla riapertura del modale (solo Android) + alert "Foto recuperata". Verificato: lint/tsc puliti (13 errori TS pre-esistenti solo in order-collection-v2), smoke E2E web con tour sintetico (poi eliminato): EsitoModal si apre con sezione foto. NOTA: il crash nativo non è riproducibile in questo ambiente; la conferma definitiva richiede redeploy + nuova build Android installata da Valentina.
+
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)
 - Camera integration for photo uploads in anagrafica visits

@@ -428,6 +428,7 @@ export default function MapScreen() {
     try {
       const pts = await tabaccheriePointsInBounds(bounds);
       if (reqId !== dotsReqRef.current) return; // superata da un pan/zoom successivo
+      console.log('[Map] puntini registro:', pts.length, 'nell\'area');
       setDotsCount(pts.length);
       if (Platform.OS === 'web') {
         const L = (window as any).L;
@@ -447,6 +448,7 @@ export default function MapScreen() {
         }
       } else {
         // WebView nativa: payload compatto (5 decimali ≈ 1 m)
+        console.log('[Map] invio', pts.length, 'puntini alla WebView');
         sendToMap({
           type: 'updateDots',
           data: pts.map(p => ({ lat: Math.round(p.lat * 1e5) / 1e5, lng: Math.round(p.lng * 1e5) / 1e5 })),
@@ -506,6 +508,10 @@ export default function MapScreen() {
         currentBoundsRef.current = msg.bounds;
         loadByBounds(msg.bounds, filterModeRef.current);
       }
+
+      if (msg.type === 'mapReady') console.log('[Map] WebView pronta (script Leaflet ok)');
+      if (msg.type === 'dotsRendered') console.log('[Map] WebView ha disegnato', msg.count, 'puntini registro');
+      if (msg.type === 'jsError') console.warn('[Map] errore JS nella WebView:', msg.where, msg.message);
 
       if (msg.type === 'markerClick') {
         const tab = tabaccherieRef.current.find(t => t.id === msg.id);

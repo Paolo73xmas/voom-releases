@@ -108,15 +108,30 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
     userMarker = L.marker([${lat}, ${lng}], { icon: userIcon, zIndexOffset: -1000, interactive: false }).addTo(map);
 
     // Puntini neri: tutte le tabaccherie del registro nell'area visualizzata
-    // (layer canvas non interattivo, sta sotto i marker colorati)
-    var dotsGroup = L.layerGroup().addTo(map);
-    var dotsRenderer = L.canvas({ padding: 0.2 });
+    // (layer canvas non interattivo, sta sotto i marker colorati).
+    // Protetto da try/catch: un problema qui non deve rompere il resto della mappa.
+    var dotsGroup = null;
+    var dotsRenderer = null;
+    try {
+      dotsGroup = L.layerGroup().addTo(map);
+      dotsRenderer = L.canvas({ padding: 0.2 });
+    } catch (e) {
+      sendMessage({ type: 'jsError', where: 'dotsInit', message: String(e && e.message || e) });
+    }
     function updateDots(data) {
-      dotsGroup.clearLayers();
-      for (var i = 0; i < data.length; i++) {
-        var p = data[i];
-        if (!p.lat || !p.lng) continue;
-        L.circleMarker([p.lat, p.lng], { renderer: dotsRenderer, radius: 2.5, color: '#111827', fillColor: '#111827', fillOpacity: 0.85, weight: 0, interactive: false }).addTo(dotsGroup);
+      try {
+        if (!dotsGroup) return;
+        dotsGroup.clearLayers();
+        var n = 0;
+        for (var i = 0; i < data.length; i++) {
+          var p = data[i];
+          if (!p.lat || !p.lng) continue;
+          L.circleMarker([p.lat, p.lng], { renderer: dotsRenderer, radius: 2.5, color: '#111827', fillColor: '#111827', fillOpacity: 0.85, weight: 0, interactive: false }).addTo(dotsGroup);
+          n++;
+        }
+        sendMessage({ type: 'dotsRendered', count: n });
+      } catch (e) {
+        sendMessage({ type: 'jsError', where: 'updateDots', message: String(e && e.message || e) });
       }
     }
 
@@ -189,6 +204,7 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
     // Fire initial bounds
     setTimeout(function() {
       var b = map.getBounds();
+      sendMessage({ type: 'mapReady' });
       sendMessage({
         type: 'boundsChanged',
         bounds: {

@@ -220,7 +220,7 @@ export default function CustomerDetailScreen() {
                 {customer.category === 'client' ? 'Cliente' : 'Prospect'}
               </Text>
             </View>
-            {customer.city && (
+            {!!customer.city && (
               <Text style={styles.headerSub}>{customer.city}{customer.province ? ` (${customer.province})` : ''}</Text>
             )}
           </View>
@@ -361,7 +361,7 @@ export default function CustomerDetailScreen() {
                       <Text style={styles.visitTypeText}>{visit.visit_type || 'Visita'}</Text>
                     </View>
                   </View>
-                  {visit.notes && <Text style={styles.visitNotes} numberOfLines={2}>{visit.notes}</Text>}
+                  {!!visit.notes && <Text style={styles.visitNotes} numberOfLines={2}>{visit.notes}</Text>}
                 </View>
               </View>
             ))
@@ -447,13 +447,13 @@ export default function CustomerDetailScreen() {
           <View style={styles.infoCard}>
             <InfoRow icon="card-outline" label="P.IVA" value={customer.vat_number || '-'} />
             <InfoRow icon="document-text-outline" label="C.F." value={customer.fiscal_code || '-'} />
-            {customer.pec && <InfoRow icon="at-outline" label="PEC" value={customer.pec} />}
-            {customer.sdi && <InfoRow icon="code-outline" label="SDI" value={customer.sdi} />}
+            {!!customer.pec && <InfoRow icon="at-outline" label="PEC" value={customer.pec} />}
+            {!!customer.sdi && <InfoRow icon="code-outline" label="SDI" value={customer.sdi} />}
           </View>
         </View>
 
         {/* Notes */}
-        {customer.notes && (
+        {!!customer.notes && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Note</Text>
             <View style={styles.infoCard}>

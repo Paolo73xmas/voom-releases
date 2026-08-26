@@ -7,7 +7,7 @@ URL = "https://voom-ios.preview.emergentagent.com"
 with sync_playwright() as p:
     browser = p.chromium.launch(
         headless=True,
-        executable_path="/pw-browsers/chromium_headless_shell-1228/chrome-linux/headless_shell",
+        executable_path="/pw-browsers/chromium_headless_shell-1208/chrome-linux/headless_shell",
         args=["--no-sandbox"],
     )
     ctx = browser.new_context(viewport={"width": 390, "height": 844})

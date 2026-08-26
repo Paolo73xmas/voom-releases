@@ -505,8 +505,8 @@ export default function AnagraficaScreen() {
           category: 'prospect',
           agent_id: user.id,
           notes: customerNotes,
-          pec: form.pec || '',
-          sdi: form.sdi || '',
+          pec: form.pec.trim() || null,
+          sdi: form.sdi ? form.sdi.trim().toUpperCase() : null,
           tabaccheria_id: form.tabaccheriaId || null,
           // ✅ Web parity: nuove modifiche - progetto e IBAN
           project_type: form.projectType || 'nessun_progetto',

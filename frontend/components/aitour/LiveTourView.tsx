@@ -513,11 +513,14 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             );
             setStops(updated);
             const nk = info.nextKind || 'inspection';
-            setMessage(`Prospect creato: "${stop.candidate.name}" collegato alla tappa`);
             if (nk === 'inspection') {
               // Ispezione unificata: al rientro dall'acquisizione si apre direttamente l'esito
+              setMessage(
+                `Prospect creato: "${stop.candidate.name}" collegato alla tappa. Registra ora l'esito: se chiudi la schermata senza salvare, premi di nuovo ISPEZIONE per concludere la tappa.`
+              );
               setEsitoOpen(true);
             } else {
+              setMessage(`Prospect creato: "${stop.candidate.name}" collegato alla tappa`);
               const ctx: ExternalCtx = { tourId: tour.id, stopId: stop.id, customerId: custId, kind: nk, startedAt: new Date().toISOString() };
               await AsyncStorage.setItem(EXTERNAL_KEY, JSON.stringify(ctx));
               router.push({ pathname: '/order-collection-v2', params: { customerId: custId, customerName: stop.candidate.name } });
@@ -1415,6 +1418,15 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
                   Questa tappa non ha ancora una scheda cliente. Verrà avviata la Prima Visita con i dati della tabaccheria precompilati: al termine il
                   prospect sarà collegato alla tappa e proseguirai con {acquireKind === 'order' ? 'la Raccolta Ordine' : "l'Ispezione"}.
                 </Text>
+                <View style={[styles.dialogWarn, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]} testID="aitour-acquire-repress-warning">
+                  <Ionicons name="alert-circle" size={13} color="#DC2626" />
+                  <Text style={[styles.dialogWarnText, { color: '#991B1B', fontFamily: JAKARTA.bold }]}>
+                    IMPORTANTE: finita la raccolta dell&apos;anagrafica tornerai al giro e{' '}
+                    {acquireKind === 'order' ? 'si aprirà la Raccolta Ordine' : 'si aprirà la schermata di esito'}. Se NON si apre da sola (o la chiudi
+                    senza salvare), premi di nuovo il tasto {acquireKind === 'order' ? 'RACCOLTA ORDINE' : 'ISPEZIONE'} per concludere correttamente
+                    l&apos;operazione: altrimenti la tappa resta aperta.
+                  </Text>
+                </View>
                 <View style={styles.dialogWarn}>
                   <Ionicons name="location" size={13} color="#92400E" />
                   <Text style={styles.dialogWarnText}>

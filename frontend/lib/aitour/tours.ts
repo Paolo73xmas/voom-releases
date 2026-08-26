@@ -53,6 +53,33 @@ export interface SavedTour {
   area_filter?: SavedAreaFilter | null;
 }
 
+function buildStopRows(tourId: string, plan: TourPlan) {
+  return plan.stops.map((s) => ({
+    tour_id: tourId,
+    entity_type: s.candidate.entityType,
+    customer_id: s.candidate.customerId,
+    tabaccheria_id: s.candidate.tabaccheriaId,
+    business_name: s.candidate.name,
+    address: s.candidate.address,
+    city: s.candidate.city,
+    province: s.candidate.province,
+    latitude: s.candidate.lat,
+    longitude: s.candidate.lng,
+    planned_sequence: s.sequence,
+    planned_arrival: minToTime(s.arrivalMin),
+    planned_departure: minToTime(s.departureMin),
+    planned_duration_minutes: s.candidate.visitMinutes,
+    travel_minutes: Math.round(s.travelMinFromPrev),
+    travel_km: Math.round(s.travelKmFromPrev * 10) / 10,
+    priority_score: s.candidate.score,
+    priority_class: s.candidate.priorityClass,
+    mandatory: s.mandatory,
+    status: 'planned',
+    ai_reason: s.candidate.reason,
+    preferred_slots: s.candidate.preferredSlots || null,
+  }));
+}
+
 export async function saveTour(agentId: string, plan: TourPlan): Promise<string> {
   const { data: tour, error } = await supabase
     .from('ai_tours')
@@ -88,31 +115,7 @@ export async function saveTour(agentId: string, plan: TourPlan): Promise<string>
     .single();
   if (error) throw error;
 
-  const stops = plan.stops.map((s) => ({
-    tour_id: tour.id,
-    entity_type: s.candidate.entityType,
-    customer_id: s.candidate.customerId,
-    tabaccheria_id: s.candidate.tabaccheriaId,
-    business_name: s.candidate.name,
-    address: s.candidate.address,
-    city: s.candidate.city,
-    province: s.candidate.province,
-    latitude: s.candidate.lat,
-    longitude: s.candidate.lng,
-    planned_sequence: s.sequence,
-    planned_arrival: minToTime(s.arrivalMin),
-    planned_departure: minToTime(s.departureMin),
-    planned_duration_minutes: s.candidate.visitMinutes,
-    travel_minutes: Math.round(s.travelMinFromPrev),
-    travel_km: Math.round(s.travelKmFromPrev * 10) / 10,
-    priority_score: s.candidate.score,
-    priority_class: s.candidate.priorityClass,
-    mandatory: s.mandatory,
-    status: 'planned',
-    ai_reason: s.candidate.reason,
-    preferred_slots: s.candidate.preferredSlots || null,
-  }));
-  const { error: stopsErr } = await supabase.from('ai_tour_stops').insert(stops);
+  const { error: stopsErr } = await supabase.from('ai_tour_stops').insert(buildStopRows(tour.id, plan));
   if (stopsErr) throw stopsErr;
 
   await supabase.from('ai_tour_events').insert({
@@ -121,6 +124,39 @@ export async function saveTour(agentId: string, plan: TourPlan): Promise<string>
     details: { visits: plan.stops.length, km: Math.round(plan.totalKm), day_type: plan.resolvedDayType },
   });
   return tour.id as string;
+}
+
+/**
+ * Sostituisce il piano di un tour SALVATO (status planned) con quello ricalcolato:
+ * update dell'header + delete/insert atomici delle tappe (parità web replaceTourPlan).
+ */
+export async function replaceTourPlan(tourId: string, plan: TourPlan): Promise<void> {
+  const { error: upErr } = await supabase
+    .from('ai_tours')
+    .update({
+      start_time: minToTime(plan.startMin),
+      end_time: minToTime(plan.endMin),
+      planned_visits: plan.stops.length,
+      planned_distance_km: Math.round(plan.totalKm * 10) / 10,
+      planned_drive_minutes: Math.round(plan.driveMin),
+      planned_visit_minutes: Math.round(plan.visitMin),
+      planned_buffer_minutes: Math.round(plan.bufferMin),
+      potential_value: Math.round(plan.potentialValue),
+      ai_summary: plan.aiSummary,
+      route_geometry: plan.geometry,
+    })
+    .eq('id', tourId)
+    .eq('status', 'planned');
+  if (upErr) throw upErr;
+  const { error: delErr } = await supabase.from('ai_tour_stops').delete().eq('tour_id', tourId);
+  if (delErr) throw delErr;
+  const { error: insErr } = await supabase.from('ai_tour_stops').insert(buildStopRows(tourId, plan));
+  if (insErr) throw insErr;
+  await supabase.from('ai_tour_events').insert({
+    tour_id: tourId,
+    event_type: 'recalc',
+    details: { visits: plan.stops.length, km: Math.round(plan.totalKm), source: 'edit_saved' },
+  });
 }
 
 export async function listTours(agentId: string): Promise<SavedTour[]> {

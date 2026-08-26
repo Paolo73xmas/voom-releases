@@ -1,5 +1,5 @@
 // AI Tour mobile: assistente AI per la pianificazione dei giri visita (parità logica con la web app).
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -23,15 +23,16 @@ import { hap } from '../lib/haptics';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { listAllZones, pointInZones, zoneLabel, type TerritoryZone } from '../lib/aitour/territories';
-import { loadCandidates, loadFreeTabaccherie } from '../lib/aitour/data';
+import { loadCandidates, loadFreeTabaccherie, type CandidatePool } from '../lib/aitour/data';
 import { scoreCandidates, computePortfolioStats } from '../lib/aitour/scoring';
-import { planTour, filterByArea, pickBestCluster, candidatesForDayType, type AreaFilter } from '../lib/aitour/planner';
+import { planTour, planFixedOrder, filterByArea, pickBestCluster, candidatesForDayType, type AreaFilter } from '../lib/aitour/planner';
 import { getStrategySummary, recommendDayType } from '../lib/aitour/ai';
-import { getSettings, saveTour, listTours, loadTourStops, deleteTour, type SavedTour } from '../lib/aitour/tours';
+import { getSettings, saveTour, listTours, loadTourStops, deleteTour, replaceTourPlan, type SavedTour } from '../lib/aitour/tours';
 import { getActiveTour, loadLiveState, startLiveTour, type LiveState } from '../lib/aitour/live';
 import { geocodeAddress } from '../lib/aitour/osrm';
 import { LiveTourView } from '../components/aitour/LiveTourView';
 import { TourMapView, type TourMapStop } from '../components/aitour/TourMapView';
+import { TourEditModal } from '../components/aitour/TourEditModal';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
 import { CandidateEntityBadge } from '../components/aitour/OrphanHistoryBadge';
@@ -188,9 +189,19 @@ export default function AITourScreen() {
   const [showExcluded, setShowExcluded] = useState(false);
   const [resultView, setResultView] = useState<'list' | 'map'>('list');
 
+  // Modifica giro (post-generazione e su tour salvato non ancora avviato)
+  const [pool, setPool] = useState<CandidatePool | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [loadingPool, setLoadingPool] = useState(false);
+  const [recalcing, setRecalcing] = useState(false);
+  const [viewedTourStatus, setViewedTourStatus] = useState<string | null>(null);
+  const allCandidates = useMemo(() => (pool ? [...pool.clients, ...pool.prospects, ...pool.orphans] : []), [pool]);
+
   // Visite obbligatorie
   const [search, setSearch] = useState('');
-  const [results, setResults] = useState<{ id: string; business_name: string; city: string | null }[]>([]);
+  const [results, setResults] = useState<
+    { id: string; business_name: string; city: string | null; address: string | null; contact_name: string | null; contact_surname: string | null }[]
+  >([]);
   const [selectedMandatory, setSelectedMandatory] = useState<{ id: string; business_name: string }[]>([]);
 
   // Tour salvati
@@ -199,6 +210,7 @@ export default function AITourScreen() {
 
   useEffect(() => {
     if (!agentId) return;
+    setPool(null);
     getSettings(agentId).then((s) => {
       setSettings(s);
       setForm((old) => ({ ...old, startTime: autoStartTime(old.date, s.work_start), endTime: s.work_end }));
@@ -243,13 +255,16 @@ export default function AITourScreen() {
       return;
     }
     const t = setTimeout(async () => {
+      // Ricerca su ragione sociale, nome/cognome referente, indirizzo e città (parità web)
+      const q = search.trim().replace(/[,()]/g, ' ').trim();
+      const pat = `%${q}%`;
       const { data } = await supabase
         .from('customers')
-        .select('id, business_name, city')
+        .select('id, business_name, city, address, contact_name, contact_surname')
         .eq('agent_id', agentId)
         .not('latitude', 'is', null)
-        .ilike('business_name', `%${search.trim()}%`)
-        .limit(8);
+        .or(`business_name.ilike.${pat},contact_name.ilike.${pat},contact_surname.ilike.${pat},address.ilike.${pat},city.ilike.${pat}`)
+        .limit(10);
       setResults(data || []);
     }, 300);
     return () => clearTimeout(t);
@@ -360,6 +375,8 @@ export default function AITourScreen() {
       setProgress('Analisi del portafoglio commerciale...');
       const loaded = await loadCandidates(agentId, settings);
       scoreCandidates([...loaded.clients, ...loaded.prospects, ...loaded.orphans], settings);
+      setPool(loaded);
+      setViewedTourStatus(null);
 
       let resolved: Exclude<DayType, 'ai'> = v.dayType === 'ai' ? 'mista' : v.dayType;
       let recommendation: string | null = null;
@@ -598,6 +615,82 @@ export default function AITourScreen() {
     }
   };
 
+  // Apre Modifica giro: per i tour salvati richiamati il pool candidati non è
+  // caricato, quindi lo carica al volo (serve per cercare/aggiungere tappe).
+  const openEdit = async () => {
+    if (!agentId) return;
+    hap.light();
+    if (!pool) {
+      setLoadingPool(true);
+      try {
+        const loaded = await loadCandidates(agentId, settings);
+        scoreCandidates([...loaded.clients, ...loaded.prospects, ...loaded.orphans], settings);
+        setPool(loaded);
+      } catch (err) {
+        console.error('[AITour] openEdit pool:', err);
+        setErrMsg('Errore nel caricamento dei clienti');
+        setLoadingPool(false);
+        return;
+      }
+      setLoadingPool(false);
+    }
+    setEditOpen(true);
+  };
+
+  // Ricalcolo dal pannello Modifica giro: ordine AI o sequenza manuale.
+  // Per un tour salvato richiamato (status planned) persiste subito le modifiche.
+  const recalc = async (keys: string[], mandatoryKeys: Set<string>, fixedOrder: boolean) => {
+    if (!plan) return;
+    setRecalcing(true);
+    setErrMsg('');
+    setInfoMsg('');
+    try {
+      const byKey = new Map(allCandidates.map((c) => [c.key, c]));
+      // Le tappe di un tour salvato possono non esistere nel pool (chiavi diverse): fallback ai candidati del piano
+      for (const s of plan.stops) if (!byKey.has(s.candidate.key)) byKey.set(s.candidate.key, s.candidate);
+      const chosen = keys.map((k) => byKey.get(k)).filter((c): c is TourCandidate => !!c);
+      let next: TourPlan;
+      if (fixedOrder) {
+        next = await planFixedOrder(chosen, plan);
+      } else {
+        next = await planTour({
+          candidates: chosen,
+          mandatoryKeys: new Set(chosen.map((c) => c.key)),
+          start: plan.start,
+          end: plan.end,
+          tourDate: plan.tourDate,
+          startMin: plan.startMin,
+          endMin: plan.endMin,
+          dayType: plan.dayType,
+          resolvedDayType: plan.resolvedDayType,
+          bufferPct: 0,
+          area: { mode: 'auto' },
+        });
+        // Le obbligatorie "vere" scelte dall'utente restano marcate
+        next.stops = next.stops.map((s) => ({ ...s, mandatory: mandatoryKeys.has(s.candidate.key) }));
+      }
+      next.areaLabel = plan.areaLabel;
+      next.aiRecommendation = plan.aiRecommendation;
+      next.areaFilter = plan.areaFilter;
+      next.aiSummary = await getStrategySummary(next);
+      setPlan(next);
+      setEditOpen(false);
+      hap.success();
+      if (readOnly && savedTourId && viewedTourStatus === 'planned') {
+        await replaceTourPlan(savedTourId, next);
+        if (tab === 'tours') loadSavedTours();
+        setInfoMsg('Giro ricalcolato e tour salvato aggiornato');
+      } else {
+        setInfoMsg('Giro ricalcolato');
+      }
+    } catch (err) {
+      console.error('[AITour] recalc:', err);
+      setErrMsg('Errore nel ricalcolo');
+    } finally {
+      setRecalcing(false);
+    }
+  };
+
   const save = async () => {
     if (!plan || !agentId || savedTourId) return;
     hap.medium();
@@ -784,6 +877,7 @@ export default function AITourScreen() {
       };
       setPlan(planLike);
       setSavedTourId(tour.id);
+      setViewedTourStatus(tour.status);
       setReadOnly(true);
       setPhase('result');
       setTab('genera');
@@ -1027,7 +1121,7 @@ export default function AITourScreen() {
           style={styles.searchInput}
           value={search}
           onChangeText={setSearch}
-          placeholder="Cerca cliente o prospect..."
+          placeholder="Cerca per nome, referente, indirizzo o città..."
           placeholderTextColor={DS.inkMuted}
         />
       </View>
@@ -1036,7 +1130,11 @@ export default function AITourScreen() {
           {results.map((r) => (
             <TouchableOpacity key={r.id} style={styles.resultRow} onPress={() => addMandatory(r)} activeOpacity={0.6}>
               <Text style={styles.resultName} numberOfLines={1}>
-                {r.business_name} <Text style={styles.resultCity}>{r.city || ''}</Text>
+                {r.business_name}
+                {(r.contact_name || r.contact_surname) ? (
+                  <Text style={styles.resultCity}> · {[r.contact_name, r.contact_surname].filter(Boolean).join(' ')}</Text>
+                ) : null}
+                <Text style={styles.resultCity}> {[r.address, r.city].filter(Boolean).join(', ')}</Text>
               </Text>
             </TouchableOpacity>
           ))}
@@ -1126,7 +1224,33 @@ export default function AITourScreen() {
               <Text style={[styles.actionBtnText, { color: '#FFF' }]}>{savedTourId ? 'Salvato' : 'Salva'}</Text>
             </TouchableOpacity>
           )}
+          {(!readOnly || viewedTourStatus === 'planned') && (
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={openEdit}
+              disabled={loadingPool || recalcing}
+              activeOpacity={0.7}
+              testID="aitour-edit-btn"
+            >
+              {loadingPool || recalcing ? (
+                <ActivityIndicator size="small" color={DS.ink2} />
+              ) : (
+                <Ionicons name="pencil" size={15} color={DS.ink2} />
+              )}
+              <Text style={styles.actionBtnText}>Modifica</Text>
+            </TouchableOpacity>
+          )}
         </View>
+
+        {/* Pannello Modifica giro */}
+        <TourEditModal
+          visible={editOpen}
+          onClose={() => setEditOpen(false)}
+          plan={plan}
+          allCandidates={allCandidates}
+          onRecalc={recalc}
+          recalcing={recalcing}
+        />
 
         {/* Meta */}
         <Text style={styles.resultMeta}>

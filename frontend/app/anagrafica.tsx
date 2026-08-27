@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
-import { uploadVisitPhotos } from '../lib/api/photos';
+import { uploadSinglePhoto, ensurePhotoBucket } from '../lib/api/photos';
 import { UploadProgressOverlay } from '../components/UploadProgressOverlay';
 import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
@@ -124,6 +124,9 @@ export default function AnagraficaScreen() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
+  // Salvataggio a prova di interruzione (parità web FirstVisit): progresso in memoria per il retry
+  const saveProgress = useRef<{ customerId: string | null; visitId: string | null; photosUploaded: number }>({ customerId: null, visitId: null, photosUploaded: 0 });
+  const [saveFailed, setSaveFailed] = useState<string | null>(null);
   const [isPhoneVisit, setIsPhoneVisit] = useState(false);
   const { stampPhoto, StamperView } = usePhotoStamper();
 
@@ -461,6 +464,156 @@ export default function AnagraficaScreen() {
   };
 
   // Submit
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  // Salva visita + foto in modo IDEMPOTENTE: al retry riprende esattamente da dove si era interrotto
+  const persistVisitAndPhotos = async (customerId: string, latitude: number, longitude: number): Promise<string> => {
+    if (!user) throw new Error('Utente non autenticato');
+    let visitId = saveProgress.current.visitId;
+    if (!visitId) {
+      const { data: visit, error: visitErr } = await supabase
+        .from('visits')
+        .insert({
+          customer_id: customerId,
+          agent_id: user.id,
+          visit_type: 'first_visit',
+          latitude, longitude,
+          gps_accuracy: gpsPosition?.accuracy || 0,
+          notes: form.notes,
+          visit_date: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (visitErr) throw new Error(`Errore creazione visita: ${visitErr.message}`);
+      visitId = visit.id as string;
+      saveProgress.current.visitId = visitId;
+    }
+    if (!isPhoneVisit && photos.length > 0 && saveProgress.current.photosUploaded < photos.length) {
+      if (saveProgress.current.photosUploaded === 0) await ensurePhotoBucket();
+      const ts = Date.now();
+      for (let i = saveProgress.current.photosUploaded; i < photos.length; i++) {
+        setUploadPct(Math.max(5, Math.round((i / photos.length) * 100)));
+        const p = photos[i];
+        const url = await uploadSinglePhoto(p.uri, `${user.id}/${customerId}/${ts}_${i}.jpg`);
+        if (!url) throw new Error(`Upload foto ${i + 1} fallito (connessione?)`);
+        const { error: phErr } = await supabase.from('visit_photos').insert({
+          visit_id: visitId,
+          photo_url: url,
+          latitude: p.gps?.lat || 0,
+          longitude: p.gps?.lon || 0,
+        });
+        if (phErr) throw new Error(`Registrazione foto ${i + 1} fallita: ${phErr.message}`);
+        saveProgress.current.photosUploaded = i + 1;
+        setUploadPct(Math.round(((i + 1) / photos.length) * 100));
+      }
+    }
+    return visitId;
+  };
+
+  // Dopo la creazione del cliente: visita+foto con RETRY automatico (3 tentativi);
+  // se fallisce, schermata bloccante VISITA NON SALVATA con RIPROVA (niente perdita foto).
+  const completeSubmission = async (customerId: string, latitude: number, longitude: number): Promise<void> => {
+    if (!user) return;
+    let visitId: string | null = null;
+    let lastErr: unknown = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        visitId = await persistVisitAndPhotos(customerId, latitude, longitude);
+        lastErr = null;
+        break;
+      } catch (err) {
+        console.error(`[Anagrafica] salvataggio visita/foto fallito (tentativo ${attempt}/3):`, err);
+        lastErr = err;
+        if (attempt < 3) await sleep(1200 * attempt);
+      }
+    }
+    setUploadPct(null);
+    if (!visitId) {
+      setSaveFailed(lastErr instanceof Error ? lastErr.message : 'Errore di connessione');
+      return;
+    }
+    setSaveFailed(null);
+    console.log('[Anagrafica] Visita creata:', visitId, '- foto:', saveProgress.current.photosUploaded);
+
+    // Passi secondari: non devono MAI far perdere visita/foto già salvate
+    try {
+      const emailValue = form.contactEmail && emailRegex.test(form.contactEmail) ? form.contactEmail : null;
+      if (form.tabaccheriaId) {
+        await supabase.from('tabaccherie').update({
+          stato_visita: 'visitato',
+          agente_id: user.id,
+          customer_id: customerId,
+          // Sync dedicated columns + legacy cf_iva
+          partita_iva: form.vatNumber || null,
+          codice_fiscale: form.fiscalCode || null,
+          cf_iva: form.vatNumber || form.fiscalCode || null,
+        }).eq('id', form.tabaccheriaId);
+      } else {
+        const codice = await generateUniqueCodiceRivendita();
+        const { data: newTab, error: tabErr } = await supabase.from('tabaccherie').insert({
+          codice_rivendita: codice,
+          denominazione: form.businessName,
+          indirizzo: form.address,
+          comune: form.city,
+          cap: form.postalCode,
+          provincia: form.province,
+          telefono_mobile: form.contactPhone || null,
+          email: emailValue,
+          partita_iva: form.vatNumber || null,
+          codice_fiscale: form.fiscalCode || null,
+          cf_iva: form.vatNumber || form.fiscalCode || null,
+          gps_lat: latitude.toString(),
+          gps_lng: longitude.toString(),
+          stato_visita: 'visitato',
+          agente_id: user.id,
+          customer_id: customerId,
+        }).select().single();
+        if (tabErr) {
+          console.error('Tabaccheria insert error:', tabErr);
+        } else if (newTab) {
+          // Link customer back to the new tabaccheria
+          await supabase.from('customers')
+            .update({ tabaccheria_id: newTab.id })
+            .eq('id', customerId);
+        }
+      }
+
+      // Optional appointment
+      if (scheduleAppointment && appointmentDate) {
+        await supabase.from('appointments').insert({
+          customer_id: customerId,
+          agent_id: user.id,
+          created_by_id: user.id,
+          appointment_date: appointmentDate,
+          appointment_type: 'follow_up',
+          status: 'scheduled',
+          notes: appointmentNotes || null,
+        });
+      }
+    } catch (err) {
+      console.warn('[Anagrafica] aggiornamenti secondari falliti (visita e foto comunque salvate):', err);
+    }
+
+    Alert.alert('Completato!', 'Anagrafica registrata con successo.', [
+      { text: 'OK', onPress: () => router.back() },
+    ]);
+  };
+
+  // Bottone RIPROVA della schermata bloccante
+  const retryFinalize = async () => {
+    const customerId = saveProgress.current.customerId;
+    if (!customerId) { setSaveFailed(null); return; }
+    setSaveFailed(null);
+    setLoading(true);
+    try {
+      const latitude = tabaccheriaGps?.lat ?? gpsPosition?.lat ?? 0;
+      const longitude = tabaccheriaGps?.lng ?? gpsPosition?.lng ?? 0;
+      await completeSubmission(customerId, latitude, longitude);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user) return;
     setLoading(true);
@@ -487,130 +640,50 @@ export default function AnagraficaScreen() {
         source: tabaccheriaGps ? 'tabaccheria' : (gpsPosition ? 'agent_device' : 'none'),
       });
 
-      // Create customer
-      const { data: customer, error: custErr } = await supabase
-        .from('customers')
-        .insert({
-          business_name: form.businessName,
-          address: form.address,
-          city: form.city,
-          province: form.province,
-          postal_code: form.postalCode,
-          latitude, longitude,
-          contact_name: form.contactName,
-          contact_surname: form.contactSurname,
-          contact_phone: form.contactPhone || null,
-          contact_email: emailValue,
-          vat_number: form.vatNumber,
-          fiscal_code: form.fiscalCode,
-          customer_type: form.customerType,
-          category: 'prospect',
-          agent_id: user.id,
-          notes: customerNotes,
-          pec: form.pec.trim() || null,
-          sdi: form.sdi ? form.sdi.trim().toUpperCase() : null,
-          tabaccheria_id: form.tabaccheriaId || null,
-          // ✅ Web parity: nuove modifiche - progetto e IBAN
-          project_type: form.projectType || 'nessun_progetto',
-          iban: form.iban ? form.iban.trim().toUpperCase() : null,
-          preferred_visit_slots: form.preferredVisitSlots.length > 0 ? form.preferredVisitSlots : null,
-          excluded_visit_days: form.excludedVisitDays.length > 0 ? form.excludedVisitDays : null,
-          first_visit_date: new Date().toISOString(),
-          last_visit_date: new Date().toISOString(),
-        })
-        .select().single();
-
-      if (custErr) throw new Error(`Errore creazione cliente: ${custErr.message}`);
-
-      // Create visit
-      const { data: visit, error: visitErr } = await supabase
-        .from('visits')
-        .insert({
-          customer_id: customer.id,
-          agent_id: user.id,
-          visit_type: 'first_visit',
-          latitude, longitude,
-          gps_accuracy: gpsPosition?.accuracy || 0,
-          notes: form.notes,
-          status: 'completed',
-          visit_date: new Date().toISOString(),
-        })
-        .select()
-        .single();
-      if (visitErr) console.error('Visit insert error:', visitErr);
-
-      // Upload photos to visit_photos table
-      if (photos.length > 0 && !isPhoneVisit && visit) {
-        try {
-          setUploadPct(5);
-          const photoObjects = photos.map(p => ({ uri: p.uri, latitude: p.gps.lat, longitude: p.gps.lon }));
-          const photoUrls = await uploadVisitPhotos(photoObjects, user.id, customer.id, visit.id, (done, total) =>
-            setUploadPct(Math.max(5, Math.round((done / total) * 100))));
-          console.log(`[Anagrafica] ${photoUrls.length}/${photos.length} foto caricate in visit_photos`);
-        } catch (uploadErr) {
-          console.warn('[Anagrafica] Errore upload foto (non bloccante):', uploadErr);
-        } finally {
-          setUploadPct(null);
-        }
-      }
-
-      // Update or create tabaccheria
-      if (form.tabaccheriaId) {
-        await supabase.from('tabaccherie').update({
-          stato_visita: 'visitato',
-          agente_id: user.id,
-          customer_id: customer.id,
-          // Sync dedicated columns + legacy cf_iva
-          partita_iva: form.vatNumber || null,
-          codice_fiscale: form.fiscalCode || null,
-          cf_iva: form.vatNumber || form.fiscalCode || null,
-        }).eq('id', form.tabaccheriaId);
+      // Cliente: riusa quello già creato in un tentativo precedente (retry idempotente)
+      let customerId = saveProgress.current.customerId;
+      if (customerId) {
+        console.log('[Anagrafica] Cliente già creato in un tentativo precedente, riuso:', customerId);
       } else {
-        const codice = await generateUniqueCodiceRivendita();
-        const { data: newTab, error: tabErr } = await supabase.from('tabaccherie').insert({
-          codice_rivendita: codice,
-          denominazione: form.businessName,
-          indirizzo: form.address,
-          comune: form.city,
-          cap: form.postalCode,
-          provincia: form.province,
-          telefono_mobile: form.contactPhone || null,
-          email: emailValue,
-          partita_iva: form.vatNumber || null,
-          codice_fiscale: form.fiscalCode || null,
-          cf_iva: form.vatNumber || form.fiscalCode || null,
-          gps_lat: latitude.toString(),
-          gps_lng: longitude.toString(),
-          stato_visita: 'visitato',
-          agente_id: user.id,
-          customer_id: customer.id,
-        }).select().single();
-        if (tabErr) {
-          console.error('Tabaccheria insert error:', tabErr);
-        } else if (newTab) {
-          // Link customer back to the new tabaccheria
-          await supabase.from('customers')
-            .update({ tabaccheria_id: newTab.id })
-            .eq('id', customer.id);
-        }
+        const { data: customer, error: custErr } = await supabase
+          .from('customers')
+          .insert({
+            business_name: form.businessName,
+            address: form.address,
+            city: form.city,
+            province: form.province,
+            postal_code: form.postalCode,
+            latitude, longitude,
+            contact_name: form.contactName,
+            contact_surname: form.contactSurname,
+            contact_phone: form.contactPhone || null,
+            contact_email: emailValue,
+            vat_number: form.vatNumber,
+            fiscal_code: form.fiscalCode,
+            customer_type: form.customerType,
+            category: 'prospect',
+            agent_id: user.id,
+            notes: customerNotes,
+            pec: form.pec.trim() || null,
+            sdi: form.sdi ? form.sdi.trim().toUpperCase() : null,
+            tabaccheria_id: form.tabaccheriaId || null,
+            // ✅ Web parity: nuove modifiche - progetto e IBAN
+            project_type: form.projectType || 'nessun_progetto',
+            iban: form.iban ? form.iban.trim().toUpperCase() : null,
+            preferred_visit_slots: form.preferredVisitSlots.length > 0 ? form.preferredVisitSlots : null,
+            excluded_visit_days: form.excludedVisitDays.length > 0 ? form.excludedVisitDays : null,
+            first_visit_date: new Date().toISOString(),
+            last_visit_date: new Date().toISOString(),
+          })
+          .select().single();
+
+        if (custErr) throw new Error(`Errore creazione cliente: ${custErr.message}`);
+        customerId = customer.id as string;
+        saveProgress.current.customerId = customerId;
       }
 
-      // Optional appointment
-      if (scheduleAppointment && appointmentDate) {
-        await supabase.from('appointments').insert({
-          customer_id: customer.id,
-          agent_id: user.id,
-          created_by_id: user.id,
-          appointment_date: appointmentDate,
-          appointment_type: 'follow_up',
-          status: 'scheduled',
-          notes: appointmentNotes || null,
-        });
-      }
-
-      Alert.alert('Completato!', 'Anagrafica registrata con successo.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      // Visita + foto con retry automatico; passi secondari (tabaccheria/appuntamento) e navigazione inclusi
+      await completeSubmission(customerId, latitude, longitude);
     } catch (error: any) {
       Alert.alert('Errore', error.message || 'Impossibile completare la registrazione.');
     } finally {
@@ -1040,6 +1113,33 @@ export default function AnagraficaScreen() {
       </Modal>
       {/* Invio foto in corso: barra 0-100%, non chiudere l'app */}
       <UploadProgressOverlay visible={uploadPct != null} progress={uploadPct ?? 0} label="Invio foto visita" />
+      {/* Schermata BLOCCANTE (parità web): visita/foto non salvate, le foto sono in memoria — RIPROVA */}
+      <Modal visible={!!saveFailed} transparent animationType="fade" onRequestClose={() => {}}>
+        <View style={styles.saveFailedBackdrop} testID="first-visit-save-failed-overlay">
+          <View style={styles.saveFailedCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="alert-circle" size={28} color="#DC2626" />
+              <Text style={styles.saveFailedTitle} testID="first-visit-save-failed-title">VISITA NON SALVATA</Text>
+            </View>
+            <Text style={styles.saveFailedText}>
+              La scheda cliente è stata creata, ma <Text style={{ fontWeight: '800' }}>la visita e le foto ({photos.length}) NON sono ancora state salvate</Text> per un problema di connessione.
+            </Text>
+            <Text style={styles.saveFailedWarn}>NON chiudere l&apos;app: le foto sono ancora in memoria e verranno reinviate.</Text>
+            {saveFailed && saveFailed !== 'Errore di connessione' ? (
+              <Text style={styles.saveFailedDetail} numberOfLines={3}>Dettaglio: {saveFailed}</Text>
+            ) : null}
+            <TouchableOpacity
+              style={[styles.saveFailedBtn, loading && { opacity: 0.6 }]}
+              onPress={retryFinalize}
+              disabled={loading}
+              activeOpacity={0.8}
+              testID="first-visit-save-retry-button"
+            >
+              {loading ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveFailedBtnText}>RIPROVA ADESSO</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1076,6 +1176,14 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  saveFailedBackdrop: { flex: 1, backgroundColor: 'rgba(69,10,10,0.96)', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  saveFailedCard: { width: '100%', maxWidth: 400, backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 4, borderColor: '#DC2626', padding: 18, gap: 10 },
+  saveFailedTitle: { fontSize: 20, fontWeight: '900', color: '#B91C1C', letterSpacing: 0.3 },
+  saveFailedText: { fontSize: 14, color: '#1F2937', lineHeight: 20 },
+  saveFailedWarn: { fontSize: 14, fontWeight: '800', color: '#B91C1C', lineHeight: 20 },
+  saveFailedDetail: { fontSize: 11, color: '#6B7280' },
+  saveFailedBtn: { height: 50, borderRadius: 10, backgroundColor: '#DC2626', alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+  saveFailedBtnText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
   container: { flex: 1, backgroundColor: COLORS.bgAlt },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   backBtn: { flexDirection: 'row', alignItems: 'center', height: 44, paddingRight: 8, gap: 4 },

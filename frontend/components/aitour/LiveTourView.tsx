@@ -587,6 +587,14 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
 
   const handleEsito = async (outcome: string, note: string, followUpDate: string | null, followUpTime: string | null, extras: EsitoExtras) => {
     if (!next) return;
+    if (!next.candidate.customerId) {
+      // Nessuna scheda cliente: l'esito con foto non può essere registrato (le foto andrebbero perse).
+      // Stesso percorso del tasto Ispezione: prima l'anagrafica (Prima Visita), poi di nuovo Ispezione.
+      setEsitoOpen(false);
+      setAcquireKind('inspection');
+      setMessage("Questa tappa non ha una scheda cliente: completa prima l'anagrafica (Prima Visita). Al termine premi di nuovo ISPEZIONE per registrare l'esito con le foto.");
+      return;
+    }
     setBusy(true);
     try {
       await completeStop(tour, next, { outcome, note, followUpDate, followUpTime });
@@ -748,14 +756,14 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         // ricalcolo già in corso: la tappa è comunque FUORI dal giro,
         // il riallineamento orari parte automaticamente appena finisce
         pendingTrashRecalcRef.current = true;
-        setMessage(`Visita "${target.candidate.name}" cestinata: è fuori dal giro, gli orari si aggiornano a fine ricalcolo.`);
+        setMessage(`"${target.candidate.name}" cestinata: non verrà più riproposta in questo giro. Orari in aggiornamento a fine ricalcolo.`);
       } else {
         setTrashing(false);
-        await runRecalc(updated, `Visita "${target.candidate.name}" cestinata`);
+        await runRecalc(updated, `"${target.candidate.name}" cestinata (non verrà più riproposta in questo giro)`);
       }
     } catch (err) {
       console.error('[AITour][live] cestino:', err);
-      setMessage(`ATTENZIONE: la visita "${target.candidate.name}" NON è stata cestinata (errore di rete?). Riprova.`);
+      setMessage(`ATTENZIONE: cestino NON riuscito, "${target.candidate.name}" è ancora nel giro. Riprova.`);
     } finally {
       setTrashing(false);
     }
@@ -1495,10 +1503,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             </Text>
             <View style={styles.dialogFooter}>
               <TouchableOpacity style={styles.dialogCancel} onPress={() => setTrashTarget(null)} activeOpacity={0.7} testID="aitour-trash-cancel">
-                <Text style={styles.dialogCancelText}>Annulla</Text>
+                <Text style={styles.dialogCancelText}>No, mantieni la visita</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.dialogConfirm, { backgroundColor: '#DC2626' }]} onPress={handleTrash} disabled={trashing} activeOpacity={0.7} testID="aitour-trash-confirm">
-                {trashing ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.dialogConfirmText}>Cestina</Text>}
+                {trashing ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.dialogConfirmText}>Sì, cestina la visita</Text>}
               </TouchableOpacity>
             </View>
           </View>

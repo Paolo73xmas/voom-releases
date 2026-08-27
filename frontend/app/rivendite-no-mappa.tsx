@@ -272,8 +272,8 @@ export default function RivenditeNoMappaScreen() {
       // 3. Link customer → tabaccheria
       await supabase.from('customers').update({ tabaccheria_id: newTab.id }).eq('id', customer.id);
 
-      // 4. Create visit
-      const { data: visit } = await supabase.from('visits').insert({
+      // 4. Create visit (NB: la tabella visits NON ha la colonna status — l'insert fallirebbe in silenzio)
+      const { data: visit, error: visitErr } = await supabase.from('visits').insert({
         customer_id: customer.id,
         agent_id: user.id,
         visit_type: 'first_visit',
@@ -281,9 +281,9 @@ export default function RivenditeNoMappaScreen() {
         longitude: finalLng,
         gps_accuracy: useManualGPS ? 0 : (gpsAccuracy || 0),
         notes: form.notes || 'Rivendita registrata fuori mappa',
-        status: 'completed',
         visit_date: new Date().toISOString(),
       }).select().single();
+      if (visitErr) console.error('[OffMap] Visit insert error:', visitErr);
 
       // 5. Upload photos to visit_photos table
       if (photos.length > 0 && visit) {

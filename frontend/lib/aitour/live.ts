@@ -268,11 +268,13 @@ export async function completeStop(tour: SavedTour, stop: LiveStop, esito: Esito
 }
 
 export async function skipStop(tourId: string, stopId: string, reason: string, note: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('ai_tour_stops')
     .update({ status: 'skipped', skip_reason: note ? `${reason}: ${note}` : reason })
-    .eq('id', stopId);
+    .eq('id', stopId)
+    .select('id');
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error('Salto non registrato: nessuna riga aggiornata');
   await logEvent(tourId, 'skipped', stopId, { reason, note });
 }
 
@@ -280,11 +282,13 @@ export const TRASH_REASON = "Visita cestinata dall'agente";
 
 // Visita cestinata dall'agente: esce dal giro (il caller ricalcola) e viene segnalata come tale
 export async function trashStop(tourId: string, stopId: string, name: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('ai_tour_stops')
     .update({ status: 'cancelled', skip_reason: TRASH_REASON })
-    .eq('id', stopId);
+    .eq('id', stopId)
+    .select('id');
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error('Cestino non registrato: nessuna riga aggiornata');
   await logEvent(tourId, 'stop_trashed', stopId, { stop: name });
 }
 
@@ -427,11 +431,37 @@ export async function updateTourPosition(tourId: string, lat: number, lng: numbe
     .eq('id', tourId);
 }
 
-// Traccia percorso reale: salva un punto GPS nella tabella di tracking condivisa
+// Traccia percorso reale: salva un punto GPS nella tabella di tracking condivisa.
+// Filtro anti-teletrasporto (parità web): scarta punti che implicano una velocità
+// impossibile (>170 km/h) rispetto all'ultima posizione recente (<30 min) — glitch GPS.
+const MAX_TRACK_SPEED_KMH = 170;
+
 export async function recordTrackPoint(agentId: string, lat: number, lng: number): Promise<void> {
+  const now = Date.now();
+  try {
+    const { data: last } = await supabase
+      .from('app_4d4e73c9f0_gps_tracking')
+      .select('latitude, longitude, timestamp')
+      .eq('user_id', agentId)
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (last && last.latitude != null && last.longitude != null) {
+      const dtHours = Math.max((now - Number(last.timestamp)) / 3600000, 1 / 3600);
+      if (dtHours < 0.5) {
+        const km = haversineKm(Number(last.latitude), Number(last.longitude), lat, lng);
+        if (km / dtHours > MAX_TRACK_SPEED_KMH) {
+          console.warn(`[AITour][live] punto GPS scartato: salto di ${km.toFixed(1)} km in ${(dtHours * 60).toFixed(1)} min — probabile glitch GPS`);
+          return;
+        }
+      }
+    }
+  } catch {
+    // il filtro non deve mai bloccare il tracking
+  }
   await supabase
     .from('app_4d4e73c9f0_gps_tracking')
-    .insert({ user_id: agentId, latitude: lat, longitude: lng, timestamp: Date.now() });
+    .insert({ user_id: agentId, latitude: lat, longitude: lng, timestamp: now });
 }
 
 // Acquisizione prospect dal tour: cliente collegato alla tabaccheria dopo la Prima Visita

@@ -24,6 +24,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { uploadVisitPhotos } from '../lib/api/photos';
+import { UploadProgressOverlay } from '../components/UploadProgressOverlay';
 import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
 import { VisitSlotWheel } from '../components/customers/VisitSlotWheel';
@@ -122,6 +123,7 @@ export default function AnagraficaScreen() {
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [isPhoneVisit, setIsPhoneVisit] = useState(false);
   const { stampPhoto, StamperView } = usePhotoStamper();
 
@@ -540,11 +542,15 @@ export default function AnagraficaScreen() {
       // Upload photos to visit_photos table
       if (photos.length > 0 && !isPhoneVisit && visit) {
         try {
+          setUploadPct(5);
           const photoObjects = photos.map(p => ({ uri: p.uri, latitude: p.gps.lat, longitude: p.gps.lon }));
-          const photoUrls = await uploadVisitPhotos(photoObjects, user.id, customer.id, visit.id);
+          const photoUrls = await uploadVisitPhotos(photoObjects, user.id, customer.id, visit.id, (done, total) =>
+            setUploadPct(Math.max(5, Math.round((done / total) * 100))));
           console.log(`[Anagrafica] ${photoUrls.length}/${photos.length} foto caricate in visit_photos`);
         } catch (uploadErr) {
           console.warn('[Anagrafica] Errore upload foto (non bloccante):', uploadErr);
+        } finally {
+          setUploadPct(null);
         }
       }
 
@@ -1032,6 +1038,8 @@ export default function AnagraficaScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+      {/* Invio foto in corso: barra 0-100%, non chiudere l'app */}
+      <UploadProgressOverlay visible={uploadPct != null} progress={uploadPct ?? 0} label="Invio foto visita" />
     </View>
   );
 }

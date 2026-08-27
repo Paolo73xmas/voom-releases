@@ -74,6 +74,7 @@ export async function createTourInspection(args: {
   longitude: number;
   photos: { uri: string }[];
   gps: { lat: number; lon: number };
+  onProgress?: (done: number, total: number) => void;
 }): Promise<void> {
   const { data: inspection, error } = await supabase
     .from('inspections')
@@ -104,6 +105,7 @@ export async function createTourInspection(args: {
     const publicUrl = await uploadSinglePhoto(args.photos[i].uri, fileName, 'inspection_photos');
     if (!publicUrl) {
       console.warn(`[createTourInspection] upload foto ${i + 1} fallito`);
+      args.onProgress?.(i + 1, args.photos.length);
       continue;
     }
     const { error: photoError } = await supabase.from('inspection_photos').insert({
@@ -114,6 +116,7 @@ export async function createTourInspection(args: {
       photo_order: i + 1,
     });
     if (photoError) console.warn(`[createTourInspection] record foto ${i + 1}:`, photoError.message);
+    args.onProgress?.(i + 1, args.photos.length);
   }
 }
 

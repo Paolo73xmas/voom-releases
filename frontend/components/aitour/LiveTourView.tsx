@@ -72,9 +72,15 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [extendError, setExtendError] = useState<string | null>(null);
   // Cestinare una visita: conferma prima di rimuoverla dal giro
   const [trashTarget, setTrashTarget] = useState<LiveStop | null>(null);
+  const [trashing, setTrashing] = useState(false);
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
   const tour = initial.tour;
   const stopsRef = useRef(stops);
   stopsRef.current = stops;
+  // Cestino sempre disponibile: se un ricalcolo è in corso, la cestinatura viene
+  // comunque salvata subito e il riallineamento orari parte a fine ricalcolo
+  const recalcingRef = useRef(false);
+  const pendingTrashRecalcRef = useRef(false);
 
   // Avviso di prossimità: tabaccheria da acquisire a <3 km dalla posizione o dal percorso
   const [proxSuggestion, setProxSuggestion] = useState<(TourCandidate & { distKm: number }) | null>(null);
@@ -232,6 +238,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         return;
       }
       setRecalcing(true);
+      recalcingRef.current = true;
       try {
         const pos = (await getCurrentPos()) || fallbackPos();
         const start: GeoPoint = { ...pos, label: 'Posizione attuale' };
@@ -266,17 +273,21 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         await updateLiveSequence(tour.id, updates);
 
         const updById = new Map(updates.map((u) => [u.stopId, u]));
-        const merged = currentStops.map((s): LiveStop => {
-          const u = updById.get(s.id);
-          if (u) return { ...s, plannedArrival: u.arrival, travelMinutes: Math.round(u.travelMin), travelKm: u.travelKm };
-          return s;
+        // Aggiornamento FUNZIONALE sullo stato più recente: una tappa cestinata o gestita
+        // MENTRE il ricalcolo era in corso non deve tornare nel giro (orari applicati solo alle planned)
+        setStops((prev) => {
+          const merged = prev.map((s): LiveStop => {
+            const u = updById.get(s.id);
+            if (u && s.status === 'planned') return { ...s, plannedArrival: u.arrival, travelMinutes: Math.round(u.travelMin), travelKm: u.travelKm };
+            return s;
+          });
+          merged.sort((a, b) => {
+            const ra = a.status === 'planned' ? (updById.get(a.id)?.seq ?? 999) : -1;
+            const rb = b.status === 'planned' ? (updById.get(b.id)?.seq ?? 999) : -1;
+            return ra - rb;
+          });
+          return merged;
         });
-        merged.sort((a, b) => {
-          const ra = a.status === 'planned' ? (updById.get(a.id)?.seq ?? 999) : -1;
-          const rb = b.status === 'planned' ? (updById.get(b.id)?.seq ?? 999) : -1;
-          return ra - rb;
-        });
-        setStops(merged);
 
         let msg = `${reasonPrefix ? `${reasonPrefix} — ` : ''}Giro ricalcolato alle ${minToTime(nowMin())}.`;
         msg += ` ${plan.stops.length} visite rimanenti, fine prevista ${minToTime(plan.finishMin)}.`;
@@ -299,10 +310,18 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         setMessage('Errore nel ricalcolo del giro');
       } finally {
         setRecalcing(false);
+        recalcingRef.current = false;
+        // Cestinature arrivate DURANTE il ricalcolo: riallinea subito gli orari sul giro aggiornato
+        if (pendingTrashRecalcRef.current) {
+          pendingTrashRecalcRef.current = false;
+          setTimeout(() => runRecalcRef.current(stopsRef.current, 'Aggiornamento dopo la cestinatura'), 400);
+        }
       }
     },
     [tour, endMin, initial.endPoint, fallbackPos, settings]
   );
+  const runRecalcRef = useRef(runRecalc);
+  runRecalcRef.current = runRecalc;
 
   // Ricalcolo AUTOMATICO: controllo ogni minuto; se il ritardo sulla prossima tappa
   // supera la soglia, l'AI ricalcola il giro da sola (orari, sequenza, eventuali tagli
@@ -606,6 +625,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         // 3) Foto (obbligatorie) -> ispezione nella sezione Ispezioni (bucket inspection_photos)
         if (extras.photos.length > 0) {
           try {
+            setUploadPct(5);
             const pos = await getCurrentPos();
             const gps = pos ? { lat: pos.lat, lon: pos.lng } : { lat: next.candidate.lat, lon: next.candidate.lng };
             await createTourInspection({
@@ -616,10 +636,13 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               longitude: gps.lon,
               photos: extras.photos,
               gps,
+              onProgress: (done, total) => setUploadPct(Math.max(5, Math.round((done / total) * 100))),
             });
           } catch (err) {
             console.warn('[AITour][live] registrazione ispezione con foto fallita:', err);
             setMessage('Foto non salvate nella sezione Ispezioni (esito comunque registrato)');
+          } finally {
+            setUploadPct(null);
           }
         }
         // 4) Orfano / mai visitato / prospect -> torna cliente o prospect in base agli ordini
@@ -707,22 +730,34 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     }
   };
 
-  // Visita cestinata: esce dal giro, viene segnalata come tale e gli orari si ricalcolano
+  // Visita cestinata: la scrittura su DB avviene SUBITO (anche durante un ricalcolo,
+  // così nessuna cestinatura va persa); il ricalcolo orari parte subito o viene accodato.
   const handleTrash = async () => {
-    if (!trashTarget) return;
-    setBusy(true);
+    if (!trashTarget || trashing) return;
+    const target = trashTarget;
+    // Stato dedicato (non "busy"): la conferma deve funzionare ANCHE mentre
+    // gira il ricalcolo di una cestinatura precedente, altrimenti il tap va perso
+    setTrashing(true);
     try {
-      await trashStop(tour.id, trashTarget.id, trashTarget.candidate.name);
-      const updated = stops.map((s): LiveStop => (s.id === trashTarget.id ? { ...s, status: 'cancelled', skipReason: TRASH_REASON } : s));
+      await trashStop(tour.id, target.id, target.candidate.name);
+      const updated = stopsRef.current.map((s): LiveStop => (s.id === target.id ? { ...s, status: 'cancelled', skipReason: TRASH_REASON } : s));
       setStops(updated);
       setTrashTarget(null);
       hap.success();
-      await runRecalc(updated, `Visita "${trashTarget.candidate.name}" cestinata`);
+      if (recalcingRef.current) {
+        // ricalcolo già in corso: la tappa è comunque FUORI dal giro,
+        // il riallineamento orari parte automaticamente appena finisce
+        pendingTrashRecalcRef.current = true;
+        setMessage(`Visita "${target.candidate.name}" cestinata: è fuori dal giro, gli orari si aggiornano a fine ricalcolo.`);
+      } else {
+        setTrashing(false);
+        await runRecalc(updated, `Visita "${target.candidate.name}" cestinata`);
+      }
     } catch (err) {
       console.error('[AITour][live] cestino:', err);
-      setMessage('Errore nella cestinatura della visita');
+      setMessage(`ATTENZIONE: la visita "${target.candidate.name}" NON è stata cestinata (errore di rete?). Riprova.`);
     } finally {
-      setBusy(false);
+      setTrashing(false);
     }
   };
 
@@ -1293,9 +1328,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
                   hap.light();
                   setTrashTarget(s);
                 }}
-                disabled={busy || recalcing}
                 hitSlop={8}
-                style={{ padding: 2, opacity: busy || recalcing ? 0.4 : 1 }}
+                style={{ padding: 2 }}
                 testID={`aitour-live-trash-${i + 1}`}
               >
                 <Ionicons name="trash-outline" size={16} color="#EF4444" />
@@ -1333,7 +1367,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         </View>
       )}
 
-      <EsitoModal visible={esitoOpen} stopName={next?.candidate.name || ''} stopId={next?.id || null} customerId={next?.candidate.customerId || null} saving={busy} onClose={() => setEsitoOpen(false)} onConfirm={handleEsito} />
+      <EsitoModal visible={esitoOpen} stopName={next?.candidate.name || ''} stopId={next?.id || null} customerId={next?.candidate.customerId || null} saving={busy} uploadPct={uploadPct} onClose={() => setEsitoOpen(false)} onConfirm={handleEsito} />
 
       {/* Avviso esplicito: cliente orfano riassegnato all'agente */}
       <Modal visible={!!reassigned} transparent animationType="fade" onRequestClose={() => setReassigned(null)}>
@@ -1463,8 +1497,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               <TouchableOpacity style={styles.dialogCancel} onPress={() => setTrashTarget(null)} activeOpacity={0.7} testID="aitour-trash-cancel">
                 <Text style={styles.dialogCancelText}>Annulla</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.dialogConfirm, { backgroundColor: '#DC2626' }]} onPress={handleTrash} disabled={busy} activeOpacity={0.7} testID="aitour-trash-confirm">
-                {busy ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.dialogConfirmText}>Cestina</Text>}
+              <TouchableOpacity style={[styles.dialogConfirm, { backgroundColor: '#DC2626' }]} onPress={handleTrash} disabled={trashing} activeOpacity={0.7} testID="aitour-trash-confirm">
+                {trashing ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.dialogConfirmText}>Cestina</Text>}
               </TouchableOpacity>
             </View>
           </View>

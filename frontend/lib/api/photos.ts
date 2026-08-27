@@ -84,11 +84,13 @@ export async function uploadSinglePhoto(
 
 /**
  * Upload multiple photos to Supabase Storage.
+ * onProgress: avanzamento (foto completate / totali) per la barra di invio.
  */
 export async function uploadPhotosToStorage(
   photos: { uri: string }[],
   userId: string,
-  entityId: string
+  entityId: string,
+  onProgress?: (done: number, total: number) => void
 ): Promise<string[]> {
   if (photos.length === 0) return [];
 
@@ -96,6 +98,7 @@ export async function uploadPhotosToStorage(
 
   const timestamp = Date.now();
   const urls: string[] = [];
+  onProgress?.(0, photos.length);
 
   for (let i = 0; i < photos.length; i++) {
     const path = `${userId}/${entityId}/${timestamp}_${i}.jpg`;
@@ -103,6 +106,7 @@ export async function uploadPhotosToStorage(
     if (url) {
       urls.push(url);
     }
+    onProgress?.(i + 1, photos.length);
   }
 
   console.log(`[Photos] Uploaded ${urls.length}/${photos.length} photos successfully`);
@@ -116,9 +120,10 @@ export async function uploadInspectionPhotos(
   photos: { uri: string }[],
   userId: string,
   inspectionId: string,
-  customerId: string
+  customerId: string,
+  onProgress?: (done: number, total: number) => void
 ): Promise<string[]> {
-  const urls = await uploadPhotosToStorage(photos, userId, customerId);
+  const urls = await uploadPhotosToStorage(photos, userId, customerId, onProgress);
 
   for (const url of urls) {
     const { error } = await supabase.from('inspection_photos').insert({
@@ -140,10 +145,11 @@ export async function uploadVisitPhotos(
   photos: { uri: string; latitude?: number; longitude?: number }[],
   userId: string,
   customerId: string,
-  visitId?: string
+  visitId?: string,
+  onProgress?: (done: number, total: number) => void
 ): Promise<string[]> {
   const photoObjects = photos.map(p => ({ uri: p.uri }));
-  const urls = await uploadPhotosToStorage(photoObjects, userId, customerId);
+  const urls = await uploadPhotosToStorage(photoObjects, userId, customerId, onProgress);
 
   if (visitId) {
     for (let i = 0; i < urls.length; i++) {

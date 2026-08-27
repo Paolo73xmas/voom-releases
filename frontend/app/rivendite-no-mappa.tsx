@@ -12,6 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { uploadVisitPhotos } from '../lib/api/photos';
+import { UploadProgressOverlay } from '../components/UploadProgressOverlay';
 import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
 
@@ -29,6 +30,7 @@ export default function RivenditeNoMappaScreen() {
   // Wizard step
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
 
   // GPS
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -286,11 +288,15 @@ export default function RivenditeNoMappaScreen() {
       // 5. Upload photos to visit_photos table
       if (photos.length > 0 && visit) {
         try {
+          setUploadPct(5);
           const photoObjects = photos.map(p => ({ uri: p.uri, latitude: p.latitude, longitude: p.longitude }));
-          const photoUrls = await uploadVisitPhotos(photoObjects, user.id, customer.id, visit.id);
+          const photoUrls = await uploadVisitPhotos(photoObjects, user.id, customer.id, visit.id, (done, total) =>
+            setUploadPct(Math.max(5, Math.round((done / total) * 100))));
           console.log(`[OffMap] ${photoUrls.length}/${photos.length} foto caricate in visit_photos`);
         } catch (uploadErr) {
           console.warn('[OffMap] Errore upload foto (non bloccante):', uploadErr);
+        } finally {
+          setUploadPct(null);
         }
       }
 
@@ -602,6 +608,8 @@ export default function RivenditeNoMappaScreen() {
           </TouchableOpacity>
         )}
       </View>
+      {/* Invio foto in corso: barra 0-100%, non chiudere l'app */}
+      <UploadProgressOverlay visible={uploadPct != null} progress={uploadPct ?? 0} label="Invio foto visita" />
     </View>
   );
 }

@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 import { AI_PURPLE, AI_PURPLE_SOFT } from './shared';
 import { VisitSlotWheel } from '../customers/VisitSlotWheel';
 import { ExcludedDaysPicker } from '../customers/ExcludedDaysPicker';
+import { UploadProgressOverlay } from '../UploadProgressOverlay';
 
 const ALERT_RED = currentThemeMode === 'dark' ? '#F87171' : '#DC2626';
 
@@ -66,6 +67,8 @@ interface Props {
   stopId?: string | null;
   customerId?: string | null;
   saving: boolean;
+  /** Avanzamento invio foto (0-100); null = nessun invio in corso */
+  uploadPct?: number | null;
   onClose: () => void;
   onConfirm: (outcome: string, note: string, followUpDate: string | null, followUpTime: string | null, extras: EsitoExtras) => void;
 }
@@ -80,7 +83,7 @@ export interface EsitoExtras {
   excludedDays: number[] | null;
 }
 
-export function EsitoModal({ visible, stopName, stopId, customerId, saving, onClose, onConfirm }: Props) {
+export function EsitoModal({ visible, stopName, stopId, customerId, saving, uploadPct, onClose, onConfirm }: Props) {
   const [outcome, setOutcome] = useState('');
   const [note, setNote] = useState('');
   const [followUpDays, setFollowUpDays] = useState<number | null>(null);
@@ -336,6 +339,8 @@ export function EsitoModal({ visible, stopName, stopId, customerId, saving, onCl
             </TouchableOpacity>
           </View>
         </View>
+        {/* Invio foto in corso: barra 0-100%, non chiudere l'app (modal annidato: resta sopra su iOS) */}
+        <UploadProgressOverlay visible={uploadPct != null} progress={uploadPct ?? 0} label="Invio foto ispezione" />
       </KeyboardAvoidingView>
     </Modal>
   );

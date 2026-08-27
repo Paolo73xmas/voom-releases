@@ -20,6 +20,7 @@ import { useAuthStore } from '../../store/authStore';
 import { fetchCustomerById, fetchCustomers } from '../../lib/api/customers';
 import { createInspection } from '../../lib/api/inspections';
 import { uploadInspectionPhotos } from '../../lib/api/photos';
+import { UploadProgressOverlay } from '../../components/UploadProgressOverlay';
 import { Customer } from '../../types';
 import { usePhotoStamper } from '../../components/PhotoStamper';
 import { COLORS } from '../../lib/theme';
@@ -30,6 +31,7 @@ export default function NewInspectionScreen() {
   const { user } = useAuthStore();
   
   const [loading, setLoading] = useState(false);
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -172,11 +174,15 @@ export default function NewInspectionScreen() {
       // Upload photos to inspection_photos table
       if (photos.length > 0) {
         try {
+          setUploadPct(5);
           const photoObjects = photos.map(uri => ({ uri }));
-          const photoUrls = await uploadInspectionPhotos(photoObjects, user.id, inspection.id, selectedCustomer.id);
+          const photoUrls = await uploadInspectionPhotos(photoObjects, user.id, inspection.id, selectedCustomer.id, (done, total) =>
+            setUploadPct(Math.max(5, Math.round((done / total) * 100))));
           console.log(`[Inspection] ${photoUrls.length}/${photos.length} foto caricate in inspection_photos`);
         } catch (uploadErr) {
           console.warn('[Inspection] Errore upload foto (non bloccante):', uploadErr);
+        } finally {
+          setUploadPct(null);
         }
       }
 
@@ -345,6 +351,8 @@ export default function NewInspectionScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+      {/* Invio foto in corso: barra 0-100%, non chiudere l'app */}
+      <UploadProgressOverlay visible={uploadPct != null} progress={uploadPct ?? 0} label="Invio foto ispezione" />
     </KeyboardAvoidingView>
   );
 }

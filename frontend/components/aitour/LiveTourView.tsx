@@ -74,6 +74,11 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [trashTarget, setTrashTarget] = useState<LiveStop | null>(null);
   const [trashing, setTrashing] = useState(false);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
+  // Stato GPS per il chip nella barra live (aggiornato dal battito posizione)
+  const [gpsOk, setGpsOk] = useState<boolean | null>(null);
+  // Orologio reattivo (30s) per l'avviso "oltre orario di fine giro"
+  const [nowTick, setNowTick] = useState(nowMin());
+  const [overtimeEnd, setOvertimeEnd] = useState('');
   const tour = initial.tour;
   const stopsRef = useRef(stops);
   stopsRef.current = stops;
@@ -81,11 +86,31 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   // comunque salvata subito e il riallineamento orari parte a fine ricalcolo
   const recalcingRef = useRef(false);
   const pendingTrashRecalcRef = useRef(false);
+  // Vero mentre l'agente sta compilando un dialog o c'è un'operazione in corso: il sync non deve strappare la vista
+  const uiBusyRef = useRef(false);
+  uiBusyRef.current = busy || recalcing || esitoOpen || skipOpen || recapOpen || !!acquireKind || !!trashTarget || addOpen || reorderOpen || extendOpen;
+
+  // Retry di rete per le azioni critiche del live: 3 tentativi con attesa crescente (dati mai persi in silenzio)
+  const withRetry = useCallback(async <T,>(fn: () => Promise<T>, label: string): Promise<T> => {
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastErr = err;
+        console.warn(`[AITour][live] ${label}: tentativo ${attempt}/3 fallito`, err);
+        if (attempt < 3) await new Promise((r) => setTimeout(r, 1000 * attempt));
+      }
+    }
+    throw lastErr;
+  }, []);
 
   // Avviso di prossimità: tabaccheria da acquisire a <3 km dalla posizione o dal percorso
   const [proxSuggestion, setProxSuggestion] = useState<(TourCandidate & { distKm: number }) | null>(null);
   const proxSuggestionRef = useRef(proxSuggestion);
   proxSuggestionRef.current = proxSuggestion;
+  const suggestionRef = useRef(suggestion);
+  suggestionRef.current = suggestion;
   const proxDismissedRef = useRef<Set<string>>(new Set());
   const proxBusyRef = useRef(false);
   const areaCheckRef = useRef<((c: { lat: number; lng: number; province?: string; city?: string }) => boolean) | null>(null);
@@ -124,6 +149,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       }
       const exclude = new Set<string>(proxDismissedRef.current);
       for (const s of stopsRef.current) if (s.candidate.tabaccheriaId) exclude.add(s.candidate.tabaccheriaId);
+      // Dedup: lo stesso punto vendita non deve comparire su due banner (margine + prossimità)
+      if (suggestionRef.current?.cand.tabaccheriaId) exclude.add(suggestionRef.current.cand.tabaccheriaId);
       const route = stopsRef.current
         .filter((s) => s.status === 'planned')
         .map((s) => ({ lat: s.candidate.lat, lng: s.candidate.lng }));
@@ -159,7 +186,9 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     let stopped = false;
     const beat = async () => {
       const pos = await getCurrentPos();
-      if (!stopped && pos) {
+      if (stopped) return;
+      setGpsOk(!!pos);
+      if (pos) {
         updateTourPosition(tour.id, pos.lat, pos.lng).catch(() => {});
         recordTrackPoint(tour.agent_id, pos.lat, pos.lng).catch(() => {});
         checkProximityRef.current(pos).catch(() => {});
@@ -186,14 +215,19 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           onExit();
           return;
         }
-        const { data: ids } = await supabase.from('ai_tour_stops').select('id').eq('tour_id', tour.id);
+        const { data: ids } = await supabase.from('ai_tour_stops').select('id,status').eq('tour_id', tour.id);
         if (stopped || !ids) return;
-        const known = new Set(stopsRef.current.map((s) => s.id));
-        if (ids.some((r) => !known.has(r.id as string))) {
+        const known = new Map(stopsRef.current.map((s) => [s.id, s.status]));
+        const hasNew = ids.some((r) => !known.has(r.id as string));
+        const hasChanged = ids.some((r) => known.has(r.id as string) && known.get(r.id as string) !== (r.status as string));
+        if (hasNew || hasChanged) {
+          if (uiBusyRef.current) return; // dialog aperto o operazione in corso: riallinea al prossimo giro
           const st = await loadLiveState(tour);
           if (stopped) return;
           setStops(st.stops);
-          setMessage("L'amministratore ha aggiunto una tappa al tuo giro: percorso aggiornato");
+          setMessage(hasNew
+            ? "L'amministratore ha aggiunto una tappa al tuo giro: percorso aggiornato"
+            : "Il tuo giro è stato aggiornato dall'amministratore: percorso riallineato");
         }
       } catch {
         // sync silenziosa: riprova al prossimo giro
@@ -209,6 +243,16 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
 
   const pending = useMemo(() => stops.filter((s) => s.status === 'planned' || s.status === 'arrived'), [stops]);
   const next = pending[0] || null;
+
+  // Avviso "oltre orario di fine giro": orologio reattivo + orario di posticipo predefinito (+1h)
+  useEffect(() => {
+    const iv = setInterval(() => setNowTick(nowMin()), 30000);
+    return () => clearInterval(iv);
+  }, []);
+  const overTime = nowTick >= endMin && pending.length > 0;
+  useEffect(() => {
+    if (overTime && !overtimeEnd) setOvertimeEnd(minToTime(Math.min(nowTick + 60, 23 * 60 + 59)));
+  }, [overTime, nowTick, overtimeEnd]);
   // Numerazione STABILE del giro: ogni tappa mantiene il proprio numero progressivo
   // anche dopo esiti/salti (la successiva alla n.1 resta n.2, non torna n.1)
   const stopNumbers = useMemo(() => new Map(stops.map((s, i) => [s.id, i + 1])), [stops]);
@@ -225,7 +269,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const delayMin = next?.plannedArrival && next.status === 'planned' ? nowMin() - timeToMin(next.plannedArrival) : 0;
 
   const runRecalc = useCallback(
-    async (currentStops: LiveStop[], reasonPrefix?: string, startOffsetMin = 0) => {
+    async (currentStops: LiveStop[], reasonPrefix?: string, startOffsetMin = 0, endOverride?: number) => {
+      const effEnd = endOverride ?? endMin;
       const remaining = currentStops.filter((s) => s.status === 'planned');
       if (remaining.length === 0) {
         setMessage('Tutte le visite sono state gestite: puoi terminare il tour.');
@@ -233,8 +278,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       }
       // Guardia: oltre l'orario di fine tour il ricalcolo azzererebbe il giro (tutte
       // le tappe risulterebbero "fuori orario"). Non tocchiamo nulla: l'agente decide.
-      if (nowMin() + startOffsetMin >= endMin) {
-        setMessage(`Sei oltre l'orario di fine tour (${minToTime(endMin)}): il giro non viene ricalcolato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
+      if (nowMin() + startOffsetMin >= effEnd) {
+        setMessage(`Sei oltre l'orario di fine tour (${minToTime(effEnd)}): il giro non viene ricalcolato. Le ${remaining.length} tappe restano attive — posticipa la fine giro dal riquadro rosso, prosegui manualmente o termina il tour.`);
         return;
       }
       setRecalcing(true);
@@ -251,7 +296,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           end: initial.endPoint,
           tourDate: tour.tour_date,
           startMin: nowMin() + startOffsetMin,
-          endMin,
+          endMin: effEnd,
           dayType: tour.tour_type as DayType,
           resolvedDayType: (tour.resolved_tour_type || 'mista') as Exclude<DayType, 'ai'>,
           bufferPct: 5,
@@ -261,7 +306,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         });
         // Guardia anti-azzeramento: se il planner non restituisce nulla non toccare il giro
         if (plan.stops.length === 0) {
-          setMessage(`Tempo residuo insufficiente per ripianificare entro le ${minToTime(endMin)}: il giro non viene modificato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
+          setMessage(`Tempo residuo insufficiente per ripianificare entro le ${minToTime(effEnd)}: il giro non viene modificato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
           return;
         }
 
@@ -291,15 +336,18 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
 
         let msg = `${reasonPrefix ? `${reasonPrefix} — ` : ''}Giro ricalcolato alle ${minToTime(nowMin())}.`;
         msg += ` ${plan.stops.length} visite rimanenti, fine prevista ${minToTime(plan.finishMin)}.`;
-        if (plan.finishMin > endMin) {
-          msg += ` Attenzione: la fine prevista supera le ${minToTime(endMin)} — nessuna tappa è stata rimossa: se vuoi alleggerire il giro usa il cestino rosso o "Salta".`;
+        if (plan.finishMin > effEnd) {
+          msg += ` Attenzione: la fine prevista supera le ${minToTime(effEnd)} — nessuna tappa è stata rimossa: se vuoi alleggerire il giro usa il cestino rosso o "Salta".`;
         }
         setMessage(msg);
 
         // Recupero tempo: se resta molto margine, proponi una visita vicina
-        const slack = endMin - plan.finishMin;
+        const slack = effEnd - plan.finishMin;
         if (slack >= 25) {
           const exclude = new Set(currentStops.map((s) => s.candidate.tabaccheriaId).filter((x): x is string => !!x));
+          // Dedup: niente ripetizione dei punti vendita rifiutati o già suggeriti in prossimità
+          for (const id of proxDismissedRef.current) exclude.add(id);
+          if (proxSuggestionRef.current?.tabaccheriaId) exclude.add(proxSuggestionRef.current.tabaccheriaId);
           const sugg = await suggestNearby(pos, exclude, settings);
           if (sugg) setSuggestion({ cand: sugg, slack: Math.round(slack) });
         } else {
@@ -411,11 +459,11 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     hap.medium();
     setBusy(true);
     try {
-      await markArrived(tour.id, next.id);
+      await withRetry(() => markArrived(tour.id, next.id), 'sono arrivato');
       setStops(stops.map((s) => (s.id === next.id ? { ...s, status: 'arrived', actualArrival: new Date().toISOString() } : s)));
     } catch (err) {
       console.error('[AITour][live] arrived:', err);
-      setMessage('Errore nella registrazione dell\u2019arrivo');
+      setMessage('Arrivo NON registrato (problema di connessione?). Riprova.');
     } finally {
       setBusy(false);
     }
@@ -597,7 +645,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     }
     setBusy(true);
     try {
-      await completeStop(tour, next, { outcome, note, followUpDate, followUpTime });
+      await withRetry(() => completeStop(tour, next, { outcome, note, followUpDate, followUpTime }), 'registrazione esito');
       const customerId = next.candidate.customerId;
       if (customerId) {
         // 1) Cliente ORFANO ispezionato di persona -> riassegnazione PRIMA di tutto
@@ -636,7 +684,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             setUploadPct(5);
             const pos = await getCurrentPos();
             const gps = pos ? { lat: pos.lat, lon: pos.lng } : { lat: next.candidate.lat, lon: next.candidate.lng };
-            await createTourInspection({
+            const insp = await withRetry(() => createTourInspection({
               customer_id: customerId,
               agent_id: tour.agent_id,
               notes: `[AI Tour] Esito: ${outcome}${note ? ` — ${note}` : ''}`,
@@ -645,10 +693,13 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               photos: extras.photos,
               gps,
               onProgress: (done, total) => setUploadPct(Math.max(5, Math.round((done / total) * 100))),
-            });
+            }), 'ispezione con foto');
+            if (insp.photoFailures > 0) {
+              setMessage(`ATTENZIONE: ${insp.photoFailures} foto su ${extras.photos.length} NON salvate (connessione). Rifalle dalla scheda cliente nella sezione Ispezioni.`);
+            }
           } catch (err) {
             console.warn('[AITour][live] registrazione ispezione con foto fallita:', err);
-            setMessage('Foto non salvate nella sezione Ispezioni (esito comunque registrato)');
+            setMessage('FOTO NON SALVATE nella sezione Ispezioni (esito comunque registrato): rifalle dalla scheda cliente');
           } finally {
             setUploadPct(null);
           }
@@ -671,7 +722,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       await runRecalc(updated);
     } catch (err) {
       console.error('[AITour][live] esito:', err);
-      setMessage('Errore nella registrazione dell\u2019esito');
+      setMessage('Esito NON registrato (problema di connessione?). I dati e le foto sono ancora qui: riprova tra qualche secondo.');
     } finally {
       setBusy(false);
     }
@@ -683,7 +734,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     try {
       if (revisitTime) {
         // Ripasso in giornata: la tappa resta nel giro con finestra oraria attorno all'ora scelta
-        await scheduleRevisit(tour.id, next.id, revisitTime, reason);
+        await withRetry(() => scheduleRevisit(tour.id, next.id, revisitTime, reason), 'ripasso in giornata');
         const slot = revisitSlotFor(revisitTime);
         const updated = stops.map((s) => (s.id === next.id
           ? { ...s, status: 'planned' as const, actualArrival: null, candidate: { ...s.candidate, preferredSlots: [slot] } }
@@ -694,17 +745,27 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         await runRecalc(updated, `Ripasso "${next.candidate.name}" alle ${revisitTime}`);
         return;
       }
-      await skipStop(tour.id, next.id, reason, note);
+      await withRetry(() => skipStop(tour.id, next.id, reason, note), 'salto tappa');
       const updated = stops.map((s) => (s.id === next.id ? { ...s, status: 'skipped' as const, skipReason: reason } : s));
       setStops(updated);
       setSkipOpen(false);
       await runRecalc(updated);
     } catch (err) {
       console.error('[AITour][live] skip:', err);
-      setMessage('Errore nel salto della visita');
+      setMessage('Salto NON registrato (problema di connessione?). La tappa è ancora nel giro: riprova.');
     } finally {
       setBusy(false);
     }
+  };
+
+  // Rifiuto del suggerimento "tempo di margine": memorizzato come i suggerimenti di prossimità,
+  // così lo stesso punto vendita non viene riproposto nel resto del giro (né duplicato su due banner)
+  const declineSuggestion = () => {
+    if (suggestion?.cand.tabaccheriaId) {
+      proxDismissedRef.current.add(suggestion.cand.tabaccheriaId);
+      AsyncStorage.setItem(`aitour_prox_dismissed_${tour.id}`, JSON.stringify([...proxDismissedRef.current])).catch(() => {});
+    }
+    setSuggestion(null);
   };
 
   const acceptSuggestion = async () => {
@@ -747,7 +808,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     // gira il ricalcolo di una cestinatura precedente, altrimenti il tap va perso
     setTrashing(true);
     try {
-      await trashStop(tour.id, target.id, target.candidate.name);
+      await withRetry(() => trashStop(tour.id, target.id, target.candidate.name), 'cestino visita');
       const updated = stopsRef.current.map((s): LiveStop => (s.id === target.id ? { ...s, status: 'cancelled', skipReason: TRASH_REASON } : s));
       setStops(updated);
       setTrashTarget(null);
@@ -922,13 +983,34 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const handleFinish = async () => {
     setBusy(true);
     try {
-      await finishLiveTour(tour.id);
+      await withRetry(() => finishLiveTour(tour.id), 'termina tour');
       setRecapOpen(false);
       hap.success();
       onExit();
     } catch (err) {
       console.error('[AITour][live] finish:', err);
-      setMessage('Errore nella chiusura del tour');
+      setMessage('Chiusura NON registrata (problema di connessione?). Riprova.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Posticipa la fine giro quando si è oltre l'orario con tappe rimanenti
+  const handlePostponeEnd = async () => {
+    const newEnd = overtimeEnd ? timeToMin(overtimeEnd) : 0;
+    if (!overtimeEnd || newEnd <= nowMin()) {
+      setMessage('Indica un orario di fine successivo ad adesso (formato HH:MM)');
+      return;
+    }
+    setBusy(true);
+    try {
+      await withRetry(() => extendTourEndTime(tour.id, overtimeEnd), 'posticipo fine giro');
+      setEndMin(newEnd);
+      hap.success();
+      await runRecalc(stopsRef.current, 'Fine giro posticipata', 0, newEnd);
+    } catch (err) {
+      console.error('[AITour][live] posticipo fine giro:', err);
+      setMessage('Posticipo NON registrato (problema di connessione?). Riprova.');
     } finally {
       setBusy(false);
     }
@@ -978,6 +1060,15 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           {doneCount} fatte · {skipCount} saltate · {pending.length} rimanenti
         </Text>
         <OwnStaminaChip />
+        <View
+          style={[styles.gpsChip, { backgroundColor: gpsOk === false ? '#FEE2E2' : gpsOk ? '#D1FAE5' : DS.surface2 }]}
+          testID="aitour-live-gps-chip"
+        >
+          <Ionicons name="location" size={10} color={gpsOk === false ? '#991B1B' : gpsOk ? '#047857' : DS.inkMuted} />
+          <Text style={[styles.gpsChipText, { color: gpsOk === false ? '#991B1B' : gpsOk ? '#047857' : DS.inkMuted }]}>
+            {gpsOk === false ? 'GPS assente' : gpsOk ? 'GPS OK' : 'GPS...'}
+          </Text>
+        </View>
         {next && Math.abs(delayMin) > 5 && (
           <View style={[styles.delayBadge, { backgroundColor: delayMin > 0 ? '#FEE2E2' : '#D1FAE5' }]}>
             <Text style={[styles.delayText, { color: delayMin > 0 ? '#991B1B' : '#047857' }]}>
@@ -986,6 +1077,49 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           </View>
         )}
       </View>
+
+      {/* Oltre l'orario di fine giro con tappe rimanenti: posticipa o termina */}
+      {overTime && (
+        <View style={styles.overtimeBox} testID="aitour-live-overtime">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="time" size={14} color="#DC2626" />
+            <Text style={styles.overtimeTitle}>Oltre l&apos;orario di fine giro ({minToTime(endMin)})</Text>
+          </View>
+          <Text style={styles.overtimeText}>
+            Hai ancora {pending.length} {pending.length === 1 ? 'tappa rimanente' : 'tappe rimanenti'}. Posticipa la fine per continuare con orari ricalcolati, oppure termina il tour.
+          </Text>
+          <View style={styles.overtimeRow}>
+            <TextInput
+              style={styles.overtimeInput}
+              value={overtimeEnd}
+              onChangeText={setOvertimeEnd}
+              placeholder="HH:MM"
+              placeholderTextColor={DS.inkMuted}
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+              testID="aitour-live-overtime-time"
+            />
+            <TouchableOpacity
+              style={[styles.overtimeBtn, (busy || recalcing) && { opacity: 0.5 }]}
+              onPress={handlePostponeEnd}
+              disabled={busy || recalcing}
+              activeOpacity={0.7}
+              testID="aitour-live-overtime-extend-btn"
+            >
+              <Text style={styles.overtimeBtnText}>Posticipa fine giro</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.overtimeGhostBtn, busy && { opacity: 0.5 }]}
+              onPress={() => setRecapOpen(true)}
+              disabled={busy}
+              activeOpacity={0.7}
+              testID="aitour-live-overtime-finish-btn"
+            >
+              <Text style={styles.overtimeGhostText}>Termina Tour</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Operazioni live sul giro: pausa pranzo, aggiungi tappa, riordina */}
       <View style={styles.liveOpsRow}>
@@ -1131,7 +1265,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             <TouchableOpacity style={styles.suggAccept} onPress={acceptSuggestion} disabled={busy} activeOpacity={0.7}>
               <Text style={styles.suggAcceptText}>Aggiungi</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.suggDecline} onPress={() => setSuggestion(null)} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.suggDecline} onPress={declineSuggestion} activeOpacity={0.7}>
               <Text style={styles.suggDeclineText}>No, grazie</Text>
             </TouchableOpacity>
           </View>
@@ -1685,6 +1819,17 @@ const styles = StyleSheet.create({
   finishBtnText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: '#FFF' },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 7, flexWrap: 'wrap' },
   progressText: { fontFamily: JAKARTA.medium, fontSize: 11, color: DS.inkMuted },
+  gpsChip: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },
+  gpsChipText: { fontFamily: JAKARTA.semibold, fontSize: 10 },
+  overtimeBox: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 10, padding: 10, marginTop: 8, gap: 6 },
+  overtimeTitle: { fontFamily: JAKARTA.bold, fontSize: 12.5, color: '#991B1B' },
+  overtimeText: { fontFamily: JAKARTA.regular, fontSize: 11.5, color: '#7F1D1D', lineHeight: 16 },
+  overtimeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  overtimeInput: { borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, fontFamily: JAKARTA.semibold, fontSize: 13, color: '#7F1D1D', backgroundColor: '#FFF', width: 76, textAlign: 'center' },
+  overtimeBtn: { backgroundColor: '#DC2626', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
+  overtimeBtnText: { fontFamily: JAKARTA.bold, fontSize: 11.5, color: '#FFF' },
+  overtimeGhostBtn: { borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#FFF' },
+  overtimeGhostText: { fontFamily: JAKARTA.semibold, fontSize: 11.5, color: '#991B1B' },
   delayBadge: { borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },
   delayText: { fontFamily: JAKARTA.semibold, fontSize: 10 },
   liveOpsRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 9, flexWrap: 'wrap' },

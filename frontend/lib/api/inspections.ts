@@ -66,6 +66,11 @@ export async function createInspection(inspectionData: {
  * record inspections con status 'completed', aggiornamento last_visit_date del cliente,
  * foto caricate nel bucket 'inspection_photos' + record inspection_photos (gps + ordine).
  */
+/**
+ * Registra un'ispezione (con foto) generata dall'esito di una tappa AI Tour.
+ * Ogni foto ha un retry (2 tentativi); i fallimenti definitivi vengono conteggiati
+ * e riferiti al chiamante (photoFailures) per avvisare l'agente.
+ */
 export async function createTourInspection(args: {
   customer_id: string;
   agent_id: string;
@@ -75,7 +80,7 @@ export async function createTourInspection(args: {
   photos: { uri: string }[];
   gps: { lat: number; lon: number };
   onProgress?: (done: number, total: number) => void;
-}): Promise<void> {
+}): Promise<{ photoFailures: number }> {
   const { data: inspection, error } = await supabase
     .from('inspections')
     .insert({
@@ -98,26 +103,34 @@ export async function createTourInspection(args: {
     .eq('id', args.customer_id);
   if (visitDateError) console.warn('[createTourInspection] last_visit_date:', visitDateError.message);
 
+  let photoFailures = 0;
   for (let i = 0; i < args.photos.length; i++) {
-    const timestamp = Date.now();
-    const randomStr = Math.random().toString(36).substring(2, 15);
-    const fileName = `${inspection.id}/${timestamp}_${randomStr}_${i + 1}.jpg`;
-    const publicUrl = await uploadSinglePhoto(args.photos[i].uri, fileName, 'inspection_photos');
-    if (!publicUrl) {
-      console.warn(`[createTourInspection] upload foto ${i + 1} fallito`);
-      args.onProgress?.(i + 1, args.photos.length);
-      continue;
+    let saved = false;
+    for (let attempt = 1; attempt <= 2 && !saved; attempt++) {
+      try {
+        const timestamp = Date.now();
+        const randomStr = Math.random().toString(36).substring(2, 15);
+        const fileName = `${inspection.id}/${timestamp}_${randomStr}_${i + 1}.jpg`;
+        const publicUrl = await uploadSinglePhoto(args.photos[i].uri, fileName, 'inspection_photos');
+        if (!publicUrl) throw new Error('upload fallito');
+        const { error: photoError } = await supabase.from('inspection_photos').insert({
+          inspection_id: inspection.id,
+          photo_url: publicUrl,
+          gps_lat: args.gps.lat,
+          gps_lng: args.gps.lon,
+          photo_order: i + 1,
+        });
+        if (photoError) throw photoError;
+        saved = true;
+      } catch (err) {
+        console.warn(`[createTourInspection] foto ${i + 1} (tentativo ${attempt}/2):`, err);
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1200));
+      }
     }
-    const { error: photoError } = await supabase.from('inspection_photos').insert({
-      inspection_id: inspection.id,
-      photo_url: publicUrl,
-      gps_lat: args.gps.lat,
-      gps_lng: args.gps.lon,
-      photo_order: i + 1,
-    });
-    if (photoError) console.warn(`[createTourInspection] record foto ${i + 1}:`, photoError.message);
+    if (!saved) photoFailures++;
     args.onProgress?.(i + 1, args.photos.length);
   }
+  return { photoFailures };
 }
 
 export function getInspectionStatusLabel(status: string): string {

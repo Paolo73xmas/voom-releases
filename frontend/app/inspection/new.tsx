@@ -179,8 +179,24 @@ export default function NewInspectionScreen() {
           const photoUrls = await uploadInspectionPhotos(photoObjects, user.id, inspection.id, selectedCustomer.id, (done, total) =>
             setUploadPct(Math.max(5, Math.round((done / total) * 100))));
           console.log(`[Inspection] ${photoUrls.length}/${photos.length} foto caricate in inspection_photos`);
+          if (photoUrls.length < photos.length) {
+            setUploadPct(null);
+            Alert.alert(
+              'Attenzione: foto mancanti',
+              `Ispezione creata ma ${photos.length - photoUrls.length} foto su ${photos.length} NON sono state salvate (connessione). Riaprila e ricarica le foto mancanti.`,
+              [{ text: 'OK', onPress: () => router.back() }]
+            );
+            return;
+          }
         } catch (uploadErr) {
-          console.warn('[Inspection] Errore upload foto (non bloccante):', uploadErr);
+          console.warn('[Inspection] Errore upload foto:', uploadErr);
+          setUploadPct(null);
+          Alert.alert(
+            'Attenzione: foto non salvate',
+            'Ispezione creata ma le foto NON sono state salvate (connessione). Riaprila e ricarica le foto.',
+            [{ text: 'OK', onPress: () => router.back() }]
+          );
+          return;
         } finally {
           setUploadPct(null);
         }

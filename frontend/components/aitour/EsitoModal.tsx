@@ -23,7 +23,7 @@ export const ESITO_OPTIONS = [
   { value: 'da_richiamare', label: 'Da richiamare' },
   { value: 'appuntamento_fissato', label: 'Appuntamento fissato' },
   { value: 'titolare_assente', label: 'Titolare assente' },
-  { value: 'chiuso', label: 'Chiuso' },
+  { value: 'chiuso', label: 'Chiuso definitivamente' },
   { value: 'non_trovato', label: 'Non trovato' },
   { value: 'altro', label: 'Altro' },
 ];

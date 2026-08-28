@@ -218,6 +218,18 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
   - Commit skippati con motivazione: 18e463a tile CARTO→OSM (mobile già OSM ovunque), bb957a0 (dialog Genera Fatture admin; mobile già null-safe sui contatti), 2fc4e5d/b0f1a11/26638cd (sottozone admin web), 88b96e8/c3afd93/1d90a84 (portale supplier Jivea), 481eaae (retrigger deploy).
   - **VERIFICATO E2E**: retry-flow completo con rete visits bloccata via Playwright route-abort (schermata VISITA NON SALVATA apparsa dopo 3 tentativi → rete ripristinata → RIPROVA → 1 solo cliente, 1 sola visita, 0 tabaccherie create, cleanup completo); cestino con nuove etichette + messaggio esplicito su tour sintetico (poi eliminato); tsc/lint puliti.
 
+- **Allineamento origin/main (giu 2026, commit 0132b09 — "AI Tour più fluido")**:
+  1) **withRetry** (LiveTourView): 3 tentativi con backoff su arrivo/esito/salta/ripasso/cestino/termina/posticipo — messaggi di errore ESPLICITI ("Esito NON registrato... i dati e le foto sono ancora qui: riprova").
+  2) **Sync admin completo**: il polling 60s ora rileva anche tappe MODIFICATE/RIMOSSE dall'admin (select id,status + confronto known Map), con guard `uiBusyRef` (nessun riallineamento mentre un dialog è aperto o un'operazione è in corso) e messaggio differenziato.
+  3) **Chip stato GPS** nella barra live (testID aitour-live-gps-chip): verde "GPS OK" / rosso "GPS assente" / neutro "GPS...", aggiornato dal battito posizione.
+  4) **Avviso rosso oltre orario** (testID aitour-live-overtime): orologio reattivo 30s; se now>=endMin con tappe rimanenti → riquadro rosso con orario proposto (+1h), "Posticipa fine giro" (extendTourEndTime + runRecalc con endOverride) e "Termina Tour". runRecalc ora accetta `endOverride` e i messaggi di guardia citano il riquadro rosso.
+  5) **Foto ispezione con retry**: createTourInspection fa 2 tentativi per foto e ritorna `photoFailures`; l'esito Live avvisa "N foto su M NON salvate... rifalle dalla scheda cliente"; uploadPhotosToStorage con retry per foto; inspection/new.tsx mostra Alert bloccante se mancano foto.
+  6) **Etichette**: esito "Chiuso" → "Chiuso definitivamente"; skip "Chiuso" → "Chiuso ora (orario/ferie)" (valore invariato).
+  7) **Dedup suggerimenti**: lo stesso punto vendita non appare più su due banner (margine + prossimità); "No, grazie" sul banner margine viene memorizzato (proxDismissed AsyncStorage) e non riproposto nel giro.
+  8) **Zone territorio deselezionate di default**: nessuna zona preselezionata (l'agente sceglie), label ambra "Seleziona le zone del giro", GENERA bloccato con errore se territorio con >1 zone e nessuna selezionata, rimosso il vincolo "almeno una zona" sul toggle.
+  - SKIP motivato: calendario follow-up italiano (web) — il mobile usa già chip "tra N giorni" + date it-IT.
+  - **VERIFICATO E2E** (tour sintetico con end_time nel passato, poi eliminato): GPS chip "GPS OK", banner overtime con orario proposto, Posticipa fine giro → DB end_time aggiornato + eventi end_time_extended/recalc, banner scomparso, etichette Chiuso ora/definitivamente, zone: label ambra + GENERA bloccato + selezione zona aggiorna "1/26". tsc/lint puliti.
+
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)
 - Camera integration for photo uploads in anagrafica visits

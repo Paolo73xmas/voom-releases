@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA } from '../../lib/theme';
 
 const SKIP_REASONS = [
-  { value: 'chiuso', label: 'Chiuso' },
+  { value: 'chiuso', label: 'Chiuso ora (orario/ferie)' },
   { value: 'titolare_assente', label: 'Titolare assente' },
   { value: 'non_disponibile', label: 'Non disponibile' },
   { value: 'gia_visitato', label: 'Già visitato' },

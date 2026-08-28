@@ -220,11 +220,11 @@ export default function AITourScreen() {
         const mine = z.filter((x) => x.agent_id === agentId);
         setAgentZones(mine);
         if (mine.length > 0) {
-          const allIds = mine.map((x) => x.id);
+          // Nessuna zona preselezionata: è l'agente a scegliere dove andare (parità web)
           setForm((old) => ({
             ...old,
             areaMode: old.areaMode === 'auto' ? 'territory' : old.areaMode,
-            territoryZoneIds: allIds,
+            territoryZoneIds: [],
           }));
         }
       })
@@ -335,6 +335,11 @@ export default function AITourScreen() {
   const generate = async () => {
     if (!agentId) return;
     hap.medium();
+    // Territorio con più zone: l'agente deve scegliere dove andare (nessuna zona preselezionata)
+    if (form.areaMode === 'territory' && agentZones.length > 1 && form.territoryZoneIds.length === 0) {
+      setErrMsg('Seleziona almeno una zona del territorio per il giro (tocca le zone in cui vuoi andare)');
+      return;
+    }
     setGenerating(true);
     setInfoMsg('');
     setErrMsg('');
@@ -1055,7 +1060,11 @@ export default function AITourScreen() {
       </View>
       {form.areaMode === 'territory' && agentZones.length > 1 && (
         <>
-          <Text style={styles.zonesHint}>Zone del giro (tocca per includere/escludere, minimo una)</Text>
+          <Text style={[styles.zonesHint, form.territoryZoneIds.length === 0 && { color: '#B45309', fontFamily: JAKARTA.semibold }]} testID="aitour-territory-zones-count">
+            {form.territoryZoneIds.length === 0
+              ? 'Seleziona le zone del giro (tocca le zone in cui vuoi andare)'
+              : `Zone del giro: ${form.territoryZoneIds.length}/${agentZones.length} (tocca per includere/escludere)`}
+          </Text>
           <View style={styles.chipRow}>
             {agentZones.map((z) => {
               const active = form.territoryZoneIds.includes(z.id);
@@ -1065,7 +1074,6 @@ export default function AITourScreen() {
                 () => {
                   setForm((old) => {
                     const has = old.territoryZoneIds.includes(z.id);
-                    if (has && old.territoryZoneIds.length === 1) return old; // almeno una zona
                     return {
                       ...old,
                       territoryZoneIds: has

@@ -3,8 +3,10 @@
 // regolabile), selettore "Solo clienti"/"Tutti i punti vendita" e disegno libero
 // (poligono/rettangolo, leaflet-draw in italiano) delle aree del giro.
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Platform, TouchableOpacity, Modal } from 'react-native';
 import Slider from '@react-native-community/slider';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../lib/theme';
 import { tabaccheriePointsInBounds } from '../../lib/api/tabaccherie';
 import {
@@ -177,6 +179,15 @@ function buildHtml(zones: TerritoryZone[]): string {
       } else if (msg.type === 'setDotsOpacity') {
         dotsOpacity = Number(msg.value) || 0.85;
         applyOpacity();
+      } else if (msg.type === 'setRings') {
+        // Ripristino aree disegnate (es. dopo passaggio inline <-> schermo intero)
+        drawnItems.clearLayers();
+        var rr = msg.rings || [];
+        for (var ri = 0; ri < rr.length; ri++) {
+          var lls = [];
+          for (var rj = 0; rj < rr[ri].length; rj++) lls.push([rr[ri][rj][1], rr[ri][rj][0]]);
+          drawnItems.addLayer(L.polygon(lls, SHAPE));
+        }
       }
     } catch (e) {}
   }
@@ -200,9 +211,12 @@ export function DrawAreasMap({ agentId, zones, onRingsChange }: Props) {
   const [loadingAll, setLoadingAll] = useState(false);
   const [dotsOpacity, setDotsOpacity] = useState(0.85);
   const [rings, setRings] = useState<number[][][]>([]);
-  const [mapReady, setMapReady] = useState(false);
+  const [mapEpoch, setMapEpoch] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+  const insets = useSafeAreaInsets();
   const webViewRef = useRef<any>(null);
   const iframeRef = useRef<any>(null);
+  const ringsRef = useRef<number[][][]>([]);
   const onRingsChangeRef = useRef(onRingsChange);
   onRingsChangeRef.current = onRingsChange;
 
@@ -253,26 +267,31 @@ export function DrawAreasMap({ agentId, zones, onRingsChange }: Props) {
     };
   }, [dotsMode, allPoints, zones]);
 
-  // Push dati/preferenze alla mappa
+  // Push dati/preferenze alla mappa (ad ogni (ri)montaggio della mappa: mapEpoch)
   useEffect(() => {
-    if (mapReady) sendToMap({ type: 'setPoints', kind: 'clients', points });
-  }, [mapReady, points, sendToMap]);
+    if (mapEpoch > 0) sendToMap({ type: 'setPoints', kind: 'clients', points });
+  }, [mapEpoch, points, sendToMap]);
   useEffect(() => {
-    if (mapReady && allPoints) sendToMap({ type: 'setPoints', kind: 'all', points: allPoints });
-  }, [mapReady, allPoints, sendToMap]);
+    if (mapEpoch > 0 && allPoints) sendToMap({ type: 'setPoints', kind: 'all', points: allPoints });
+  }, [mapEpoch, allPoints, sendToMap]);
   useEffect(() => {
-    if (mapReady) sendToMap({ type: 'setDotsMode', mode: dotsMode });
-  }, [mapReady, dotsMode, sendToMap]);
+    if (mapEpoch > 0) sendToMap({ type: 'setDotsMode', mode: dotsMode });
+  }, [mapEpoch, dotsMode, sendToMap]);
   useEffect(() => {
-    if (mapReady) sendToMap({ type: 'setDotsOpacity', value: dotsOpacity });
-  }, [mapReady, dotsOpacity, sendToMap]);
+    if (mapEpoch > 0) sendToMap({ type: 'setDotsOpacity', value: dotsOpacity });
+  }, [mapEpoch, dotsOpacity, sendToMap]);
+  // Ripristina le aree già disegnate quando la mappa viene rimontata (inline <-> schermo intero)
+  useEffect(() => {
+    if (mapEpoch > 0 && ringsRef.current.length > 0) sendToMap({ type: 'setRings', rings: ringsRef.current });
+  }, [mapEpoch, sendToMap]);
 
   const handleMessage = useCallback((raw: string) => {
     try {
       const msg = JSON.parse(raw);
-      if (msg.type === 'mapReady') setMapReady(true);
+      if (msg.type === 'mapReady') setMapEpoch((e) => e + 1);
       else if (msg.type === 'ringsChanged') {
         const r: number[][][] = Array.isArray(msg.rings) ? msg.rings : [];
+        ringsRef.current = r;
         setRings(r);
         onRingsChangeRef.current(r);
       }
@@ -306,28 +325,28 @@ export function DrawAreasMap({ agentId, zones, onRingsChange }: Props) {
         ? 'Le aree disegnate sono fuori dalle tue zone assegnate: ridisegnale dentro le zone colorate.'
         : `${rings.length} area/e disegnata/e — ${inter?.count ?? 0} clienti dentro le aree (vale solo la parte nelle tue zone).`;
 
-  return (
-    <View style={styles.root} testID="aitour-draw-areas">
-      <View style={styles.mapBox}>
-        {Platform.OS === 'web'
-          ? React.createElement('iframe', {
-              ref: iframeRef,
-              srcDoc: html,
-              style: { width: '100%', height: '100%', border: 'none' },
-              title: 'Disegna aree del giro',
-            })
-          : WebView && (
-              <WebView
-                ref={webViewRef}
-                source={{ html }}
-                style={{ flex: 1 }}
-                onMessage={(e: { nativeEvent: { data: string } }) => handleMessage(e.nativeEvent.data)}
-                javaScriptEnabled
-                domStorageEnabled
-                originWhitelist={['*']}
-              />
-            )}
-      </View>
+  const renderMapCanvas = () =>
+    Platform.OS === 'web'
+      ? React.createElement('iframe', {
+          ref: iframeRef,
+          srcDoc: html,
+          style: { width: '100%', height: '100%', border: 'none' },
+          title: 'Disegna aree del giro',
+        })
+      : WebView && (
+          <WebView
+            ref={webViewRef}
+            source={{ html }}
+            style={{ flex: 1 }}
+            onMessage={(e: { nativeEvent: { data: string } }) => handleMessage(e.nativeEvent.data)}
+            javaScriptEnabled
+            domStorageEnabled
+            originWhitelist={['*']}
+          />
+        );
+
+  const renderStatusAndControls = () => (
+    <>
       <Text style={[styles.status, !!inter && !inter.ok && styles.statusWarn]} testID="aitour-draw-areas-status">
         {statusText}
       </Text>
@@ -373,6 +392,55 @@ export function DrawAreasMap({ agentId, zones, onRingsChange }: Props) {
           />
         </View>
       </View>
+    </>
+  );
+
+  return (
+    <View style={styles.root} testID="aitour-draw-areas">
+      <View style={styles.mapBox}>
+        {!expanded ? (
+          <>
+            {renderMapCanvas()}
+            <TouchableOpacity
+              style={styles.expandBtn}
+              onPress={() => setExpanded(true)}
+              activeOpacity={0.8}
+              accessibilityLabel="Mappa a schermo intero"
+              testID="aitour-draw-expand"
+            >
+              <Ionicons name="expand" size={17} color={COLORS.text} />
+              <Text style={styles.expandText}>Schermo intero</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <View style={styles.placeholder}>
+            <Ionicons name="map-outline" size={22} color="#94A3B8" />
+            <Text style={styles.placeholderText}>Mappa aperta a schermo intero</Text>
+          </View>
+        )}
+      </View>
+      {renderStatusAndControls()}
+      <Modal visible={expanded} animationType="fade" onRequestClose={() => setExpanded(false)}>
+        <View style={[styles.fullRoot, { paddingTop: insets.top }]}>
+          <View style={styles.fullHeader}>
+            <Text style={styles.fullTitle}>Disegna aree del giro</Text>
+            <TouchableOpacity
+              style={styles.reduceBtn}
+              onPress={() => setExpanded(false)}
+              activeOpacity={0.8}
+              accessibilityLabel="Riduci la mappa"
+              testID="aitour-draw-reduce"
+            >
+              <Ionicons name="contract" size={17} color="#FFF" />
+              <Text style={styles.reduceText}>Riduci</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.fullMap}>{expanded && renderMapCanvas()}</View>
+          <View style={[styles.fullControls, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+            {renderStatusAndControls()}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -404,4 +472,52 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 10.5, color: '#64748B' },
   sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 220, flex: 1 },
   slider: { flex: 1, height: 32, minWidth: 120 },
+  placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  placeholderText: { fontSize: 11, color: '#94A3B8' },
+  expandBtn: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  expandText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+  fullRoot: { flex: 1, backgroundColor: COLORS.bg },
+  fullHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  fullTitle: { fontSize: 15, fontWeight: '800', color: COLORS.text },
+  reduceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    minHeight: 44,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  },
+  reduceText: { fontSize: 13, fontWeight: '700', color: '#FFF' },
+  fullMap: { flex: 1, backgroundColor: COLORS.bg },
+  fullControls: { paddingHorizontal: 14, paddingTop: 8, gap: 6 },
 });

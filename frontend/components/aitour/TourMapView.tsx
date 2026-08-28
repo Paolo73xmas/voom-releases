@@ -39,14 +39,17 @@ interface Props {
   start: { lat: number; lng: number; label?: string };
   end?: { lat: number; lng: number; label?: string } | null;
   height?: number;
+  /** Tap sul segnaposto: apre il dettaglio tappa (usato dal Live Tour al posto del popup) */
+  onStopSelect?: (key: string) => void;
 }
 
-function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Props['start'], end: Props['end'], dots: TabPoint[]): string {
+function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Props['start'], end: Props['end'], dots: TabPoint[], selectable: boolean): string {
   const payload = JSON.stringify({
     stops,
     geometry,
     start,
     end: end || null,
+    selectable,
     dots: dots.map((p) => ({ lat: Math.round(p.lat * 1e5) / 1e5, lng: Math.round(p.lng * 1e5) / 1e5 })),
   });
   return `<!DOCTYPE html>
@@ -136,9 +139,13 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
       .bindPopup('<div class="pp-name">Rientro</div><div class="pp-line">' + (DATA.end.label || '') + '</div>');
   }
 
-  // Fermate
+  // Fermate: con selectable il tap apre il dettaglio tappa nell'app (niente popup)
   DATA.stops.forEach(function(s) {
     var m = L.marker([s.lat, s.lng], { icon: numberedIcon(s.label, s.color, s.mandatory, s.status) }).addTo(map);
+    if (DATA.selectable) {
+      m.on('click', function() { sendMessage({ type: 'stopSelect', key: s.key }); });
+      return;
+    }
     var html = '<div class="pp-name">' + s.name + '</div>' +
       (s.crmName && s.crmName !== s.name ? '<div class="pp-line" style="color:#2563eb">Scheda CRM: <b>' + s.crmName + '</b></div>' : '') +
       '<span class="pp-badge" style="border-color:' + s.color + ';color:' + s.color + '">' + s.entity + '</span>' +
@@ -176,7 +183,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
 </html>`;
 }
 
-export function TourMapView({ stops, geometry, start, end, height = 420 }: Props) {
+export function TourMapView({ stops, geometry, start, end, height = 420, onStopSelect }: Props) {
   // Puntini neri: tabaccherie del registro nel riquadro del percorso + ~10 km di margine.
   // Caricati una volta per composizione del giro ed embedded nell'HTML della mappa.
   const [dots, setDots] = useState<TabPoint[]>([]);
@@ -222,16 +229,19 @@ export function TourMapView({ stops, geometry, start, end, height = 420 }: Props
   }, [stops, start, end]);
 
   const html = useMemo(
-    () => buildHtml(stops, geometry, start, end, dotsVisible ? dots : []),
-    [stops, geometry, start, end, dots, dotsVisible],
+    () => buildHtml(stops, geometry, start, end, dotsVisible ? dots : [], !!onStopSelect),
+    [stops, geometry, start, end, dots, dotsVisible, onStopSelect],
   );
   const [fullscreen, setFullscreen] = useState(false);
   const insets = useSafeAreaInsets();
 
+  const onStopSelectRef = React.useRef(onStopSelect);
+  onStopSelectRef.current = onStopSelect;
   const handleMessage = useCallback((raw: string) => {
     try {
       const msg = JSON.parse(raw);
       if (msg.type === 'navigate') openNavigation(msg.lat, msg.lng, msg.name || '');
+      else if (msg.type === 'stopSelect' && msg.key && onStopSelectRef.current) onStopSelectRef.current(String(msg.key));
     } catch {
       // ignora messaggi non validi
     }

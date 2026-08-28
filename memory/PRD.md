@@ -232,6 +232,13 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
 
 - **Modifica dati cliente da scheda (giu 2026, richiesta utente)**: in /customer/[id] tasto "Modifica" (matita) sulle sezioni Contatto, Indirizzo e Dati Fiscali → bottom-sheet con i campi della sezione (contatto: nome/cognome/telefono/email; indirizzo: via/città/provincia/CAP; fiscali: P.IVA/CF/PEC/SDI). Vuoti salvati come NULL, sigle in maiuscolo automatico, validazioni email/P.IVA con Alert, update con verifica riga scritta e aggiornamento immediato della scheda. PEC/SDI sempre visibili (con "-") per rendere evidente l'inserimento. E2E completo su cliente temporaneo con verifica DB e cleanup.
 
+- **Allineamento origin/main (giu 2026, commit 94327c0 + 3be6260 + 2afe57c)**:
+  1) **Dettaglio tappa + Fallo Ora nel Live**: tap sul nome nell'elenco rimanenti (sottolineato puntinato) o sul segnaposto in mappa (TourMapView prop `onStopSelect`, marker → postMessage stopSelect, bridge ok su WebView nativa e iframe web) → dialog con scheda CRM, indirizzo, arrivo previsto, ultima visita/ordine, ordini, fatturato 6m, stato; bottone **Fallo Ora** (reorderLiveStops con la tappa in testa + retry) per renderla subito la prossima visita.
+  2) **Orario preferenziale visite obbligatorie** (form Genera): campo HH:MM facoltativo per ogni obbligatoria; il planner arriva attorno all'ora scelta (±30 min, fascia `ore HH:MM (richiesta)` via preferredSlots).
+  3) **CF 11 cifre**: nelle anagrafiche (Prima Visita e Rivendite fuori mappa) il CF numerico di 11 cifre è accettato solo se identico alla P.IVA (rivalidato quando cambia la P.IVA); resta valido il CF a 16 caratteri.
+  - SKIP motivato: e1becb2 vista supporto admin (l'app mobile non ha una vista live di altri agenti).
+  - E2E: Fallo Ora da elenco e da mappa OK (tour sintetico poi eliminato); CF: 11=PIVA passa / 11≠PIVA blocca / 16 char passa. ⚠️ Il campo orario obbligatorie nel form non è stato E2E-testato: l'account di test tadini ha un TOUR LIVE REALE in corso (l'utente lo sta usando in produzione, DB condiviso) e il form è irraggiungibile con live attivo. NON creare tour sintetici su tadini finché l'utente lo usa realmente.
+
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)
 - Camera integration for photo uploads in anagrafica visits

@@ -457,7 +457,9 @@ export default function AnagraficaScreen() {
       const emailOk = !form.contactEmail || emailRegex.test(form.contactEmail);
       const sdiOk = !form.sdi || sdiRegex.test(form.sdi.toUpperCase());
       const vatOk = vatRegex.test(form.vatNumber);
-      const cfOk = fiscalCodeRegex.test(form.fiscalCode.toUpperCase());
+      // CF di 16 caratteri, oppure 11 cifre (società di capitali) solo se identico alla P.IVA
+      const cfUp = form.fiscalCode.toUpperCase().trim();
+      const cfOk = /^[0-9]{11}$/.test(cfUp) ? cfUp === form.vatNumber.trim() : fiscalCodeRegex.test(cfUp);
       return !!(required && emailOk && sdiOk && vatOk && cfOk);
     }
     return true;
@@ -620,7 +622,13 @@ export default function AnagraficaScreen() {
     try {
       // Validate
       if (!vatRegex.test(form.vatNumber)) { Alert.alert('Errore', 'P.IVA deve essere di 11 cifre'); return; }
-      if (!fiscalCodeRegex.test(form.fiscalCode.toUpperCase())) { Alert.alert('Errore', 'Codice Fiscale deve essere 16 caratteri alfanumerici'); return; }
+      // CF di 16 caratteri, oppure 11 cifre (società di capitali) solo se identico alla P.IVA
+      const cfUp = form.fiscalCode.toUpperCase().trim();
+      if (/^[0-9]{11}$/.test(cfUp)) {
+        if (cfUp !== form.vatNumber.trim()) { Alert.alert('Errore', 'CF di 11 cifre accettato solo se identico alla P.IVA'); return; }
+      } else if (!fiscalCodeRegex.test(cfUp)) {
+        Alert.alert('Errore', 'Codice Fiscale: 16 caratteri alfanumerici, oppure 11 cifre identiche alla P.IVA'); return;
+      }
 
       const emailValue = form.contactEmail && emailRegex.test(form.contactEmail) ? form.contactEmail : null;
       let customerNotes = form.notes || '';

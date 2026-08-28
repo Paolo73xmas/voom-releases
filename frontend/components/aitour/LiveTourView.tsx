@@ -73,6 +73,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   // Cestinare una visita: conferma prima di rimuoverla dal giro
   const [trashTarget, setTrashTarget] = useState<LiveStop | null>(null);
   const [trashing, setTrashing] = useState(false);
+  // Dettaglio tappa (tap sul nome in elenco o sul segnaposto in mappa) con "Fallo Ora"
+  const [detailStop, setDetailStop] = useState<LiveStop | null>(null);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   // Stato GPS per il chip nella barra live (aggiornato dal battito posizione)
   const [gpsOk, setGpsOk] = useState<boolean | null>(null);
@@ -88,7 +90,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const pendingTrashRecalcRef = useRef(false);
   // Vero mentre l'agente sta compilando un dialog o c'è un'operazione in corso: il sync non deve strappare la vista
   const uiBusyRef = useRef(false);
-  uiBusyRef.current = busy || recalcing || esitoOpen || skipOpen || recapOpen || !!acquireKind || !!trashTarget || addOpen || reorderOpen || extendOpen;
+  uiBusyRef.current = busy || recalcing || esitoOpen || skipOpen || recapOpen || !!acquireKind || !!trashTarget || !!detailStop || addOpen || reorderOpen || extendOpen;
 
   // Retry di rete per le azioni critiche del live: 3 tentativi con attesa crescente (dati mai persi in silenzio)
   const withRetry = useCallback(async <T,>(fn: () => Promise<T>, label: string): Promise<T> => {
@@ -980,6 +982,25 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     }
   };
 
+  // "Fallo Ora": la tappa scelta diventa immediatamente la prossima visita e il giro si ricalcola
+  const handleDoNow = async (s: LiveStop) => {
+    setDetailStop(null);
+    setBusy(true);
+    try {
+      const ctx = await buildCtx();
+      const ordered = [s, ...pending.filter((p) => p.id !== s.id)];
+      const res = await withRetry(() => reorderLiveStops(ctx, ordered), 'fallo ora');
+      await reloadFromDb();
+      hap.success();
+      setMessage(res.warnings.length > 0 ? `"${s.candidate.name}" è ora la prossima visita. ${res.warnings.join(' ')}` : `"${s.candidate.name}" è ora la prossima visita: percorso e orari ricalcolati.`);
+    } catch (err) {
+      console.error('[AITour][live] fallo ora:', err);
+      setMessage('Operazione NON riuscita (problema di connessione?). Riprova.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleFinish = async () => {
     setBusy(true);
     try {
@@ -1241,6 +1262,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           start={{ lat: tour.start_lat ?? stops[0]?.candidate.lat ?? 41.9, lng: tour.start_lng ?? stops[0]?.candidate.lng ?? 12.49, label: tour.start_label || 'Partenza' }}
           end={initial.endPoint}
           height={380}
+          onStopSelect={(key) => {
+            const s = stopsRef.current.find((x) => x.id === key);
+            if (s) setDetailStop(s);
+          }}
         />
       )}
 
@@ -1446,9 +1471,17 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               <View style={[styles.listSeq, { backgroundColor: s.addedByAdmin ? '#EA580C' : ENTITY_COLORS[s.candidate.entityType] }]}>
                 <Text style={styles.listSeqText}>{stopNumbers.get(s.id)}</Text>
               </View>
-              <Text style={styles.listName} numberOfLines={1}>
-                {s.candidate.name}
-              </Text>
+              <TouchableOpacity
+                style={{ flex: 1 }}
+                onPress={() => setDetailStop(s)}
+                disabled={busy || recalcing}
+                activeOpacity={0.6}
+                testID={`aitour-live-pending-name-${i + 1}`}
+              >
+                <Text style={[styles.listName, styles.listNameLink]} numberOfLines={1}>
+                  {s.candidate.name}
+                </Text>
+              </TouchableOpacity>
               {s.addedByAdmin && (
                 <View style={[styles.tinyBadge, { backgroundColor: '#EA580C' }]}>
                   <Text style={styles.tinyBadgeText}>admin</Text>
@@ -1510,6 +1543,72 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       )}
 
       <EsitoModal visible={esitoOpen} stopName={next?.candidate.name || ''} stopId={next?.id || null} customerId={next?.candidate.customerId || null} saving={busy} uploadPct={uploadPct} onClose={() => setEsitoOpen(false)} onConfirm={handleEsito} />
+
+      {/* Dettaglio tappa: informazioni cliente + Fallo Ora */}
+      <Modal visible={!!detailStop} animationType="fade" transparent onRequestClose={() => setDetailStop(null)}>
+        <View style={styles.centerBackdrop}>
+          <View style={styles.dialog} testID="aitour-stop-detail-dialog">
+            {detailStop && (
+              <>
+                <Text style={styles.dialogTitle} testID="aitour-stop-detail-name">{detailStop.candidate.name}</Text>
+                {!!detailStop.candidate.crmName && detailStop.candidate.crmName !== detailStop.candidate.name && (
+                  <Text style={styles.detailCrm}>Scheda CRM: {detailStop.candidate.crmName}</Text>
+                )}
+                <Text style={styles.dialogText}>
+                  {detailStop.candidate.address}
+                  {detailStop.candidate.city ? `, ${detailStop.candidate.city}` : ''}
+                  {detailStop.candidate.province ? ` (${detailStop.candidate.province})` : ''}
+                </Text>
+                <View style={styles.detailBadgeRow}>
+                  <View style={[styles.detailBadge, { borderColor: ENTITY_COLORS[detailStop.candidate.entityType] }]}>
+                    <Text style={[styles.detailBadgeText, { color: ENTITY_COLORS[detailStop.candidate.entityType] }]}>{ENTITY_LABELS[detailStop.candidate.entityType]}</Text>
+                  </View>
+                  {!!detailStop.plannedArrival && (
+                    <Text style={styles.dialogText}>arrivo previsto {detailStop.plannedArrival.slice(0, 5)}</Text>
+                  )}
+                  {!!(detailStop.candidate.preferredSlots || [])[0] && (
+                    <View style={[styles.tinyBadge, { backgroundColor: '#2563EB' }]}>
+                      <Text style={styles.tinyBadgeText}>{(detailStop.candidate.preferredSlots || [])[0].label}</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.detailGrid}>
+                  <Text style={styles.detailGridItem}>Ultima visita: <Text style={styles.detailGridBold}>{detailStop.candidate.lastVisitDate ? new Date(detailStop.candidate.lastVisitDate).toLocaleDateString('it-IT') : 'mai'}</Text></Text>
+                  <Text style={styles.detailGridItem}>Ultimo ordine: <Text style={styles.detailGridBold}>{detailStop.candidate.lastOrderDate ? new Date(detailStop.candidate.lastOrderDate).toLocaleDateString('it-IT') : 'mai'}</Text></Text>
+                  <Text style={styles.detailGridItem}>Ordini totali: <Text style={styles.detailGridBold}>{detailStop.candidate.orderCount || 0}</Text></Text>
+                  <Text style={styles.detailGridItem}>Fatturato 6 mesi: <Text style={styles.detailGridBold}>€ {Math.round(detailStop.candidate.revenue6m || 0)}</Text></Text>
+                </View>
+                {!detailStop.candidate.customerId && (
+                  <Text style={styles.detailProspect}>Nessuna scheda cliente: da acquisire come prospect.</Text>
+                )}
+                {!pending.some((p) => p.id === detailStop.id) ? (
+                  <Text style={styles.detailHandled}>Tappa già gestita ({detailStop.status === 'completed' ? 'completata' : 'saltata/cestinata'}).</Text>
+                ) : detailStop.id === next?.id ? (
+                  <Text style={styles.detailIsNext}>È già la prossima visita del giro.</Text>
+                ) : (
+                  <Text style={styles.dialogText}>Con <Text style={styles.detailGridBold}>Fallo Ora</Text> questa diventa subito la prossima visita e il giro viene ricalcolato.</Text>
+                )}
+                <View style={styles.dialogFooter}>
+                  <TouchableOpacity style={styles.dialogCancel} onPress={() => setDetailStop(null)} activeOpacity={0.7} testID="aitour-stop-detail-close">
+                    <Text style={styles.dialogCancelText}>Chiudi</Text>
+                  </TouchableOpacity>
+                  {detailStop.id !== next?.id && pending.some((p) => p.id === detailStop.id) && (
+                    <TouchableOpacity
+                      style={[styles.dialogConfirm, { backgroundColor: AI_PURPLE }, (busy || recalcing) && { opacity: 0.6 }]}
+                      onPress={() => handleDoNow(detailStop)}
+                      disabled={busy || recalcing}
+                      activeOpacity={0.75}
+                      testID="aitour-stop-detail-donow"
+                    >
+                      {busy ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.dialogConfirmText}>Fallo Ora</Text>}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Avviso esplicito: cliente orfano riassegnato all'agente */}
       <Modal visible={!!reassigned} transparent animationType="fade" onRequestClose={() => setReassigned(null)}>
@@ -1994,6 +2093,7 @@ const styles = StyleSheet.create({
   listSeq: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   listSeqText: { fontFamily: JAKARTA.bold, fontSize: 10, color: '#FFF' },
   listName: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 12, color: DS.ink },
+  listNameLink: { flex: undefined, textDecorationLine: 'underline', textDecorationStyle: 'dotted' },
   listNameDone: { color: DS.inkMuted, textDecorationLine: 'line-through' },
   listTime: { fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted },
   listOutcome: { fontFamily: JAKARTA.regular, fontSize: 10, color: DS.inkMuted },
@@ -2026,6 +2126,16 @@ const styles = StyleSheet.create({
   dialogCancelText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: DS.ink2 },
   dialogConfirm: { flex: 2, backgroundColor: '#0D9488', borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
   dialogConfirmText: { fontFamily: JAKARTA.bold, fontSize: 12, color: '#FFF' },
+  detailCrm: { fontFamily: JAKARTA.semibold, fontSize: 12, color: '#2563EB', marginTop: 6 },
+  detailBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' },
+  detailBadge: { borderWidth: 1, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },
+  detailBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 10 },
+  detailGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, rowGap: 3 },
+  detailGridItem: { width: '50%', fontFamily: JAKARTA.regular, fontSize: 11, color: DS.ink2 },
+  detailGridBold: { fontFamily: JAKARTA.bold, color: DS.ink },
+  detailProspect: { fontFamily: JAKARTA.semibold, fontSize: 11.5, color: '#B45309', marginTop: 8 },
+  detailHandled: { fontFamily: JAKARTA.semibold, fontSize: 11.5, color: DS.inkMuted, marginTop: 8 },
+  detailIsNext: { fontFamily: JAKARTA.semibold, fontSize: 11.5, color: '#047857', marginTop: 8 },
   recapGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   recapCell: { backgroundColor: DS.surface2, borderRadius: 8, padding: 8, minWidth: '47%', flexGrow: 1 },
   recapLabel: { fontFamily: JAKARTA.regular, fontSize: 10, color: DS.inkMuted },

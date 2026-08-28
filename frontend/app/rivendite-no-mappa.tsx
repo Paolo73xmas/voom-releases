@@ -162,8 +162,16 @@ export default function RivenditeNoMappaScreen() {
     if (!form.vatNumber.trim() || !vatRegex.test(form.vatNumber)) {
       Alert.alert('Errore', 'P.IVA deve essere di 11 cifre'); return false;
     }
-    if (form.fiscalCode.trim() && !fiscalRegex.test(form.fiscalCode.toUpperCase())) {
-      Alert.alert('Errore', 'Codice Fiscale deve essere di 16 caratteri alfanumerici'); return false;
+    if (form.fiscalCode.trim()) {
+      // CF di 16 caratteri, oppure 11 cifre (società di capitali) solo se identico alla P.IVA
+      const cfUp = form.fiscalCode.toUpperCase().trim();
+      if (/^[0-9]{11}$/.test(cfUp)) {
+        if (cfUp !== form.vatNumber.trim()) {
+          Alert.alert('Errore', 'CF di 11 cifre accettato solo se identico alla P.IVA'); return false;
+        }
+      } else if (!fiscalRegex.test(cfUp)) {
+        Alert.alert('Errore', 'Codice Fiscale: 16 caratteri alfanumerici, oppure 11 cifre identiche alla P.IVA'); return false;
+      }
     }
     if (form.contactEmail.trim() && !emailRegex.test(form.contactEmail)) {
       Alert.alert('Errore', 'Email non valida'); return false;

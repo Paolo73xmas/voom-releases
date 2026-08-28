@@ -71,6 +71,8 @@ interface FormValues {
   city: string;
   radiusKm: string;
   mandatoryCustomerIds: string[];
+  /** Orario preferenziale di arrivo per le visite obbligatorie (customerId -> "HH:MM", vuoto = nessuna preferenza) */
+  mandatoryTimes: Record<string, string>;
   /** Zone del territorio selezionate (vuoto = tutte) */
   territoryZoneIds: string[];
 }
@@ -176,6 +178,7 @@ export default function AITourScreen() {
     city: '',
     radiusKm: '15',
     mandatoryCustomerIds: [],
+    mandatoryTimes: {},
     territoryZoneIds: [],
   });
   const [generating, setGenerating] = useState(false);
@@ -311,6 +314,11 @@ export default function AITourScreen() {
     const next = selectedMandatory.filter((s) => s.id !== id);
     setSelectedMandatory(next);
     set('mandatoryCustomerIds', next.map((s) => s.id));
+    setForm((old) => {
+      const times = { ...old.mandatoryTimes };
+      delete times[id];
+      return { ...old, mandatoryTimes: times };
+    });
   };
 
   const resolvePoint = useCallback(
@@ -481,10 +489,17 @@ export default function AITourScreen() {
       const mandatoryKeys = new Set<string>();
       for (const id of v.mandatoryCustomerIds) {
         const all = [...loaded.clients, ...loaded.prospects, ...loaded.orphans];
-        const cand = all.find((c) => c.customerId === id);
-        if (cand) {
+        const found = all.find((c) => c.customerId === id);
+        if (found) {
+          // Orario preferenziale di arrivo scelto dall'agente: diventa la fascia oraria della tappa (±30 min nel planner)
+          const t = v.mandatoryTimes?.[id];
+          const cand = t && /^\d{2}:\d{2}$/.test(t)
+            ? { ...found, preferredSlots: [{ id: `mand_${id}`, label: `ore ${t} (richiesta)`, start: timeToMin(t), end: timeToMin(t) }] }
+            : found;
           mandatoryKeys.add(cand.key);
-          if (!candidates.find((c) => c.key === cand.key)) candidates = [...candidates, cand];
+          const idx = candidates.findIndex((c) => c.key === cand.key);
+          if (idx >= 0) candidates = candidates.map((c, i) => (i === idx ? cand : c));
+          else candidates = [...candidates, cand];
         }
       }
       if (candidates.length === 0) {
@@ -1149,17 +1164,29 @@ export default function AITourScreen() {
         </View>
       )}
       {selectedMandatory.length > 0 && (
-        <View style={styles.chipRow}>
+        <View style={{ gap: 6 }}>
           {selectedMandatory.map((s) => (
-            <View key={s.id} style={styles.mandChip}>
+            <View key={s.id} style={styles.mandRow}>
               <Text style={styles.mandChipText} numberOfLines={1}>
                 {s.business_name}
               </Text>
+              <Text style={styles.mandTimeLabel}>arrivo preferito</Text>
+              <TextInput
+                style={styles.mandTimeInput}
+                value={form.mandatoryTimes[s.id] || ''}
+                onChangeText={(t) => set('mandatoryTimes', { ...form.mandatoryTimes, [s.id]: t })}
+                placeholder="HH:MM"
+                placeholderTextColor={DS.inkMuted}
+                keyboardType="numbers-and-punctuation"
+                maxLength={5}
+                testID={`aitour-mandatory-time-${s.id}`}
+              />
               <TouchableOpacity onPress={() => removeMandatory(s.id)} hitSlop={8}>
                 <Ionicons name="close" size={14} color={AI_PURPLE} />
               </TouchableOpacity>
             </View>
           ))}
+          <Text style={styles.mandTimeHint}>L&apos;orario di arrivo preferito è facoltativo: il giro proverà ad arrivare dal cliente attorno a quell&apos;ora (±30 min).</Text>
         </View>
       )}
 
@@ -1804,7 +1831,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     maxWidth: '100%',
   },
-  mandChipText: { fontFamily: JAKARTA.medium, fontSize: 12, color: '#5B21B6', maxWidth: 220 },
+  mandChipText: { fontFamily: JAKARTA.medium, fontSize: 12, color: '#5B21B6', maxWidth: 220, flex: 1 },
+  mandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F3E8FF', borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9 },
+  mandTimeLabel: { fontFamily: JAKARTA.regular, fontSize: 9.5, color: DS.inkMuted },
+  mandTimeInput: { borderWidth: 1, borderColor: '#DDD6FE', borderRadius: 7, paddingVertical: 4, paddingHorizontal: 6, fontFamily: JAKARTA.semibold, fontSize: 12, color: '#5B21B6', backgroundColor: '#FFF', width: 62, textAlign: 'center' },
+  mandTimeHint: { fontFamily: JAKARTA.regular, fontSize: 10, color: DS.inkMuted },
   generateBtn: {
     flexDirection: 'row',
     alignItems: 'center',

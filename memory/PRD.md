@@ -230,6 +230,8 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
   - SKIP motivato: calendario follow-up italiano (web) — il mobile usa già chip "tra N giorni" + date it-IT.
   - **VERIFICATO E2E** (tour sintetico con end_time nel passato, poi eliminato): GPS chip "GPS OK", banner overtime con orario proposto, Posticipa fine giro → DB end_time aggiornato + eventi end_time_extended/recalc, banner scomparso, etichette Chiuso ora/definitivamente, zone: label ambra + GENERA bloccato + selezione zona aggiorna "1/26". tsc/lint puliti.
 
+- **Modifica dati cliente da scheda (giu 2026, richiesta utente)**: in /customer/[id] tasto "Modifica" (matita) sulle sezioni Contatto, Indirizzo e Dati Fiscali → bottom-sheet con i campi della sezione (contatto: nome/cognome/telefono/email; indirizzo: via/città/provincia/CAP; fiscali: P.IVA/CF/PEC/SDI). Vuoti salvati come NULL, sigle in maiuscolo automatico, validazioni email/P.IVA con Alert, update con verifica riga scritta e aggiornamento immediato della scheda. PEC/SDI sempre visibili (con "-") per rendere evidente l'inserimento. E2E completo su cliente temporaneo con verifica DB e cleanup.
+
 ## Next Steps
 - Implement offline data sync (critical for field agents in areas with bad reception)
 - Camera integration for photo uploads in anagrafica visits

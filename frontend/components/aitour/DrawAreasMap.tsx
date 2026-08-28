@@ -222,6 +222,16 @@ export function DrawAreasMap({ agentId, zones, onRingsChange }: Props) {
 
   const html = useMemo(() => buildHtml(zones), [zones]);
 
+  // Al mount la mappa è vuota: azzera eventuali aree di una sessione di disegno precedente (parità web e26480b)
+  useEffect(() => {
+    onRingsChangeRef.current([]);
+  }, []);
+
+  // Zone cambiate: i punti "Tutti" vanno ricaricati
+  useEffect(() => {
+    setAllPoints(null);
+  }, [zones]);
+
   const sendToMap = useCallback((msg: object) => {
     const str = JSON.stringify(msg);
     if (Platform.OS === 'web') iframeRef.current?.contentWindow?.postMessage(str, '*');

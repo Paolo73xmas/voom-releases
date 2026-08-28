@@ -263,10 +263,11 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
   ]);
   const orphanMap = await fetchOrphanMap(orphanConfig);
 
-  // Orfani propri (clienti dell'agente diventati orfani) - dati completi
+  // Orfani propri (schede dell'agente — clienti E prospect — con tabaccheria diventata orfana):
+  // una sola voce candidato (dati CRM completi + badge orfano), MAI doppione dal registro tabaccherie
   const ownOrphanKeys = new Set<string>();
   const orphans: TourCandidate[] = [];
-  for (const r of clientRows) {
+  for (const r of [...clientRows, ...prospectRows]) {
     const status = r.tabaccheria_id ? orphanMap.get(r.tabaccheria_id) : undefined;
     if (status) {
       orphans.push(toCandidate(r, 'orphan', stats.get(r.id), appointments.get(r.id) || null, settings, status, projects, remoteOrders.get(r.id), learnedDurations.get(r.id), slotDefs));
@@ -349,12 +350,18 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
   }
 
   const orphanCustomerIds = new Set(orphans.filter((o) => o.customerId).map((o) => o.customerId));
+  const orphanTabIds = new Set(orphans.filter((o) => o.tabaccheriaId).map((o) => o.tabaccheriaId));
+  // Un punto vendita = UN candidato: chi è già tra gli orfani non deve rientrare
+  // come cliente/prospect (stesso customer o stessa tabaccheria collegata)
+  const notInOrphans = (r: CustomerRow) =>
+    !orphanCustomerIds.has(r.id) && !(r.tabaccheria_id && orphanTabIds.has(r.tabaccheria_id));
   return {
     clients: clientRows
-      .filter((r) => !orphanCustomerIds.has(r.id))
+      .filter(notInOrphans)
       .map((r) => toCandidate(r, 'client', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, remoteOrders.get(r.id), learnedDurations.get(r.id), slotDefs))
       .filter((c) => !isNoInterestBlocked(c, noBlock)),
     prospects: prospectRows
+      .filter(notInOrphans)
       .map((r) => toCandidate(r, 'prospect', stats.get(r.id), appointments.get(r.id) || null, settings, null, projects, undefined, learnedDurations.get(r.id), slotDefs))
       .filter((c) => !isNoInterestBlocked(c, noBlock)),
     orphans: orphans.filter((c) => !isNoInterestBlocked(c, noBlock)),

@@ -392,17 +392,33 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   };
 }
 
+// Un punto vendita = una sola tappa: rete di sicurezza contro candidati doppi
+// provenienti da fonti diverse (es. prospect + orfano della stessa tabaccheria)
+function dedupeCandidates(list: TourCandidate[]): TourCandidate[] {
+  const seenTabs = new Set<string>();
+  const seenCust = new Set<string>();
+  const out: TourCandidate[] = [];
+  for (const c of list) {
+    if (c.tabaccheriaId && seenTabs.has(c.tabaccheriaId)) continue;
+    if (c.customerId && seenCust.has(c.customerId)) continue;
+    if (c.tabaccheriaId) seenTabs.add(c.tabaccheriaId);
+    if (c.customerId) seenCust.add(c.customerId);
+    out.push(c);
+  }
+  return out;
+}
+
 export function candidatesForDayType(
   pool: { clients: TourCandidate[]; prospects: TourCandidate[]; orphans: TourCandidate[] },
   dayType: Exclude<DayType, 'ai'>,
 ): TourCandidate[] {
-  if (dayType === 'clienti') return pool.clients;
+  if (dayType === 'clienti') return dedupeCandidates(pool.clients);
   if (dayType === 'sviluppo') {
     // sviluppo territorio: prospect + orfani + clienti propri "da recuperare" (molto in ritardo)
     const daRecuperare = pool.clients.filter((c) => (c.daysSinceOrder ?? 0) > 60 && c.score >= 60);
-    return [...pool.prospects, ...pool.orphans, ...daRecuperare];
+    return dedupeCandidates([...pool.prospects, ...pool.orphans, ...daRecuperare]);
   }
-  return [...pool.clients, ...pool.prospects, ...pool.orphans];
+  return dedupeCandidates([...pool.clients, ...pool.prospects, ...pool.orphans]);
 }
 
 // Ricalcolo con sequenza manuale fissa: solo percorso + timeline (nessuna riottimizzazione)

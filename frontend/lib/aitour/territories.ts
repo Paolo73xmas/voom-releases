@@ -1,5 +1,7 @@
 // Territori AI Tour: riusa la tabella agent_zones (poligoni GeoJSON per agente, anche non contigui).
 import { supabase } from '../supabase';
+import { intersect as turfIntersect } from '@turf/intersect';
+import { polygon as turfPolygon, featureCollection as turfFeatureCollection } from '@turf/helpers';
 import { isPointInPolygon, geoJSONToLeafletLatLngs } from './geo';
 import { loadFreeTabaccherie } from './data';
 import type { TourCandidate, AiTourSettings } from './types';
@@ -103,6 +105,75 @@ export async function loadNeverVisitedFillers(
   );
   if (zones.length > 0) extra = extra.filter((c) => pointInZones(c.lat, c.lng, zones));
   return extra;
+}
+
+// Clienti dell'agente con coordinate valide (puntini neri di "Disegna aree")
+export async function agentCustomerPoints(agentId: string): Promise<{ id: string; lat: number; lng: number }[]> {
+  const { data, error } = await supabase
+    .from('customers')
+    .select('id, latitude, longitude')
+    .eq('agent_id', agentId)
+    .not('latitude', 'is', null)
+    .not('longitude', 'is', null)
+    .limit(5000);
+  if (error) throw error;
+  return ((data || []) as { id: string; latitude: unknown; longitude: unknown }[])
+    .map((r) => ({ id: r.id, lat: Number(r.latitude), lng: Number(r.longitude) }))
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+}
+
+// Zone sintetiche da anelli GeoJSON [lng,lat] (aree disegnate a mano nel Genera Tour)
+export function ringsToSyntheticZones(rings: number[][][], color = '#7c3aed', prefix = 'draw'): TerritoryZone[] {
+  return rings
+    .filter((r) => Array.isArray(r) && r.length >= 4)
+    .map((ring, i) => ({
+      id: `${prefix}-${i}`,
+      agent_id: '',
+      zone_name: `Area disegnata ${i + 1}`,
+      alias: null,
+      color,
+      geometry: { type: 'Polygon', coordinates: [ring] } as GeoJSON.Polygon,
+      agent_name: '',
+    }));
+}
+
+// Interseca le aree disegnate con le zone assegnate: conta solo la parte DENTRO le zone
+export function intersectDrawnWithZones(rings: number[][][], zones: TerritoryZone[]): TerritoryZone[] {
+  const out: TerritoryZone[] = [];
+  let n = 0;
+  for (const ring of rings) {
+    if (!Array.isArray(ring) || ring.length < 4) continue;
+    let drawn: GeoJSON.Feature<GeoJSON.Polygon>;
+    try {
+      drawn = turfPolygon([ring]);
+    } catch {
+      continue;
+    }
+    for (const z of zones) {
+      try {
+        const inter = turfIntersect(turfFeatureCollection([drawn, turfPolygon(z.geometry.coordinates)]));
+        if (!inter) continue;
+        const polys: number[][][] = inter.geometry.type === 'MultiPolygon'
+          ? inter.geometry.coordinates.map((c) => c[0] as number[][])
+          : [inter.geometry.coordinates[0] as number[][]];
+        for (const r of polys) {
+          n += 1;
+          out.push({
+            id: `draw-${n}`,
+            agent_id: z.agent_id,
+            zone_name: `Area disegnata ${n}`,
+            alias: null,
+            color: '#7c3aed',
+            geometry: { type: 'Polygon', coordinates: [r] },
+            agent_name: z.agent_name,
+          });
+        }
+      } catch (err) {
+        console.warn('[AITour][draw] intersezione zona fallita:', err);
+      }
+    }
+  }
+  return out;
 }
 
 export async function agentPortfolioPoints(agentId: string): Promise<[number, number][]> {

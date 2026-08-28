@@ -22,7 +22,7 @@ import { DS, JAKARTA, SHADOWS, COLORS, currentThemeMode } from '../lib/theme';
 import { hap } from '../lib/haptics';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { listAllZones, pointInZones, zoneLabel, type TerritoryZone } from '../lib/aitour/territories';
+import { listAllZones, pointInZones, zoneLabel, intersectDrawnWithZones, type TerritoryZone } from '../lib/aitour/territories';
 import { loadCandidates, loadFreeTabaccherie, type CandidatePool } from '../lib/aitour/data';
 import { scoreCandidates, computePortfolioStats } from '../lib/aitour/scoring';
 import { planTour, planFixedOrder, filterByArea, pickBestCluster, candidatesForDayType, type AreaFilter } from '../lib/aitour/planner';
@@ -33,6 +33,7 @@ import { geocodeAddress } from '../lib/aitour/osrm';
 import { LiveTourView } from '../components/aitour/LiveTourView';
 import { TourMapView, type TourMapStop } from '../components/aitour/TourMapView';
 import { TourEditModal } from '../components/aitour/TourEditModal';
+import { DrawAreasMap } from '../components/aitour/DrawAreasMap';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
 import { CandidateEntityBadge } from '../components/aitour/OrphanHistoryBadge';
@@ -55,7 +56,7 @@ const DAY_TYPES: { value: DayType; label: string; desc: string; icon: keyof type
 
 type StartMode = 'current' | 'address' | 'home' | 'office';
 type EndMode = 'none' | 'start' | 'address' | 'home' | 'office';
-type AreaMode = 'auto' | 'territory' | 'province' | 'city' | 'radius';
+type AreaMode = 'auto' | 'territory' | 'province' | 'city' | 'radius' | 'draw';
 
 interface FormValues {
   date: string;
@@ -75,6 +76,8 @@ interface FormValues {
   mandatoryTimes: Record<string, string>;
   /** Zone del territorio selezionate (vuoto = tutte) */
   territoryZoneIds: string[];
+  /** Aree disegnate a mano sulla mappa (anelli GeoJSON [lng,lat]) per areaMode='draw' */
+  drawnRings: number[][][];
 }
 
 const localDateStr = (offsetDays = 0) => {
@@ -180,6 +183,7 @@ export default function AITourScreen() {
     mandatoryCustomerIds: [],
     mandatoryTimes: {},
     territoryZoneIds: [],
+    drawnRings: [],
   });
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState('');
@@ -348,6 +352,10 @@ export default function AITourScreen() {
       setErrMsg('Seleziona almeno una zona del territorio per il giro (tocca le zone in cui vuoi andare)');
       return;
     }
+    if (form.areaMode === 'draw' && form.drawnRings.length === 0) {
+      setErrMsg("Disegna almeno un'area sulla mappa per generare il giro");
+      return;
+    }
     setGenerating(true);
     setInfoMsg('');
     setErrMsg('');
@@ -385,6 +393,14 @@ export default function AITourScreen() {
       }
       const end = await resolvePoint(v.endMode, v.endAddress, start);
 
+      // Aree disegnate a mano: fail-fast PRIMA delle chiamate costose (portafoglio/AI)
+      const drawnZones = v.areaMode === 'draw' ? intersectDrawnWithZones(v.drawnRings, agentZones) : [];
+      if (v.areaMode === 'draw' && drawnZones.length === 0) {
+        setErrMsg('Le aree disegnate non toccano le tue zone assegnate: ridisegnale dentro le zone');
+        setGenerating(false);
+        return;
+      }
+
       setProgress('Analisi del portafoglio commerciale...');
       const loaded = await loadCandidates(agentId, settings);
       scoreCandidates([...loaded.clients, ...loaded.prospects, ...loaded.orphans], settings);
@@ -408,16 +424,20 @@ export default function AITourScreen() {
         v.areaMode === 'territory' && v.territoryZoneIds.length > 0
           ? agentZones.filter((z) => v.territoryZoneIds.includes(z.id))
           : agentZones;
+      const isTerritory = v.areaMode === 'territory' || v.areaMode === 'draw';
+      const territoryZones = v.areaMode === 'draw' ? drawnZones : zonesForTour;
       const area: AreaFilter = {
-        mode: v.areaMode,
+        mode: isTerritory ? 'territory' : (v.areaMode as Exclude<AreaMode, 'territory' | 'draw'>),
         province: v.province,
         city: v.city,
         radiusKm,
-        zones: v.areaMode === 'territory' ? zonesForTour : undefined,
+        zones: isTerritory ? territoryZones : undefined,
       };
       candidates = filterByArea(candidates, area, start);
       let areaLabel =
-        v.areaMode === 'territory'
+        v.areaMode === 'draw'
+          ? `aree disegnate sulla mappa (${v.drawnRings.length})`
+          : v.areaMode === 'territory'
           ? zonesForTour.map((z) => zoneLabel(z)).join(' + ') || 'territorio assegnato'
           : v.areaMode === 'province'
             ? `provincia ${v.province}`
@@ -436,9 +456,9 @@ export default function AITourScreen() {
       if (resolved === 'sviluppo' || resolved === 'mista') {
         let bounds = { minLat: 35, maxLat: 47.5, minLng: 6, maxLng: 19 };
         const filters: { provincia?: string; comune?: string; refLat: number; refLng: number } = { refLat: start.lat, refLng: start.lng };
-        if (v.areaMode === 'territory' && zonesForTour.length > 0) {
+        if (isTerritory && territoryZones.length > 0) {
           let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
-          for (const z of zonesForTour) {
+          for (const z of territoryZones) {
             for (const pt of z.geometry.coordinates[0]) {
               const [lng, lat] = pt as [number, number];
               minLat = Math.min(minLat, lat);
@@ -475,8 +495,8 @@ export default function AITourScreen() {
         }
         const exclude = new Set(candidates.map((c) => c.tabaccheriaId).filter((x): x is string => !!x));
         let free = await loadFreeTabaccherie(bounds, exclude, settings, { ...filters, agentId }, resolved === 'sviluppo' ? 80 : 50);
-        if (v.areaMode === 'territory' && zonesForTour.length > 0) {
-          free = free.filter((c) => pointInZones(c.lat, c.lng, zonesForTour));
+        if (isTerritory && territoryZones.length > 0) {
+          free = free.filter((c) => pointInZones(c.lat, c.lng, territoryZones));
         }
         if (free.length > 0) {
           scoreCandidates(free, settings);
@@ -563,8 +583,8 @@ export default function AITourScreen() {
             c.lat >= fillBounds.minLat && c.lat <= fillBounds.maxLat && c.lng >= fillBounds.minLng && c.lng <= fillBounds.maxLng;
           // orfani vicini non ancora nel giro
           let fillers = loaded.orphans.filter((c) => !plannedKeys.has(c.key) && inBox(c));
-          if (v.areaMode === 'territory' && zonesForTour.length > 0) {
-            fillers = fillers.filter((c) => pointInZones(c.lat, c.lng, zonesForTour));
+          if (isTerritory && territoryZones.length > 0) {
+            fillers = fillers.filter((c) => pointInZones(c.lat, c.lng, territoryZones));
           }
           // mai visitate del territorio + tabaccherie libere vicine al giro
           const excludeIds = new Set<string>();
@@ -575,8 +595,8 @@ export default function AITourScreen() {
             { refLat: (fillBounds.minLat + fillBounds.maxLat) / 2, refLng: (fillBounds.minLng + fillBounds.maxLng) / 2, agentId },
             40,
           );
-          if (v.areaMode === 'territory' && zonesForTour.length > 0) {
-            fillFree = fillFree.filter((c) => pointInZones(c.lat, c.lng, zonesForTour));
+          if (isTerritory && territoryZones.length > 0) {
+            fillFree = fillFree.filter((c) => pointInZones(c.lat, c.lng, territoryZones));
           }
           scoreCandidates(fillFree, settings);
           const known = new Set([...plannedKeys, ...fillers.map((c) => c.key)]);
@@ -618,6 +638,7 @@ export default function AITourScreen() {
         city: v.areaMode === 'city' ? v.city : undefined,
         radiusKm: v.areaMode === 'radius' ? radiusKm : undefined,
         zoneIds: v.areaMode === 'territory' ? zonesForTour.map((z) => z.id) : undefined,
+        drawnRings: v.areaMode === 'draw' ? drawnZones.map((z) => z.geometry.coordinates[0] as number[][]) : undefined,
       };
 
       setProgress("L'AI sta scrivendo la strategia del giro...");
@@ -1068,6 +1089,7 @@ export default function AITourScreen() {
       <Text style={styles.label}>Area</Text>
       <View style={styles.chipRow}>
         {agentZones.length > 0 && renderChip('Territorio assegnato', form.areaMode === 'territory', () => set('areaMode', 'territory'))}
+        {agentZones.length > 0 && renderChip('Disegna aree (mappa)', form.areaMode === 'draw', () => set('areaMode', 'draw'))}
         {renderChip('Automatica (AI)', form.areaMode === 'auto', () => set('areaMode', 'auto'))}
         {renderChip('Provincia', form.areaMode === 'province', () => set('areaMode', 'province'))}
         {renderChip('Comune', form.areaMode === 'city', () => set('areaMode', 'city'))}
@@ -1103,6 +1125,9 @@ export default function AITourScreen() {
             })}
           </View>
         </>
+      )}
+      {form.areaMode === 'draw' && agentZones.length > 0 && !!agentId && (
+        <DrawAreasMap agentId={agentId} zones={agentZones} onRingsChange={(r) => set('drawnRings', r)} />
       )}
       {form.areaMode === 'province' && (
         <TextInput

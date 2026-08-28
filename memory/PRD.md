@@ -244,3 +244,11 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
 - Camera integration for photo uploads in anagrafica visits
 - Cart persistence in Order Collection
 - Refactoring of large files (order-collection.tsx ~3500 lines, map.tsx ~1100 lines)
+
+## Allineamento web "Disegna aree (mappa)" (28 ago 2026 — commit web 52ca7982 + 192614b3 + 98e28748)
+- **Genera Tour → nuova area "Disegna aree (mappa)"** (solo agenti con zone assegnate): chip nel form; mappa Leaflet (WebView nativo / iframe web) con zone colorate dell'agente, puntini neri clienti (radius 3.5, intensità default 0.85 con slider @react-native-community/slider 0.1–0.9), strumenti leaflet-draw 1.0.4 (poligono/rettangolo) localizzati in italiano, edit/elimina aree. Componente: `frontend/components/aitour/DrawAreasMap.tsx`.
+- **Selettore "Solo clienti"/"Tutti i punti vendita"**: in modalità Tutti carica lazy le tabaccherie nelle zone (RPC tabaccherie_points_in_bbox + filtro pointInZones) e le mostra in grigio accanto ai clienti neri, con conteggio.
+- **Conteggio live**: status sotto la mappa — N aree disegnate + M clienti dentro (vale solo l'intersezione con le zone assegnate, turf: `intersectDrawnWithZones` in territories.ts con @turf/intersect+@turf/helpers); warning ambra se le aree sono fuori dalle zone.
+- **Generazione**: fail-fast se nessuna area disegnata o se le aree non toccano le zone; le aree intersecate diventano zone sintetiche (`ringsToSyntheticZones`) usate come territorio (bounds, filtro libere/fillers); areaLabel "aree disegnate sulla mappa (N)" visibile nel riepilogo; `SavedAreaFilter.mode='draw'` + `drawnRings` persistiti sul tour → "Più Visite" live rispetta le aree disegnate (branch draw in `areaCheckForTour`, liveops.ts).
+- **SKIP motivato**: slider intensità nella TerritoryDialog web — l'app mobile non ha la vista territorio con mappa.
+- **E2E (account roberto.beretta, zero scritture DB)**: T1 form+chip, T2 mappa+hint, T3 errore senza aree, T4 poligono→"1 area/e — 71 clienti", T5 Tutti→"386 punti vendita nelle zone", T6 GENERA CON AI→piano "aree disegnate sulla mappa (1)" con 8 visite (non salvato). Live tour reale di roberto lasciato intatto (usato solo "Esci", azione locale). Script: manual/video/e2e_draw_areas.py, setup_auth_roberto.py (state /tmp/roberto_state.json).

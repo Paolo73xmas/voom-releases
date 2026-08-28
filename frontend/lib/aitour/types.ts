@@ -68,11 +68,13 @@ export interface TourCandidate {
 
 /** Area scelta alla creazione del giro: le operazioni live (es. "Più Visite") la rispettano */
 export interface SavedAreaFilter {
-  mode: 'auto' | 'territory' | 'province' | 'city' | 'radius';
+  mode: 'auto' | 'territory' | 'province' | 'city' | 'radius' | 'draw';
   province?: string;
   city?: string;
   radiusKm?: number;
   zoneIds?: string[];
+  /** Aree disegnate a mano (già intersecate con le zone assegnate), anelli GeoJSON [lng,lat] */
+  drawnRings?: number[][][];
 }
 
 export interface PlannedStop {

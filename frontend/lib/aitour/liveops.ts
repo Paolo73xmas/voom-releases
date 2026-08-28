@@ -9,7 +9,7 @@ import { addLiveStop, updateLiveSequence, logTourEvent } from './live';
 import { planFixedOrder, planTour, candidatesForDayType } from './planner';
 import { loadCandidates, loadFreeTabaccherie } from './data';
 import { scoreCandidates } from './scoring';
-import { listAllZones, pointInZones } from './territories';
+import { listAllZones, pointInZones, ringsToSyntheticZones } from './territories';
 import type { VisitSlot } from '../visit-slots';
 import { isoWeekday } from '../visit-slots';
 
@@ -216,6 +216,11 @@ type AreaCheck = (c: { lat: number; lng: number; province?: string; city?: strin
 export async function areaCheckForTour(tour: SavedTour, pending: Pick<LiveStopRef, 'candidate'>[]): Promise<AreaCheck> {
   const af = tour.area_filter || null;
   try {
+    if (af?.mode === 'draw' && (af.drawnRings || []).length > 0) {
+      const zones = ringsToSyntheticZones(af.drawnRings!);
+      if (zones.length > 0) return (c) => pointInZones(c.lat, c.lng, zones);
+      return () => true;
+    }
     if (af?.mode === 'territory' && (af.zoneIds || []).length > 0) {
       const zones = (await listAllZones()).filter((z) => af.zoneIds!.includes(z.id));
       if (zones.length > 0) return (c) => pointInZones(c.lat, c.lng, zones);

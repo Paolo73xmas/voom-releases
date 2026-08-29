@@ -262,3 +262,13 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
 - **⚠️ Il WEB ha lo stesso bug** (verificato su clone repo, src/lib/aitour/data.ts stessa logica): da correggere anche lì dal team web.
 - **Nota**: il giro live in corso di Valentina ha ancora le tappe doppie già salvate (11/12 BARBATI, 13/14 SCHIRONE, 9 TABACCHI 2 RIPA ridondante): possono essere cestinate in app; nessuna modifica ai dati production senza conferma utente.
 - Regression: E2E generazione completa (e2e_draw_areas) PASS. Allineati anche commit web e26480b (Disegna aree: reset aree al cambio modalità + ricarica punti Tutti se cambiano zone). SKIP ff77b94 (immagini prodotti, solo admin web). Production richiede redeploy Publish.
+
+## Miglioramento calcolo giro AI Tour (28 ago 2026 — richiesta utente: "passa davanti al cliente due volte ignorandolo la prima")
+- **Causa**: costruzione greedy "in coda" (score − 1.3·viaggio) + solo 2-opt con scarto totale se violava le fasce orarie → incroci e ripassaggi davanti allo stesso punto vendita. Su percorsi lineari andata/ritorno i km totali sono identici tra ordini diversi, quindi il 2-opt puro non discriminava.
+- **Nuovo optimizer (frontend/lib/aitour/planner.ts)**:
+  - `evalOrder`: costo lessicografico = fasce violate (×100000) ≫ orario di fine con attese ≫ guida (×0.2) ≫ **latenza** (somma orari di arrivo ×0.03, tie-break: a parità di km visita il cliente alla PRIMA passata, non al ritorno). Soglia accettazione mosse 0.1.
+  - `improveOrder`: 2-opt (inversione segmento) + **Or-opt** (ricollocazione di 1–3 tappe consecutive nella posizione migliore) — l'Or-opt elimina i ripassaggi che il 2-opt non può correggere. Fasce mai peggiorate (penalità nel costo, niente più "tutto o niente").
+  - **Refill post-ottimizzazione**: il tempo liberato dal percorso migliore viene usato per inserire i candidati esclusi nella POSIZIONE MIGLIORE del giro (non in coda), senza nuove violazioni né sforamenti (usableUntil). Poi rifinitura finale.
+  - Beneficia anche il recalc live e "Più Visite" (passano da planTour). planFixedOrder (sequenza manuale) invariato.
+- **Test sintetici node (esbuild bundle con stub react-native/supabase, /tmp/plantest)**: T1 corridoio 5 tappe → ordine monotono a→b→c→d→e (prima era b→c→e→d→a con doppio passaggio); T2 fascia preferita ~10:00 su B rispettata (arrivo 10:26, zero fuori fascia); T3 giornata corta → 4 tappe monotone, vincolo orario rispettato. Regressione E2E generazione completa in app: PASS (piano 7 visite/34 km, non salvato).
+- **⚠️ Il WEB usa ancora il vecchio 2-opt**: stesso miglioramento da portare in src/lib/aitour/planner web.

@@ -127,30 +127,91 @@ export function pickBestCluster(candidates: TourCandidate[], start: GeoPoint): {
   return { list, label: topCities.join(' / ') };
 }
 
-function twoOpt(order: number[], dur: (number | null)[][], hasEnd: boolean, endIdx: number): number[] {
-  const D = (a: number, b: number) => dur[a]?.[b] ?? 999999;
-  const seq = [...order];
-  const cost = (s: number[]) => {
-    let t = D(0, s[0]);
-    for (let i = 1; i < s.length; i++) t += D(s[i - 1], s[i]);
-    if (hasEnd && s.length > 0) t += D(s[s.length - 1], endIdx);
-    return t;
-  };
+// Valutazione completa di un ordine: fasce violate, orario di fine (attese incluse) e guida.
+// Costo lessicografico: violazioni >> orario di fine >> guida >> latenza media.
+// La latenza (somma degli orari di arrivo) e' il tie-break sui percorsi "lineari"
+// andata/ritorno: a parita' di km si visita il cliente alla PRIMA passata, non al ritorno.
+function evalOrder(
+  order: number[],
+  pool: TourCandidate[],
+  durMin: (a: number, b: number) => number,
+  startMin: number,
+  hasEnd: boolean,
+  endIdx: number,
+): { violations: number; finish: number; drive: number; cost: number } {
+  let t = startMin;
+  let cur = 0;
+  let drive = 0;
+  let violations = 0;
+  let latency = 0;
+  for (const idx of order) {
+    const cand = pool[idx - 1];
+    const leg = durMin(cur, idx);
+    drive += leg;
+    const wa = windowArrival(cand, t + leg);
+    if (wa.outside) violations++;
+    latency += wa.arrival - startMin;
+    t = wa.arrival + cand.visitMinutes;
+    cur = idx;
+  }
+  if (hasEnd && order.length > 0) {
+    const back = durMin(cur, endIdx);
+    drive += back;
+    t += back;
+  }
+  return { violations, finish: t, drive, cost: violations * 100000 + t + drive * 0.2 + latency * 0.03 };
+}
+
+// Ottimizzazione ordine tappe: 2-opt (inversione di segmento) + Or-opt (ricollocazione di
+// 1-3 tappe consecutive nel punto migliore del giro). A differenza del solo 2-opt, l'Or-opt
+// elimina i "ripassaggi" davanti allo stesso punto vendita; il costo tiene conto delle fasce
+// orarie preferite (mai peggiorate) e delle attese, non solo della guida.
+function improveOrder(
+  order: number[],
+  pool: TourCandidate[],
+  durMin: (a: number, b: number) => number,
+  startMin: number,
+  hasEnd: boolean,
+  endIdx: number,
+): number[] {
+  const ev = (o: number[]) => evalOrder(o, pool, durMin, startMin, hasEnd, endIdx).cost;
+  let best = [...order];
+  let bestCost = ev(best);
   let improved = true;
   let guard = 0;
-  while (improved && guard++ < 40) {
+  while (improved && guard++ < 15) {
     improved = false;
-    for (let i = 0; i < seq.length - 1; i++) {
-      for (let j = i + 1; j < seq.length; j++) {
-        const alt = [...seq.slice(0, i), ...seq.slice(i, j + 1).reverse(), ...seq.slice(j + 1)];
-        if (cost(alt) < cost(seq) - 1) {
-          seq.splice(0, seq.length, ...alt);
+    // 2-opt: inverte il tratto [i..j]
+    for (let i = 0; i < best.length - 1; i++) {
+      for (let j = i + 1; j < best.length; j++) {
+        const alt = [...best.slice(0, i), ...best.slice(i, j + 1).reverse(), ...best.slice(j + 1)];
+        const c = ev(alt);
+        if (c < bestCost - 0.1) {
+          best = alt;
+          bestCost = c;
           improved = true;
         }
       }
     }
+    // Or-opt: sposta catene di 1..3 tappe consecutive in un'altra posizione
+    for (let len = 1; len <= 3 && len < best.length; len++) {
+      for (let i = 0; i + len <= best.length; i++) {
+        const chain = best.slice(i, i + len);
+        const rest = [...best.slice(0, i), ...best.slice(i + len)];
+        for (let j = 0; j <= rest.length; j++) {
+          if (j === i) continue;
+          const alt = [...rest.slice(0, j), ...chain, ...rest.slice(j)];
+          const c = ev(alt);
+          if (c < bestCost - 0.1) {
+            best = alt;
+            bestCost = c;
+            improved = true;
+          }
+        }
+      }
+    }
   }
-  return seq;
+  return best;
 }
 
 export async function planTour(input: PlanInput): Promise<TourPlan> {
@@ -251,24 +312,42 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     currentIdx = bestI;
   }
 
-  // Miglioramento 2-opt sulla sequenza (start fisso, end fisso se presente).
-  // Se il riordino viola le fasce orarie preferite, si mantiene la sequenza greedy.
-  const violatesWindows = (order: number[]): boolean => {
-    let tt = startMin;
-    let cur = 0;
-    for (const idx of order) {
-      const cand = pool[idx - 1];
-      const wa = windowArrival(cand, tt + durMin(cur, idx));
-      if (wa.outside) return true;
-      tt = wa.arrival + cand.visitMinutes;
-      cur = idx;
+  // Miglioramento dell'ordine (2-opt + Or-opt, fasce orarie mai peggiorate: il costo
+  // penalizza le violazioni, quindi si accettano solo ordini con violazioni <= greedy)
+  let optimized = selected.length > 2 ? improveOrder(selected, pool, durMin, startMin, !!end, endIdx) : [...selected];
+
+  // Il percorso ottimizzato libera tempo: inserisce i candidati rimasti fuori nella
+  // POSIZIONE MIGLIORE del giro (non in coda) — niente piu' "passato davanti e ignorato"
+  if (optimized.length > 0) {
+    let current = evalOrder(optimized, pool, durMin, startMin, !!end, endIdx);
+    const remaining = pool
+      .map((c, i) => ({ c, idx: i + 1 }))
+      .filter(({ idx }) => !inTour.has(idx))
+      .sort((a, b) => b.c.score - a.c.score);
+    let inserted = false;
+    for (const { c, idx } of remaining) {
+      let bestAlt: number[] | null = null;
+      let bestCost = Infinity;
+      for (let j = 0; j <= optimized.length; j++) {
+        const alt = [...optimized.slice(0, j), idx, ...optimized.slice(j)];
+        const e = evalOrder(alt, pool, durMin, startMin, !!end, endIdx);
+        if (e.violations > current.violations) continue;
+        if (e.finish > usableUntil) continue;
+        if (e.cost < bestCost) {
+          bestCost = e.cost;
+          bestAlt = alt;
+        }
+      }
+      if (bestAlt) {
+        optimized = bestAlt;
+        inTour.add(idx);
+        windowBlockedKeys.delete(c.key);
+        current = evalOrder(optimized, pool, durMin, startMin, !!end, endIdx);
+        inserted = true;
+      }
     }
-    return false;
-  };
-  let optimized = selected.length > 2 ? twoOpt(selected, matrix.durations, !!end, endIdx) : selected;
-  const anyWindows = selected.some((i) => (pool[i - 1].preferredSlots?.length || 0) > 0);
-  if (anyWindows && optimized !== selected && violatesWindows(optimized) && !violatesWindows(selected)) {
-    optimized = selected;
+    // Rifinitura dopo gli inserimenti
+    if (inserted && optimized.length > 2) optimized = improveOrder(optimized, pool, durMin, startMin, !!end, endIdx);
   }
 
   // Percorso finale per geometria e tempi reali

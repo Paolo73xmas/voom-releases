@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA } from '../../lib/theme';
-import { AI_PURPLE, AI_PURPLE_SOFT } from './shared';
+import { AI_PURPLE, AI_PURPLE_SOFT, AI_PURPLE_TEXT } from './shared';
 import { loadCandidates, loadFreeTabaccherie } from '../../lib/aitour/data';
 import { getVisitSlots, type VisitSlot, WEEKDAY_NAMES } from '../../lib/visit-slots';
 import type { PlacementChoice } from '../../lib/aitour/liveops';
@@ -114,7 +114,7 @@ export function AddStopModal({ visible, onClose, agentId, settings, center, excl
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.titleRow}>
-            <Ionicons name="add-circle" size={17} color={AI_PURPLE} />
+            <Ionicons name="add-circle" size={17} color={AI_PURPLE_TEXT} />
             <Text style={styles.title}>Aggiungi tappa al giro</Text>
           </View>
 
@@ -139,7 +139,7 @@ export function AddStopModal({ visible, onClose, agentId, settings, center, excl
               </View>
               {loading ? (
                 <View style={styles.loadingBox}>
-                  <ActivityIndicator color={AI_PURPLE} />
+                  <ActivityIndicator color={AI_PURPLE_TEXT} />
                   <Text style={styles.loadingText}>Carico i punti vendita…</Text>
                 </View>
               ) : (
@@ -199,8 +199,8 @@ export function AddStopModal({ visible, onClose, agentId, settings, center, excl
                   activeOpacity={0.7}
                 >
                   <View style={styles.modeTop}>
-                    <Ionicons name={m.icon} size={14} color={mode === m.id ? AI_PURPLE : DS.inkMuted} />
-                    <Text style={[styles.modeLabel, mode === m.id && { color: AI_PURPLE }]}>{m.label}</Text>
+                    <Ionicons name={m.icon} size={14} color={mode === m.id ? AI_PURPLE_TEXT : DS.inkMuted} />
+                    <Text style={[styles.modeLabel, mode === m.id && { color: AI_PURPLE_TEXT }]}>{m.label}</Text>
                   </View>
                   <Text style={styles.modeDesc}>{m.desc}</Text>
                 </TouchableOpacity>
@@ -237,7 +237,7 @@ export function AddStopModal({ visible, onClose, agentId, settings, center, excl
                       const active = afterId === p.id;
                       return (
                         <TouchableOpacity key={p.id} style={[styles.afterRow, active && styles.afterRowActive]} onPress={() => setAfterId(p.id)} activeOpacity={0.7}>
-                          <Ionicons name={active ? 'radio-button-on' : 'radio-button-off'} size={15} color={active ? AI_PURPLE : DS.inkMuted} />
+                          <Ionicons name={active ? 'radio-button-on' : 'radio-button-off'} size={15} color={active ? AI_PURPLE_TEXT : DS.inkMuted} />
                           <Text style={[styles.afterText, active && { color: DS.ink, fontFamily: JAKARTA.semibold }]} numberOfLines={1}>
                             {i + 1}. {p.name}
                           </Text>

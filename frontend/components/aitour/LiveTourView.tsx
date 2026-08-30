@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 import { DS, JAKARTA, SHADOWS } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
-import { AI_PURPLE, AI_PURPLE_SOFT, openNavigation } from './shared';
+import { AI_PURPLE, AI_PURPLE_SOFT, AI_PURPLE_TEXT, AI_PURPLE_BORDER, openNavigation } from './shared';
 import { EsitoModal, type EsitoExtras } from './EsitoModal';
 import { SkipModal } from './SkipModal';
 import { TourMapView, type TourMapStop } from './TourMapView';
@@ -1167,7 +1167,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           disabled={busy}
           activeOpacity={0.7}
         >
-          <Ionicons name="add" size={15} color={AI_PURPLE} />
+          <Ionicons name="add" size={15} color={AI_PURPLE_TEXT} />
           <Text style={styles.opsBtnText}>Tappa</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -1195,7 +1195,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             disabled={busy}
             activeOpacity={0.7}
           >
-            <Ionicons name="swap-vertical" size={14} color={AI_PURPLE} />
+            <Ionicons name="swap-vertical" size={14} color={AI_PURPLE_TEXT} />
             <Text style={styles.opsBtnText}>Ordine</Text>
           </TouchableOpacity>
         )}
@@ -1230,7 +1230,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         }}
         activeOpacity={0.7}
       >
-        <Ionicons name="map-outline" size={15} color={AI_PURPLE} />
+        <Ionicons name="map-outline" size={15} color={AI_PURPLE_TEXT} />
         <Text style={styles.mapToggleText}>Mappa del giro</Text>
         <Ionicons name={showMap ? 'chevron-up' : 'chevron-down'} size={15} color={DS.inkMuted} style={{ marginLeft: 'auto' }} />
       </TouchableOpacity>
@@ -1457,7 +1457,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
 
       {recalcing && (
         <View style={styles.recalcRow}>
-          <ActivityIndicator size="small" color={AI_PURPLE} />
+          <ActivityIndicator size="small" color={AI_PURPLE_TEXT} />
           <Text style={styles.recalcText}>Ricalcolo del giro in corso...</Text>
         </View>
       )}
@@ -1850,7 +1850,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
                 </View>
               </View>
             ) : (
-              <ActivityIndicator size="small" color={AI_PURPLE} style={{ marginVertical: 8 }} />
+              <ActivityIndicator size="small" color={AI_PURPLE_TEXT} style={{ marginVertical: 8 }} />
             )}
             {pending.length > 0 && (
               <Text style={styles.recapWarn}>
@@ -1943,7 +1943,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 11,
   },
-  opsBtnText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: AI_PURPLE },
+  opsBtnText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: AI_PURPLE_TEXT },
   lunchBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2006,7 +2006,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.sm,
   },
   nextHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4 },
-  nextLabel: { fontFamily: JAKARTA.bold, fontSize: 10, color: AI_PURPLE, letterSpacing: 0.4 },
+  nextLabel: { fontFamily: JAKARTA.bold, fontSize: 10, color: AI_PURPLE_TEXT, letterSpacing: 0.4 },
   nextBadges: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
   mandBadge: { backgroundColor: '#DC2626', borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 },
   mandBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 9, color: '#FFF' },
@@ -2021,10 +2021,10 @@ const styles = StyleSheet.create({
   nextReason: {
     fontFamily: JAKARTA.regular,
     fontSize: 11,
-    color: '#6D28D9',
+    color: AI_PURPLE_TEXT,
     fontStyle: 'italic',
     borderLeftWidth: 2,
-    borderLeftColor: '#C4B5FD',
+    borderLeftColor: AI_PURPLE_BORDER,
     paddingLeft: 7,
     marginTop: 8,
     lineHeight: 16,
@@ -2075,7 +2075,7 @@ const styles = StyleSheet.create({
   },
   doneText: { fontFamily: JAKARTA.medium, fontSize: 13, color: DS.ink2, textAlign: 'center' },
   recalcRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
-  recalcText: { fontFamily: JAKARTA.medium, fontSize: 12, color: AI_PURPLE },
+  recalcText: { fontFamily: JAKARTA.medium, fontSize: 12, color: AI_PURPLE_TEXT },
   listSection: { backgroundColor: DS.surface, borderRadius: 12, padding: 10, marginTop: 12 },
   listTitle: { fontFamily: JAKARTA.bold, fontSize: 10, color: DS.inkMuted, letterSpacing: 0.4, marginBottom: 6 },
   listRow: {

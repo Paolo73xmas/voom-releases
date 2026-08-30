@@ -25,7 +25,7 @@ import {
 } from 'expo-audio';
 import { DS, JAKARTA } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
-import { AI_PURPLE, AI_PURPLE_SOFT } from './shared';
+import { AI_PURPLE, AI_PURPLE_SOFT, AI_PURPLE_TEXT } from './shared';
 import { normalizeBrief, segmentLabel, type TourBrief } from '../../lib/aitour/brief';
 
 const API = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
@@ -188,7 +188,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
           <View style={styles.header}>
             <View style={styles.headerTitle}>
-              <Ionicons name="sparkles" size={18} color={AI_PURPLE} />
+              <Ionicons name="sparkles" size={18} color={AI_PURPLE_TEXT} />
               <Text style={styles.title}>{"Dillo all'AI"}</Text>
             </View>
             <TouchableOpacity onPress={close} hitSlop={10}>
@@ -249,7 +249,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                     <View key={`${s.type}-${i}`} style={styles.segChip}>
                       <Text style={styles.segChipText}>{segmentLabel(s)}</Text>
                       <TouchableOpacity onPress={() => removeSegment(i)} hitSlop={8}>
-                        <Ionicons name="close-circle" size={16} color={AI_PURPLE} />
+                        <Ionicons name="close-circle" size={16} color={AI_PURPLE_TEXT} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -333,7 +333,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                     onPress={() => { hap.light(); setBrief({ ...brief, compact: !brief.compact }); }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name={brief.compact ? 'checkbox' : 'square-outline'} size={18} color={brief.compact ? AI_PURPLE : DS.ink2} />
+                    <Ionicons name={brief.compact ? 'checkbox' : 'square-outline'} size={18} color={brief.compact ? AI_PURPLE_TEXT : DS.ink2} />
                     <Text style={styles.toggleText}>Tutti vicini (zona unica)</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -341,7 +341,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                     onPress={() => { hap.light(); setBrief({ ...brief, splitDays: brief.splitDays === 2 ? 1 : 2 }); }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name={brief.splitDays === 2 ? 'checkbox' : 'square-outline'} size={18} color={brief.splitDays === 2 ? AI_PURPLE : DS.ink2} />
+                    <Ionicons name={brief.splitDays === 2 ? 'checkbox' : 'square-outline'} size={18} color={brief.splitDays === 2 ? AI_PURPLE_TEXT : DS.ink2} />
                     <Text style={styles.toggleText}>Dividi su 2 giorni</Text>
                   </TouchableOpacity>
                 </View>
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, minHeight: 80, maxHeight: 140, borderWidth: 1, borderColor: DS.border, borderRadius: 12, padding: 12, fontFamily: JAKARTA.regular, fontSize: 15, color: DS.ink, backgroundColor: DS.surface2, textAlignVertical: 'top' },
   micBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: AI_PURPLE, justifyContent: 'center', alignItems: 'center' },
   micBtnActive: { backgroundColor: '#DC2626' },
-  recHint: { fontFamily: JAKARTA.medium, fontSize: 12, color: AI_PURPLE, marginTop: 8 },
+  recHint: { fontFamily: JAKARTA.medium, fontSize: 12, color: AI_PURPLE_TEXT, marginTop: 8 },
   err: { fontFamily: JAKARTA.medium, fontSize: 13, color: '#DC2626', marginTop: 8 },
   interpretBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: AI_PURPLE, borderRadius: 12, paddingVertical: 14, marginTop: 14 },
   interpretText: { fontFamily: JAKARTA.semibold, fontSize: 15, color: '#FFF' },
@@ -384,13 +384,13 @@ const styles = StyleSheet.create({
   groupLabel: { fontFamily: JAKARTA.semibold, fontSize: 13, color: DS.ink2, marginBottom: 8, marginTop: 6 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 6 },
   segChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: AI_PURPLE_SOFT, borderRadius: 20, paddingVertical: 7, paddingHorizontal: 12 },
-  segChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: AI_PURPLE },
+  segChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: AI_PURPLE_TEXT },
   emptyChip: { fontFamily: JAKARTA.regular, fontSize: 13, color: DS.inkMuted, fontStyle: 'italic' },
   areaInput: { borderWidth: 1, borderColor: DS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: JAKARTA.regular, fontSize: 15, color: DS.ink, backgroundColor: DS.surface2, marginBottom: 6 },
   optChip: { borderWidth: 1, borderColor: DS.border, borderRadius: 20, paddingVertical: 7, paddingHorizontal: 16, backgroundColor: DS.surface2 },
   optChipActive: { borderColor: AI_PURPLE, backgroundColor: AI_PURPLE_SOFT },
   optChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: DS.ink2 },
-  optChipTextActive: { color: AI_PURPLE },
+  optChipTextActive: { color: AI_PURPLE_TEXT },
   counterRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 8 },
   counterBtn: { width: 40, height: 40, borderRadius: 10, borderWidth: 1, borderColor: DS.border, justifyContent: 'center', alignItems: 'center', backgroundColor: DS.surface2 },
   counterValue: { fontFamily: JAKARTA.semibold, fontSize: 16, color: DS.ink, minWidth: 54, textAlign: 'center' },

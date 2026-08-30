@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA } from '../../lib/theme';
-import { AI_PURPLE } from './shared';
+import { AI_PURPLE, AI_PURPLE_TEXT } from './shared';
 import { supabase } from '../../lib/supabase';
 import type { TourCandidate } from '../../lib/aitour/types';
 import { ENTITY_LABELS, ENTITY_TEXT_COLORS, fmtEur } from '../../lib/aitour/types';
@@ -68,7 +68,7 @@ export function CandidateEntityBadge({ candidate }: { candidate: TourCandidate }
         <View style={styles.backdrop}>
           <View style={styles.sheet}>
             <View style={styles.header}>
-              <Ionicons name="cart" size={17} color={AI_PURPLE} />
+              <Ionicons name="cart" size={17} color={AI_PURPLE_TEXT} />
               <Text style={styles.title} numberOfLines={1}>{candidate.name}</Text>
               <TouchableOpacity onPress={() => setOpen(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="close" size={22} color={DS.inkMuted} />
@@ -78,7 +78,7 @@ export function CandidateEntityBadge({ candidate }: { candidate: TourCandidate }
 
             {loading ? (
               <View style={styles.loadingBox}>
-                <ActivityIndicator color={AI_PURPLE} />
+                <ActivityIndicator color={AI_PURPLE_TEXT} />
               </View>
             ) : orders.length > 0 ? (
               <>

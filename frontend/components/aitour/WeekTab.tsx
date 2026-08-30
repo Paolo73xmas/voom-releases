@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
 import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA, SHADOWS } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
-import { AI_PURPLE } from './shared';
+import { AI_PURPLE, AI_PURPLE_TEXT } from './shared';
 import { loadCandidates } from '../../lib/aitour/data';
 import { scoreCandidates } from '../../lib/aitour/scoring';
 import { listAllZones, pointInZones, loadNeverVisitedFillers, type TerritoryZone } from '../../lib/aitour/territories';
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   dayCard: { backgroundColor: DS.surface, borderRadius: 12, padding: 12, marginTop: 10, ...SHADOWS.sm },
   dayHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   dayTitle: { fontFamily: JAKARTA.bold, fontSize: 14, color: DS.ink },
-  dayTerritory: { fontFamily: JAKARTA.semibold, fontSize: 11, color: AI_PURPLE, marginTop: 1 },
+  dayTerritory: { fontFamily: JAKARTA.semibold, fontSize: 11, color: AI_PURPLE_TEXT, marginTop: 1 },
   dayCountBadge: { backgroundColor: DS.surface2, borderRadius: 7, paddingVertical: 3, paddingHorizontal: 8 },
   dayCountText: { fontFamily: JAKARTA.semibold, fontSize: 11, color: DS.ink2 },
   dayMeta: { fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted, marginTop: 5, marginBottom: 6 },
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   candName: { flexShrink: 1, fontFamily: JAKARTA.medium, fontSize: 12, color: DS.ink },
   candCity: { flex: 1, fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted },
   candScore: { fontFamily: JAKARTA.bold, fontSize: 12, color: DS.ink2 },
-  expandText: { fontFamily: JAKARTA.semibold, fontSize: 11, color: AI_PURPLE, marginTop: 6 },
+  expandText: { fontFamily: JAKARTA.semibold, fontSize: 11, color: AI_PURPLE_TEXT, marginTop: 6 },
   noVisits: { fontFamily: JAKARTA.regular, fontSize: 12, color: DS.inkMuted, paddingVertical: 8 },
   dayGenBtn: {
     flexDirection: 'row',

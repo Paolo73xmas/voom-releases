@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA } from '../../lib/theme';
-import { AI_PURPLE } from './shared';
+import { AI_PURPLE_TEXT } from './shared';
 
 export interface ReorderItem {
   id: string;
@@ -44,7 +44,7 @@ export function ReorderStopsModal({ visible, onClose, items, saving, onConfirm }
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.titleRow}>
-            <Ionicons name="swap-vertical" size={16} color={AI_PURPLE} />
+            <Ionicons name="swap-vertical" size={16} color={AI_PURPLE_TEXT} />
             <Text style={styles.title}>Cambia Ordine Tappe</Text>
           </View>
           <Text style={styles.hint}>

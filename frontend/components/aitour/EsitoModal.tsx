@@ -7,7 +7,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA, currentThemeMode } from '../../lib/theme';
 import { supabase } from '../../lib/supabase';
-import { AI_PURPLE, AI_PURPLE_SOFT } from './shared';
+import { AI_PURPLE, AI_PURPLE_SOFT, AI_PURPLE_TEXT } from './shared';
 import { VisitSlotWheel } from '../customers/VisitSlotWheel';
 import { ExcludedDaysPicker } from '../customers/ExcludedDaysPicker';
 import { UploadProgressOverlay } from '../UploadProgressOverlay';
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   },
   optionActive: { borderColor: AI_PURPLE, backgroundColor: AI_PURPLE_SOFT },
   optionText: { fontFamily: JAKARTA.medium, fontSize: 12, color: DS.ink2 },
-  optionTextActive: { color: '#5B21B6', fontFamily: JAKARTA.semibold },
+  optionTextActive: { color: AI_PURPLE_TEXT, fontFamily: JAKARTA.semibold },
   label: { fontFamily: JAKARTA.semibold, fontSize: 11, color: DS.ink2, marginTop: 12, marginBottom: 5 },
   input: {
     borderWidth: 1,

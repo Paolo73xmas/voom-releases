@@ -39,7 +39,7 @@ import { buildBriefPlan, type TourBrief } from '../lib/aitour/brief';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
 import { CandidateEntityBadge } from '../components/aitour/OrphanHistoryBadge';
-import { AI_PURPLE, AI_PURPLE_SOFT, openNavigation } from '../components/aitour/shared';
+import { AI_PURPLE, AI_PURPLE_SOFT, AI_PURPLE_TEXT, AI_PURPLE_BORDER, openNavigation } from '../components/aitour/shared';
 import type { TourPlan, GeoPoint, AiTourSettings, DayType, EntityType, PriorityClass, TourCandidate } from '../lib/aitour/types';
 import { DEFAULT_SETTINGS, timeToMin, minToTime, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS } from '../lib/aitour/types';
 import type { WeekDayPlan } from '../lib/aitour/week';
@@ -1155,7 +1155,7 @@ export default function AITourScreen() {
           <Text style={styles.briefCardTitle}>{"Dillo all'AI"}</Text>
           <Text style={styles.briefCardDesc}>{"Descrivi il giro a voce o per iscritto e lascia che l'AI lo costruisca"}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={AI_PURPLE} />
+        <Ionicons name="chevron-forward" size={20} color={AI_PURPLE_TEXT} />
       </TouchableOpacity>
 
       <View style={styles.briefDivider}>
@@ -1232,8 +1232,8 @@ export default function AITourScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.dayTypeHeader}>
-                <Ionicons name={d.icon} size={16} color={active ? AI_PURPLE : DS.ink2} />
-                <Text style={[styles.dayTypeLabel, active && { color: AI_PURPLE }]}>{d.label}</Text>
+                <Ionicons name={d.icon} size={16} color={active ? AI_PURPLE_TEXT : DS.ink2} />
+                <Text style={[styles.dayTypeLabel, active && { color: AI_PURPLE_TEXT }]}>{d.label}</Text>
               </View>
               <Text style={styles.dayTypeDesc}>{d.desc}</Text>
             </TouchableOpacity>
@@ -1400,7 +1400,7 @@ export default function AITourScreen() {
                 testID={`aitour-mandatory-time-${s.id}`}
               />
               <TouchableOpacity onPress={() => removeMandatory(s.id)} hitSlop={8}>
-                <Ionicons name="close" size={14} color={AI_PURPLE} />
+                <Ionicons name="close" size={14} color={AI_PURPLE_TEXT} />
               </TouchableOpacity>
             </View>
           ))}
@@ -1444,7 +1444,7 @@ export default function AITourScreen() {
         {/* Giro diviso su 2 giorni: passa da Giorno 1 a Giorno 2 */}
         {secondaryPlan && (
           <View style={styles.splitBanner}>
-            <Ionicons name="calendar" size={16} color={AI_PURPLE} />
+            <Ionicons name="calendar" size={16} color={AI_PURPLE_TEXT} />
             <Text style={styles.splitBannerText}>
               Giro diviso su 2 giorni · stai vedendo {fmtTourDate(plan.tourDate)}
             </Text>
@@ -1541,9 +1541,9 @@ export default function AITourScreen() {
         </View>
 
         {plan.aiRecommendation ? (
-          <View style={[styles.alertBox, { backgroundColor: AI_PURPLE_SOFT, borderColor: '#DDD6FE' }]}>
-            <Ionicons name="sparkles" size={14} color={AI_PURPLE} />
-            <Text style={[styles.alertText, { color: '#5B21B6' }]}>{plan.aiRecommendation}</Text>
+          <View style={[styles.alertBox, { backgroundColor: AI_PURPLE_SOFT, borderColor: AI_PURPLE_BORDER }]}>
+            <Ionicons name="sparkles" size={14} color={AI_PURPLE_TEXT} />
+            <Text style={[styles.alertText, { color: AI_PURPLE_TEXT }]}>{plan.aiRecommendation}</Text>
           </View>
         ) : null}
         {plan.aiSummary ? (
@@ -1723,7 +1723,7 @@ export default function AITourScreen() {
   const renderSavedTours = () => (
     <View>
       {loadingTours && savedTours.length === 0 ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={AI_PURPLE} />
+        <ActivityIndicator style={{ marginTop: 40 }} color={AI_PURPLE_TEXT} />
       ) : savedTours.length === 0 ? (
         <View style={styles.emptyBox}>
           <Ionicons name="map-outline" size={40} color={DS.inkMuted} />
@@ -1770,7 +1770,7 @@ export default function AITourScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <View style={styles.titleRow}>
-            <Ionicons name="sparkles" size={18} color={AI_PURPLE} />
+            <Ionicons name="sparkles" size={18} color={AI_PURPLE_TEXT} />
             <Text style={styles.title}>AI Tour</Text>
           </View>
           <Text style={styles.subtitle}>Pianificazione AI dei giri visita</Text>
@@ -1852,7 +1852,7 @@ export default function AITourScreen() {
 
       {generating ? (
         <View style={styles.generatingBox}>
-          <ActivityIndicator size="large" color={AI_PURPLE} />
+          <ActivityIndicator size="large" color={AI_PURPLE_TEXT} />
           <Text style={styles.generatingText}>{progress}</Text>
           <Text style={styles.generatingHint}>Selezione commerciale → clustering → pianificazione temporale</Text>
         </View>
@@ -1934,7 +1934,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   briefIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: AI_PURPLE, justifyContent: 'center', alignItems: 'center' },
-  briefCardTitle: { fontFamily: JAKARTA.bold, fontSize: 15, color: AI_PURPLE },
+  briefCardTitle: { fontFamily: JAKARTA.bold, fontSize: 15, color: AI_PURPLE_TEXT },
   briefCardDesc: { fontFamily: JAKARTA.regular, fontSize: 12, color: DS.ink2, marginTop: 2, lineHeight: 16 },
   briefDivider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
   briefDividerLine: { flex: 1, height: 1, backgroundColor: DS.border },
@@ -1949,7 +1949,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 10,
   },
-  splitBannerText: { flex: 1, fontFamily: JAKARTA.semibold, fontSize: 12, color: AI_PURPLE },
+  splitBannerText: { flex: 1, fontFamily: JAKARTA.semibold, fontSize: 12, color: AI_PURPLE_TEXT },
   splitSwapBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: AI_PURPLE, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 },
   splitSwapText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: '#FFF' },
   segmented: {
@@ -2100,10 +2100,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     maxWidth: '100%',
   },
-  mandChipText: { fontFamily: JAKARTA.medium, fontSize: 12, color: '#5B21B6', maxWidth: 220, flex: 1 },
-  mandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F3E8FF', borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9 },
+  mandChipText: { fontFamily: JAKARTA.medium, fontSize: 12, color: AI_PURPLE_TEXT, maxWidth: 220, flex: 1 },
+  mandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: AI_PURPLE_SOFT, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9 },
   mandTimeLabel: { fontFamily: JAKARTA.regular, fontSize: 9.5, color: DS.inkMuted },
-  mandTimeInput: { borderWidth: 1, borderColor: '#DDD6FE', borderRadius: 7, paddingVertical: 4, paddingHorizontal: 6, fontFamily: JAKARTA.semibold, fontSize: 12, color: '#5B21B6', backgroundColor: '#FFF', width: 62, textAlign: 'center' },
+  mandTimeInput: { borderWidth: 1, borderColor: AI_PURPLE_BORDER, borderRadius: 7, paddingVertical: 4, paddingHorizontal: 6, fontFamily: JAKARTA.semibold, fontSize: 12, color: AI_PURPLE_TEXT, backgroundColor: DS.surface, width: 62, textAlign: 'center' },
   mandTimeHint: { fontFamily: JAKARTA.regular, fontSize: 10, color: DS.inkMuted },
   generateBtn: {
     flexDirection: 'row',

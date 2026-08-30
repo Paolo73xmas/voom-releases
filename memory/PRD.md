@@ -283,3 +283,14 @@ Implementazione:
 - app.json: permesso microfono iOS (NSMicrophoneUsageDescription) + Android RECORD_AUDIO + plugin expo-audio microphonePermission.
 
 Stato: backend agent-tested (4 casi parse OK via curl); frontend lint/tsc puliti, smoke boot OK. Da testare E2E (flusso testo→chip→genera) e user-confirm su device (voce). Produzione: richiede Publish/redeploy.
+
+## [30/08 sera] FIX DEFINITIVO blocco "Determino il punto di partenza..." (Expo Go/produzione)
+L'utente ha confermato che il blocco persisteva ANCHE dopo il deploy del primo fix (timeout solo su getCurrentPositionAsync). Root cause reale: nel percorso GPS restavano DUE await nativi SENZA timeout — Location.getForegroundPermissionsAsync() e Location.getLastKnownPositionAsync() — entrambi noti per non risolversi mai in certi stati su iOS/Expo Go (un .catch non basta contro una promise che non si conclude).
+
+Fix (app/ai-tour.tsx):
+- Helper withTimeout(promise, ms): risolve sempre null allo scadere (contro promise pendenti per sempre).
+- getCurrentPositionMobile: getForegroundPermissionsAsync max 4s (se scade si passa direttamente a requestForegroundPermissionsAsync, che risolve subito se già concesso); getLastKnownPositionAsync max 4s in parallelo; getCurrentPositionAsync max 9s. Peggior caso ~13s, poi coordinate o messaggio d'errore.
+- Timeout complessivo di sicurezza 30s attorno a resolvePoint(start) sia in generate() sia in generateFromBrief(): QUALUNQUE blocco imprevisto in questa fase termina con errore, mai schermata bloccata.
+- Diagnostica: il progress mostra la sotto-fase — "Determino il punto di partenza... (permessi posizione)" / "(lettura GPS)" — così un eventuale futuro blocco indica esattamente dove.
+
+Verificato in preview: GPS negato → errore chiaro in ~3s, UI sbloccata. Il comportamento nativo (permesso concesso, API che si impianta) è ora matematicamente limitato dai timeout. Richiede Publish/redeploy + conferma utente su device.

@@ -128,14 +128,30 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
   cancelled: { label: 'Annullato', color: '#991B1B', bg: '#FEE2E2' },
 };
 
-async function getCurrentPositionMobile(): Promise<{ lat: number; lng: number } | null> {
+// Promessa con timeout garantito: risolve comunque null se non si conclude entro ms.
+// Necessario perché alcune API native di expo-location (getForegroundPermissionsAsync,
+// getLastKnownPositionAsync) possono NON risolversi mai su iOS/Expo Go: un semplice
+// .catch non basta, serve un timer che sblocca sempre la UI.
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(null), ms);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      () => { clearTimeout(t); resolve(null); }
+    );
+  });
+}
+
+async function getCurrentPositionMobile(onPhase?: (msg: string) => void): Promise<{ lat: number; lng: number } | null> {
   try {
-    let perm = await Location.getForegroundPermissionsAsync();
-    if (perm.status !== 'granted') {
-      if (perm.canAskAgain) {
-        perm = await Location.requestForegroundPermissionsAsync();
+    onPhase?.('permessi posizione');
+    let perm = await withTimeout(Location.getForegroundPermissionsAsync(), 4000);
+    if (!perm || perm.status !== 'granted') {
+      if (!perm || perm.canAskAgain) {
+        // Qui può comparire il popup di sistema: attende legittimamente l'utente
+        perm = await Location.requestForegroundPermissionsAsync().catch(() => null);
       }
-      if (perm.status !== 'granted') {
+      if (!perm || perm.status !== 'granted') {
         Alert.alert(
           'Posizione non disponibile',
           'Per partire dalla tua posizione serve il permesso di localizzazione. Puoi abilitarlo dalle impostazioni o usare un indirizzo manuale.',
@@ -147,15 +163,15 @@ async function getCurrentPositionMobile(): Promise<{ lat: number; lng: number } 
         return null;
       }
     }
-    // Posizione: prima l'ultima nota (istantanea), poi quella attuale con timeout
-    // per evitare che il GPS lento blocchi la schermata all'infinito.
-    const last = await Location.getLastKnownPositionAsync({ maxAge: 120000 }).catch(() => null);
-    const gpsTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 9000));
-    const current = await Promise.race([
+    onPhase?.('lettura GPS');
+    // Ultima posizione nota e GPS attuale in parallelo, OGNUNA con timeout proprio:
+    // se una delle due non risponde mai, l'altra (o il timeout) sblocca comunque.
+    const lastP = withTimeout(Location.getLastKnownPositionAsync({ maxAge: 300000 }), 4000);
+    const current = await withTimeout(
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-      gpsTimeout,
-    ]).catch(() => null);
-    const pos = current || last;
+      9000
+    );
+    const pos = current || (await lastP);
     if (!pos) return null;
     return { lat: pos.coords.latitude, lng: pos.coords.longitude };
   } catch (e) {
@@ -349,11 +365,11 @@ export default function AITourScreen() {
   };
 
   const resolvePoint = useCallback(
-    async (mode: string, address: string, start: GeoPoint | null): Promise<GeoPoint | null> => {
+    async (mode: string, address: string, start: GeoPoint | null, onPhase?: (msg: string) => void): Promise<GeoPoint | null> => {
       if (mode === 'none') return null;
       if (mode === 'start') return start;
       if (mode === 'current') {
-        const p = await getCurrentPositionMobile();
+        const p = await getCurrentPositionMobile(onPhase);
         return p ? { ...p, label: 'Posizione corrente' } : null;
       }
       if (mode === 'home') return settings.home_lat ? { lat: settings.home_lat, lng: settings.home_lng as number, label: 'Casa' } : null;
@@ -404,7 +420,12 @@ export default function AITourScreen() {
       }
 
       setProgress('Determino il punto di partenza...');
-      const start = await resolvePoint(v.startMode, v.startAddress, null);
+      // Timeout complessivo di sicurezza: qualunque blocco imprevisto in questa fase
+      // termina comunque con un messaggio, mai con la schermata bloccata.
+      const start = await withTimeout(
+        resolvePoint(v.startMode, v.startAddress, null, (m) => setProgress(`Determino il punto di partenza... (${m})`)),
+        30000
+      );
       if (!start) {
         setErrMsg(
           v.startMode === 'current'
@@ -735,7 +756,11 @@ export default function AITourScreen() {
       }
 
       setProgress('Determino il punto di partenza...');
-      const start = await resolvePoint(form.startMode, form.startAddress, null);
+      // Timeout complessivo di sicurezza: mai schermata bloccata su questa fase
+      const start = await withTimeout(
+        resolvePoint(form.startMode, form.startAddress, null, (m) => setProgress(`Determino il punto di partenza... (${m})`)),
+        30000
+      );
       if (!start) {
         setErrMsg('Posizione non disponibile: consenti la geolocalizzazione o imposta un indirizzo di partenza');
         setGenerating(false);

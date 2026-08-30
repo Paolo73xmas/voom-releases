@@ -422,14 +422,24 @@ export default function AITourScreen() {
       setProgress('Determino il punto di partenza...');
       // Timeout complessivo di sicurezza: qualunque blocco imprevisto in questa fase
       // termina comunque con un messaggio, mai con la schermata bloccata.
-      const start = await withTimeout(
+      let start = await withTimeout(
         resolvePoint(v.startMode, v.startAddress, null, (m) => setProgress(`Determino il punto di partenza... (${m})`)),
         30000
       );
+      // GPS non disponibile (permesso negato o segnale assente): fallback automatico
+      // su Sede/Casa se configurate, così il giro si genera comunque.
+      if (!start && v.startMode === 'current') {
+        if (settings.office_lat) start = { lat: settings.office_lat, lng: settings.office_lng as number, label: 'Sede' };
+        else if (settings.home_lat) start = { lat: settings.home_lat, lng: settings.home_lng as number, label: 'Casa' };
+        if (start) {
+          const fb = `GPS non disponibile: parto dalla ${start.label} (abilita la localizzazione per partire dalla tua posizione)`;
+          setInfoMsg((old) => (old ? `${old} • ${fb}` : fb));
+        }
+      }
       if (!start) {
         setErrMsg(
           v.startMode === 'current'
-            ? 'Posizione non disponibile: consenti la geolocalizzazione o usa un indirizzo manuale'
+            ? 'Posizione non disponibile: consenti la localizzazione a Expo Go/VOOM nelle impostazioni del telefono, oppure imposta Sede/Casa o un indirizzo di partenza'
             : 'Punto di partenza non valido'
         );
         setGenerating(false);
@@ -757,12 +767,20 @@ export default function AITourScreen() {
 
       setProgress('Determino il punto di partenza...');
       // Timeout complessivo di sicurezza: mai schermata bloccata su questa fase
-      const start = await withTimeout(
+      let start = await withTimeout(
         resolvePoint(form.startMode, form.startAddress, null, (m) => setProgress(`Determino il punto di partenza... (${m})`)),
         30000
       );
+      // GPS non disponibile: fallback automatico su Sede/Casa se configurate
+      if (!start && form.startMode === 'current') {
+        if (settings.office_lat) start = { lat: settings.office_lat, lng: settings.office_lng as number, label: 'Sede' };
+        else if (settings.home_lat) start = { lat: settings.home_lat, lng: settings.home_lng as number, label: 'Casa' };
+        if (start) {
+          setInfoMsg(`GPS non disponibile: parto dalla ${start.label} (abilita la localizzazione per partire dalla tua posizione)`);
+        }
+      }
       if (!start) {
-        setErrMsg('Posizione non disponibile: consenti la geolocalizzazione o imposta un indirizzo di partenza');
+        setErrMsg('Posizione non disponibile: consenti la localizzazione a Expo Go/VOOM nelle impostazioni del telefono, oppure imposta Sede/Casa o un indirizzo di partenza');
         setGenerating(false);
         return;
       }

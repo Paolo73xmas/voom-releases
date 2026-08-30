@@ -294,3 +294,6 @@ Fix (app/ai-tour.tsx):
 - Diagnostica: il progress mostra la sotto-fase — "Determino il punto di partenza... (permessi posizione)" / "(lettura GPS)" — così un eventuale futuro blocco indica esattamente dove.
 
 Verificato in preview: GPS negato → errore chiaro in ~3s, UI sbloccata. Il comportamento nativo (permesso concesso, API che si impianta) è ora matematicamente limitato dai timeout. Richiede Publish/redeploy + conferma utente su device.
+
+## [30/08 sera] Fallback GPS → Sede/Casa (Expo Go senza permesso localizzazione)
+L'utente ha confermato che su Expo Go il GPS probabilmente non è abilitato. Ora la generazione (form e "Dillo all'AI") non si ferma più: se la posizione corrente non è disponibile, parte automaticamente dalla Sede (o Casa) configurata nelle impostazioni AI Tour, con banner informativo; se non configurate, errore esplicito con istruzioni (Impostazioni telefono > Expo Go > Posizione, oppure Sede/Casa/indirizzo). Verificato in preview. Richiede Publish.

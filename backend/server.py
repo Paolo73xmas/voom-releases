@@ -203,6 +203,7 @@ Regole:
 - "recuperare X orfani" -> orphans con count=X, e dayType "sviluppo".
 - "migliori clienti" -> clients_top con count.
 - "clienti nuovi / acquisire nuovi / clienti nuovi intorno" -> new_around (con radiusKm ragionevole, default 5).
+- Usa il segmento "project" SOLO se nel testo e' nominata ESPLICITAMENTE un'insegna/progetto/catena (es. "DoctorVape"). "tutti i miei clienti" SENZA insegna -> clients_all (con mandatoryAll=true se dice "tutti").
 - "tutti i miei clienti <insegna>" -> project con name=insegna e mandatoryAll=true.
 - "accorpa in una zona / tutti vicini / zona singola" -> compact=true.
 - "se non entra dividilo su due giorni" -> splitDays=2.

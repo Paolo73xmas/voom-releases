@@ -56,14 +56,14 @@ export function normalizeBrief(raw: unknown): TourBrief {
     else if (t === 'project') segments.push({ type: 'project', name: seg.name ? String(seg.name) : undefined });
     else if (t === 'orphans') segments.push({ type: 'orphans', count: seg.count ? Number(seg.count) : undefined });
     else if (t === 'prospects') segments.push({ type: 'prospects' });
-    else if (t === 'new_around') segments.push({ type: 'new_around', radiusKm: Number(seg.radiusKm) || 5 });
+    else if (t === 'new_around') segments.push({ type: 'new_around', radiusKm: Math.min(30, Number(seg.radiusKm) || 5) });
   }
   const timeOk = (v: unknown): string | null => (typeof v === 'string' && /^\d{1,2}:\d{2}$/.test(v) ? v : null);
   return {
     dayType,
     area: { kind, value: kind === 'none' ? null : value },
-    segments,
-    targetCount: r.targetCount != null && Number(r.targetCount) > 0 ? Math.round(Number(r.targetCount)) : null,
+    segments: (segments.length > 0 ? segments : [{ type: 'clients_all' } as BriefSegment]).slice(0, 10),
+    targetCount: r.targetCount != null && Number(r.targetCount) > 0 ? Math.min(60, Math.round(Number(r.targetCount))) : null,
     compact: r.compact === true,
     splitDays: Number(r.splitDays) === 2 ? 2 : 1,
     startTime: timeOk(r.startTime),
@@ -129,7 +129,8 @@ function resolveSegments(pool: CandidatePool, brief: TourBrief): { base: TourCan
     } else if (s.type === 'project') {
       if (s.name) [...pool.clients, ...pool.prospects].filter((c) => matchProject(c, s.name!)).forEach(add);
     } else if (s.type === 'orphans') {
-      pool.orphans.forEach(add);
+      const list = [...pool.orphans].sort((a, b) => b.score - a.score);
+      (s.count && s.count > 0 ? list.slice(0, s.count) : list).forEach(add);
     } else if (s.type === 'prospects') {
       pool.prospects.forEach(add);
     } else if (s.type === 'new_around') {

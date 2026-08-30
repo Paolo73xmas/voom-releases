@@ -1,0 +1,41 @@
+{
+  "summary": "Feature 'Dillo all'AI' testata end-to-end (backend + frontend). Backend 7/7 PASSED su URL esterno EXPO_PUBLIC_BACKEND_URL: 4 casi utente di /api/ai-tour/parse-brief tutti coerenti con l'atteso, + validazione 400 su testo vuoto, + /api/ai-tour/transcribe (dopo fix). Frontend flusso testo tab 'Genera' funziona: card viola 'Dillo all'AI' → bottom-sheet modale → digitazione → 'Interpreta la richiesta' → chip modificabili + summary → 'Genera il giro' chiude il modale correttamente. RILEVATO E FIXATO 1 BUG BACKEND CRITICO su /api/ai-tour/transcribe: passava file=str al client OpenAI ma litellm richiede bytes/IOBase/PathLike → 500 su qualunque upload. Fix: wrap con pathlib.Path(tmp.name). Fix applicato in /app/backend/server.py L257 e verificato via pytest.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "BriefModal", "issues": ["Manca testID sulla card 'Dillo all'AI' in ai-tour.tsx L1092 e su tutti i controlli chiave del modale (textarea input, mic-btn, interpret-btn, seg-chip-close, generate-btn, day-option-chips, compact-toggle, split-toggle). L'automazione ha funzionato via text selectors ma testID renderebbe i test futuri più stabili."]}
+    ],
+    "react_native_issues": [
+      {"component": "shadow* / props.pointerEvents", "issue": "Warning di deprecazione RN-Web già segnalati in iterazioni precedenti — non-blocking."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ai_tour_brief.py",
+    "/app/test_reports/pytest/pytest_ai_tour_brief.xml"
+  ],
+  "action_items": [
+    "OK — Bug fix già applicato su /api/ai-tour/transcribe (Path wrap). Nessun'altra azione richiesta per il main agent sulla feature.",
+    "OPZIONALE (miglioramento testabilità): aggiungere testID nel BriefModal e sulla card 'Dillo all'AI' in ai-tour.tsx: brief-card, brief-textarea, brief-mic-btn, brief-interpret-btn, brief-generate-btn, brief-segchip-remove-{i}, brief-day-{value}, brief-compact-toggle, brief-split-toggle. Non blocca il rilascio."
+  ],
+  "critical_code_review_comments": [
+    "backend/server.py L257 (PRE-FIX): stt.transcribe(file=tmp.name, ...) passava string. litellm/openai SDK richiede bytes/IOBase/PathLike/tuple → 500 su qualunque upload. FIXATO usando pathlib.Path(tmp.name).",
+    "backend/server.py /api/ai-tour/parse-brief: pulizia JSON via _extract_json robusta, gestione fenced code block/bare JSON. Prompt di sistema BRIEF_SYSTEM produce output coerente su tutti e 4 i casi (verificato: Voghera→city+clients_frequent+clients_overdue; DoctorVape→project+mandatoryAll+splitDays=2; Milano→orphans count=25 targetCount=25 compact=true; Lago di Garda→place+clients_top count=5+new_around).",
+    "frontend/components/aitour/BriefModal.tsx: usa correttamente expo-audio (RecordingPresets.HIGH_QUALITY, useAudioRecorder). Web fallback per FormData con blob type detection (webm/m4a) — corretto per RN-Web. Il tasto microfono non è testabile in automazione web (no permessi microfono), come da nota agent-to-agent.",
+    "frontend/lib/aitour/brief.ts: normalizeBrief coerce difensiva (dayType whitelist, area.kind whitelist, segments per-type parsing con default sicuri). resolveSegments applica correttamente i filtri per tipo. mandatoryKeys applicato solo se splitDays===1 (evita conflitti col planner su 2 giorni). Codice pulito e ben commentato in italiano."
+  ],
+  "updated_files": [
+    "/app/backend/server.py (fix transcribe: Path wrap)",
+    "/app/backend/tests/test_ai_tour_brief.py (nuovo test file, 7 test)"
+  ],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% flusso UI Genera (card→modale→testo→interpreta→chip→genera). Il tasto microfono e la generazione con dati reali non sono verificabili con questo account di test (0 clienti in portafoglio); esito 'nessuna visita pianificabile'/banner geolocalizzazione è atteso e non-blocking, come da nota agent-to-agent."},
+  "seed_data_creation": "Nessuna. Test read-only come da vincolo (nessun tour salvato/avviato).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Feature 'Dillo all'AI' completa e funzionante. Backend endpoints coperti da /app/backend/tests/test_ai_tour_brief.py (7 test, LLM live, tempo ~6s totali). Se in futuro cambia il prompt di parse-brief, rieseguire i 4 casi e aggiornare gli assert; se cambia la firma di transcribe (es. campo audio→file), aggiornare il fixture wav generator. Il chip removal in BriefModal è funzionante visivamente (icona × close-circle nel segChip) ma difficile da automatizzare via CSS selector senza testID: aggiungere testID='brief-segchip-remove-{i}' semplificherebbe i test. Per test con dati reali usare roberto.beretta@voomweb.it (ha zone territoriali) — attenzione a NON salvare tour su DB Supabase condiviso con produzione.",
+  "rca_of_issue": "BUG CRITICO /api/ai-tour/transcribe: OpenAISpeechToText.transcribe di emergentintegrations delega a litellm che a sua volta usa openai-python. openai-python fa strict type check sul campo `file`: accetta bytes | io.IOBase | os.PathLike | tuple, ma NON str. server.py L257 passava tmp.name (str) → APIConnectionError. RIPRODUZIONE: `curl -F audio=@test.wav {API}/ai-tour/transcribe` restituiva 500 con log 'Expected entry at `file` to be bytes, an io.IOBase instance, PathLike or a tuple but received <class 'str'>'. FIX: `from pathlib import Path; stt.transcribe(file=Path(tmp.name), ...)`. Path implementa __fspath__ (PathLike). Test regression: /app/backend/tests/test_ai_tour_brief.py::test_transcribe_accepts_wav_returns_text_key."
+}

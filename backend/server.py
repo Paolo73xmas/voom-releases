@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Request, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -6,6 +6,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 import re
+import json as _json
+import tempfile
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List
@@ -157,6 +159,144 @@ async def get_video_tutorial(num: str, request: Request):
             )
 
     return FileResponse(path, media_type="video/mp4", filename=name, headers={"Accept-Ranges": "bytes"})
+
+# ==================== AI Tour: voce + interpretazione richiesta ====================
+from emergentintegrations.llm.openai.speech_to_text import OpenAISpeechToText
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
+AUDIO_EXTS = [".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm"]
+
+BRIEF_SYSTEM = """Sei l'assistente di pianificazione di VOOM CRM per agenti commerciali del settore tabacchi in Italia.
+Ricevi una richiesta in linguaggio naturale (dettata o scritta) e la trasformi in un OGGETTO JSON che descrive come costruire il giro visite (AI Tour).
+
+Rispondi SOLO con un oggetto JSON valido, senza testo prima o dopo, senza markdown.
+
+Schema JSON:
+{
+  "dayType": "clienti" | "sviluppo" | "mista" | null,   // clienti=solo clienti acquisiti; sviluppo=prospect/orfani/nuovi; mista=mix; null=non specificato
+  "area": { "kind": "city" | "province" | "place" | "none", "value": string | null },
+      // city=comune (es. "Voghera"); province=sigla o nome provincia (es. "Milano"); place=zona/luogo informale (es. "Lago di Garda"); none=nessuna area
+  "segments": [   // uno o piu' filtri sui soggetti da includere; l'unione forma i candidati
+     {"type": "clients_all"},                          // tutti i clienti
+     {"type": "clients_frequent"},                     // clienti che ordinano spesso / ogni mese / abitualmente
+     {"type": "clients_overdue", "minDays": 30},       // clienti che non ordinano da almeno minDays giorni
+     {"type": "clients_top", "count": 5},              // i migliori N clienti (per fatturato)
+     {"type": "project", "name": "DoctorVape"},        // clienti di un progetto/insegna/catena specifica
+     {"type": "orphans", "count": 25},                 // clienti orfani da recuperare (count opzionale)
+     {"type": "prospects"},                            // potenziali clienti gia' schedati
+     {"type": "new_around", "radiusKm": 5}             // punti vendita NUOVI da acquisire vicino agli altri soggetti selezionati
+  ],
+  "targetCount": number | null,   // numero massimo di tappe desiderate (es. "25 clienti" -> 25)
+  "compact": boolean,             // true se l'utente vuole i soggetti tutti vicini tra loro / in un'unica zona
+  "splitDays": 1 | 2,             // 2 se l'utente chiede di dividere il giro su piu' giorni quando non entra in uno
+  "startTime": "HH:MM" | null,
+  "endTime": "HH:MM" | null,
+  "mandatoryAll": boolean,        // true se l'utente vuole ASSOLUTAMENTE tutti i soggetti del filtro (es. "tutti i miei clienti DoctorVape")
+  "summary": string               // 1 frase in italiano che riassume come hai interpretato la richiesta
+}
+
+Regole:
+- Usa SOLO i tipi di segmento elencati. Se un concetto non e' rappresentabile, ignoralo e citalo in "summary".
+- "ordinano ogni mese/frequentemente/abitualmente" -> clients_frequent.
+- "30 giorni che non ordinano / non raccolgo ordini da X giorni" -> clients_overdue con minDays.
+- "recuperare X orfani" -> orphans con count=X, e dayType "sviluppo".
+- "migliori clienti" -> clients_top con count.
+- "clienti nuovi / acquisire nuovi / clienti nuovi intorno" -> new_around (con radiusKm ragionevole, default 5).
+- "tutti i miei clienti <insegna>" -> project con name=insegna e mandatoryAll=true.
+- "accorpa in una zona / tutti vicini / zona singola" -> compact=true.
+- "se non entra dividilo su due giorni" -> splitDays=2.
+- Se un progetto/insegna citato somiglia a uno di quelli disponibili forniti dall'utente, usa il nome disponibile piu' simile.
+- Non inventare comuni: se l'area e' un luogo informale (lago, zona, valle) usa kind="place".
+"""
+
+
+class BriefParseRequest(BaseModel):
+    text: str
+    projects: List[str] = Field(default_factory=list)
+    cities: List[str] = Field(default_factory=list)
+
+
+def _extract_json(raw: str):
+    if not raw:
+        return None
+    raw = raw.strip()
+    # rimuove eventuali fence markdown
+    if raw.startswith("```"):
+        raw = re.sub(r"^```[a-zA-Z]*\n?", "", raw)
+        raw = re.sub(r"\n?```$", "", raw).strip()
+    try:
+        return _json.loads(raw)
+    except Exception:
+        pass
+    m = re.search(r"\{.*\}", raw, re.DOTALL)
+    if m:
+        try:
+            return _json.loads(m.group(0))
+        except Exception:
+            return None
+    return None
+
+
+@api_router.post("/ai-tour/transcribe")
+async def ai_tour_transcribe(audio: UploadFile = File(...)):
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="Servizio vocale non configurato")
+    suffix = os.path.splitext(audio.filename or "")[1].lower()
+    if suffix not in AUDIO_EXTS:
+        suffix = ".m4a"
+    data = await audio.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Audio vuoto")
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    tmp.write(data)
+    tmp.flush()
+    tmp.close()
+    try:
+        stt = OpenAISpeechToText(api_key=EMERGENT_LLM_KEY)
+        resp = await stt.transcribe(file=Path(tmp.name), model="whisper-1", response_format="json", language="it")
+        text = getattr(resp, "text", None)
+        if text is None and isinstance(resp, dict):
+            text = resp.get("text", "")
+        return {"text": (text or "").strip()}
+    except Exception as e:
+        logger.error(f"[ai-tour] transcribe: {e}")
+        raise HTTPException(status_code=500, detail="Trascrizione non riuscita")
+    finally:
+        try:
+            os.unlink(tmp.name)
+        except Exception:
+            pass
+
+
+@api_router.post("/ai-tour/parse-brief")
+async def ai_tour_parse_brief(req: BriefParseRequest):
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="Servizio AI non configurato")
+    if not (req.text or "").strip():
+        raise HTTPException(status_code=400, detail="Richiesta vuota")
+    ctx = ""
+    if req.projects:
+        ctx += f"\nProgetti/insegne disponibili: {', '.join(req.projects[:60])}."
+    if req.cities:
+        ctx += f"\nComuni presenti nel portafoglio: {', '.join(req.cities[:150])}."
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"brief-{uuid.uuid4()}",
+        system_message=BRIEF_SYSTEM,
+    ).with_model("openai", "gpt-5.4")
+    try:
+        raw = await chat.send_message(UserMessage(
+            text=f"Richiesta dell'agente: \"{req.text.strip()}\".{ctx}\nRestituisci SOLO il JSON."
+        ))
+        brief = _extract_json(raw)
+        if not isinstance(brief, dict):
+            raise ValueError("risposta non JSON")
+        return brief
+    except Exception as e:
+        logger.error(f"[ai-tour] parse-brief: {e}")
+        raise HTTPException(status_code=500, detail="Interpretazione non riuscita")
+
 
 # Include the router in the main app
 app.include_router(api_router)

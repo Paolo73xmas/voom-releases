@@ -17,6 +17,7 @@
         "NSLocationAlwaysUsageDescription": "Per rilevare la posizione durante le visite e i rimborsi",
         "NSCameraUsageDescription": "Per scattare foto di ispezioni e scontrini di rimborso",
         "NSPhotoLibraryUsageDescription": "Per selezionare foto dalla galleria",
+        "NSMicrophoneUsageDescription": "Per dettare a voce la richiesta del giro",
         "NSFaceIDUsageDescription": "Per accesso rapido sicuro all'app",
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -33,7 +34,8 @@
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "RECORD_AUDIO"
       ]
     },
     "web": {
@@ -62,7 +64,12 @@
       ],
       "expo-web-browser",
       "expo-font",
-      "expo-audio"
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Per dettare a voce la richiesta del giro"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

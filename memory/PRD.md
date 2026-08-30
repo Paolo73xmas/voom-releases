@@ -272,3 +272,14 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_... (nuova publishable key, lug 202
   - Beneficia anche il recalc live e "Più Visite" (passano da planTour). planFixedOrder (sequenza manuale) invariato.
 - **Test sintetici node (esbuild bundle con stub react-native/supabase, /tmp/plantest)**: T1 corridoio 5 tappe → ordine monotono a→b→c→d→e (prima era b→c→e→d→a con doppio passaggio); T2 fascia preferita ~10:00 su B rispettata (arrivo 10:26, zero fuori fascia); T3 giornata corta → 4 tappe monotone, vincolo orario rispettato. Regressione E2E generazione completa in app: PASS (piano 7 visite/34 km, non salvato).
 - **⚠️ Il WEB usa ancora il vecchio 2-opt**: stesso miglioramento da portare in src/lib/aitour/planner web.
+
+## [30/08] "Dillo all'AI" — Genera Tour con voce + interpretazione linguaggio naturale
+Richiesta utente: tasto vocale al Genera Tour per dettare orario/zona/obbligatorie/tipo giornata + costruzione più intelligente del giro da richieste in linguaggio naturale (es. "clienti di Voghera che non ordinano da 30gg", "tutti i DoctorVape, se non entra dividi su 2 giorni", "25 orfani su Milano tutti vicini", "5 migliori clienti del Lago di Garda + nuovi intorno").
+
+Implementazione:
+- Backend (server.py): POST /api/ai-tour/transcribe (Whisper it via emergentintegrations OpenAISpeechToText) e POST /api/ai-tour/parse-brief (LLM gpt-5.4 via LlmChat → JSON TourBrief). EMERGENT_LLM_KEY già in backend/.env.
+- Frontend: lib/aitour/brief.ts (TourBrief + normalizeBrief + buildBriefPlan: segmenti→candidati, area city/province/place(geocode)/none, new_around, compact via pickBestCluster, targetCount, mandatoryAll, split su 2 giorni). components/aitour/BriefModal.tsx (voce expo-audio + testo + "Interpreta" + chip modificabili: segmenti/zona/tipo giornata/n° tappe/compatto/2 giorni + "Genera il giro"). ai-tour.tsx: card "Dillo all'AI" in cima al form, generateFromBrief, banner Giorno 1/Giorno 2 (swapDay) nel risultato.
+- Vocabolario segmenti: clients_all, clients_frequent, clients_overdue(minDays), clients_top(count), project(name), orphans(count), prospects, new_around(radiusKm).
+- app.json: permesso microfono iOS (NSMicrophoneUsageDescription) + Android RECORD_AUDIO + plugin expo-audio microphonePermission.
+
+Stato: backend agent-tested (4 casi parse OK via curl); frontend lint/tsc puliti, smoke boot OK. Da testare E2E (flusso testo→chip→genera) e user-confirm su device (voce). Produzione: richiede Publish/redeploy.

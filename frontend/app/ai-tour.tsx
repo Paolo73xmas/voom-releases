@@ -34,6 +34,8 @@ import { LiveTourView } from '../components/aitour/LiveTourView';
 import { TourMapView, type TourMapStop } from '../components/aitour/TourMapView';
 import { TourEditModal } from '../components/aitour/TourEditModal';
 import { DrawAreasMap } from '../components/aitour/DrawAreasMap';
+import { BriefModal } from '../components/aitour/BriefModal';
+import { buildBriefPlan, type TourBrief } from '../lib/aitour/brief';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
 import { CandidateEntityBadge } from '../components/aitour/OrphanHistoryBadge';
@@ -196,6 +198,10 @@ export default function AITourScreen() {
   const [showExcluded, setShowExcluded] = useState(false);
   const [resultView, setResultView] = useState<'list' | 'map'>('list');
 
+  // "Dillo all'AI": brief in linguaggio naturale + giro (eventuale) su 2 giorni
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [secondaryPlan, setSecondaryPlan] = useState<TourPlan | null>(null);
+
   // Modifica giro (post-generazione e su tour salvato non ancora avviato)
   const [pool, setPool] = useState<CandidatePool | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -203,6 +209,14 @@ export default function AITourScreen() {
   const [recalcing, setRecalcing] = useState(false);
   const [viewedTourStatus, setViewedTourStatus] = useState<string | null>(null);
   const allCandidates = useMemo(() => (pool ? [...pool.clients, ...pool.prospects, ...pool.orphans] : []), [pool]);
+  const briefProjects = useMemo(
+    () => (pool ? ([...new Set([...pool.clients, ...pool.prospects].map((c) => c.projectName).filter(Boolean))] as string[]) : []),
+    [pool]
+  );
+  const briefCities = useMemo(
+    () => (pool ? ([...new Set([...pool.clients, ...pool.prospects, ...pool.orphans].map((c) => c.city).filter(Boolean))] as string[]) : []),
+    [pool]
+  );
 
   // Visite obbligatorie
   const [search, setSearch] = useState('');
@@ -656,6 +670,109 @@ export default function AITourScreen() {
     }
   };
 
+  // Apre "Dillo all'AI": carica il pool in background per arricchire il contesto (progetti/comuni)
+  const openBrief = () => {
+    hap.light();
+    setErrMsg('');
+    if (!pool && agentId) {
+      loadCandidates(agentId, settings)
+        .then((l) => {
+          scoreCandidates([...l.clients, ...l.prospects, ...l.orphans], settings);
+          setPool(l);
+        })
+        .catch(() => {});
+    }
+    setBriefOpen(true);
+  };
+
+  // Scambia la visualizzazione tra Giorno 1 e Giorno 2 di un giro diviso
+  const swapDay = () => {
+    if (!secondaryPlan || !plan) return;
+    hap.light();
+    setPlan(secondaryPlan);
+    setSecondaryPlan(plan);
+    setSavedTourId(null);
+  };
+
+  // Genera un giro a partire dal brief interpretato dall'AI ("Dillo all'AI")
+  const generateFromBrief = async (brief: TourBrief) => {
+    if (!agentId) return;
+    setBriefOpen(false);
+    hap.medium();
+    setGenerating(true);
+    setInfoMsg('');
+    setErrMsg('');
+    setSavedTourId(null);
+    setShowExcluded(false);
+    setSecondaryPlan(null);
+    try {
+      const date = localDateStr();
+      const nextDate = localDateStr(1);
+      let startMin = timeToMin(brief.startTime || form.startTime);
+      const endMin = timeToMin(brief.endTime || form.endTime);
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      if (date === localDateStr() && nowMin > startMin) startMin = Math.min(nowMin, endMin - 30);
+      if (startMin >= endMin) {
+        setErrMsg("L'orario di fine è già passato: modifica l'orario o riprova più tardi");
+        setGenerating(false);
+        return;
+      }
+
+      setProgress('Determino il punto di partenza...');
+      const start = await resolvePoint(form.startMode, form.startAddress, null);
+      if (!start) {
+        setErrMsg('Posizione non disponibile: consenti la geolocalizzazione o imposta un indirizzo di partenza');
+        setGenerating(false);
+        return;
+      }
+      const end = await resolvePoint(form.endMode, form.endAddress, start);
+
+      setProgress('Analisi del portafoglio commerciale...');
+      const loaded = await loadCandidates(agentId, settings);
+      scoreCandidates([...loaded.clients, ...loaded.prospects, ...loaded.orphans], settings);
+      setPool(loaded);
+      setViewedTourStatus(null);
+
+      setProgress('Costruisco il giro richiesto...');
+      const result = await buildBriefPlan({
+        pool: loaded,
+        brief,
+        settings,
+        agentId,
+        start,
+        end,
+        tourDate: date,
+        nextDate,
+        startMin,
+        endMin,
+      });
+      if (result.plan.stops.length === 0) {
+        setErrMsg('Nessuna visita pianificabile con la richiesta indicata: prova ad ampliare la zona o l\'orario');
+        setGenerating(false);
+        return;
+      }
+      if (result.note) result.plan.warnings.unshift(result.note);
+
+      setProgress("L'AI sta scrivendo la strategia del giro...");
+      result.plan.aiSummary = await getStrategySummary(result.plan);
+      if (result.secondary && result.secondary.stops.length > 0) {
+        result.secondary.aiSummary = await getStrategySummary(result.secondary);
+        setSecondaryPlan(result.secondary);
+      }
+      setPlan(result.plan);
+      setReadOnly(false);
+      setPhase('result');
+      hap.success();
+    } catch (err) {
+      console.error('[AITour] brief generate:', err);
+      setErrMsg('Errore nella generazione del giro');
+    } finally {
+      setGenerating(false);
+      setProgress('');
+    }
+  };
+
   // Apre Modifica giro: per i tour salvati richiamati il pool candidati non è
   // caricato, quindi lo carica al volo (serve per cercare/aggiungere tappe).
   const openEdit = async () => {
@@ -971,6 +1088,24 @@ export default function AITourScreen() {
 
   const renderForm = () => (
     <View>
+      {/* Dillo all'AI: brief in linguaggio naturale (voce o testo) */}
+      <TouchableOpacity style={styles.briefCard} onPress={openBrief} activeOpacity={0.85}>
+        <View style={styles.briefIcon}>
+          <Ionicons name="mic" size={20} color="#FFF" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.briefCardTitle}>{"Dillo all'AI"}</Text>
+          <Text style={styles.briefCardDesc}>{"Descrivi il giro a voce o per iscritto e lascia che l'AI lo costruisca"}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={AI_PURPLE} />
+      </TouchableOpacity>
+
+      <View style={styles.briefDivider}>
+        <View style={styles.briefDividerLine} />
+        <Text style={styles.briefDividerText}>oppure imposta manualmente</Text>
+        <View style={styles.briefDividerLine} />
+      </View>
+
       {/* Data */}
       <Text style={styles.label}>Data</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateRow} contentContainerStyle={{ gap: 8 }}>
@@ -1248,6 +1383,19 @@ export default function AITourScreen() {
 
     return (
       <View>
+        {/* Giro diviso su 2 giorni: passa da Giorno 1 a Giorno 2 */}
+        {secondaryPlan && (
+          <View style={styles.splitBanner}>
+            <Ionicons name="calendar" size={16} color={AI_PURPLE} />
+            <Text style={styles.splitBannerText}>
+              Giro diviso su 2 giorni · stai vedendo {fmtTourDate(plan.tourDate)}
+            </Text>
+            <TouchableOpacity style={styles.splitSwapBtn} onPress={swapDay} activeOpacity={0.8}>
+              <Ionicons name="swap-horizontal" size={14} color="#FFF" />
+              <Text style={styles.splitSwapText}>Altro giorno</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {/* Azioni */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
@@ -1688,6 +1836,14 @@ export default function AITourScreen() {
       )}
         </>
       )}
+
+      <BriefModal
+        visible={briefOpen}
+        onClose={() => setBriefOpen(false)}
+        onConfirm={generateFromBrief}
+        projects={briefProjects}
+        cities={briefCities}
+      />
     </View>
   );
 }
@@ -1708,6 +1864,36 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   title: { fontFamily: JAKARTA.bold, fontSize: 18, color: DS.ink },
   subtitle: { fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted, marginTop: 1 },
+  briefCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: AI_PURPLE_SOFT,
+    borderWidth: 1,
+    borderColor: AI_PURPLE,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
+  },
+  briefIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: AI_PURPLE, justifyContent: 'center', alignItems: 'center' },
+  briefCardTitle: { fontFamily: JAKARTA.bold, fontSize: 15, color: AI_PURPLE },
+  briefCardDesc: { fontFamily: JAKARTA.regular, fontSize: 12, color: DS.ink2, marginTop: 2, lineHeight: 16 },
+  briefDivider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  briefDividerLine: { flex: 1, height: 1, backgroundColor: DS.border },
+  briefDividerText: { fontFamily: JAKARTA.medium, fontSize: 11, color: DS.inkMuted },
+  splitBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: AI_PURPLE_SOFT,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  splitBannerText: { flex: 1, fontFamily: JAKARTA.semibold, fontSize: 12, color: AI_PURPLE },
+  splitSwapBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: AI_PURPLE, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 },
+  splitSwapText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: '#FFF' },
   segmented: {
     flexDirection: 'row',
     backgroundColor: DS.surface3,

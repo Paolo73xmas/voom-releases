@@ -30,6 +30,7 @@ export interface TourBrief {
   endTime: string | null;
   mandatoryAll: boolean;
   summary: string;
+  dayOffset: number;
 }
 
 const norm = (s: string | null | undefined): string =>
@@ -70,6 +71,7 @@ export function normalizeBrief(raw: unknown): TourBrief {
     endTime: timeOk(r.endTime),
     mandatoryAll: r.mandatoryAll === true,
     summary: r.summary ? String(r.summary) : '',
+    dayOffset: r.dayOffset != null && Number(r.dayOffset) > 0 ? Math.min(14, Math.round(Number(r.dayOffset))) : 0,
   };
 }
 

@@ -193,6 +193,7 @@ Schema JSON:
   "startTime": "HH:MM" | null,
   "endTime": "HH:MM" | null,
   "mandatoryAll": boolean,        // true se l'utente vuole ASSOLUTAMENTE tutti i soggetti del filtro (es. "tutti i miei clienti DoctorVape")
+  "dayOffset": number,            // giorni da OGGI: 0=oggi, 1=domani, 2=dopodomani; per un giorno della settimana calcola i giorni mancanti fino alla prossima occorrenza
   "summary": string               // 1 frase in italiano che riassume come hai interpretato la richiesta
 }
 
@@ -207,6 +208,8 @@ Regole:
 - "tutti i miei clienti <insegna>" -> project con name=insegna e mandatoryAll=true.
 - "accorpa in una zona / tutti vicini / zona singola" -> compact=true.
 - "se non entra dividilo su due giorni" -> splitDays=2.
+- "oggi" -> dayOffset=0; "domani" -> dayOffset=1; "dopodomani" -> dayOffset=2; nessun riferimento temporale -> dayOffset=0.
+- Se non specificato, startTime/endTime restano null (l'app usera' l'orario di lavoro).
 - Se un progetto/insegna citato somiglia a uno di quelli disponibili forniti dall'utente, usa il nome disponibile piu' simile.
 - Non inventare comuni: se l'area e' un luogo informale (lago, zona, valle) usa kind="place".
 """
@@ -216,6 +219,7 @@ class BriefParseRequest(BaseModel):
     text: str
     projects: List[str] = Field(default_factory=list)
     cities: List[str] = Field(default_factory=list)
+    today: str = ""
 
 
 def _extract_json(raw: str):
@@ -281,6 +285,8 @@ async def ai_tour_parse_brief(req: BriefParseRequest):
         ctx += f"\nProgetti/insegne disponibili: {', '.join(req.projects[:60])}."
     if req.cities:
         ctx += f"\nComuni presenti nel portafoglio: {', '.join(req.cities[:150])}."
+    if req.today:
+        ctx += f"\nData di oggi: {req.today}. Calcola dayOffset rispetto a questa data."
     chat = LlmChat(
         api_key=EMERGENT_LLM_KEY,
         session_id=f"brief-{uuid.uuid4()}",

@@ -706,15 +706,21 @@ export default function AITourScreen() {
     setShowExcluded(false);
     setSecondaryPlan(null);
     try {
-      const date = localDateStr();
-      const nextDate = localDateStr(1);
-      let startMin = timeToMin(brief.startTime || form.startTime);
-      const endMin = timeToMin(brief.endTime || form.endTime);
-      const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      if (date === localDateStr() && nowMin > startMin) startMin = Math.min(nowMin, endMin - 30);
+      const offset = Math.max(0, brief.dayOffset || 0);
+      const date = localDateStr(offset);
+      const nextDate = localDateStr(offset + 1);
+      const isToday = date === localDateStr();
+      // Giorno futuro (es. "domani") → usa l'intera giornata lavorativa; oggi → dall'ora attuale
+      const startStr = brief.startTime || autoStartTime(date, settings.work_start);
+      const endStr = brief.endTime || settings.work_end;
+      const startMin = timeToMin(startStr);
+      const endMin = timeToMin(endStr);
       if (startMin >= endMin) {
-        setErrMsg("L'orario di fine è già passato: modifica l'orario o riprova più tardi");
+        setErrMsg(
+          isToday
+            ? "Per oggi non ci sono più ore disponibili nel tuo orario di lavoro: prova a chiedere il giro per domani"
+            : "L'orario di fine è precedente all'orario di inizio: modifica gli orari e riprova"
+        );
         setGenerating(false);
         return;
       }

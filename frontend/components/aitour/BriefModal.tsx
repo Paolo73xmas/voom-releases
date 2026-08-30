@@ -154,10 +154,13 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
     setParsing(true);
     setErr('');
     try {
+      const now = new Date();
+      const giorni = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
+      const today = `${giorni[now.getDay()]} ${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const res = await fetch(`${API}/ai-tour/parse-brief`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim(), projects, cities }),
+        body: JSON.stringify({ text: text.trim(), projects, cities, today }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
@@ -276,6 +279,28 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                       </TouchableOpacity>
                     );
                   })}
+                </View>
+
+                <Text style={styles.groupLabel}>Giorno</Text>
+                <View style={styles.chipWrap}>
+                  {[{ o: 0, l: 'Oggi' }, { o: 1, l: 'Domani' }, { o: 2, l: 'Dopodomani' }].map((d) => {
+                    const active = brief.dayOffset === d.o;
+                    return (
+                      <TouchableOpacity
+                        key={d.o}
+                        style={[styles.optChip, active && styles.optChipActive]}
+                        onPress={() => { hap.light(); setBrief({ ...brief, dayOffset: d.o }); }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.optChipText, active && styles.optChipTextActive]}>{d.l}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                  {brief.dayOffset > 2 && (
+                    <View style={[styles.optChip, styles.optChipActive]}>
+                      <Text style={styles.optChipTextActive}>tra {brief.dayOffset} giorni</Text>
+                    </View>
+                  )}
                 </View>
 
                 <Text style={styles.groupLabel}>Numero massimo di tappe</Text>

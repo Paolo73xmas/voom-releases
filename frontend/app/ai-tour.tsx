@@ -147,7 +147,16 @@ async function getCurrentPositionMobile(): Promise<{ lat: number; lng: number } 
         return null;
       }
     }
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    // Posizione: prima l'ultima nota (istantanea), poi quella attuale con timeout
+    // per evitare che il GPS lento blocchi la schermata all'infinito.
+    const last = await Location.getLastKnownPositionAsync({ maxAge: 120000 }).catch(() => null);
+    const gpsTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 9000));
+    const current = await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+      gpsTimeout,
+    ]).catch(() => null);
+    const pos = current || last;
+    if (!pos) return null;
     return { lat: pos.coords.latitude, lng: pos.coords.longitude };
   } catch (e) {
     console.warn('[AITour] posizione corrente:', e);

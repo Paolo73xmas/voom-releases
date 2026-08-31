@@ -17,6 +17,8 @@ import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
 import { findCustomerByVat, isPlaceholderVat, parseVatGuardError, type ExistingVatCustomer } from '../lib/api/vat-guard';
 import { DuplicateVatDialog } from '../components/customers/DuplicateVatDialog';
+import { searchUnlinkedTabaccherie, type RegistryTabMatch } from '../lib/api/registry-search';
+import { RegistryHintBox, RegistryLinkedBanner } from '../components/customers/RegistryHintBox';
 
 interface PhotoData {
   uri: string;
@@ -36,6 +38,10 @@ export default function RivenditeNoMappaScreen() {
   // Anti-duplicati P.IVA: scheda esistente trovata + flag "forza altro punto vendita"
   const [dupVatExisting, setDupVatExisting] = useState<ExistingVatCustomer | null>(null);
   const allowDupVatRef = useRef(false);
+  // Rivendita già censita nel registro: suggerimenti live + aggancio (niente doppioni sulla mappa)
+  const [registryHints, setRegistryHints] = useState<RegistryTabMatch[]>([]);
+  const [registryDismissed, setRegistryDismissed] = useState(false);
+  const [linkedTab, setLinkedTab] = useState<RegistryTabMatch | null>(null);
 
   // GPS
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -96,6 +102,46 @@ export default function RivenditeNoMappaScreen() {
   }, []);
 
   const updateForm = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+
+  // Suggerimento live: rivendita già censita nel registro (senza scheda) mentre si digita nome/indirizzo
+  useEffect(() => {
+    if (linkedTab || registryDismissed) { setRegistryHints([]); return; }
+    const name = form.businessName.trim();
+    const addr = `${form.address} ${form.city}`.trim();
+    const term = name.length >= 4 ? `${name} ${form.city}`.trim() : (addr.length >= 6 ? addr : '');
+    if (!term) { setRegistryHints([]); return; }
+    const timer = setTimeout(async () => {
+      try {
+        const rows = await searchUnlinkedTabaccherie(term, 5);
+        setRegistryHints(rows.slice(0, 3));
+      } catch {
+        setRegistryHints([]);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.businessName, form.address, form.city, linkedTab, registryDismissed]);
+
+  // "Usa questa": precompila dal registro e aggancia la tabaccheria esistente al salvataggio
+  const useRegistryMatch = (m: RegistryTabMatch) => {
+    const cfIva = (m.cf_iva || '').trim();
+    const isVat = /^[0-9]{11}$/.test(cfIva);
+    setForm(prev => ({
+      ...prev,
+      businessName: m.denominazione || prev.businessName,
+      address: m.indirizzo || prev.address,
+      city: m.comune || prev.city,
+      province: m.provincia || prev.province,
+      postalCode: m.cap || prev.postalCode,
+      contactPhone: prev.contactPhone || m.telefono_mobile || m.telefono_fisso || '',
+      contactEmail: prev.contactEmail || m.email || '',
+      vatNumber: isVat ? cfIva : prev.vatNumber,
+      fiscalCode: !isVat && cfIva ? cfIva : prev.fiscalCode,
+      numOrdinale: m.Num_Ordinale != null ? String(m.Num_Ordinale) : prev.numOrdinale,
+    }));
+    setLinkedTab(m);
+    setRegistryHints([]);
+  };
 
   // Take photo
   const takePhoto = async () => {
@@ -271,38 +317,59 @@ export default function RivenditeNoMappaScreen() {
         throw new Error(`Errore creazione cliente: ${custErr.message}`);
       }
 
-      // 2. Create tabaccheria (OFFMAP code for map visibility)
-      const codice = await generateOffMapCode();
-      const cfIva = form.vatNumber || form.fiscalCode || null;
+      // 2. Tabaccheria: aggancia quella già censita nel registro oppure creane una nuova (OFFMAP)
+      let tabToLinkId: string;
+      if (linkedTab) {
+        const { error: linkErr } = await supabase
+          .from('tabaccherie')
+          .update({
+            customer_id: customer.id,
+            agente_id: user.id,
+            stato_visita: 'visitato',
+            // GPS: mantieni quello del registro se presente, altrimenti usa quello rilevato
+            ...(linkedTab.gps_lat && linkedTab.gps_lng ? {} : { gps_lat: finalLat.toString(), gps_lng: finalLng.toString() }),
+          })
+          .eq('id', linkedTab.id);
+        if (linkErr) {
+          // Rollback customer
+          await supabase.from('customers').delete().eq('id', customer.id);
+          throw new Error(`Impossibile agganciare la rivendita censita: ${linkErr.message}. Il cliente non è stato salvato.`);
+        }
+        tabToLinkId = linkedTab.id;
+      } else {
+        const codice = await generateOffMapCode();
+        const cfIva = form.vatNumber || form.fiscalCode || null;
 
-      const { data: newTab, error: tabErr } = await supabase.from('tabaccherie').insert({
-        codice_rivendita: codice,
-        denominazione: form.businessName,
-        indirizzo: form.address,
-        comune: form.city,
-        cap: form.postalCode,
-        provincia: form.province,
-        telefono_mobile: form.contactPhone || null,
-        email: emailValue,
-        partita_iva: form.vatNumber || null,
-        codice_fiscale: form.fiscalCode ? form.fiscalCode.toUpperCase() : null,
-        cf_iva: cfIva,
-        gps_lat: finalLat.toString(),
-        gps_lng: finalLng.toString(),
-        stato_visita: 'visitato',
-        agente_id: user.id,
-        customer_id: customer.id,
-        ...(form.numOrdinale.trim() ? { 'Num_Ordinale': parseInt(form.numOrdinale) } : {}),
-      }).select().single();
+        const { data: newTab, error: tabErr } = await supabase.from('tabaccherie').insert({
+          codice_rivendita: codice,
+          denominazione: form.businessName,
+          indirizzo: form.address,
+          comune: form.city,
+          cap: form.postalCode,
+          provincia: form.province,
+          telefono_mobile: form.contactPhone || null,
+          email: emailValue,
+          partita_iva: form.vatNumber || null,
+          codice_fiscale: form.fiscalCode ? form.fiscalCode.toUpperCase() : null,
+          cf_iva: cfIva,
+          gps_lat: finalLat.toString(),
+          gps_lng: finalLng.toString(),
+          stato_visita: 'visitato',
+          agente_id: user.id,
+          customer_id: customer.id,
+          ...(form.numOrdinale.trim() ? { 'Num_Ordinale': parseInt(form.numOrdinale) } : {}),
+        }).select().single();
 
-      if (tabErr) {
-        // Rollback customer
-        await supabase.from('customers').delete().eq('id', customer.id);
-        throw new Error(`Errore creazione tabaccheria: ${tabErr.message}`);
+        if (tabErr) {
+          // Rollback customer
+          await supabase.from('customers').delete().eq('id', customer.id);
+          throw new Error(`Errore creazione tabaccheria: ${tabErr.message}`);
+        }
+        tabToLinkId = newTab.id;
       }
 
       // 3. Link customer → tabaccheria
-      await supabase.from('customers').update({ tabaccheria_id: newTab.id }).eq('id', customer.id);
+      await supabase.from('customers').update({ tabaccheria_id: tabToLinkId }).eq('id', customer.id);
 
       // 4. Create visit (NB: la tabella visits NON ha la colonna status — l'insert fallirebbe in silenzio)
       const { data: visit, error: visitErr } = await supabase.from('visits').insert({
@@ -414,6 +481,19 @@ export default function RivenditeNoMappaScreen() {
         <Text style={styles.inputLabel}>Ragione Sociale *</Text>
         <TextInput style={styles.input} value={form.businessName} onChangeText={v => updateForm('businessName', v)}
           placeholder="Ragione Sociale" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
+        {linkedTab ? (
+          <RegistryLinkedBanner
+            name={linkedTab.denominazione || 'rivendita'}
+            numOrdinale={linkedTab.Num_Ordinale}
+            onUnlink={() => setLinkedTab(null)}
+          />
+        ) : (
+          <RegistryHintBox
+            hints={registryHints}
+            onUse={useRegistryMatch}
+            onDismiss={() => { setRegistryDismissed(true); setRegistryHints([]); }}
+          />
+        )}
 
         <Text style={styles.inputLabel}>N. Ordinale</Text>
         <TextInput style={styles.input} value={form.numOrdinale} onChangeText={v => updateForm('numOrdinale', v)}

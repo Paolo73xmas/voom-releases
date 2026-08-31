@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { fetchCustomers } from '../../lib/api/customers';
+import { searchUnlinkedTabaccherie, type RegistryTabMatch } from '../../lib/api/registry-search';
 import { Customer } from '../../types';
 import { useDebounce } from '../../hooks/useDebounce';
 import { SkeletonList } from '../../components/Skeleton';
@@ -88,6 +89,17 @@ export default function CustomersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 250);
+  // Rivendite del registro tabaccherie SENZA scheda cliente che corrispondono alla ricerca
+  const [registryMatches, setRegistryMatches] = useState<RegistryTabMatch[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (debouncedSearch.trim().length < 3) { setRegistryMatches([]); return; }
+    searchUnlinkedTabaccherie(debouncedSearch, 15)
+      .then((rows) => { if (!cancelled) setRegistryMatches(rows); })
+      .catch(() => { if (!cancelled) setRegistryMatches([]); });
+    return () => { cancelled = true; };
+  }, [debouncedSearch]);
 
   const loadCustomers = useCallback(async (force: boolean = false) => {
     if (!user) return;
@@ -204,12 +216,60 @@ export default function CustomersScreen() {
             iconGradient="primary"
           />
         }
+        ListFooterComponent={
+          registryMatches.length > 0 ? (
+            <View style={styles.registrySection}>
+              <Text style={styles.registryTitle}>
+                Dal registro tabaccherie (senza scheda cliente) — crea la scheda senza doppioni
+              </Text>
+              {registryMatches.map((t) => (
+                <View key={t.id} style={styles.registryCard}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.registryName} numberOfLines={1}>
+                      {t.denominazione || 'Rivendita senza nome'}{t.Num_Ordinale ? ` — Riv. ${t.Num_Ordinale}` : ''}
+                    </Text>
+                    <Text style={styles.registryAddr} numberOfLines={1}>
+                      {[t.indirizzo, t.comune, t.provincia ? `(${t.provincia})` : ''].filter(Boolean).join(', ')}
+                      {t.gps_lat && t.gps_lng ? ' · 📍 georeferenziata' : ''}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.registryBtn}
+                    onPress={() => {
+                      hap.light();
+                      router.push({ pathname: '/anagrafica', params: { tabaccheriaId: t.id } });
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="add" size={13} color="#FFF" />
+                    <Text style={styles.registryBtnText}>Crea scheda</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          ) : null
+        }
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  registrySection: { marginTop: 14, gap: 8, paddingBottom: 8 },
+  registryTitle: { fontSize: 11, fontWeight: '700', color: '#92400E' },
+  registryCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FCD34D', borderRadius: 10,
+    paddingVertical: 8, paddingHorizontal: 10,
+  },
+  registryName: { fontSize: 13, fontWeight: '600', color: '#1F2937' },
+  registryAddr: { fontSize: 11, color: '#6B7280', marginTop: 1 },
+  registryBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: '#D97706', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 10,
+    minHeight: 36, justifyContent: 'center',
+  },
+  registryBtnText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
   container: {
     flex: 1,
     backgroundColor: COLORS.bg,

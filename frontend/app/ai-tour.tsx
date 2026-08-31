@@ -233,6 +233,10 @@ export default function AITourScreen() {
   const [dayIdx, setDayIdx] = useState(0);
   // Giro troppo grande per una giornata: contesto per proporre la strutturazione multi-giorno
   const [multiDayAsk, setMultiDayAsk] = useState<{
+    // 'leftover': il giorno 1 resta com'è, si pianificano solo gli esclusi;
+    // 'overflow': le tappe obbligatorie sforano l'orario → si ripianifica tutto da zero sui giorni
+    mode: 'leftover' | 'overflow';
+    overrunMin?: number;
     leftover: TourCandidate[];
     start: GeoPoint;
     end: GeoPoint | null;
@@ -725,8 +729,18 @@ export default function AITourScreen() {
       // solo se la giornata è davvero satura (poco tempo residuo) e restano soggetti fuori
       const plannedKeysAll = new Set(finalPlan.stops.map((s) => s.candidate.key));
       const leftoverAll = candidates.filter((c) => !plannedKeysAll.has(c.key));
-      if (leftoverAll.length >= 3 && residualMin <= 60) {
+      const overrunForm = Math.round(finalPlan.finishMin - timeToMin(v.endTime));
+      if (overrunForm > 30 && finalPlan.stops.length >= 4) {
+        // Giro con tappe obbligatorie che sfora l'orario: proponi la ripartizione su più giorni
         setMultiDayAsk({
+          mode: 'overflow', overrunMin: overrunForm,
+          leftover: candidates, start, end, baseDate: v.date,
+          startMin: timeToMin(v.startTime), endMin: timeToMin(v.endTime),
+          dayType: v.dayType, resolvedDayType: resolved, bufferPct, area, areaLabel,
+        });
+      } else if (leftoverAll.length >= 3 && residualMin <= 60) {
+        setMultiDayAsk({
+          mode: 'leftover',
           leftover: leftoverAll, start, end, baseDate: v.date,
           startMin: timeToMin(v.startTime), endMin: timeToMin(v.endTime),
           dayType: v.dayType, resolvedDayType: resolved, bufferPct, area, areaLabel,
@@ -786,11 +800,15 @@ export default function AITourScreen() {
     setGenerating(true);
     setPhase('form');
     try {
-      const plans: TourPlan[] = [plan];
+      // 'overflow': si ripianifica tutto da zero distribuendo le tappe sui giorni;
+      // 'leftover': il giorno 1 resta com'è e si pianificano solo gli esclusi
+      const plans: TourPlan[] = ctx.mode === 'overflow' ? [] : [plan];
       let remaining = ctx.leftover;
       let date = ctx.baseDate;
+      let firstDay = ctx.mode === 'overflow';
       while (remaining.length > 0 && plans.length < 6) {
-        date = nextWorkDate(date);
+        if (!firstDay) date = nextWorkDate(date);
+        firstDay = false;
         setProgress(`Pianificazione del giorno ${plans.length + 1} (${remaining.length} visite rimaste)...`);
         const p = await planTour({
           candidates: remaining,
@@ -810,22 +828,28 @@ export default function AITourScreen() {
         p.areaLabel = ctx.areaLabel;
         p.aiRecommendation = plan.aiRecommendation;
         p.areaFilter = plan.areaFilter;
-        const dLabel = new Date(date + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: '2-digit' });
-        p.warnings.unshift(`Giorno ${plans.length + 1} (${dLabel}): partenza dallo stesso punto della richiesta`);
+        if (plans.length > 0) {
+          const dLabel = new Date(date + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: '2-digit' });
+          p.warnings.unshift(`Giorno ${plans.length + 1} (${dLabel}): partenza dallo stesso punto della richiesta`);
+        }
         plans.push(p);
         const done = new Set(p.stops.map((s) => s.candidate.key));
         remaining = remaining.filter((c) => !done.has(c.key));
       }
-      if (plans.length === 1) {
+      if (plans.length === 0) {
+        setErrMsg('Nessuna visita pianificabile: orario troppo stretto');
+        return;
+      }
+      if (plans.length === 1 && ctx.mode === 'leftover') {
         setInfoMsg('Nessuna visita aggiuntiva pianificabile nelle giornate successive');
         return;
       }
       if (remaining.length > 0) {
         plans[plans.length - 1].warnings.push(`${remaining.length} soggetti restano fuori anche dopo ${plans.length} giornate`);
       }
-      // Strategia AI specifica per ogni giornata (il giorno 1 ha già la sua)
+      // Strategia AI specifica per ogni giornata che non la ha già
       setProgress("L'AI sta scrivendo la strategia di ogni giornata...");
-      await Promise.all(plans.slice(1).map(async (p) => {
+      await Promise.all(plans.filter((p) => !p.aiSummary).map(async (p) => {
         try { p.aiSummary = await getStrategySummary(p); } catch { p.aiSummary = ''; }
       }));
       setDayPlans(plans);
@@ -929,11 +953,22 @@ export default function AITourScreen() {
         result.secondary.aiSummary = await getStrategySummary(result.secondary);
         setDayPlans([result.plan, result.secondary]);
         setDayIdx(0);
-      } else if (result.leftover.length >= 3) {
+      } else {
         // Giro troppo grande per una giornata: proponi la strutturazione su più giorni
         const residualBrief = Math.max(0, endMin - result.plan.finishMin);
-        if (residualBrief <= 60) {
+        const overrunBrief = Math.round(result.plan.finishMin - endMin);
+        if (overrunBrief > 30 && result.plan.stops.length >= 4) {
+          // Es. "tutti i clienti del progetto": tappe obbligatorie che sforano l'orario
           setMultiDayAsk({
+            mode: 'overflow', overrunMin: overrunBrief,
+            leftover: [...result.plan.stops.map((s) => s.candidate), ...result.leftover],
+            start, end, baseDate: date,
+            startMin, endMin, dayType: result.resolvedDayType, resolvedDayType: result.resolvedDayType,
+            bufferPct: result.bufferPct, area: { mode: 'auto' }, areaLabel: result.areaLabel,
+          });
+        } else if (result.leftover.length >= 3 && residualBrief <= 60) {
+          setMultiDayAsk({
+            mode: 'leftover',
             leftover: result.leftover, start, end, baseDate: date,
             startMin, endMin, dayType: result.resolvedDayType, resolvedDayType: result.resolvedDayType,
             bufferPct: result.bufferPct, area: { mode: 'auto' }, areaLabel: result.areaLabel,
@@ -2075,9 +2110,12 @@ export default function AITourScreen() {
               <Text style={styles.multiDayTitle}>Il giro necessita di più giornate</Text>
             </View>
             <Text style={styles.multiDayDesc}>
-              {multiDayAsk?.leftover.length} visite non entrano nella giornata richiesta. Vuoi che crei dei tour su più
-              giorni? Ogni giornata partirà sempre dal punto da cui hai fatto la richiesta: sarà una tua scelta se
-              rientrare davvero al punto di partenza o fermarti dove finisce il giro e riprendere da lì.
+              {multiDayAsk?.mode === 'overflow'
+                ? `Il giro pianificato sfora l'orario della giornata di circa ${multiDayAsk?.overrunMin} minuti.`
+                : `${multiDayAsk?.leftover.length} visite non entrano nella giornata richiesta.`}{' '}
+              Vuoi che crei dei tour su più giorni? Ogni giornata partirà sempre dal punto da cui hai fatto la
+              richiesta: sarà una tua scelta se rientrare davvero al punto di partenza o fermarti dove finisce il giro
+              e riprendere da lì.
             </Text>
             <TouchableOpacity style={styles.multiDayYes} onPress={continueMultiDay} activeOpacity={0.8}>
               <Text style={styles.multiDayYesText}>Sì, crea più giornate</Text>

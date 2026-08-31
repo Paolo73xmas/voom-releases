@@ -29,6 +29,8 @@ import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
 import { findCustomerByVat, isPlaceholderVat, parseVatGuardError, type ExistingVatCustomer } from '../lib/api/vat-guard';
 import { DuplicateVatDialog } from '../components/customers/DuplicateVatDialog';
+import { searchUnlinkedTabaccherie, type RegistryTabMatch } from '../lib/api/registry-search';
+import { RegistryHintBox, RegistryLinkedBanner } from '../components/customers/RegistryHintBox';
 import { VisitSlotWheel } from '../components/customers/VisitSlotWheel';
 import { ExcludedDaysPicker } from '../components/customers/ExcludedDaysPicker';
 import { searchCompany } from '../lib/api/openapi-company';
@@ -133,6 +135,10 @@ export default function AnagraficaScreen() {
   const allowDupVatRef = useRef(false);
   const [saveFailed, setSaveFailed] = useState<string | null>(null);
   const [isPhoneVisit, setIsPhoneVisit] = useState(false);
+  // Avviso live: rivendita già censita nel registro (senza scheda) mentre si digita nome/indirizzo
+  const [registryHints, setRegistryHints] = useState<RegistryTabMatch[]>([]);
+  const [registryDismissed, setRegistryDismissed] = useState(false);
+  const [registryLinkedName, setRegistryLinkedName] = useState('');
   const { stampPhoto, StamperView } = usePhotoStamper();
 
   // Step 1: Photos + GPS
@@ -214,6 +220,33 @@ export default function AnagraficaScreen() {
       } catch (e) { console.warn('[Anagrafica] projects/types load error:', e); }
     })();
   }, []);
+
+  // Suggerimento live: rivendita già censita nel registro senza scheda cliente,
+  // mentre l'agente digita nome/indirizzo (parità web 7345065)
+  useEffect(() => {
+    if (form.tabaccheriaId || registryDismissed) { setRegistryHints([]); return; }
+    const name = form.businessName.trim();
+    const addr = `${form.address} ${form.city}`.trim();
+    const term = name.length >= 4 ? `${name} ${form.city}`.trim() : (addr.length >= 6 ? addr : '');
+    if (!term) { setRegistryHints([]); return; }
+    const timer = setTimeout(async () => {
+      try {
+        const rows = await searchUnlinkedTabaccherie(term, 5);
+        setRegistryHints(rows.slice(0, 3));
+      } catch {
+        setRegistryHints([]);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.businessName, form.address, form.city, form.tabaccheriaId, registryDismissed]);
+
+  const useRegistryMatch = async (m: RegistryTabMatch) => {
+    setRegistryHints([]);
+    setRegistryLinkedName(m.denominazione || 'rivendita');
+    // Precompila e aggancia la tabaccheria esistente (stessa via del flusso da mappa)
+    await loadTabaccheriaData(m.id);
+  };
 
   const loadTabaccheriaData = async (tabId: string) => {
     try {
@@ -809,6 +842,15 @@ export default function AnagraficaScreen() {
         {/* Form Fields */}
         <Text style={styles.sectionTitle}>Dati Aziendali</Text>
         <FormField label="Ragione Sociale *" value={form.businessName} field="businessName" onChange={updateField} autoCapitalize="characters" />
+        {registryLinkedName && form.tabaccheriaId ? (
+          <RegistryLinkedBanner name={registryLinkedName} />
+        ) : (
+          <RegistryHintBox
+            hints={registryHints}
+            onUse={useRegistryMatch}
+            onDismiss={() => { setRegistryDismissed(true); setRegistryHints([]); }}
+          />
+        )}
         <FormField label="P.IVA * (11 cifre)" value={form.vatNumber} field="vatNumber" onChange={updateField} keyboardType="numeric" maxLength={11}
           error={form.vatNumber && !vatRegex.test(form.vatNumber) ? 'P.IVA deve essere di 11 cifre' : ''} />
         <FormField label="Codice Fiscale * (16 car.)" value={form.fiscalCode} field="fiscalCode" onChange={updateField} maxLength={16} autoCapitalize="characters"

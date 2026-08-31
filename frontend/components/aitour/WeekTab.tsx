@@ -9,8 +9,12 @@ import { loadCandidates } from '../../lib/aitour/data';
 import { scoreCandidates } from '../../lib/aitour/scoring';
 import { listAllZones, pointInZones, loadNeverVisitedFillers, type TerritoryZone } from '../../lib/aitour/territories';
 import { buildWeekPlan, mondayOf, nextMonday, addDays, type WeekPlan, type WeekDayPlan } from '../../lib/aitour/week';
-import type { AiTourSettings, GeoPoint } from '../../lib/aitour/types';
-import { ENTITY_COLORS, fmtDur } from '../../lib/aitour/types';
+import { planTour } from '../../lib/aitour/planner';
+import { getStrategySummary } from '../../lib/aitour/ai';
+import { saveToursBatch } from '../../lib/aitour/tours';
+import { TourNameDialog } from './TourNameDialog';
+import type { AiTourSettings, GeoPoint, TourPlan } from '../../lib/aitour/types';
+import { ENTITY_COLORS, fmtDur, timeToMin } from '../../lib/aitour/types';
 
 export interface WeekPreset {
   weekStart: string;
@@ -71,6 +75,11 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
   const [genDay, setGenDay] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [errMsg, setErrMsg] = useState('');
+  // Salva tutta la settimana in un colpo solo (nome + RPC atomica)
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [savingWeek, setSavingWeek] = useState(false);
+  const [saveProgress, setSaveProgress] = useState('');
+  const [okMsg, setOkMsg] = useState('');
 
   useEffect(() => {
     setWeek(null);
@@ -157,6 +166,61 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
   };
 
   const totalVisits = week ? week.days.reduce((s, d) => s + d.candidates.length, 0) : 0;
+  const savableDays = week ? week.days.filter((d) => d.candidates.length > 0).length : 0;
+
+  // Salva tutta la settimana: calcola il percorso dettagliato di ogni giorno e
+  // salva TUTTI i tour in una sola chiamata server-side atomica (o tutti o nessuno).
+  const confirmSaveWeek = async (name: string) => {
+    if (!week || !startPoint) return;
+    setSavingWeek(true);
+    setOkMsg('');
+    setErrMsg('');
+    try {
+      const daysToSave = week.days.filter((d) => d.candidates.length > 0);
+      const plans: TourPlan[] = [];
+      for (const d of daysToSave) {
+        setSaveProgress(`Calcolo percorso di ${d.dow} (${plans.length + 1}/${daysToSave.length})...`);
+        const p = await planTour({
+          candidates: d.candidates,
+          mandatoryKeys: new Set<string>(),
+          start: startPoint,
+          end: endPoint,
+          tourDate: d.date,
+          startMin: timeToMin(settings.work_start),
+          endMin: timeToMin(settings.work_end),
+          dayType: 'mista',
+          resolvedDayType: 'mista',
+          bufferPct: settings.buffer_pct_mista,
+          bufferMaxMin: settings.buffer_max_min,
+          area: { mode: 'auto' },
+        });
+        if (p.stops.length > 0) {
+          p.areaLabel = d.label;
+          plans.push(p);
+        }
+      }
+      if (plans.length === 0) {
+        setErrMsg("Nessuna visita pianificabile nell'orario configurato");
+        return;
+      }
+      setSaveProgress("L'AI sta scrivendo la strategia di ogni giornata...");
+      await Promise.all(plans.map(async (p) => {
+        try { p.aiSummary = await getStrategySummary(p); } catch { p.aiSummary = ''; }
+      }));
+      setSaveProgress('Salvataggio sul server...');
+      const ids = await saveToursBatch(agentId, plans, name);
+      setOkMsg(`${ids.length} tour salvati${name ? ` con nome "${name}"` : ''}: li trovi in "I miei Tour"`);
+      setSaveOpen(false);
+      hap.success();
+    } catch (err) {
+      console.error('[AITour][week] salva settimana:', err);
+      setErrMsg('Errore nel salvataggio della settimana: nessun tour salvato');
+    } finally {
+      setSavingWeek(false);
+      setSaveProgress('');
+    }
+  };
+
   const choices = weekChoices();
   const presetChoice = choices.some((c) => c.value === weekStart);
 
@@ -267,6 +331,28 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
             </Text>{' '}
             · Giornata utile: <Text style={styles.kpiBold}>{fmtDur(week.usableMinPerDay)}</Text>
           </Text>
+          {okMsg ? (
+            <View style={styles.okBox}>
+              <Ionicons name="checkmark-circle" size={14} color="#047857" />
+              <Text style={styles.okText}>{okMsg}</Text>
+            </View>
+          ) : null}
+          {savableDays > 0 && (
+            <TouchableOpacity
+              style={[styles.saveWeekBtn, (genDay !== null || savingWeek) && { opacity: 0.5 }]}
+              onPress={() => {
+                hap.medium();
+                setSaveOpen(true);
+              }}
+              disabled={genDay !== null || savingWeek}
+              activeOpacity={0.8}
+            >
+              {savingWeek ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="save-outline" size={15} color="#FFF" />}
+              <Text style={styles.saveWeekText}>
+                {savingWeek ? 'SALVATAGGIO...' : `SALVA SETTIMANA (${savableDays} ${savableDays === 1 ? 'giorno' : 'giorni'})`}
+              </Text>
+            </TouchableOpacity>
+          )}
           {week.overflow.length > 0 && (
             <View style={styles.warnBox}>
               <Ionicons name="warning" size={13} color="#92400E" />
@@ -277,7 +363,6 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
               </Text>
             </View>
           )}
-
           {week.days.map((d, idx) => (
             <View key={d.date} style={styles.dayCard}>
               <View style={styles.dayHeader}>
@@ -332,6 +417,17 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
           ))}
         </View>
       )}
+
+      {/* Nome del blocco di tour della settimana */}
+      <TourNameDialog
+        visible={saveOpen}
+        title={`Salva settimana (${savableDays} ${savableDays === 1 ? 'giorno' : 'giorni'})`}
+        description="Calcolo il percorso dettagliato di ogni giorno e salvo tutti i tour in un colpo solo: o tutti o nessuno."
+        saving={savingWeek}
+        progress={saveProgress}
+        onClose={() => { if (!savingWeek) setSaveOpen(false); }}
+        onConfirm={confirmSaveWeek}
+      />
     </View>
   );
 }
@@ -375,6 +471,27 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   errText: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 11, color: '#991B1B' },
+  okBox: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+    backgroundColor: '#D1FAE5',
+    borderRadius: 8,
+    padding: 9,
+    marginTop: 8,
+  },
+  okText: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 11, color: '#047857' },
+  saveWeekBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: '#059669',
+    borderRadius: 11,
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  saveWeekText: { fontFamily: JAKARTA.bold, fontSize: 12.5, color: '#FFF', letterSpacing: 0.3 },
   generateBtn: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -167,6 +167,9 @@ export interface BriefPlanResult {
   areaLabel: string;
   resolvedDayType: Exclude<DayType, 'ai'>;
   note: string;
+  /** Soggetti selezionati ma NON entrati nei giorni pianificati (per proporre più giornate) */
+  leftover: TourCandidate[];
+  bufferPct: number;
 }
 
 // Costruisce uno (o due) giri a partire dal brief interpretato.
@@ -288,5 +291,10 @@ export async function buildBriefPlan(p: BriefPlanParams): Promise<BriefPlanResul
     }
   }
 
-  return { plan, secondary, areaLabel, resolvedDayType, note: notes.join('. ') };
+  // Soggetti rimasti fuori da tutti i giorni pianificati
+  const doneKeys = new Set(plan.stops.map((s) => s.candidate.key));
+  if (secondary) for (const s of secondary.stops) doneKeys.add(s.candidate.key);
+  const leftover = base.filter((c) => !doneKeys.has(c.key));
+
+  return { plan, secondary, areaLabel, resolvedDayType, note: notes.join('. '), leftover, bufferPct };
 }

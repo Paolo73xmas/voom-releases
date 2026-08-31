@@ -12,6 +12,7 @@ import {
   Linking,
   Platform,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,7 +28,7 @@ import { loadCandidates, loadFreeTabaccherie, type CandidatePool } from '../lib/
 import { scoreCandidates, computePortfolioStats } from '../lib/aitour/scoring';
 import { planTour, planFixedOrder, filterByArea, pickBestCluster, candidatesForDayType, type AreaFilter } from '../lib/aitour/planner';
 import { getStrategySummary, recommendDayType } from '../lib/aitour/ai';
-import { getSettings, saveTour, listTours, loadTourStops, deleteTour, replaceTourPlan, type SavedTour } from '../lib/aitour/tours';
+import { getSettings, saveTour, saveToursBatch, listTours, loadTourStops, deleteTour, replaceTourPlan, type SavedTour } from '../lib/aitour/tours';
 import { getActiveTour, loadLiveState, startLiveTour, type LiveState } from '../lib/aitour/live';
 import { geocodeAddress } from '../lib/aitour/osrm';
 import { LiveTourView } from '../components/aitour/LiveTourView';
@@ -36,6 +37,7 @@ import { PortfolioTab } from '../components/aitour/PortfolioTab';
 import { TourEditModal } from '../components/aitour/TourEditModal';
 import { DrawAreasMap } from '../components/aitour/DrawAreasMap';
 import { BriefModal } from '../components/aitour/BriefModal';
+import { TourNameDialog } from '../components/aitour/TourNameDialog';
 import { buildBriefPlan, type TourBrief } from '../lib/aitour/brief';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
@@ -226,7 +228,25 @@ export default function AITourScreen() {
 
   // "Dillo all'AI": brief in linguaggio naturale + giro (eventuale) su 2 giorni
   const [briefOpen, setBriefOpen] = useState(false);
-  const [secondaryPlan, setSecondaryPlan] = useState<TourPlan | null>(null);
+  // Tour multi-giornata: piani per giorno + giorno visualizzato
+  const [dayPlans, setDayPlans] = useState<TourPlan[] | null>(null);
+  const [dayIdx, setDayIdx] = useState(0);
+  // Giro troppo grande per una giornata: contesto per proporre la strutturazione multi-giorno
+  const [multiDayAsk, setMultiDayAsk] = useState<{
+    leftover: TourCandidate[];
+    start: GeoPoint;
+    end: GeoPoint | null;
+    baseDate: string;
+    startMin: number;
+    endMin: number;
+    dayType: DayType;
+    resolvedDayType: Exclude<DayType, 'ai'>;
+    bufferPct: number;
+    area: AreaFilter;
+    areaLabel: string;
+  } | null>(null);
+  // Salvataggio con nome
+  const [saveNameOpen, setSaveNameOpen] = useState(false);
 
   // Modifica giro (post-generazione e su tour salvato non ancora avviato)
   const [pool, setPool] = useState<CandidatePool | null>(null);
@@ -401,6 +421,9 @@ export default function AITourScreen() {
     setErrMsg('');
     setSavedTourId(null);
     setShowExcluded(false);
+    setDayPlans(null);
+    setDayIdx(0);
+    setMultiDayAsk(null);
     const v = form;
     try {
       // Tour di oggi: l'orario di inizio effettivo non può essere nel passato
@@ -698,6 +721,17 @@ export default function AITourScreen() {
 
       setProgress("L'AI sta scrivendo la strategia del giro...");
       finalPlan.aiSummary = await getStrategySummary(finalPlan);
+      // Giro troppo grande per una giornata: proponi la strutturazione su più giorni
+      // solo se la giornata è davvero satura (poco tempo residuo) e restano soggetti fuori
+      const plannedKeysAll = new Set(finalPlan.stops.map((s) => s.candidate.key));
+      const leftoverAll = candidates.filter((c) => !plannedKeysAll.has(c.key));
+      if (leftoverAll.length >= 3 && residualMin <= 60) {
+        setMultiDayAsk({
+          leftover: leftoverAll, start, end, baseDate: v.date,
+          startMin: timeToMin(v.startTime), endMin: timeToMin(v.endTime),
+          dayType: v.dayType, resolvedDayType: resolved, bufferPct, area, areaLabel,
+        });
+      }
       setPlan(finalPlan);
       setReadOnly(false);
       setPhase('result');
@@ -726,13 +760,87 @@ export default function AITourScreen() {
     setBriefOpen(true);
   };
 
-  // Scambia la visualizzazione tra Giorno 1 e Giorno 2 di un giro diviso
-  const swapDay = () => {
-    if (!secondaryPlan || !plan) return;
+  // Passa alla visualizzazione di un altro giorno di un giro multi-giornata,
+  // conservando le eventuali modifiche fatte al giorno corrente
+  const switchDay = (i: number) => {
+    if (!dayPlans || !plan || i === dayIdx) return;
     hap.light();
-    setPlan(secondaryPlan);
-    setSecondaryPlan(plan);
-    setSavedTourId(null);
+    const updated = dayPlans.map((x, j) => (j === dayIdx ? plan : x));
+    setDayPlans(updated);
+    setPlan(updated[i]);
+    setDayIdx(i);
+  };
+
+  // Strutturazione multi-giornata: ogni giorno riparte dallo stesso punto della richiesta
+  const nextWorkDate = (d: string): string => {
+    const dt = new Date(d + 'T12:00:00');
+    do { dt.setDate(dt.getDate() + 1); } while (dt.getDay() === 0); // mai di domenica
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  };
+
+  const continueMultiDay = async () => {
+    const ctx = multiDayAsk;
+    if (!ctx || !plan) return;
+    hap.medium();
+    setMultiDayAsk(null);
+    setGenerating(true);
+    setPhase('form');
+    try {
+      const plans: TourPlan[] = [plan];
+      let remaining = ctx.leftover;
+      let date = ctx.baseDate;
+      while (remaining.length > 0 && plans.length < 6) {
+        date = nextWorkDate(date);
+        setProgress(`Pianificazione del giorno ${plans.length + 1} (${remaining.length} visite rimaste)...`);
+        const p = await planTour({
+          candidates: remaining,
+          mandatoryKeys: new Set<string>(),
+          start: ctx.start,
+          end: ctx.end,
+          tourDate: date,
+          startMin: ctx.startMin,
+          endMin: ctx.endMin,
+          dayType: ctx.dayType,
+          resolvedDayType: ctx.resolvedDayType,
+          bufferPct: ctx.bufferPct,
+          bufferMaxMin: settings.buffer_max_min,
+          area: ctx.area,
+        });
+        if (p.stops.length === 0) break;
+        p.areaLabel = ctx.areaLabel;
+        p.aiRecommendation = plan.aiRecommendation;
+        p.areaFilter = plan.areaFilter;
+        const dLabel = new Date(date + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: '2-digit' });
+        p.warnings.unshift(`Giorno ${plans.length + 1} (${dLabel}): partenza dallo stesso punto della richiesta`);
+        plans.push(p);
+        const done = new Set(p.stops.map((s) => s.candidate.key));
+        remaining = remaining.filter((c) => !done.has(c.key));
+      }
+      if (plans.length === 1) {
+        setInfoMsg('Nessuna visita aggiuntiva pianificabile nelle giornate successive');
+        return;
+      }
+      if (remaining.length > 0) {
+        plans[plans.length - 1].warnings.push(`${remaining.length} soggetti restano fuori anche dopo ${plans.length} giornate`);
+      }
+      // Strategia AI specifica per ogni giornata (il giorno 1 ha già la sua)
+      setProgress("L'AI sta scrivendo la strategia di ogni giornata...");
+      await Promise.all(plans.slice(1).map(async (p) => {
+        try { p.aiSummary = await getStrategySummary(p); } catch { p.aiSummary = ''; }
+      }));
+      setDayPlans(plans);
+      setDayIdx(0);
+      setPlan(plans[0]);
+      setInfoMsg(`Giro strutturato su ${plans.length} giornate: passa tra i giorni con i pulsanti in alto, Salva li salva tutti`);
+      hap.success();
+    } catch (err) {
+      console.error('[AITour] continueMultiDay:', err);
+      setErrMsg('Errore nella pianificazione multi-giornata');
+    } finally {
+      setGenerating(false);
+      setProgress('');
+      setPhase('result');
+    }
   };
 
   // Genera un giro a partire dal brief interpretato dall'AI ("Dillo all'AI")
@@ -745,7 +853,9 @@ export default function AITourScreen() {
     setErrMsg('');
     setSavedTourId(null);
     setShowExcluded(false);
-    setSecondaryPlan(null);
+    setDayPlans(null);
+    setDayIdx(0);
+    setMultiDayAsk(null);
     try {
       const offset = Math.max(0, brief.dayOffset || 0);
       const date = localDateStr(offset);
@@ -817,7 +927,18 @@ export default function AITourScreen() {
       result.plan.aiSummary = await getStrategySummary(result.plan);
       if (result.secondary && result.secondary.stops.length > 0) {
         result.secondary.aiSummary = await getStrategySummary(result.secondary);
-        setSecondaryPlan(result.secondary);
+        setDayPlans([result.plan, result.secondary]);
+        setDayIdx(0);
+      } else if (result.leftover.length >= 3) {
+        // Giro troppo grande per una giornata: proponi la strutturazione su più giorni
+        const residualBrief = Math.max(0, endMin - result.plan.finishMin);
+        if (residualBrief <= 60) {
+          setMultiDayAsk({
+            leftover: result.leftover, start, end, baseDate: date,
+            startMin, endMin, dayType: result.resolvedDayType, resolvedDayType: result.resolvedDayType,
+            bufferPct: result.bufferPct, area: { mode: 'auto' }, areaLabel: result.areaLabel,
+          });
+        }
       }
       setPlan(result.plan);
       setReadOnly(false);
@@ -908,17 +1029,26 @@ export default function AITourScreen() {
     }
   };
 
-  const save = async () => {
+  const save = async (name: string) => {
     if (!plan || !agentId || savedTourId) return;
     hap.medium();
     setSaving(true);
     try {
-      const id = await saveTour(agentId, plan);
-      setSavedTourId(id);
+      // Salvataggio lato server (RPC atomica): con multi-giornata o tutti i giorni o nessuno
+      if (dayPlans && dayPlans.length > 1) {
+        const all = dayPlans.map((p, i) => (i === dayIdx ? plan : p));
+        const ids = await saveToursBatch(agentId, all, name);
+        setSavedTourId(ids[dayIdx] || ids[0] || null);
+        setInfoMsg(`${ids.length} tour salvati, uno per giornata${name ? ` — "${name}"` : ''}`);
+      } else {
+        const ids = await saveToursBatch(agentId, [plan], name);
+        setSavedTourId(ids[0] || null);
+      }
+      setSaveNameOpen(false);
       hap.success();
     } catch (err) {
       console.error('[AITour] save:', err);
-      setErrMsg('Errore nel salvataggio del tour');
+      setErrMsg('Errore nel salvataggio del tour: nessun tour salvato');
     } finally {
       setSaving(false);
     }
@@ -1013,6 +1143,8 @@ export default function AITourScreen() {
 
   const viewSaved = async (tour: SavedTour) => {
     hap.light();
+    setDayPlans(null);
+    setDayIdx(0);
     // Tour in corso: riprendi direttamente la Modalità Live
     if (tour.status === 'active') {
       try {
@@ -1442,17 +1574,24 @@ export default function AITourScreen() {
 
     return (
       <View>
-        {/* Giro diviso su 2 giorni: passa da Giorno 1 a Giorno 2 */}
-        {secondaryPlan && (
+        {/* Giro multi-giornata: tab per passare da un giorno all'altro */}
+        {dayPlans && dayPlans.length > 1 && (
           <View style={styles.splitBanner}>
             <Ionicons name="calendar" size={16} color={AI_PURPLE_TEXT} />
-            <Text style={styles.splitBannerText}>
-              Giro diviso su 2 giorni · stai vedendo {fmtTourDate(plan.tourDate)}
-            </Text>
-            <TouchableOpacity style={styles.splitSwapBtn} onPress={swapDay} activeOpacity={0.8}>
-              <Ionicons name="swap-horizontal" size={14} color="#FFF" />
-              <Text style={styles.splitSwapText}>Altro giorno</Text>
-            </TouchableOpacity>
+            <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {dayPlans.map((p, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.dayTabBtn, dayIdx === i && styles.dayTabBtnActive]}
+                  onPress={() => switchDay(i)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.dayTabText, dayIdx === i && styles.dayTabTextActive]}>
+                    Giorno {i + 1} ({p.stops.length})
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         )}
         {/* Azioni */}
@@ -1464,6 +1603,8 @@ export default function AITourScreen() {
               setPhase('form');
               setReadOnly(false);
               setSavedTourId(null);
+              setDayPlans(null);
+              setDayIdx(0);
             }}
             activeOpacity={0.7}
           >
@@ -1479,7 +1620,7 @@ export default function AITourScreen() {
           {!readOnly && (
             <TouchableOpacity
               style={[styles.actionBtn, styles.saveBtn, savedTourId != null && styles.savedBtn]}
-              onPress={save}
+              onPress={() => { hap.light(); setSaveNameOpen(true); }}
               disabled={saving || savedTourId != null}
               activeOpacity={0.7}
             >
@@ -1745,6 +1886,9 @@ export default function AITourScreen() {
                   <Ionicons name="trash-outline" size={17} color={DS.error} />
                 </TouchableOpacity>
               </View>
+              {t.name ? (
+                <Text style={styles.tourName} numberOfLines={1}>{t.name}</Text>
+              ) : null}
               <Text style={styles.tourInfo}>
                 {t.start_time?.slice(0, 5)}–{t.end_time?.slice(0, 5)} · {TOUR_TYPE_LABELS[t.resolved_tour_type || t.tour_type] || t.tour_type} ·{' '}
                 {t.planned_visits} visite · {Number(t.planned_distance_km || 0).toFixed(0)} km
@@ -1907,6 +2051,43 @@ export default function AITourScreen() {
         projects={briefProjects}
         cities={briefCities}
       />
+
+      {/* Salvataggio con nome (singolo o multi-giornata, RPC atomica) */}
+      <TourNameDialog
+        visible={saveNameOpen}
+        title={dayPlans && dayPlans.length > 1 ? `Salva ${dayPlans.length} giornate` : 'Salva tour'}
+        description={
+          dayPlans && dayPlans.length > 1
+            ? 'Verranno salvati tutti i giorni del giro in un colpo solo, uno per giornata.'
+            : 'Il tour verrà salvato in "I miei Tour".'
+        }
+        saving={saving}
+        onClose={() => { if (!saving) setSaveNameOpen(false); }}
+        onConfirm={save}
+      />
+
+      {/* Il giro non entra in una giornata: proposta multi-giornata */}
+      <Modal visible={!!multiDayAsk} transparent animationType="fade" onRequestClose={() => setMultiDayAsk(null)}>
+        <View style={styles.multiDayBackdrop}>
+          <View style={styles.multiDayCard}>
+            <View style={styles.multiDayTitleRow}>
+              <Ionicons name="calendar" size={20} color={AI_PURPLE_TEXT} />
+              <Text style={styles.multiDayTitle}>Il giro necessita di più giornate</Text>
+            </View>
+            <Text style={styles.multiDayDesc}>
+              {multiDayAsk?.leftover.length} visite non entrano nella giornata richiesta. Vuoi che crei dei tour su più
+              giorni? Ogni giornata partirà sempre dal punto da cui hai fatto la richiesta: sarà una tua scelta se
+              rientrare davvero al punto di partenza o fermarti dove finisce il giro e riprendere da lì.
+            </Text>
+            <TouchableOpacity style={styles.multiDayYes} onPress={continueMultiDay} activeOpacity={0.8}>
+              <Text style={styles.multiDayYesText}>Sì, crea più giornate</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.multiDayNo} onPress={() => { hap.light(); setMultiDayAsk(null); }} activeOpacity={0.7}>
+              <Text style={styles.multiDayNoText}>No, solo questa giornata</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1955,8 +2136,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   splitBannerText: { flex: 1, fontFamily: JAKARTA.semibold, fontSize: 12, color: AI_PURPLE_TEXT },
-  splitSwapBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: AI_PURPLE, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 },
-  splitSwapText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: '#FFF' },
+  dayTabBtn: { borderWidth: 1, borderColor: AI_PURPLE, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 },
+  dayTabBtnActive: { backgroundColor: AI_PURPLE },
+  dayTabText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: AI_PURPLE_TEXT },
+  dayTabTextActive: { color: '#FFF' },
+  tourName: { fontFamily: JAKARTA.semibold, fontSize: 12.5, color: AI_PURPLE_TEXT, marginTop: 3 },
+  multiDayBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 },
+  multiDayCard: { backgroundColor: DS.surface, borderRadius: 16, padding: 20, gap: 12 },
+  multiDayTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  multiDayTitle: { flex: 1, fontFamily: JAKARTA.bold, fontSize: 16, color: DS.ink },
+  multiDayDesc: { fontFamily: JAKARTA.regular, fontSize: 13, color: DS.ink2, lineHeight: 19 },
+  multiDayYes: { backgroundColor: AI_PURPLE, borderRadius: 12, paddingVertical: 13, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+  multiDayYesText: { fontFamily: JAKARTA.bold, fontSize: 14, color: '#FFF' },
+  multiDayNo: { paddingVertical: 10, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+  multiDayNoText: { fontFamily: JAKARTA.medium, fontSize: 14, color: DS.inkMuted },
   segmented: {
     flexDirection: 'row',
     backgroundColor: DS.surface3,

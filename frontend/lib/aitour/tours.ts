@@ -27,6 +27,7 @@ export async function saveSettings(agentId: string, settings: AiTourSettings): P
 export interface SavedTour {
   id: string;
   agent_id: string;
+  name: string | null;
   tour_date: string;
   start_time: string;
   end_time: string;
@@ -53,9 +54,8 @@ export interface SavedTour {
   area_filter?: SavedAreaFilter | null;
 }
 
-function buildStopRows(tourId: string, plan: TourPlan) {
+function buildStopRows(plan: TourPlan) {
   return plan.stops.map((s) => ({
-    tour_id: tourId,
     entity_type: s.candidate.entityType,
     customer_id: s.candidate.customerId,
     tabaccheria_id: s.candidate.tabaccheriaId,
@@ -80,42 +80,50 @@ function buildStopRows(tourId: string, plan: TourPlan) {
   }));
 }
 
-export async function saveTour(agentId: string, plan: TourPlan): Promise<string> {
+// Colonne ai_tours ricavate dal piano (usate sia dal salvataggio singolo che dal batch server-side)
+function buildTourRow(agentId: string, plan: TourPlan, name?: string) {
+  return {
+    agent_id: agentId,
+    name: name?.trim() || null,
+    tour_date: plan.tourDate,
+    start_time: minToTime(plan.startMin),
+    end_time: minToTime(plan.endMin),
+    start_label: plan.start.label,
+    start_lat: plan.start.lat,
+    start_lng: plan.start.lng,
+    end_mode: plan.end ? 'point' : 'none',
+    end_label: plan.end?.label || null,
+    end_lat: plan.end?.lat ?? null,
+    end_lng: plan.end?.lng ?? null,
+    tour_type: plan.dayType,
+    resolved_tour_type: plan.resolvedDayType,
+    status: 'planned',
+    planned_visits: plan.stops.length,
+    planned_distance_km: Math.round(plan.totalKm * 10) / 10,
+    km_urban: plan.kmUrban ?? null,
+    km_extra: plan.kmExtra ?? null,
+    km_highway: plan.kmHighway ?? null,
+    planned_drive_minutes: Math.round(plan.driveMin),
+    planned_visit_minutes: Math.round(plan.visitMin),
+    planned_buffer_minutes: Math.round(plan.bufferMin),
+    potential_value: Math.round(plan.potentialValue),
+    ai_summary: plan.aiSummary,
+    route_geometry: plan.geometry,
+    area_filter: plan.areaFilter ?? null,
+  };
+}
+
+export async function saveTour(agentId: string, plan: TourPlan, name?: string): Promise<string> {
   const { data: tour, error } = await supabase
     .from('ai_tours')
-    .insert({
-      agent_id: agentId,
-      tour_date: plan.tourDate,
-      start_time: minToTime(plan.startMin),
-      end_time: minToTime(plan.endMin),
-      start_label: plan.start.label,
-      start_lat: plan.start.lat,
-      start_lng: plan.start.lng,
-      end_mode: plan.end ? 'point' : 'none',
-      end_label: plan.end?.label || null,
-      end_lat: plan.end?.lat ?? null,
-      end_lng: plan.end?.lng ?? null,
-      tour_type: plan.dayType,
-      resolved_tour_type: plan.resolvedDayType,
-      status: 'planned',
-      planned_visits: plan.stops.length,
-      planned_distance_km: Math.round(plan.totalKm * 10) / 10,
-      km_urban: plan.kmUrban ?? null,
-      km_extra: plan.kmExtra ?? null,
-      km_highway: plan.kmHighway ?? null,
-      planned_drive_minutes: Math.round(plan.driveMin),
-      planned_visit_minutes: Math.round(plan.visitMin),
-      planned_buffer_minutes: Math.round(plan.bufferMin),
-      potential_value: Math.round(plan.potentialValue),
-      ai_summary: plan.aiSummary,
-      route_geometry: plan.geometry,
-      area_filter: plan.areaFilter ?? null,
-    })
+    .insert(buildTourRow(agentId, plan, name))
     .select('id')
     .single();
   if (error) throw error;
 
-  const { error: stopsErr } = await supabase.from('ai_tour_stops').insert(buildStopRows(tour.id, plan));
+  const { error: stopsErr } = await supabase
+    .from('ai_tour_stops')
+    .insert(buildStopRows(plan).map((r) => ({ ...r, tour_id: tour.id as string })));
   if (stopsErr) throw stopsErr;
 
   await supabase.from('ai_tour_events').insert({
@@ -124,6 +132,18 @@ export async function saveTour(agentId: string, plan: TourPlan): Promise<string>
     details: { visits: plan.stops.length, km: Math.round(plan.totalKm), day_type: plan.resolvedDayType },
   });
   return tour.id as string;
+}
+
+// Salvataggio LATO SERVER di più tour in una sola transazione atomica (RPC save_tours_batch):
+// o si salvano tutti i giorni o nessuno. Usato da Vista Settimanale e multi-giornata.
+export async function saveToursBatch(agentId: string, plans: TourPlan[], name?: string): Promise<string[]> {
+  const payload = plans.map((plan) => ({
+    tour: buildTourRow(agentId, plan, name),
+    stops: buildStopRows(plan),
+  }));
+  const { data, error } = await supabase.rpc('save_tours_batch', { p_tours: payload });
+  if (error) throw error;
+  return (data || []) as string[];
 }
 
 /**
@@ -150,7 +170,9 @@ export async function replaceTourPlan(tourId: string, plan: TourPlan): Promise<v
   if (upErr) throw upErr;
   const { error: delErr } = await supabase.from('ai_tour_stops').delete().eq('tour_id', tourId);
   if (delErr) throw delErr;
-  const { error: insErr } = await supabase.from('ai_tour_stops').insert(buildStopRows(tourId, plan));
+  const { error: insErr } = await supabase
+    .from('ai_tour_stops')
+    .insert(buildStopRows(plan).map((r) => ({ ...r, tour_id: tourId })));
   if (insErr) throw insErr;
   await supabase.from('ai_tour_events').insert({
     tour_id: tourId,
@@ -162,7 +184,7 @@ export async function replaceTourPlan(tourId: string, plan: TourPlan): Promise<v
 export async function listTours(agentId: string): Promise<SavedTour[]> {
   const { data, error } = await supabase
     .from('ai_tours')
-    .select('id, agent_id, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at, lunch_break_start, lunch_break_end, lunch_break_minutes, area_filter')
+    .select('id, agent_id, name, tour_date, start_time, end_time, start_label, start_lat, start_lng, end_label, end_lat, end_lng, tour_type, resolved_tour_type, status, planned_visits, planned_distance_km, planned_drive_minutes, planned_visit_minutes, planned_buffer_minutes, potential_value, ai_summary, created_at, lunch_break_start, lunch_break_end, lunch_break_minutes, area_filter')
     .eq('agent_id', agentId)
     .order('tour_date', { ascending: false })
     .order('created_at', { ascending: false })

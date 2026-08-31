@@ -26,6 +26,7 @@ import { COLORS } from '../../lib/theme';
 import { VisitSlotWheel } from '../../components/customers/VisitSlotWheel';
 import { getVisitSlots, slotsFromIds, WEEKDAY_NAMES, type VisitSlot } from '../../lib/visit-slots';
 import { ExcludedDaysPicker } from '../../components/customers/ExcludedDaysPicker';
+import { isPlaceholderVat, parseVatGuardError } from '../../lib/api/vat-guard';
 
 interface CustomerOrder {
   id: string;
@@ -174,6 +175,10 @@ export default function CustomerDetailScreen() {
       Alert.alert('P.IVA non valida', 'La Partita IVA deve avere 11 cifre');
       return;
     }
+    if (editSection === 'fiscal' && piva && isPlaceholderVat(piva)) {
+      Alert.alert('P.IVA non valida', 'Numero fittizio/segnaposto non ammesso');
+      return;
+    }
     setEditSaving(true);
     try {
       // Campi vuoti salvati come NULL (mai stringhe vuote); sigle in maiuscolo
@@ -190,7 +195,18 @@ export default function CustomerDetailScreen() {
       setEditSection(null);
     } catch (err) {
       console.error('[CustomerDetail] saveEdit:', err);
-      Alert.alert('Errore', 'Modifiche NON salvate (problema di connessione?). Riprova.');
+      // Errori del vincolo DB anti-duplicati P.IVA: messaggio chiaro
+      const vatGuard = parseVatGuardError((err as { message?: string })?.message);
+      if (vatGuard?.type === 'duplicate') {
+        Alert.alert(
+          'P.IVA già registrata',
+          `Questa Partita IVA è già presente sulla scheda "${vatGuard.name}"${vatGuard.where && vatGuard.where !== ', ' ? ` (${vatGuard.where})` : ''}. Correggi la P.IVA o verifica la scheda esistente.`,
+        );
+      } else if (vatGuard?.type === 'placeholder') {
+        Alert.alert('P.IVA non valida', 'Numero fittizio/segnaposto non ammesso');
+      } else {
+        Alert.alert('Errore', 'Modifiche NON salvate (problema di connessione?). Riprova.');
+      }
     } finally {
       setEditSaving(false);
     }

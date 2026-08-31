@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
   Alert, ActivityIndicator, Switch, Platform, KeyboardAvoidingView,
@@ -15,6 +15,8 @@ import { uploadVisitPhotos } from '../lib/api/photos';
 import { UploadProgressOverlay } from '../components/UploadProgressOverlay';
 import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
+import { findCustomerByVat, isPlaceholderVat, parseVatGuardError, type ExistingVatCustomer } from '../lib/api/vat-guard';
+import { DuplicateVatDialog } from '../components/customers/DuplicateVatDialog';
 
 interface PhotoData {
   uri: string;
@@ -31,6 +33,9 @@ export default function RivenditeNoMappaScreen() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
+  // Anti-duplicati P.IVA: scheda esistente trovata + flag "forza altro punto vendita"
+  const [dupVatExisting, setDupVatExisting] = useState<ExistingVatCustomer | null>(null);
+  const allowDupVatRef = useRef(false);
 
   // GPS
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -162,6 +167,9 @@ export default function RivenditeNoMappaScreen() {
     if (!form.vatNumber.trim() || !vatRegex.test(form.vatNumber)) {
       Alert.alert('Errore', 'P.IVA deve essere di 11 cifre'); return false;
     }
+    if (isPlaceholderVat(form.vatNumber)) {
+      Alert.alert('Errore', 'P.IVA non valida: numero fittizio/segnaposto non ammesso'); return false;
+    }
     if (form.fiscalCode.trim()) {
       // CF di 16 caratteri, oppure 11 cifre (società di capitali) solo se identico alla P.IVA
       const cfUp = form.fiscalCode.toUpperCase().trim();
@@ -219,6 +227,12 @@ export default function RivenditeNoMappaScreen() {
       const finalLng = useManualGPS ? parseFloat(manualLng) : longitude!;
       const emailValue = emailRegex.test(form.contactEmail) ? form.contactEmail : null;
 
+      // Anti-duplicati: se esiste già una scheda con questa P.IVA, chiedi conferma
+      if (!allowDupVatRef.current) {
+        const existingVat = await findCustomerByVat(form.vatNumber);
+        if (existingVat) { setDupVatExisting(existingVat); return; }
+      }
+
       // 1. Create customer (source: off_map)
       const { data: customer, error: custErr } = await supabase.from('customers').insert({
         business_name: form.businessName,
@@ -234,6 +248,7 @@ export default function RivenditeNoMappaScreen() {
         contact_email: emailValue,
         vat_number: form.vatNumber,
         fiscal_code: form.fiscalCode.toUpperCase() || null,
+        allow_duplicate_vat: allowDupVatRef.current,
         customer_type: form.customerType,
         category: 'prospect',
         agent_id: user.id,
@@ -245,7 +260,16 @@ export default function RivenditeNoMappaScreen() {
         last_visit_date: new Date().toISOString(),
       }).select().single();
 
-      if (custErr) throw new Error(`Errore creazione cliente: ${custErr.message}`);
+      if (custErr) {
+        // Errori del vincolo DB anti-duplicati: messaggi chiari invece del codice grezzo
+        const vatGuard = parseVatGuardError(custErr.message);
+        if (vatGuard?.type === 'duplicate') {
+          setDupVatExisting({ id: vatGuard.id, business_name: vatGuard.name, address: vatGuard.where, city: null, province: null, agent_id: null });
+          return;
+        }
+        if (vatGuard?.type === 'placeholder') throw new Error('P.IVA non valida: numero fittizio/segnaposto non ammesso');
+        throw new Error(`Errore creazione cliente: ${custErr.message}`);
+      }
 
       // 2. Create tabaccheria (OFFMAP code for map visibility)
       const codice = await generateOffMapCode();
@@ -618,6 +642,20 @@ export default function RivenditeNoMappaScreen() {
       </View>
       {/* Invio foto in corso: barra 0-100%, non chiudere l'app */}
       <UploadProgressOverlay visible={uploadPct != null} progress={uploadPct ?? 0} label="Invio foto visita" />
+      <DuplicateVatDialog
+        existing={dupVatExisting}
+        onCancel={() => setDupVatExisting(null)}
+        onOpenExisting={() => {
+          const existingId = dupVatExisting?.id;
+          setDupVatExisting(null);
+          if (existingId) router.push(`/customer/${existingId}`);
+        }}
+        onForce={() => {
+          allowDupVatRef.current = true;
+          setDupVatExisting(null);
+          handleSubmit();
+        }}
+      />
     </View>
   );
 }

@@ -95,8 +95,9 @@ export default function SubstitutionsScreen() {
     // Use shared fetchCustomers helper for branch-aware filtering (admin/supervisor/branch_admin support)
     try {
       const data = await fetchCustomers(user.id, user.role, user.branchId);
+      // Elenco COMPLETO (niente slice: il taglio a 500 nascondeva clienti — parità web 49d5ca3)
       setCustomers(
-        data.slice(0, 500).map((c: any) => ({
+        data.map((c: any) => ({
           id: c.id,
           business_name: c.business_name,
           city: c.city,
@@ -182,7 +183,14 @@ export default function SubstitutionsScreen() {
     setShowProductPicker(false);
   };
   const filteredPicker = pickerSearch.length >= 2
-    ? products.filter(p => { const q = pickerSearch.toLowerCase(); return p.name.toLowerCase().includes(q) || (p.short_description && p.short_description.toLowerCase().includes(q)) || (p.sku && p.sku.toLowerCase().includes(q)); }).slice(0, 50)
+    ? products.filter(p => {
+        // Ricerca multi-parola: ogni parola deve comparire in nome, descrizione o SKU
+        const tokens = pickerSearch.toLowerCase().split(/\s+/).filter(Boolean);
+        return tokens.every(t =>
+          p.name.toLowerCase().includes(t) ||
+          (p.short_description && p.short_description.toLowerCase().includes(t)) ||
+          (p.sku && p.sku.toLowerCase().includes(t)));
+      }).slice(0, 50)
     : products.slice(0, 50);
 
   // ═══ RENDERS ═══
@@ -363,13 +371,32 @@ export default function SubstitutionsScreen() {
         )}
 
         <ScrollView style={{ flex: 1, padding: 16 }} keyboardShouldPersistTaps="handled">
-          {createStep === 0 && (<>
+          {createStep === 0 && (() => {
+            // Ricerca multi-parola su nome + comune + provincia (parità web):
+            // ogni parola digitata deve comparire in almeno uno dei tre campi
+            const tokens = customerSearch.toLowerCase().split(/\s+/).filter(Boolean);
+            const filteredCust = tokens.length > 0
+              ? customers.filter(c => tokens.every(t =>
+                  c.business_name.toLowerCase().includes(t) ||
+                  (c.city || '').toLowerCase().includes(t) ||
+                  (c.province || '').toLowerCase().includes(t)))
+              : customers;
+            return (<>
             <Text style={st.formLabel}>Seleziona Cliente</Text>
-            <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca cliente..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor={COLORS.textLight} /></View>
+            <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca nome, comune o provincia..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor={COLORS.textLight} /></View>
             {selectedCustomer && <View style={st.selectedPill}><Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#7C3AED' }}>{selectedCustomer.business_name}</Text><TouchableOpacity onPress={() => setSelectedCustomer(null)}><Ionicons name="close-circle" size={18} color="#7C3AED" /></TouchableOpacity></View>}
-            <FlatList data={(customerSearch.length >= 2 ? customers.filter(c => c.business_name.toLowerCase().includes(customerSearch.toLowerCase())) : customers).slice(0, 30)} keyExtractor={c => c.id} scrollEnabled={false}
+            <FlatList data={filteredCust.slice(0, 50)} keyExtractor={c => c.id} scrollEnabled={false}
               renderItem={({ item: c }) => (<TouchableOpacity style={[st.listItem, selectedCustomer?.id === c.id && st.listItemSelected]} onPress={() => setSelectedCustomer(c)}><Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.text }}>{c.business_name}</Text><Text style={{ fontSize: 11, color: COLORS.textLight }}>{c.city}{c.province ? ` (${c.province})` : ''}</Text></TouchableOpacity>)} />
-          </>)}
+            {filteredCust.length > 50 && (
+              <Text style={{ fontSize: 11, color: COLORS.textMuted, textAlign: 'center', paddingVertical: 8 }}>
+                Mostrati 50 di {filteredCust.length} clienti: digita per restringere la ricerca
+              </Text>
+            )}
+            {filteredCust.length === 0 && (
+              <Text style={{ fontSize: 12, color: COLORS.textMuted, textAlign: 'center', paddingVertical: 12 }}>Nessun cliente trovato</Text>
+            )}
+          </>);
+          })()}
           {createStep === 1 && (<>
             <Text style={st.formLabel}>Prodotti da Ritirare</Text>
             <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 10 }}>Prodotti che verranno ritirati dal cliente (opzionale)</Text>

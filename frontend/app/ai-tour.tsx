@@ -32,6 +32,7 @@ import { getActiveTour, loadLiveState, startLiveTour, type LiveState } from '../
 import { geocodeAddress } from '../lib/aitour/osrm';
 import { LiveTourView } from '../components/aitour/LiveTourView';
 import { TourMapView, type TourMapStop } from '../components/aitour/TourMapView';
+import { PortfolioTab } from '../components/aitour/PortfolioTab';
 import { TourEditModal } from '../components/aitour/TourEditModal';
 import { DrawAreasMap } from '../components/aitour/DrawAreasMap';
 import { BriefModal } from '../components/aitour/BriefModal';
@@ -186,7 +187,7 @@ export default function AITourScreen() {
   const { user } = useAuthStore();
   const agentId = user?.id || '';
 
-  const [tab, setTab] = useState<'genera' | 'settimana' | 'mensile' | 'tours'>('genera');
+  const [tab, setTab] = useState<'genera' | 'settimana' | 'mensile' | 'portafoglio' | 'tours'>('genera');
   const [phase, setPhase] = useState<'form' | 'result'>('form');
   const [liveState, setLiveState] = useState<LiveState | null>(null);
   const [activePausedTour, setActivePausedTour] = useState<SavedTour | null>(null);
@@ -1800,6 +1801,7 @@ export default function AITourScreen() {
                 { key: 'genera', label: 'Genera' },
                 { key: 'settimana', label: 'Settimana' },
                 { key: 'mensile', label: 'Mese' },
+                { key: 'portafoglio', label: 'Portafoglio' },
                 { key: 'tours', label: 'I miei Tour' },
               ] as const
             ).map((t) => (
@@ -1812,7 +1814,7 @@ export default function AITourScreen() {
                 }}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.segmentText, tab === t.key && styles.segmentTextActive]}>{t.label}</Text>
+                <Text style={[styles.segmentText, tab === t.key && styles.segmentTextActive]} numberOfLines={1}>{t.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -1889,6 +1891,9 @@ export default function AITourScreen() {
               }}
             />
           )}
+          {tab === 'portafoglio' && (
+            <PortfolioTab agentId={agentId} settings={settings} zones={agentZones} />
+          )}
           {tab === 'tours' && renderSavedTours()}
         </KeyboardAwareScrollView>
       )}
@@ -1962,7 +1967,7 @@ const styles = StyleSheet.create({
   },
   segment: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
   segmentActive: { backgroundColor: DS.surface, ...SHADOWS.sm },
-  segmentText: { fontFamily: JAKARTA.semibold, fontSize: 13, color: DS.inkMuted },
+  segmentText: { fontFamily: JAKARTA.semibold, fontSize: 11.5, color: DS.inkMuted },
   segmentTextActive: { color: DS.ink },
   pausedBanner: {
     flexDirection: 'row',

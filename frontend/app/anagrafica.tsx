@@ -27,6 +27,8 @@ import { uploadSinglePhoto, ensurePhotoBucket } from '../lib/api/photos';
 import { UploadProgressOverlay } from '../components/UploadProgressOverlay';
 import { usePhotoStamper } from '../components/PhotoStamper';
 import { COLORS } from '../lib/theme';
+import { findCustomerByVat, isPlaceholderVat, parseVatGuardError, type ExistingVatCustomer } from '../lib/api/vat-guard';
+import { DuplicateVatDialog } from '../components/customers/DuplicateVatDialog';
 import { VisitSlotWheel } from '../components/customers/VisitSlotWheel';
 import { ExcludedDaysPicker } from '../components/customers/ExcludedDaysPicker';
 import { searchCompany } from '../lib/api/openapi-company';
@@ -126,6 +128,9 @@ export default function AnagraficaScreen() {
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   // Salvataggio a prova di interruzione (parità web FirstVisit): progresso in memoria per il retry
   const saveProgress = useRef<{ customerId: string | null; visitId: string | null; photosUploaded: number }>({ customerId: null, visitId: null, photosUploaded: 0 });
+  // Anti-duplicati P.IVA: scheda esistente trovata + flag "forza altro punto vendita"
+  const [dupVatExisting, setDupVatExisting] = useState<ExistingVatCustomer | null>(null);
+  const allowDupVatRef = useRef(false);
   const [saveFailed, setSaveFailed] = useState<string | null>(null);
   const [isPhoneVisit, setIsPhoneVisit] = useState(false);
   const { stampPhoto, StamperView } = usePhotoStamper();
@@ -622,6 +627,7 @@ export default function AnagraficaScreen() {
     try {
       // Validate
       if (!vatRegex.test(form.vatNumber)) { Alert.alert('Errore', 'P.IVA deve essere di 11 cifre'); return; }
+      if (isPlaceholderVat(form.vatNumber)) { Alert.alert('Errore', 'P.IVA non valida: numero fittizio/segnaposto non ammesso'); return; }
       // CF di 16 caratteri, oppure 11 cifre (società di capitali) solo se identico alla P.IVA
       const cfUp = form.fiscalCode.toUpperCase().trim();
       if (/^[0-9]{11}$/.test(cfUp)) {
@@ -653,6 +659,11 @@ export default function AnagraficaScreen() {
       if (customerId) {
         console.log('[Anagrafica] Cliente già creato in un tentativo precedente, riuso:', customerId);
       } else {
+        // Anti-duplicati: se esiste già una scheda con questa P.IVA, chiedi conferma
+        if (!allowDupVatRef.current) {
+          const existingVat = await findCustomerByVat(form.vatNumber);
+          if (existingVat) { setDupVatExisting(existingVat); return; }
+        }
         const { data: customer, error: custErr } = await supabase
           .from('customers')
           .insert({
@@ -668,6 +679,7 @@ export default function AnagraficaScreen() {
             contact_email: emailValue,
             vat_number: form.vatNumber,
             fiscal_code: form.fiscalCode,
+            allow_duplicate_vat: allowDupVatRef.current,
             customer_type: form.customerType,
             category: 'prospect',
             agent_id: user.id,
@@ -685,7 +697,16 @@ export default function AnagraficaScreen() {
           })
           .select().single();
 
-        if (custErr) throw new Error(`Errore creazione cliente: ${custErr.message}`);
+        if (custErr) {
+          // Errori del vincolo DB anti-duplicati: messaggi chiari invece del codice grezzo
+          const vatGuard = parseVatGuardError(custErr.message);
+          if (vatGuard?.type === 'duplicate') {
+            setDupVatExisting({ id: vatGuard.id, business_name: vatGuard.name, address: vatGuard.where, city: null, province: null, agent_id: null });
+            return;
+          }
+          if (vatGuard?.type === 'placeholder') throw new Error('P.IVA non valida: numero fittizio/segnaposto non ammesso');
+          throw new Error(`Errore creazione cliente: ${custErr.message}`);
+        }
         customerId = customer.id as string;
         saveProgress.current.customerId = customerId;
       }
@@ -1148,6 +1169,20 @@ export default function AnagraficaScreen() {
           </View>
         </View>
       </Modal>
+      <DuplicateVatDialog
+        existing={dupVatExisting}
+        onCancel={() => setDupVatExisting(null)}
+        onOpenExisting={() => {
+          const existingId = dupVatExisting?.id;
+          setDupVatExisting(null);
+          if (existingId) router.push(`/customer/${existingId}`);
+        }}
+        onForce={() => {
+          allowDupVatRef.current = true;
+          setDupVatExisting(null);
+          handleSubmit();
+        }}
+      />
     </View>
   );
 }

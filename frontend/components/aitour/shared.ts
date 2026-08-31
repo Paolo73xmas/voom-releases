@@ -11,10 +11,12 @@ export const AI_PURPLE_SOFT = currentThemeMode === 'dark' ? '#2B2150' : '#F3E8FF
 /** Bordo viola tenue abbinato a AI_PURPLE_SOFT */
 export const AI_PURPLE_BORDER = currentThemeMode === 'dark' ? '#4A3B7A' : '#DDD6FE';
 
-export function openNavigation(lat: number, lng: number, label: string) {
-  const encoded = encodeURIComponent(label);
+export function openNavigation(lat: number, lng: number) {
+  // ATTENZIONE: mai aggiungere `q=` insieme a `daddr` su Apple Maps — `q` viene
+  // trattato come RICERCA e può dirottare la navigazione su un altro punto
+  // vendita con nome uguale/simile invece delle coordinate esatte.
   const url = Platform.select({
-    ios: `http://maps.apple.com/?daddr=${lat},${lng}&q=${encoded}`,
+    ios: `http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`,
     default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
   });
   Linking.openURL(url as string).catch(() => {

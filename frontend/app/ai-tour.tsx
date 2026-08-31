@@ -1665,7 +1665,7 @@ export default function AITourScreen() {
                 style={styles.navBtn}
                 onPress={() => {
                   hap.light();
-                  openNavigation(s.candidate.lat, s.candidate.lng, s.candidate.name);
+                  openNavigation(s.candidate.lat, s.candidate.lng);
                 }}
                 activeOpacity={0.7}
               >

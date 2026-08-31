@@ -1,10 +1,11 @@
 // Mappa del tour AI (parità web TourMap): marker numerati per tipo, percorso, partenza/rientro,
 // popup con dettagli e Naviga. WebView su nativo, iframe su web. Tasto schermo intero.
 // In più: puntini neri con le tabaccherie del registro intorno al percorso (opportunità).
-import React, { useMemo, useEffect, useCallback, useState } from 'react';
+import React, { useMemo, useEffect, useCallback, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { openNavigation } from './shared';
 import { COLORS } from '../../lib/theme';
 import { tabaccheriePointsInBounds, type TabPoint } from '../../lib/api/tabaccherie';
@@ -153,7 +154,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
       '<div class="pp-line">' + s.line1 + '</div>' +
       (s.line2 ? '<div class="pp-line">' + s.line2 + '</div>' : '') +
       (s.reason ? '<div class="pp-reason">' + s.reason + '</div>' : '') +
-      '<a class="pp-nav" href="#" onclick="sendMessage({type:\\'navigate\\',lat:' + s.lat + ',lng:' + s.lng + ',name:' + JSON.stringify(s.name) + '});return false;">\\u27A4 Naviga</a>';
+      '<a class="pp-nav" href="#" onclick="sendMessage({type:\\'navigate\\',lat:' + s.lat + ',lng:' + s.lng + '});return false;">\\u27A4 Naviga</a>';
     m.bindPopup(html, { maxWidth: 260 });
   });
 
@@ -177,6 +178,31 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
   setTimeout(function() { if (!userTouched) fitAll(); }, 900);
   window.addEventListener('resize', function() {
     if (!userTouched) setTimeout(function() { if (!userTouched) fitAll(); }, 120);
+  });
+
+  // Posizione dell'agente: pallino blu + cerchio di precisione, aggiornati dall'app
+  var userMarker = null, userCircle = null;
+  window.updateUserPos = function(lat, lng, acc) {
+    try {
+      if (!userMarker) {
+        userMarker = L.marker([lat, lng], {
+          icon: L.divIcon({ className: 'aitour-marker', html: '<div style="width:16px;height:16px;border-radius:50%;background:#2563EB;border:3px solid #fff;box-shadow:0 0 8px rgba(37,99,235,.9)"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }),
+          zIndexOffset: 1000, interactive: false,
+        }).addTo(map);
+        userCircle = L.circle([lat, lng], { radius: Math.min(acc || 0, 150), color: '#2563EB', weight: 1, fillColor: '#2563EB', fillOpacity: 0.12, interactive: false }).addTo(map);
+      } else {
+        userMarker.setLatLng([lat, lng]);
+        userCircle.setLatLng([lat, lng]);
+        userCircle.setRadius(Math.min(acc || 0, 150));
+      }
+    } catch (e) {}
+  };
+  // Web (iframe): riceve la posizione via postMessage
+  window.addEventListener('message', function(e) {
+    try {
+      var m = typeof e.data === 'string' ? JSON.parse(e.data) : null;
+      if (m && m.type === 'userpos') window.updateUserPos(m.lat, m.lng, m.acc);
+    } catch (err) {}
   });
 </script>
 </body>
@@ -235,12 +261,59 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
   const [fullscreen, setFullscreen] = useState(false);
   const insets = useSafeAreaInsets();
 
+  // Posizione dell'agente sulla mappa: watch GPS (solo se il permesso è GIÀ concesso,
+  // nessun popup dalla mappa) e push del pallino blu dentro WebView/iframe via injection.
+  const webRef = useRef<any>(null);
+  const webRefFull = useRef<any>(null);
+  const iframeRef = useRef<any>(null);
+  const iframeRefFull = useRef<any>(null);
+  const lastPosRef = useRef<{ lat: number; lng: number; acc: number } | null>(null);
+  const pushUserPos = useCallback(() => {
+    const p = lastPosRef.current;
+    if (!p) return;
+    if (Platform.OS === 'web') {
+      const msg = JSON.stringify({ type: 'userpos', ...p });
+      try { iframeRef.current?.contentWindow?.postMessage(msg, '*'); } catch { /* iframe non pronto */ }
+      try { iframeRefFull.current?.contentWindow?.postMessage(msg, '*'); } catch { /* iframe non pronto */ }
+    } else {
+      const js = `window.updateUserPos && window.updateUserPos(${p.lat},${p.lng},${p.acc}); true;`;
+      try { webRef.current?.injectJavaScript(js); } catch { /* webview non pronta */ }
+      try { webRefFull.current?.injectJavaScript(js); } catch { /* webview non pronta */ }
+    }
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    let sub: Location.LocationSubscription | null = null;
+    (async () => {
+      try {
+        // Timeout: getForegroundPermissionsAsync può non risolversi mai su iOS/Expo Go
+        const perm = (await Promise.race([
+          Location.getForegroundPermissionsAsync(),
+          new Promise<null>((r) => setTimeout(() => r(null), 4000)),
+        ])) as Location.LocationPermissionResponse | null;
+        if (!alive || !perm || perm.status !== 'granted') return;
+        sub = await Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.Balanced, timeInterval: 10000, distanceInterval: 15 },
+          (loc) => {
+            lastPosRef.current = { lat: loc.coords.latitude, lng: loc.coords.longitude, acc: loc.coords.accuracy || 0 };
+            pushUserPos();
+          },
+        );
+        if (!alive) { sub.remove(); sub = null; }
+      } catch { /* GPS non disponibile: la mappa resta usabile senza pallino */ }
+    })();
+    return () => {
+      alive = false;
+      sub?.remove();
+    };
+  }, [pushUserPos]);
+
   const onStopSelectRef = React.useRef(onStopSelect);
   onStopSelectRef.current = onStopSelect;
   const handleMessage = useCallback((raw: string) => {
     try {
       const msg = JSON.parse(raw);
-      if (msg.type === 'navigate') openNavigation(msg.lat, msg.lng, msg.name || '');
+      if (msg.type === 'navigate') openNavigation(msg.lat, msg.lng);
       else if (msg.type === 'stopSelect' && msg.key && onStopSelectRef.current) onStopSelectRef.current(String(msg.key));
     } catch {
       // ignora messaggi non validi
@@ -257,20 +330,24 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
     return () => (globalThis as unknown as Window).removeEventListener?.('message', listener);
   }, [handleMessage]);
 
-  const renderMap = () => {
+  const renderMap = (full = false) => {
     if (Platform.OS === 'web') {
       return React.createElement('iframe', {
+        ref: full ? iframeRefFull : iframeRef,
         srcDoc: html,
         style: { width: '100%', height: '100%', border: 'none' },
         title: 'Mappa del tour',
+        onLoad: pushUserPos,
       });
     }
     if (!WebView) return null;
     return (
       <WebView
+        ref={full ? webRefFull : webRef}
         source={{ html }}
         style={{ flex: 1 }}
         onMessage={(e: { nativeEvent: { data: string } }) => handleMessage(e.nativeEvent.data)}
+        onLoadEnd={pushUserPos}
         javaScriptEnabled
         domStorageEnabled
         originWhitelist={['*']}
@@ -303,7 +380,7 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
       </View>
       <Modal visible={fullscreen} animationType="fade" onRequestClose={() => setFullscreen(false)}>
         <View style={styles.fullRoot}>
-          {fullscreen && renderMap()}
+          {fullscreen && renderMap(true)}
           <TouchableOpacity
             style={[styles.reduceBtn, { top: insets.top + 10 }]}
             onPress={() => setFullscreen(false)}

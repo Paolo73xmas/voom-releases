@@ -1392,7 +1392,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               style={[styles.actionBtn, { backgroundColor: '#7C3AED' }]}
               onPress={() => {
                 hap.light();
-                openNavigation(next.candidate.lat, next.candidate.lng, next.candidate.name);
+                openNavigation(next.candidate.lat, next.candidate.lng);
               }}
               activeOpacity={0.75}
             >

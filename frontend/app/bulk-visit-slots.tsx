@@ -175,7 +175,7 @@ export default function BulkVisitSlotsScreen() {
         {item.latitude != null && item.longitude != null && (
           <TouchableOpacity
             style={styles.mapBtn}
-            onPress={() => openNavigation(Number(item.latitude), Number(item.longitude), item.business_name)}
+            onPress={() => openNavigation(Number(item.latitude), Number(item.longitude))}
             activeOpacity={0.7}
           >
             <Ionicons name="location-outline" size={17} color="#7C3AED" />

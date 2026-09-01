@@ -26,7 +26,7 @@ import { supabase } from '../lib/supabase';
 import { listAllZones, pointInZones, zoneLabel, intersectDrawnWithZones, type TerritoryZone } from '../lib/aitour/territories';
 import { loadCandidates, loadFreeTabaccherie, type CandidatePool } from '../lib/aitour/data';
 import { scoreCandidates, computePortfolioStats } from '../lib/aitour/scoring';
-import { planTour, planFixedOrder, filterByArea, pickBestCluster, candidatesForDayType, type AreaFilter } from '../lib/aitour/planner';
+import { planTour, planFixedOrder, filterByArea, pickBestCluster, candidatesForDayType, sweepPartition, type AreaFilter } from '../lib/aitour/planner';
 import { getStrategySummary, recommendDayType } from '../lib/aitour/ai';
 import { getSettings, saveTour, saveToursBatch, listTours, loadTourStops, deleteTour, replaceTourPlan, type SavedTour } from '../lib/aitour/tours';
 import { getActiveTour, loadLiveState, startLiveTour, type LiveState } from '../lib/aitour/live';
@@ -38,7 +38,7 @@ import { TourEditModal } from '../components/aitour/TourEditModal';
 import { DrawAreasMap } from '../components/aitour/DrawAreasMap';
 import { BriefModal } from '../components/aitour/BriefModal';
 import { TourNameDialog } from '../components/aitour/TourNameDialog';
-import { buildBriefPlan, type TourBrief } from '../lib/aitour/brief';
+import { selectCandidatesV4, resolveStopRefs, applyAppointment, targetCap, withinRadiusOfAnchors, type TourBriefV4 } from '../lib/aitour/brief-v4';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
 import { CandidateEntityBadge } from '../components/aitour/OrphanHistoryBadge';
@@ -248,6 +248,8 @@ export default function AITourScreen() {
     bufferPct: number;
     area: AreaFilter;
     areaLabel: string;
+    returnFlexible?: boolean;
+    maxDays?: number | null;
   } | null>(null);
   // Salvataggio con nome
   const [saveNameOpen, setSaveNameOpen] = useState(false);
@@ -800,18 +802,33 @@ export default function AITourScreen() {
     setGenerating(true);
     setPhase('form');
     try {
-      // 'overflow': si ripianifica tutto da zero distribuendo le tappe sui giorni;
-      // 'leftover': il giorno 1 resta com'è e si pianificano solo gli esclusi
+      // Cluster-first, route-second: partiziona le tappe in settori geografici
+      // attorno alla partenza e dedica ogni giornata a un settore diverso
+      const usableMin = Math.max(60, ctx.endMin - ctx.startMin);
+      const capDays = ctx.maxDays && ctx.maxDays >= 2 ? Math.min(6, ctx.maxDays) : 6;
+      let k: number;
+      if (ctx.mode === 'overflow') {
+        const effFinish = plan.finishMin - (ctx.returnFlexible ? plan.returnMin : 0);
+        const totalMin = Math.max(usableMin + 1, effFinish - ctx.startMin);
+        k = Math.min(capDays, Math.max(2, Math.ceil(totalMin / usableMin)));
+      } else {
+        k = Math.min(capDays - 1, Math.max(1, Math.ceil(ctx.leftover.length / Math.max(1, plan.stops.length))));
+      }
+      const queue = sweepPartition(ctx.leftover, ctx.start, k);
       const plans: TourPlan[] = ctx.mode === 'overflow' ? [] : [plan];
-      let remaining = ctx.leftover;
       let date = ctx.baseDate;
       let firstDay = ctx.mode === 'overflow';
-      while (remaining.length > 0 && plans.length < 6) {
+      let carry: TourCandidate[] = [];
+      let dropped = 0;
+      while ((queue.length > 0 || carry.length > 0) && plans.length < capDays) {
+        const pool = [...(queue.shift() || []), ...carry];
+        carry = [];
+        if (pool.length === 0) continue;
         if (!firstDay) date = nextWorkDate(date);
         firstDay = false;
-        setProgress(`Pianificazione del giorno ${plans.length + 1} (${remaining.length} visite rimaste)...`);
+        setProgress(`Pianificazione del giorno ${plans.length + 1} (${pool.length} visite in zona)...`);
         const p = await planTour({
-          candidates: remaining,
+          candidates: pool,
           mandatoryKeys: new Set<string>(),
           start: ctx.start,
           end: ctx.end,
@@ -823,8 +840,9 @@ export default function AITourScreen() {
           bufferPct: ctx.bufferPct,
           bufferMaxMin: settings.buffer_max_min,
           area: ctx.area,
+          returnFlexible: ctx.returnFlexible,
         });
-        if (p.stops.length === 0) break;
+        if (p.stops.length === 0) { dropped += pool.length; continue; }
         p.areaLabel = ctx.areaLabel;
         p.aiRecommendation = plan.aiRecommendation;
         p.areaFilter = plan.areaFilter;
@@ -834,8 +852,67 @@ export default function AITourScreen() {
         }
         plans.push(p);
         const done = new Set(p.stops.map((s) => s.candidate.key));
-        remaining = remaining.filter((c) => !done.has(c.key));
+        // Le tappe della zona non entrate vengono assegnate al SETTORE RIMANENTE più vicino
+        // (non al giorno successivo cieco: eviterebbe di ripassare nelle stesse zone)
+        const leftHere = pool.filter((c) => !done.has(c.key));
+        if (leftHere.length > 0 && queue.length > 0) {
+          for (const c of leftHere) {
+            let bi = 0;
+            let bd = Infinity;
+            queue.forEach((g, i) => {
+              for (const x of g) {
+                const d = haversineKm(c.lat, c.lng, x.lat, x.lng);
+                if (d < bd) { bd = d; bi = i; }
+              }
+            });
+            queue[bi].push(c);
+          }
+        } else if (leftHere.length > 0 && leftHere.length < 3) {
+          // Residuo piccolo a settori finiti: NIENTE mini-giornata, prova ad assorbirlo
+          // nella giornata già pianificata con più tempo libero residuo
+          let absorbed = leftHere;
+          const byBuffer = plans
+            .map((pp, i) => ({ pp, i }))
+            .filter(({ pp }) => pp.bufferMin >= 45)
+            .sort((a, b) => b.pp.bufferMin - a.pp.bufferMin);
+          for (const { pp, i } of byBuffer) {
+            if (absorbed.length === 0) break;
+            setProgress(`Riassegno ${absorbed.length} visite residue al giorno ${i + 1}...`);
+            try {
+              const merged = await planTour({
+                candidates: [...pp.stops.map((s) => s.candidate), ...absorbed],
+                mandatoryKeys: new Set(pp.stops.map((s) => s.candidate.key)),
+                start: ctx.start,
+                end: ctx.end,
+                tourDate: pp.tourDate,
+                startMin: ctx.startMin,
+                endMin: ctx.endMin,
+                dayType: ctx.dayType,
+                resolvedDayType: ctx.resolvedDayType,
+                bufferPct: ctx.bufferPct,
+                bufferMaxMin: settings.buffer_max_min,
+                area: ctx.area,
+                returnFlexible: ctx.returnFlexible,
+              });
+              if (merged.stops.length > pp.stops.length) {
+                merged.areaLabel = pp.areaLabel;
+                merged.aiRecommendation = pp.aiRecommendation;
+                merged.areaFilter = pp.areaFilter;
+                merged.warnings.unshift(...pp.warnings.filter((w) => w.startsWith('Giorno ')));
+                plans[i] = merged;
+                const inMerged = new Set(merged.stops.map((s) => s.candidate.key));
+                absorbed = absorbed.filter((c) => !inMerged.has(c.key));
+              }
+            } catch (err) {
+              console.warn('[AITour] assorbimento residuo fallito:', err);
+            }
+          }
+          carry = absorbed;
+        } else {
+          carry = leftHere;
+        }
       }
+      const leftoverEnd = dropped + carry.length + queue.reduce((s, g) => s + g.length, 0);
       if (plans.length === 0) {
         setErrMsg('Nessuna visita pianificabile: orario troppo stretto');
         return;
@@ -844,8 +921,8 @@ export default function AITourScreen() {
         setInfoMsg('Nessuna visita aggiuntiva pianificabile nelle giornate successive');
         return;
       }
-      if (remaining.length > 0) {
-        plans[plans.length - 1].warnings.push(`${remaining.length} soggetti restano fuori anche dopo ${plans.length} giornate`);
+      if (leftoverEnd > 0) {
+        plans[plans.length - 1].warnings.push(`${leftoverEnd} soggetti restano fuori anche dopo ${plans.length} giornate`);
       }
       // Strategia AI specifica per ogni giornata che non la ha già
       setProgress("L'AI sta scrivendo la strategia di ogni giornata...");
@@ -867,8 +944,8 @@ export default function AITourScreen() {
     }
   };
 
-  // Genera un giro a partire dal brief interpretato dall'AI ("Dillo all'AI")
-  const generateFromBrief = async (brief: TourBrief) => {
+  // Genera un giro a partire dal brief V4 interpretato dall'AI ("Dillo all'AI")
+  const generateFromBrief = async (brief: TourBriefV4) => {
     if (!agentId) return;
     setBriefOpen(false);
     hap.medium();
@@ -881,21 +958,28 @@ export default function AITourScreen() {
     setDayIdx(0);
     setMultiDayAsk(null);
     try {
-      const offset = Math.max(0, brief.dayOffset || 0);
-      const date = localDateStr(offset);
-      const nextDate = localDateStr(offset + 1);
-      const isToday = date === localDateStr();
-      // Giorno futuro (es. "domani") → usa l'intera giornata lavorativa; oggi → dall'ora attuale
-      const startStr = brief.startTime || autoStartTime(date, settings.work_start);
-      const endStr = brief.endTime || settings.work_end;
-      const startMin = timeToMin(startStr);
-      const endMin = timeToMin(endStr);
-      if (startMin >= endMin) {
-        setErrMsg(
-          isToday
-            ? "Per oggi non ci sono più ore disponibili nel tuo orario di lavoro: prova a chiedere il giro per domani"
-            : "L'orario di fine è precedente all'orario di inizio: modifica gli orari e riprova"
-        );
+      // Data richiesta: oggi/domani/esplicita; per date future niente aggancio all'ora corrente
+      const todayStr = localDateStr();
+      let date = todayStr;
+      if (brief.requestedDate.type === 'tomorrow') {
+        date = brief.requestedDate.value || localDateStr(1);
+      } else if ((brief.requestedDate.type === 'explicit' || brief.requestedDate.type === 'selected') && brief.requestedDate.value) {
+        date = brief.requestedDate.value;
+      }
+      if (date < todayStr) date = todayStr;
+      const startTime = brief.route.startTime || settings.work_start;
+      let endTime = brief.route.endTime || settings.work_end;
+      // finishBy = fine tassativa: comprime l'orario e rende il rientro NON flessibile
+      if (brief.route.finishBy && timeToMin(brief.route.finishBy) < timeToMin(endTime)) endTime = brief.route.finishBy;
+      let effStartMin = timeToMin(startTime);
+      if (date === todayStr) {
+        const nowDt = new Date();
+        const nowMin = nowDt.getHours() * 60 + nowDt.getMinutes();
+        if (nowMin > effStartMin) effStartMin = nowMin;
+      }
+      const endMin = timeToMin(endTime);
+      if (effStartMin >= endMin) {
+        setErrMsg(`Per oggi l'orario di fine (${endTime}) è già passato: di' ad esempio "domani" nella richiesta`);
         setGenerating(false);
         return;
       }
@@ -919,7 +1003,17 @@ export default function AITourScreen() {
         setGenerating(false);
         return;
       }
-      const end = await resolvePoint(form.endMode, form.endAddress, start);
+      // Rientro: al punto di partenza o a casa anagrafica; ritorno flessibile (può sforare)
+      // salvo finishBy tassativo detto dall'agente
+      const wantsReturn = brief.route.returnHome || brief.route.returnToStart;
+      let briefEnd: GeoPoint | null = null;
+      if (brief.route.returnToStart) briefEnd = { lat: start.lat, lng: start.lng, label: 'Rientro al punto di partenza' };
+      else if (brief.route.returnHome) {
+        briefEnd = settings.home_lat && settings.home_lng
+          ? { lat: settings.home_lat, lng: settings.home_lng, label: 'Rientro a casa' }
+          : { lat: start.lat, lng: start.lng, label: 'Rientro al punto di partenza' };
+      }
+      const returnFlexible = wantsReturn && !brief.route.finishBy;
 
       setProgress('Analisi del portafoglio commerciale...');
       const loaded = await loadCandidates(agentId, settings);
@@ -927,58 +1021,193 @@ export default function AITourScreen() {
       setPool(loaded);
       setViewedTourStatus(null);
 
-      setProgress('Costruisco il giro richiesto...');
-      const result = await buildBriefPlan({
-        pool: loaded,
-        brief,
-        settings,
-        agentId,
-        start,
-        end,
-        tourDate: date,
-        nextDate,
-        startMin,
-        endMin,
+      setProgress('Applico la tua richiesta...');
+      const sel = selectCandidatesV4(brief, loaded);
+      let candidates = sel.candidates;
+      const briefWarnings: string[] = [...sel.warnings];
+
+      // Aree multiple: include (unione), exclude, prefer (boost punteggio)
+      let placeCenter: GeoPoint | null = null;
+      const includes = brief.areas.filter((a) => a.mode === 'include');
+      const excludes = brief.areas.filter((a) => a.mode === 'exclude');
+      const prefers = brief.areas.filter((a) => a.mode === 'prefer');
+      if (includes.length > 0) {
+        const keep = new Set<string>();
+        for (const a of includes) {
+          if (a.kind === 'city') filterByArea(candidates, { mode: 'city', city: a.value }, start).forEach((c) => keep.add(c.key));
+          else if (a.kind === 'province') filterByArea(candidates, { mode: 'province', province: a.value }, start).forEach((c) => keep.add(c.key));
+          else {
+            const g = await geocodeAddress(a.value);
+            if (g) {
+              if (!placeCenter) placeCenter = { lat: g.lat, lng: g.lng, label: a.value };
+              candidates.filter((c) => haversineKm(g.lat, g.lng, c.lat, c.lng) <= 30).forEach((c) => keep.add(c.key));
+            } else {
+              briefWarnings.push(`Luogo "${a.value}" non trovato: filtro zona non applicato`);
+            }
+          }
+        }
+        if (keep.size > 0) candidates = candidates.filter((c) => keep.has(c.key));
+      }
+      for (const a of excludes) {
+        if (a.kind === 'city') candidates = candidates.filter((c) => (c.city || '').trim().toLowerCase() !== a.value.trim().toLowerCase());
+        else if (a.kind === 'province') candidates = candidates.filter((c) => (c.province || '').trim().toUpperCase() !== a.value.trim().toUpperCase());
+        else {
+          const g = await geocodeAddress(a.value);
+          if (g) candidates = candidates.filter((c) => haversineKm(g.lat, g.lng, c.lat, c.lng) > 10);
+        }
+      }
+      if (prefers.length > 0) {
+        const prefCities = new Set(prefers.filter((a) => a.kind === 'city').map((a) => a.value.trim().toLowerCase()));
+        const prefProv = new Set(prefers.filter((a) => a.kind === 'province').map((a) => a.value.trim().toUpperCase()));
+        candidates = candidates.map((c) =>
+          prefCities.has((c.city || '').trim().toLowerCase()) || prefProv.has((c.province || '').trim().toUpperCase())
+            ? { ...c, score: c.score + 15 } : c);
+      }
+
+      // new_around: nuovi punti vendita da acquisire vicino alle ancore (top clienti o bacino)
+      if (sel.newAround) {
+        const radius = sel.newAround.radiusKm;
+        const anchors = sel.anchors.filter((a) => candidates.some((c) => c.key === a.key));
+        const base = anchors.length > 0 ? anchors : candidates;
+        if (base.length > 0) {
+          let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+          for (const a of base) {
+            minLat = Math.min(minLat, a.lat); maxLat = Math.max(maxLat, a.lat);
+            minLng = Math.min(minLng, a.lng); maxLng = Math.max(maxLng, a.lng);
+          }
+          const dLat = radius / 111, dLng = radius / 80;
+          const bounds = { minLat: minLat - dLat, maxLat: maxLat + dLat, minLng: minLng - dLng, maxLng: maxLng + dLng };
+          const exclude = new Set(candidates.map((c) => c.tabaccheriaId).filter((x): x is string => !!x));
+          let free = await loadFreeTabaccherie(bounds, exclude, settings, { refLat: (minLat + maxLat) / 2, refLng: (minLng + maxLng) / 2, agentId }, 60);
+          free = withinRadiusOfAnchors(free, base, radius);
+          const inKeys = new Set(candidates.map((c) => c.key));
+          const extra = withinRadiusOfAnchors([...loaded.prospects, ...loaded.orphans].filter((c) => !inKeys.has(c.key)), base, radius);
+          scoreCandidates(free, settings);
+          candidates = [...candidates, ...free, ...extra];
+        }
+      }
+
+      // Tappe nominate dall'agente: risoluzione fuzzy sul portafoglio reale
+      const allPool = [...loaded.clients, ...loaded.prospects, ...loaded.orphans];
+      const mandatoryKeys = new Set<string>();
+      const mandResolved = resolveStopRefs(brief.mandatoryStops, allPool);
+      for (const r of mandResolved) {
+        if (r.candidate) {
+          const withAppt = applyAppointment(r.candidate, r.ref.appointment);
+          const idx = candidates.findIndex((c) => c.key === withAppt.key);
+          if (idx >= 0) candidates[idx] = withAppt; else candidates.push(withAppt);
+          mandatoryKeys.add(withAppt.key);
+        } else {
+          const opts = r.options.map((o) => `${o.name}${o.city ? ` (${o.city})` : ''}`).slice(0, 3).join(' / ');
+          briefWarnings.push(`Tappa obbligatoria "${r.ref.rawReference}": ${r.status === 'ambiguous' ? `più clienti possibili (${opts}) — precisa il nome o la città` : 'cliente non trovato nel portafoglio'} — NON inserita`);
+        }
+      }
+      for (const r of resolveStopRefs(brief.preferredStops, allPool)) {
+        if (r.candidate) {
+          const boosted = { ...r.candidate, score: r.candidate.score + 30 };
+          const idx = candidates.findIndex((c) => c.key === boosted.key);
+          if (idx >= 0) candidates[idx] = boosted; else candidates.push(boosted);
+        } else {
+          briefWarnings.push(`Tappa desiderata "${r.ref.rawReference}": cliente non identificato — ignorata`);
+        }
+      }
+
+      // Compatto: clustering, ma gli obbligatori restano SEMPRE nel giro
+      if (brief.route.compact !== 'off' && candidates.length > 0) {
+        const center = placeCenter || start;
+        const cluster = pickBestCluster(candidates, center);
+        if (cluster.list.length > 0) {
+          const inCluster = new Set(cluster.list.map((c) => c.key));
+          candidates = [...cluster.list, ...candidates.filter((c) => mandatoryKeys.has(c.key) && !inCluster.has(c.key))];
+        }
+      }
+
+      // Target visite: "tutti" = obbligatorie; cap secondo mode e scope
+      if (brief.visitTarget.mode === 'all') candidates.forEach((c) => mandatoryKeys.add(c.key));
+      const cap = targetCap(brief.visitTarget);
+      if (cap && candidates.length > cap) {
+        const mand = candidates.filter((c) => mandatoryKeys.has(c.key));
+        const rest = candidates.filter((c) => !mandatoryKeys.has(c.key)).sort((a, b) => b.score - a.score);
+        candidates = brief.visitTarget.scope === 'automatic_plus_mandatory'
+          ? [...mand, ...rest.slice(0, cap)]
+          : [...mand, ...rest.slice(0, Math.max(0, cap - mand.length))];
+      }
+      if (brief.visitTarget.mode === 'minimum' && brief.visitTarget.value && candidates.length < brief.visitTarget.value) {
+        briefWarnings.push(`Hai chiesto almeno ${brief.visitTarget.value} visite ma i soggetti disponibili sono ${candidates.length}`);
+      }
+
+      if (candidates.length === 0) {
+        setErrMsg('Nessun soggetto corrisponde alla richiesta: modifica i chip e riprova');
+        setGenerating(false);
+        return;
+      }
+
+      const resolved: Exclude<DayType, 'ai'> = brief.dayType || 'mista';
+      const bufferPct = resolved === 'clienti' ? settings.buffer_pct_clienti : resolved === 'sviluppo' ? settings.buffer_pct_sviluppo : settings.buffer_pct_mista;
+      const firstArea = includes[0] || prefers[0] || null;
+      const areaLabel = firstArea?.value || (brief.route.compact !== 'off' ? 'zona compatta' : '');
+      const areaFilter: AreaFilter = firstArea?.kind === 'city'
+        ? { mode: 'city', city: firstArea.value }
+        : firstArea?.kind === 'province'
+        ? { mode: 'province', province: firstArea.value }
+        : { mode: 'auto' };
+
+      setProgress('Pianificazione del giro...');
+      const plan1 = await planTour({
+        candidates, mandatoryKeys, start, end: briefEnd, tourDate: date,
+        startMin: effStartMin, endMin,
+        dayType: resolved, resolvedDayType: resolved, bufferPct, bufferMaxMin: settings.buffer_max_min,
+        area: areaFilter, returnFlexible,
       });
-      if (result.plan.stops.length === 0) {
+      if (plan1.stops.length === 0) {
         setErrMsg('Nessuna visita pianificabile con la richiesta indicata: prova ad ampliare la zona o l\'orario');
         setGenerating(false);
         return;
       }
-      if (result.note) result.plan.warnings.unshift(result.note);
+      plan1.areaLabel = areaLabel;
+      plan1.aiRecommendation = brief.summary || null;
+      plan1.warnings.unshift(...briefWarnings);
+      const wantVal = brief.visitTarget.mode === 'exact' || brief.visitTarget.mode === 'approximately'
+        ? brief.visitTarget.value
+        : brief.visitTarget.mode === 'range' ? brief.visitTarget.min : null;
+      if (wantVal && plan1.stops.length < wantVal) {
+        plan1.warnings.unshift(`Pianificate ${plan1.stops.length} visite delle ${brief.visitTarget.mode === 'approximately' ? '~' : ''}${wantVal} richieste: soggetti disponibili, orario o zona compatta non permettono di più`);
+      }
+      if (firstArea?.kind === 'city' || firstArea?.kind === 'province') {
+        plan1.areaFilter = { mode: firstArea.kind, city: firstArea.kind === 'city' ? firstArea.value : undefined, province: firstArea.kind === 'province' ? firstArea.value : undefined };
+      }
 
       setProgress("L'AI sta scrivendo la strategia del giro...");
-      result.plan.aiSummary = await getStrategySummary(result.plan);
-      if (result.secondary && result.secondary.stops.length > 0) {
-        result.secondary.aiSummary = await getStrategySummary(result.secondary);
-        setDayPlans([result.plan, result.secondary]);
-        setDayIdx(0);
-      } else {
-        // Giro troppo grande per una giornata: proponi la strutturazione su più giorni
-        const residualBrief = Math.max(0, endMin - result.plan.finishMin);
-        const overrunBrief = Math.round(result.plan.finishMin - endMin);
-        if (overrunBrief > 30 && result.plan.stops.length >= 4) {
-          // Es. "tutti i clienti del progetto": tappe obbligatorie che sforano l'orario
-          setMultiDayAsk({
-            mode: 'overflow', overrunMin: overrunBrief,
-            leftover: [...result.plan.stops.map((s) => s.candidate), ...result.leftover],
-            start, end, baseDate: date,
-            startMin, endMin, dayType: result.resolvedDayType, resolvedDayType: result.resolvedDayType,
-            bufferPct: result.bufferPct, area: { mode: 'auto' }, areaLabel: result.areaLabel,
-          });
-        } else if (result.leftover.length >= 3 && residualBrief <= 60) {
-          setMultiDayAsk({
-            mode: 'leftover',
-            leftover: result.leftover, start, end, baseDate: date,
-            startMin, endMin, dayType: result.resolvedDayType, resolvedDayType: result.resolvedDayType,
-            bufferPct: result.bufferPct, area: { mode: 'auto' }, areaLabel: result.areaLabel,
-          });
-        }
-      }
-      setPlan(result.plan);
+      plan1.aiSummary = await getStrategySummary(plan1);
+      setPlan(plan1);
       setReadOnly(false);
       setPhase('result');
       hap.success();
+      // Giro troppo grande: proponi più giornate salvo divieto esplicito ("devono stare tutti oggi")
+      if (brief.route.splitAllowed !== false) {
+        const plannedKeys = new Set(plan1.stops.map((s) => s.candidate.key));
+        const leftoverAll = candidates.filter((c) => !plannedKeys.has(c.key));
+        const effFinish1 = plan1.finishMin - (returnFlexible ? plan1.returnMin : 0);
+        const residualBrief = Math.max(0, endMin - effFinish1);
+        const overrunBrief = Math.round(effFinish1 - endMin);
+        if (overrunBrief > 30 && plan1.stops.length >= 4) {
+          setMultiDayAsk({
+            mode: 'overflow', overrunMin: overrunBrief,
+            leftover: candidates, start, end: briefEnd, baseDate: date,
+            startMin: timeToMin(startTime), endMin,
+            dayType: resolved, resolvedDayType: resolved, bufferPct, area: areaFilter, areaLabel,
+            returnFlexible, maxDays: brief.route.maxDays,
+          });
+        } else if (leftoverAll.length >= 3 && residualBrief <= 60) {
+          setMultiDayAsk({
+            mode: 'leftover',
+            leftover: leftoverAll, start, end: briefEnd, baseDate: date,
+            startMin: timeToMin(startTime), endMin,
+            dayType: resolved, resolvedDayType: resolved, bufferPct, area: areaFilter, areaLabel,
+            returnFlexible, maxDays: brief.route.maxDays,
+          });
+        }
+      }
     } catch (err) {
       console.error('[AITour] brief generate:', err);
       setErrMsg('Errore nella generazione del giro');

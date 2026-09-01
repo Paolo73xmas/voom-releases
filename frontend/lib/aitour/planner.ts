@@ -58,6 +58,8 @@ export interface PlanInput {
   area: AreaFilter;
   /** Replan live: non applicare l'esclusione dei giorni (tappe già confermate nel giro) */
   skipDayExclusion?: boolean;
+  /** Rientro flessibile: il percorso termina verso "end" ma il viaggio di ritorno può sforare l'orario */
+  returnFlexible?: boolean;
 }
 
 const MAX_MATRIX_POINTS = 40; // start + max 38 candidati + end (demo OSRM regge fino a ~100)
@@ -214,6 +216,129 @@ function improveOrder(
   return best;
 }
 
+// Stima veloce (senza OSRM) della durata di una giornata su un settore:
+// catena nearest-neighbor dalla partenza (haversine * 1.3 strade reali, 45 km/h) + minuti visita
+export function estimateDayMin(group: TourCandidate[], start: GeoPoint): number {
+  if (group.length === 0) return 0;
+  let curLat = start.lat;
+  let curLng = start.lng;
+  const left = [...group];
+  let km = 0;
+  while (left.length > 0) {
+    let bi = 0;
+    let bd = Infinity;
+    for (let i = 0; i < left.length; i++) {
+      const d = haversineKm(curLat, curLng, left[i].lat, left[i].lng);
+      if (d < bd) { bd = d; bi = i; }
+    }
+    km += bd;
+    curLat = left[bi].lat;
+    curLng = left[bi].lng;
+    left.splice(bi, 1);
+  }
+  return (km * 1.3 / 45) * 60 + group.reduce((s, c) => s + c.visitMinutes, 0);
+}
+
+// Partizione geografica "a settori" attorno al punto di partenza (cluster-first, route-second):
+// - settori angolari contigui, così i giorni non ripassano dalle stesse zone;
+// - bilanciamento dei confini per tempo stimato (guida + visite): giornate ~uguali;
+// - ordinamento "a catena": ogni settore confina col successivo (l'ultima zona di un
+//   giorno è la più vicina alla prima del giorno dopo).
+export function sweepPartition(cands: TourCandidate[], start: GeoPoint, k: number): TourCandidate[][] {
+  if (k <= 1 || cands.length <= k) return [cands];
+  const ang = (c: TourCandidate) => Math.atan2(c.lat - start.lat, c.lng - start.lng);
+  const sorted = [...cands].sort((a, b) => ang(a) - ang(b));
+  // Ruota la sequenza in modo che il confine iniziale cada nel gap angolare più ampio
+  let gapIdx = 0;
+  let gapMax = -1;
+  for (let i = 0; i < sorted.length; i++) {
+    const a1 = ang(sorted[i]);
+    const a2 = i === sorted.length - 1 ? ang(sorted[0]) + Math.PI * 2 : ang(sorted[i + 1]);
+    if (a2 - a1 > gapMax) { gapMax = a2 - a1; gapIdx = i; }
+  }
+  const rotated = [...sorted.slice(gapIdx + 1), ...sorted.slice(0, gapIdx + 1)];
+  const per = Math.ceil(rotated.length / k);
+  const groups: TourCandidate[][] = [];
+  for (let i = 0; i < k; i++) {
+    const g = rotated.slice(i * per, (i + 1) * per);
+    if (g.length > 0) groups.push(g);
+  }
+  // Bilanciamento: sposta le tappe di confine tra settori adiacenti finché le
+  // giornate stimate non sono più o meno uguali (solo se riduce lo squilibrio)
+  const est = groups.map((g) => estimateDayMin(g, start));
+  for (let pass = 0; pass < 80; pass++) {
+    let moved = false;
+    for (let i = 0; i < groups.length - 1; i++) {
+      const a = groups[i];
+      const b = groups[i + 1];
+      const diff = est[i] - est[i + 1];
+      if (Math.abs(diff) <= 20) continue;
+      if (diff > 0 && a.length > 1) {
+        const cand = a[a.length - 1];
+        const na = estimateDayMin(a.slice(0, -1), start);
+        const nb = estimateDayMin([cand, ...b], start);
+        if (Math.max(na, nb) < Math.max(est[i], est[i + 1]) - 1) {
+          a.pop();
+          b.unshift(cand);
+          est[i] = na;
+          est[i + 1] = nb;
+          moved = true;
+        }
+      } else if (diff < 0 && b.length > 1) {
+        const cand = b[0];
+        const na = estimateDayMin([...a, cand], start);
+        const nb = estimateDayMin(b.slice(1), start);
+        if (Math.max(na, nb) < Math.max(est[i], est[i + 1]) - 1) {
+          b.shift();
+          a.push(cand);
+          est[i] = na;
+          est[i + 1] = nb;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+  // Gruppi troppo piccoli (<3) confluiscono nel vicino adiacente meno carico
+  for (let i = groups.length - 1; i >= 0; i--) {
+    if (groups[i].length >= 3 || groups.length <= 1) continue;
+    const prev = i > 0 ? est[i - 1] : Infinity;
+    const next = i < groups.length - 1 ? est[i + 1] : Infinity;
+    const j = prev <= next ? i - 1 : i + 1;
+    groups[j] = j < i ? groups[j].concat(groups[i]) : groups[i].concat(groups[j]);
+    est[j] = estimateDayMin(groups[j], start);
+    groups.splice(i, 1);
+    est.splice(i, 1);
+  }
+  // Catena dei settori: ordina i giorni minimizzando la distanza totale tra settori
+  // consecutivi (permutazione esatta, max 6 gruppi): l'ultima zona di un giorno
+  // resta la più vicina alla prima del giorno successivo
+  const centroid = (g: TourCandidate[]) => ({
+    lat: g.reduce((s, c) => s + c.lat, 0) / g.length,
+    lng: g.reduce((s, c) => s + c.lng, 0) / g.length,
+  });
+  const cents = groups.map(centroid);
+  const dist = (i: number, j: number) => haversineKm(cents[i].lat, cents[i].lng, cents[j].lat, cents[j].lng);
+  let bestChain = groups.map((_, i) => i);
+  let bestCost = Infinity;
+  const permute = (rest: number[], acc: number[], cost: number) => {
+    if (cost >= bestCost) return;
+    if (rest.length === 0) {
+      // a parità di costo preferisce iniziare dal settore più vicino alla partenza
+      const startKm = haversineKm(start.lat, start.lng, cents[acc[0]].lat, cents[acc[0]].lng) * 0.25;
+      if (cost + startKm < bestCost) { bestCost = cost + startKm; bestChain = [...acc]; }
+      return;
+    }
+    for (let i = 0; i < rest.length; i++) {
+      const next = rest[i];
+      const step = acc.length > 0 ? dist(acc[acc.length - 1], next) : 0;
+      permute([...rest.slice(0, i), ...rest.slice(i + 1)], [...acc, next], cost + step);
+    }
+  };
+  permute(bestChain, [], 0);
+  return bestChain.map((i) => groups[i]);
+}
+
 export async function planTour(input: PlanInput): Promise<TourPlan> {
   const { start, end, startMin, endMin, bufferPct } = input;
   const warnings: string[] = [];
@@ -276,7 +401,7 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     if (waM.outside) {
       warnings.push(`"${cand.name}": arrivo fuori dalla fascia oraria preferita (${slotLabelsOf(cand)})`);
     }
-    const backHomeM = end ? durMin(bestI, endIdx) : 0;
+    const backHomeM = end && !input.returnFlexible ? durMin(bestI, endIdx) : 0;
     if (waM.arrival + cand.visitMinutes + backHomeM > usableUntil) {
       warnings.push(`La visita obbligatoria "${cand.name}" porta il giro oltre l'orario pianificabile`);
     }
@@ -287,7 +412,18 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     mandatoryLeft.delete(bestI);
   }
 
+  // PRINCIPIO ECONOMICO: densità del territorio e vicinanza agli obbligatori.
+  // Ogni km/minuto di guida è un costo (carburante + ~6€/h di tempo agente):
+  // a parità di interesse si premiano i cluster e si penalizzano i clienti isolati.
+  const neighborCount = pool.map((c) =>
+    pool.reduce((n, o) => (o !== c && haversineKm(c.lat, c.lng, o.lat, o.lng) <= 5 ? n + 1 : n), 0));
+  const isolatedFlag = pool.map((c) =>
+    pool.length > 1 && Math.min(...pool.filter((o) => o !== c).map((o) => haversineKm(c.lat, c.lng, o.lat, o.lng))) > 15);
+  const nearMandatory = pool.map((c) =>
+    mandatory.length > 0 && mandatory.some((m) => m !== c && haversineKm(c.lat, c.lng, m.lat, m.lng) <= 10));
+
   // Poi le opzionali: score - 1.3*minuti viaggio - 0.5*minuti attesa fascia
+  // + correttivi economici (densità, isolamento, zona obbligatori, direzione di rientro)
   for (;;) {
     let bestI = -1;
     let bestVal = -Infinity;
@@ -297,9 +433,14 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
       const wa = windowArrival(cand, clock + durMin(currentIdx, i));
       if (wa.outside) { windowBlockedKeys.add(cand.key); continue; }
       if (wa.wait > 60) { windowBlockedKeys.add(cand.key); continue; } // attesa eccessiva ora: riconsiderato piu' avanti nel giro
-      const backHome = end ? durMin(i, endIdx) : 0;
+      const backHome = end && !input.returnFlexible ? durMin(i, endIdx) : 0;
       if (wa.arrival + cand.visitMinutes + backHome > usableUntil) continue;
-      const val = cand.score - durMin(currentIdx, i) * 1.3 - wa.wait * 0.5;
+      let val = cand.score - durMin(currentIdx, i) * 1.3 - wa.wait * 0.5;
+      val += Math.min(10, neighborCount[i - 1] * 2);
+      if (isolatedFlag[i - 1] && !nearMandatory[i - 1]) val -= 15;
+      if (nearMandatory[i - 1]) val += 10;
+      // Con rientro previsto, allontanarsi dalla direzione di casa ha un costo crescente
+      if (end) val -= Math.max(0, durMin(i, endIdx) - durMin(currentIdx, endIdx)) * 0.3;
       if (val > bestVal) { bestVal = val; bestI = i; }
     }
     if (bestI === -1) break;
@@ -394,7 +535,23 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     t += returnMin;
   }
   const finishMin = t;
-  if (finishMin > endMin) warnings.push('Il giro termina oltre l\'orario di fine configurato');
+  // Con rientro flessibile il viaggio di ritorno può sforare: si valuta l'ultima visita
+  const overrunCheck = input.returnFlexible ? finishMin - returnMin : finishMin;
+  if (overrunCheck > endMin) warnings.push('Il giro termina oltre l\'orario di fine configurato');
+
+  // Avvisi economici: ogni km e ogni minuto alla guida sono un costo reale
+  // (carburante/usura ~0,25€/km + costo-opportunità tempo agente ~6€/h)
+  if (!input.skipDayExclusion && stops.length >= 1) {
+    if (driveMin > visitMin && driveMin >= 120) {
+      const dh = Math.floor(driveMin / 60);
+      const vh = Math.floor(visitMin / 60);
+      warnings.push(`Giro poco efficiente: più tempo alla guida (~${dh}h${Math.round(driveMin % 60)}m) che dai clienti (~${vh}h${Math.round(visitMin % 60)}m)`);
+    }
+    const tripCost = Math.round(route.totalKm * 0.25 + (driveMin / 60) * 6);
+    if (route.totalKm > 120) {
+      warnings.push(`Trasferta lunga: ~${Math.round(route.totalKm)} km, costo stimato ~${tripCost}€ tra carburante e tempo di guida: assicurati che il potenziale della zona la giustifichi`);
+    }
+  }
 
   // Avviso giro multi-zona: tappe molto distanti tra loro (es. Voghera + Lomellina).
   // Solo in generazione (nei replan live le tappe sono gia' confermate dall'agente).

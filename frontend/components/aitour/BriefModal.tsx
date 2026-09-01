@@ -13,6 +13,7 @@ import {
   Linking,
   Platform,
   Alert,
+  Switch,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,11 +27,19 @@ import {
 import { DS, JAKARTA } from '../../lib/theme';
 import { hap } from '../../lib/haptics';
 import { AI_PURPLE, AI_PURPLE_SOFT, AI_PURPLE_TEXT } from './shared';
-import { normalizeBrief, segmentLabel, type TourBrief } from '../../lib/aitour/brief';
+import {
+  normalizeBriefV4,
+  applyReturnHomeFallback,
+  conditionLabel,
+  preferenceLabel,
+  targetLabel,
+  dateChipLabel,
+  type TourBriefV4,
+} from '../../lib/aitour/brief-v4';
 
 const API = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
 
-const DAY_OPTIONS: { value: TourBrief['dayType']; label: string }[] = [
+const DAY_OPTIONS: { value: Exclude<TourBriefV4['dayType'], null>; label: string }[] = [
   { value: 'clienti', label: 'Clienti' },
   { value: 'sviluppo', label: 'Sviluppo' },
   { value: 'mista', label: 'Mista' },
@@ -39,7 +48,7 @@ const DAY_OPTIONS: { value: TourBrief['dayType']; label: string }[] = [
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onConfirm: (brief: TourBrief) => void;
+  onConfirm: (brief: TourBriefV4) => void;
   projects: string[];
   cities: string[];
 }
@@ -51,7 +60,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [parsing, setParsing] = useState(false);
-  const [brief, setBrief] = useState<TourBrief | null>(null);
+  const [brief, setBrief] = useState<TourBriefV4 | null>(null);
   const [err, setErr] = useState('');
 
   const reset = () => {
@@ -155,8 +164,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
     setErr('');
     try {
       const now = new Date();
-      const giorni = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
-      const today = `${giorni[now.getDay()]} ${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const res = await fetch(`${API}/ai-tour/parse-brief`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -164,7 +172,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
-      setBrief(normalizeBrief(raw));
+      setBrief(applyReturnHomeFallback(normalizeBriefV4(raw), text));
       hap.success();
     } catch (e) {
       console.warn('[BriefModal] parse:', e);
@@ -174,11 +182,29 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
     }
   };
 
-  const removeSegment = (i: number) => {
+  const rmCondition = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, selection: { ...b.selection, conditions: b.selection.conditions.filter((_, x) => x !== i) } })); };
+  const rmExclusion = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, exclusions: b.exclusions.filter((_, x) => x !== i) })); };
+  const rmPreference = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, preferences: b.preferences.filter((_, x) => x !== i) })); };
+  const rmArea = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, areas: b.areas.filter((_, x) => x !== i) })); };
+  const rmMandatory = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, mandatoryStops: b.mandatoryStops.filter((_, x) => x !== i) })); };
+  const rmPreferred = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, preferredStops: b.preferredStops.filter((_, x) => x !== i) })); };
+
+  const setTarget = (v: number | null) => {
     if (!brief) return;
     hap.light();
-    setBrief({ ...brief, segments: brief.segments.filter((_, idx) => idx !== i) });
+    setBrief({
+      ...brief,
+      visitTarget: {
+        ...brief.visitTarget,
+        mode: v
+          ? (brief.visitTarget.mode === 'unspecified' || brief.visitTarget.mode === 'all' || brief.visitTarget.mode === 'maximize' ? 'maximum' : brief.visitTarget.mode)
+          : 'unspecified',
+        value: v,
+      },
+    });
   };
+
+  const alerts = brief ? [...brief.interpretation.warnings, ...brief.interpretation.unresolvedEntities.map((e) => `Non riconosciuto: ${e}`)] : [];
 
   const busy = transcribing || parsing;
 
@@ -242,27 +268,104 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
               <View style={styles.briefBox}>
                 {!!brief.summary && <Text style={styles.summary}>{brief.summary}</Text>}
 
-                <Text style={styles.groupLabel}>Cosa includo</Text>
+                {(brief.interpretation.needsConfirmation || alerts.length > 0) && (
+                  <View style={styles.alertBox}>
+                    {brief.interpretation.needsConfirmation && (
+                      <View style={styles.alertTitleRow}>
+                        <Ionicons name="warning" size={14} color="#D97706" />
+                        <Text style={styles.alertTitle}>Controlla i chip prima di generare: la richiesta ha punti ambigui</Text>
+                      </View>
+                    )}
+                    {alerts.map((w, i) => (
+                      <Text key={i} style={styles.alertText}>• {w}</Text>
+                    ))}
+                  </View>
+                )}
+
+                <Text style={styles.groupLabel}>Chi</Text>
                 <View style={styles.chipWrap}>
-                  {brief.segments.length === 0 && <Text style={styles.emptyChip}>Nessun filtro specifico</Text>}
-                  {brief.segments.map((s, i) => (
-                    <View key={`${s.type}-${i}`} style={styles.segChip}>
-                      <Text style={styles.segChipText}>{segmentLabel(s)}</Text>
-                      <TouchableOpacity onPress={() => removeSegment(i)} hitSlop={8}>
+                  {brief.selection.conditions.length === 0 && <Text style={styles.emptyChip}>Nessun criterio: riscrivi la richiesta</Text>}
+                  {brief.selection.conditions.map((c, i) => (
+                    <View key={`c${i}`} style={styles.segChip}>
+                      <Text style={styles.segChipText}>{conditionLabel(c)}</Text>
+                      <TouchableOpacity onPress={() => rmCondition(i)} hitSlop={8}>
+                        <Ionicons name="close-circle" size={16} color={AI_PURPLE_TEXT} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {brief.exclusions.map((c, i) => (
+                    <View key={`ex${i}`} style={styles.exChip}>
+                      <Text style={styles.exChipText}>NO {conditionLabel(c)}</Text>
+                      <TouchableOpacity onPress={() => rmExclusion(i)} hitSlop={8}>
+                        <Ionicons name="close-circle" size={16} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {brief.preferences.map((p, i) => (
+                    <View key={`pr${i}`} style={styles.prefChip}>
+                      <Text style={styles.prefChipText}>{preferenceLabel(p)}</Text>
+                      <TouchableOpacity onPress={() => rmPreference(i)} hitSlop={8}>
                         <Ionicons name="close-circle" size={16} color={AI_PURPLE_TEXT} />
                       </TouchableOpacity>
                     </View>
                   ))}
                 </View>
 
-                <Text style={styles.groupLabel}>Zona</Text>
-                <TextInput
-                  style={styles.areaInput}
-                  value={brief.area.value || ''}
-                  onChangeText={(t) => setBrief({ ...brief, area: { kind: brief.area.kind === 'none' ? 'city' : brief.area.kind, value: t } })}
-                  placeholder="Tutte le zone"
-                  placeholderTextColor={DS.inkMuted}
-                />
+                {(brief.mandatoryStops.length > 0 || brief.preferredStops.length > 0) && (
+                  <>
+                    <Text style={styles.groupLabel}>Tappe richieste <Text style={styles.groupHint}>(identificate in generazione)</Text></Text>
+                    <View style={styles.chipWrap}>
+                      {brief.mandatoryStops.map((s, i) => (
+                        <View key={`m${i}`} style={styles.mandChip}>
+                          <Ionicons name="lock-closed" size={12} color="#FFF" />
+                          <Text style={styles.mandChipText}>
+                            {s.rawReference}
+                            {s.appointment?.time ? ` · ${s.appointment.time}` : s.appointment?.from ? ` · ${s.appointment.from}-${s.appointment.to}` : ''}
+                          </Text>
+                          <TouchableOpacity onPress={() => rmMandatory(i)} hitSlop={8}>
+                            <Ionicons name="close-circle" size={16} color="#FFF" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                      {brief.preferredStops.map((s, i) => (
+                        <View key={`p${i}`} style={styles.wishChip}>
+                          <Ionicons name="star" size={12} color="#D97706" />
+                          <Text style={styles.wishChipText}>{s.rawReference}</Text>
+                          <TouchableOpacity onPress={() => rmPreferred(i)} hitSlop={8}>
+                            <Ionicons name="close-circle" size={16} color="#D97706" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                )}
+
+                <Text style={styles.groupLabel}>Giorno e zone</Text>
+                <View style={styles.chipWrap}>
+                  <View style={styles.metaChip}>
+                    <Ionicons name="calendar-outline" size={13} color={DS.ink2} />
+                    <Text style={styles.metaChipText}>{dateChipLabel(brief.requestedDate)}</Text>
+                  </View>
+                  {brief.areas.map((a, i) => (
+                    <View key={`a${i}`} style={a.mode === 'exclude' ? styles.exChip : styles.metaChip}>
+                      <Ionicons name="location-outline" size={13} color={a.mode === 'exclude' ? '#EF4444' : DS.ink2} />
+                      <Text style={a.mode === 'exclude' ? styles.exChipText : styles.metaChipText}>
+                        {a.mode === 'exclude' ? 'NO ' : a.mode === 'prefer' ? 'pref. ' : ''}{a.value}
+                      </Text>
+                      <TouchableOpacity onPress={() => rmArea(i)} hitSlop={8}>
+                        <Ionicons name="close-circle" size={16} color={a.mode === 'exclude' ? '#EF4444' : DS.inkMuted} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {(brief.route.startTime || brief.route.endTime || brief.route.finishBy) && (
+                    <View style={styles.metaChip}>
+                      <Ionicons name="time-outline" size={13} color={DS.ink2} />
+                      <Text style={styles.metaChipText}>
+                        {brief.route.startTime || '—'} → {brief.route.finishBy || brief.route.endTime || '—'}{brief.route.finishBy ? ' (fine tassativa)' : ''}
+                      </Text>
+                    </View>
+                  )}
+                </View>
 
                 <Text style={styles.groupLabel}>Tipo giornata</Text>
                 <View style={styles.chipWrap}>
@@ -281,74 +384,86 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                   })}
                 </View>
 
-                <Text style={styles.groupLabel}>Giorno</Text>
-                <View style={styles.chipWrap}>
-                  {[{ o: 0, l: 'Oggi' }, { o: 1, l: 'Domani' }, { o: 2, l: 'Dopodomani' }].map((d) => {
-                    const active = brief.dayOffset === d.o;
-                    return (
-                      <TouchableOpacity
-                        key={d.o}
-                        style={[styles.optChip, active && styles.optChipActive]}
-                        onPress={() => { hap.light(); setBrief({ ...brief, dayOffset: d.o }); }}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[styles.optChipText, active && styles.optChipTextActive]}>{d.l}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                  {brief.dayOffset > 2 && (
-                    <View style={[styles.optChip, styles.optChipActive]}>
-                      <Text style={styles.optChipTextActive}>tra {brief.dayOffset} giorni</Text>
-                    </View>
-                  )}
-                </View>
-
-                <Text style={styles.groupLabel}>Numero massimo di tappe</Text>
+                <Text style={styles.groupLabel}>Visite: {targetLabel(brief.visitTarget)}</Text>
                 <View style={styles.counterRow}>
                   <TouchableOpacity
                     style={styles.counterBtn}
-                    onPress={() => { hap.light(); setBrief({ ...brief, targetCount: brief.targetCount ? Math.max(1, brief.targetCount - 5) : null }); }}
+                    onPress={() => setTarget(brief.visitTarget.value ? Math.max(1, brief.visitTarget.value - 5) : null)}
                     hitSlop={8}
                   >
                     <Ionicons name="remove" size={18} color={DS.ink2} />
                   </TouchableOpacity>
-                  <Text style={styles.counterValue}>{brief.targetCount ?? 'Auto'}</Text>
+                  <Text style={styles.counterValue}>{brief.visitTarget.value ?? 'Auto'}</Text>
                   <TouchableOpacity
                     style={styles.counterBtn}
-                    onPress={() => { hap.light(); setBrief({ ...brief, targetCount: (brief.targetCount ?? 0) + 5 }); }}
+                    onPress={() => setTarget(Math.min(60, (brief.visitTarget.value ?? 0) + 5))}
                     hitSlop={8}
                   >
                     <Ionicons name="add" size={18} color={DS.ink2} />
                   </TouchableOpacity>
-                  {brief.targetCount != null && (
-                    <TouchableOpacity onPress={() => { hap.light(); setBrief({ ...brief, targetCount: null }); }} style={styles.autoBtn}>
+                  {brief.visitTarget.value != null && (
+                    <TouchableOpacity onPress={() => setTarget(null)} style={styles.autoBtn}>
                       <Text style={styles.autoBtnText}>Auto</Text>
                     </TouchableOpacity>
                   )}
                 </View>
 
-                <View style={styles.toggleRow}>
-                  <TouchableOpacity
-                    style={[styles.toggle, brief.compact && styles.toggleActive]}
-                    onPress={() => { hap.light(); setBrief({ ...brief, compact: !brief.compact }); }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name={brief.compact ? 'checkbox' : 'square-outline'} size={18} color={brief.compact ? AI_PURPLE_TEXT : DS.ink2} />
-                    <Text style={styles.toggleText}>Tutti vicini (zona unica)</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.toggle, brief.splitDays === 2 && styles.toggleActive]}
-                    onPress={() => { hap.light(); setBrief({ ...brief, splitDays: brief.splitDays === 2 ? 1 : 2 }); }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name={brief.splitDays === 2 ? 'checkbox' : 'square-outline'} size={18} color={brief.splitDays === 2 ? AI_PURPLE_TEXT : DS.ink2} />
-                    <Text style={styles.toggleText}>Dividi su 2 giorni</Text>
-                  </TouchableOpacity>
+                <Text style={styles.groupLabel}>Percorso compatto</Text>
+                <View style={styles.chipWrap}>
+                  {([
+                    { m: 'off', l: 'No' },
+                    { m: 'prefer', l: 'Se possibile' },
+                    { m: 'required', l: 'Vincolante' },
+                  ] as const).map(({ m, l }) => {
+                    const active = brief.route.compact === m;
+                    return (
+                      <TouchableOpacity
+                        key={m}
+                        style={[styles.optChip, active && styles.optChipActive]}
+                        onPress={() => { hap.light(); setBrief({ ...brief, route: { ...brief.route, compact: m } }); }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.optChipText, active && styles.optChipTextActive]}>{l}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <View style={styles.switchRow}>
+                  <Text style={styles.switchLabel}>Rientro a casa</Text>
+                  <Switch
+                    value={brief.route.returnHome}
+                    onValueChange={(x) => { hap.light(); setBrief({ ...brief, route: { ...brief.route, returnHome: x, returnToStart: x ? false : brief.route.returnToStart } }); }}
+                    trackColor={{ true: AI_PURPLE }}
+                  />
+                </View>
+                <View style={styles.switchRow}>
+                  <Text style={styles.switchLabel}>Torno al punto di partenza</Text>
+                  <Switch
+                    value={brief.route.returnToStart}
+                    onValueChange={(x) => { hap.light(); setBrief({ ...brief, route: { ...brief.route, returnToStart: x, returnHome: x ? false : brief.route.returnHome } }); }}
+                    trackColor={{ true: AI_PURPLE }}
+                  />
+                </View>
+                <View style={styles.switchRow}>
+                  <Text style={styles.switchLabel}>Più giornate se serve{brief.route.maxDays ? ` (max ${brief.route.maxDays})` : ''}</Text>
+                  <Switch
+                    value={brief.route.splitAllowed !== false}
+                    onValueChange={(x) => { hap.light(); setBrief({ ...brief, route: { ...brief.route, splitAllowed: x } }); }}
+                    trackColor={{ true: AI_PURPLE }}
+                  />
                 </View>
 
                 <TouchableOpacity
-                  style={styles.generateBtn}
-                  onPress={() => { hap.medium(); onConfirm(brief); }}
+                  style={[styles.generateBtn, brief.selection.conditions.length === 0 && brief.mandatoryStops.length === 0 && styles.btnDisabled]}
+                  onPress={() => {
+                    if (brief.selection.conditions.length === 0 && brief.mandatoryStops.length === 0) {
+                      setErr('Serve almeno un criterio o una tappa richiesta');
+                      return;
+                    }
+                    hap.medium();
+                    onConfirm(brief);
+                  }}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="navigate" size={18} color="#FFF" />
@@ -381,12 +496,26 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.45 },
   briefBox: { marginTop: 18, borderTopWidth: 1, borderTopColor: DS.border, paddingTop: 14 },
   summary: { fontFamily: JAKARTA.medium, fontSize: 14, color: DS.ink, backgroundColor: AI_PURPLE_SOFT, borderRadius: 10, padding: 12, marginBottom: 14, lineHeight: 20 },
+  alertBox: { borderWidth: 1, borderColor: '#D97706', backgroundColor: 'rgba(217,119,6,0.10)', borderRadius: 10, padding: 10, marginBottom: 12, gap: 4 },
+  alertTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  alertTitle: { flex: 1, fontFamily: JAKARTA.semibold, fontSize: 12, color: '#D97706' },
+  alertText: { fontFamily: JAKARTA.regular, fontSize: 12, color: '#D97706', lineHeight: 17 },
   groupLabel: { fontFamily: JAKARTA.semibold, fontSize: 13, color: DS.ink2, marginBottom: 8, marginTop: 6 },
+  groupHint: { fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 6 },
   segChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: AI_PURPLE_SOFT, borderRadius: 20, paddingVertical: 7, paddingHorizontal: 12 },
   segChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: AI_PURPLE_TEXT },
-  emptyChip: { fontFamily: JAKARTA.regular, fontSize: 13, color: DS.inkMuted, fontStyle: 'italic' },
-  areaInput: { borderWidth: 1, borderColor: DS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: JAKARTA.regular, fontSize: 15, color: DS.ink, backgroundColor: DS.surface2, marginBottom: 6 },
+  exChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#EF4444', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: 'rgba(239,68,68,0.08)' },
+  exChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: '#EF4444' },
+  prefChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: AI_PURPLE, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12 },
+  prefChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: AI_PURPLE_TEXT },
+  mandChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#DC2626', borderRadius: 20, paddingVertical: 7, paddingHorizontal: 12 },
+  mandChipText: { fontFamily: JAKARTA.semibold, fontSize: 13, color: '#FFF' },
+  wishChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#D97706', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: 'rgba(217,119,6,0.08)' },
+  wishChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: '#D97706' },
+  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: DS.border, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: DS.surface2 },
+  metaChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: DS.ink2 },
+  emptyChip: { fontFamily: JAKARTA.regular, fontSize: 13, color: '#D97706', fontStyle: 'italic' },
   optChip: { borderWidth: 1, borderColor: DS.border, borderRadius: 20, paddingVertical: 7, paddingHorizontal: 16, backgroundColor: DS.surface2 },
   optChipActive: { borderColor: AI_PURPLE, backgroundColor: AI_PURPLE_SOFT },
   optChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: DS.ink2 },
@@ -396,10 +525,8 @@ const styles = StyleSheet.create({
   counterValue: { fontFamily: JAKARTA.semibold, fontSize: 16, color: DS.ink, minWidth: 54, textAlign: 'center' },
   autoBtn: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: DS.surface2, borderWidth: 1, borderColor: DS.border },
   autoBtnText: { fontFamily: JAKARTA.medium, fontSize: 12, color: DS.ink2 },
-  toggleRow: { gap: 10, marginTop: 10, marginBottom: 6 },
-  toggle: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
-  toggleActive: {},
-  toggleText: { fontFamily: JAKARTA.medium, fontSize: 14, color: DS.ink },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6, minHeight: 44 },
+  switchLabel: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 14, color: DS.ink },
   generateBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: AI_PURPLE, borderRadius: 12, paddingVertical: 15, marginTop: 18 },
   generateText: { fontFamily: JAKARTA.bold, fontSize: 16, color: '#FFF' },
 });

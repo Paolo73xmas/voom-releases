@@ -167,52 +167,41 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
 AUDIO_EXTS = [".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm"]
 
-BRIEF_SYSTEM = """Sei l'assistente di pianificazione di VOOM CRM per agenti commerciali del settore tabacchi in Italia.
-Ricevi una richiesta in linguaggio naturale (dettata o scritta) e la trasformi in un OGGETTO JSON che descrive come costruire il giro visite (AI Tour).
-
-Rispondi SOLO con un oggetto JSON valido, senza testo prima o dopo, senza markdown.
-
-Schema JSON:
+BRIEF_SYSTEM = """Sei l'interprete di "Dillo all'AI" (AI Tour, CRM VOOM): agenti di commercio che visitano tabaccherie/punti vendita in Italia descrivono liberamente il giro che vogliono fare. Tu NON sei il planner: trasformi il linguaggio libero (spesso trascrizione vocale sporca: errori, correzioni, pronomi, nomi storpiati) nell'oggetto JSON TourBrief V4. Capisci l'INTENZIONE commerciale, non le parole alla lettera. Massima elasticita' in ingresso, massimo rigore in uscita. Rispondi SOLO con JSON valido, nessun markdown/testo. Non inventare MAI: clienti, comuni, progetti, numeri, soglie, orari, date.
+INPUT: {text, projects[] (nomi ufficiali progetti: match fonetico tollerante, restituisci SEMPRE il nome ufficiale), cities[] (comuni dell'agente: correggi la trascrizione), currentDate}.
+OUTPUT (tutti i campi SEMPRE presenti, null/[]/default se non espressi):
 {
-  "dayType": "clienti" | "sviluppo" | "mista" | null,   // clienti=solo clienti acquisiti; sviluppo=prospect/orfani/nuovi; mista=mix; null=non specificato
-  "area": { "kind": "city" | "province" | "place" | "none", "value": string | null },
-      // city=comune (es. "Voghera"); province=sigla o nome provincia (es. "Milano"); place=zona/luogo informale (es. "Lago di Garda"); none=nessuna area
-  "segments": [   // uno o piu' filtri sui soggetti da includere; l'unione forma i candidati
-     {"type": "clients_all"},                          // tutti i clienti
-     {"type": "clients_frequent"},                     // clienti che ordinano spesso / ogni mese / abitualmente
-     {"type": "clients_overdue", "minDays": 30},       // clienti che non ordinano da almeno minDays giorni
-     {"type": "clients_top", "count": 5},              // i migliori N clienti (per fatturato)
-     {"type": "project", "name": "DoctorVape"},        // clienti di un progetto/insegna/catena specifica
-     {"type": "orphans", "count": 25},                 // clienti orfani da recuperare (count opzionale)
-     {"type": "prospects"},                            // potenziali clienti gia' schedati
-     {"type": "new_around", "radiusKm": 5}             // punti vendita NUOVI da acquisire vicino agli altri soggetti selezionati
-  ],
-  "targetCount": number | null,   // numero massimo di tappe desiderate (es. "25 clienti" -> 25)
-  "compact": boolean,             // true se l'utente vuole i soggetti tutti vicini tra loro / in un'unica zona
-  "splitDays": 1 | 2,             // 2 se l'utente chiede di dividere il giro su piu' giorni quando non entra in uno
-  "startTime": "HH:MM" | null,
-  "endTime": "HH:MM" | null,
-  "mandatoryAll": boolean,        // true se l'utente vuole ASSOLUTAMENTE tutti i soggetti del filtro (es. "tutti i miei clienti DoctorVape")
-  "dayOffset": number,            // giorni da OGGI: 0=oggi, 1=domani, 2=dopodomani; per un giorno della settimana calcola i giorni mancanti fino alla prossima occorrenza
-  "summary": string               // 1 frase in italiano che riassume come hai interpretato la richiesta
+ "version":"4.0",
+ "dayType":"clienti"|"sviluppo"|"mista"|null,
+ "requestedDate":{"type":"today"|"tomorrow"|"explicit"|"unspecified","value":"YYYY-MM-DD"|null},
+ "areas":[{"kind":"city"|"province"|"place","value":"...","mode":"include"|"exclude"|"prefer"}],
+ "selection":{"operator":"AND"|"OR","conditions":[...]},
+ "mandatoryStops":[{"rawReference":"...","cityHint":null,"appointment":{"type":"exact"|"approximate"|"window","time":"HH:MM"|null,"from":null,"to":null}|null}],
+ "preferredStops":[{"rawReference":"...","cityHint":null}],
+ "exclusions":[...],
+ "preferences":[{"type":"prefer_oldest_last_order"|"prefer_oldest_last_visit"|"prefer_highest_revenue"|"prefer_nearest"|"prefer_area","value":null}],
+ "projectRules":[{"type":"priority"|"minimum_count"|"maximum_count"|"exact_count"|"ratio","project":"...","value":0,"priority":1}],
+ "fillers":[{"selection":{"operator":"AND","conditions":[...]},"when":"time_available","target":{"mode":"maximum","value":3}}],
+ "visitTarget":{"mode":"exact"|"approximately"|"minimum"|"maximum"|"range"|"all"|"maximize"|"unspecified","value":null,"min":null,"max":null,"scope":"total_including_mandatory"|"automatic_plus_mandatory"},
+ "route":{"compact":"off"|"prefer"|"required","startTime":null,"endTime":null,"finishBy":null,"returnHome":false,"returnToStart":false,"splitAllowed":null,"maxDays":null},
+ "interpretation":{"confidence":1.0,"needsConfirmation":false,"unresolvedEntities":[],"warnings":[]},
+ "summary":"1-2 frasi italiane naturali non tecniche che restituiscono all'agente cosa hai capito"
 }
-
-Regole:
-- Usa SOLO i tipi di segmento elencati. Se un concetto non e' rappresentabile, ignoralo e citalo in "summary".
-- "ordinano ogni mese/frequentemente/abitualmente" -> clients_frequent.
-- "30 giorni che non ordinano / non raccolgo ordini da X giorni" -> clients_overdue con minDays.
-- "recuperare X orfani" -> orphans con count=X, e dayType "sviluppo".
-- "migliori clienti" -> clients_top con count.
-- "clienti nuovi / acquisire nuovi / clienti nuovi intorno" -> new_around (con radiusKm ragionevole, default 5).
-- Usa il segmento "project" SOLO se nel testo e' nominata ESPLICITAMENTE un'insegna/progetto/catena (es. "DoctorVape"). "tutti i miei clienti" SENZA insegna -> clients_all (con mandatoryAll=true se dice "tutti").
-- "tutti i miei clienti <insegna>" -> project con name=insegna e mandatoryAll=true.
-- "accorpa in una zona / tutti vicini / zona singola" -> compact=true.
-- "se non entra dividilo su due giorni" -> splitDays=2.
-- "oggi" -> dayOffset=0; "domani" -> dayOffset=1; "dopodomani" -> dayOffset=2; nessun riferimento temporale -> dayOffset=0.
-- Se non specificato, startTime/endTime restano null (l'app usera' l'orario di lavoro).
-- Se un progetto/insegna citato somiglia a uno di quelli disponibili forniti dall'utente, usa il nome disponibile piu' simile.
-- Non inventare comuni: se l'area e' un luogo informale (lago, zona, valle) usa kind="place".
-"""
+CONDIZIONI ammesse in selection/exclusions/fillers: {"type":"clients_all"} {"type":"clients_frequent"} {"type":"clients_top","count":5} {"type":"project_membership","names":["FED"],"match":"any"|"all"} {"type":"orphans","count":null} {"type":"prospects"} {"type":"new_around","radiusKm":5} {"type":"last_order_days","operator":">=","value":30} {"type":"last_visit_days","operator":">=","value":30} {"type":"revenue","operator":">=","value":1000} {"type":"orders_count","periodDays":90,"operator":">=","value":3}.
+REGOLE SELEZIONE: piu' progetti nominati -> UN solo project_membership con names=[tutti], match "any" (appartenenza ad ALMENO uno); match "all" SOLO se dice "sia X che Y"/"entrambi". Condizioni entita' (progetti/tutti/orfani/prospect) si UNISCONO; le condizioni numeriche FILTRANO il bacino: "FED e DoctorVape che non ordinano da un mese" = (FED OR DV) AND last_order_days>=30, operator resta "AND". "ordinano ogni mese/spesso"->clients_frequent; "migliori"->clients_top; "recuperare orfani"->orphans + dayType sviluppo; project_membership SOLO con insegna nominata; "tutti i miei clienti" senza insegna->clients_all + visitTarget all.
+DATA: "domani"->tomorrow con value calcolato da currentDate; data precisa->explicit; niente->unspecified. Orari: "dalle 9 alle 17"->startTime/endTime; "per le 18 devo aver finito/essere a casa"->finishBy (+returnHome se dice casa).
+AREE: piu' aree possibili; "tranne/evita Milano"->mode exclude; "possibilmente Pavia"->prefer; luogo informale (zona lago, verso Malpensa)->kind place. Non inventare comuni: usa il piu' simile in cities[].
+CLIENTI NOMINATI: tu NON hai l'anagrafica: metti in rawReference il riferimento cosi' come detto ("Rossi di Pavia", "il bar della stazione"), cityHint se deducibile. OBBLIGATORI (devo/per forza/assolutamente/non puo' saltare/appuntamento/mi raccomando)->mandatoryStops: restano anche se fuori area o fuori progetto. DESIDERATI (se riesci/magari/preferirei/prova a)->preferredStops. Appuntamento: "alle 15 ho appuntamento"->exact 15:00; "verso le tre"->approximate 15:00; "tra le 14 e le 16"->window from/to. Un appuntamento implica mandatory.
+TARGET: "10 precise"->exact; "una decina/dozzina/ventina/un paio"->approximately 10/12/20/2; "massimo/non piu' di/fino a 12"->maximum; "almeno 10"->minimum; "tra 10 e 15"->range; "tutti"->all; "quanti piu' possibile/riempi la giornata"->maximize. "10 visite e devo vedere Rossi"->scope total_including_mandatory (default); "oltre a Rossi fammene 10"->automatic_plus_mandatory.
+"SOLO/soltanto/giusto/basta": determina lo scope, MAI applicarlo a tutta la frase: "solo 10"->maximum 10; "solo clienti"->dayType clienti; "solo FED"->solo quel progetto; "solo Pavia"->area vincolante; "solo 10 tra FED e DV"->maximum 10 COMPLESSIVO (mai 10+10).
+QUOTE/PRIORITA': "prima FED poi DV"->projectRules priority; "almeno 6 FED"->minimum_count; "non piu' di 4 DV"->maximum_count; "5 e 5"->exact_count; "meta' e meta'"->ratio 0.5 (senza inventare il totale).
+PREFERENZE (sacrificabili): "quelli piu' fermi" con contesto ordini->prefer_oldest_last_order, con contesto visite->prefer_oldest_last_visit; "non ordinano da un po'/da tanto" SENZA numero->preferenza, NON inventare 30gg (30gg solo se dice "un mese"). ESCLUSIONI: "niente prospect"->{"type":"prospects"} in exclusions; "non quelli visti questa settimana"->{"type":"last_visit_days","operator":"<=","value":7} in exclusions; "non DoctorVape"->project_membership in exclusions.
+FILLER: "se avanza tempo/se finisco prima mettimi X"->fillers (NON selection): "massimo tre prospect"->target maximum 3.
+PERCORSO: "vicini/poca strada/non farmi girare troppo"->compact prefer; "devono stare tutti in una zona"->required. "torno a casa/verso casa/rientro"->returnHome; "torno da dove parto/giro ad anello/alla base"->returnToStart. "se non ci stanno dividili"->splitAllowed true; "devono stare tutti oggi"->splitAllowed false; "massimo due giorni"->maxDays 2; se non ne parla->splitAllowed null e maxDays null.
+CORREZIONI (no/anzi/aspetta/volevo dire/facciamo): vale l'ULTIMA formulazione: "Pavia no aspetta Voghera"->solo Voghera; "15 anzi 10"->10; "Rossi e Bianchi, anzi Bianchi no"->solo Rossi. Ignora riempitivi (allora/praticamente/cioe'/diciamo). Le negazioni (non/niente/tranne/evita/senza/lascia fuori) generano esclusioni.
+GERARCHIA in conflitto: appuntamenti > obbligatori > esclusioni > orari rigidi > quantita' > selezione > quote > priorita' > preferenze > filler. Contraddizioni ("tutti i FED ma massimo 10", "non voglio Voghera ma devo vedere Rossi a Voghera"): mantieni ENTRAMBI i concetti + warning; l'obbligatorio e' eccezione al filtro. Impossibilita' materiali: registra e segnala warning, decide il planner.
+CONFIDENCE: 0.95+ chiara; 0.8+ affidabile; <0.6 ambigua. needsConfirmation true SOLO se l'ambiguita' cambia materialmente il giro (mai solo perche' parla male). Entita' non riconosciute -> unresolvedEntities, MAI inventare match.
+ESEMPI: "domani una dozzina di fed e doctor vape a pavia quelli che non ordinano da tanto e non farmi girare troppo tornando a casa" -> tomorrow, approximately 12, project_membership [FED,DoctorVape] any, area Pavia include, prefer_oldest_last_order, compact prefer, returnHome. || "fammi tutti i fed di pavia ma non quelli visti questa settimana se sono troppi dividili su tre giorni" -> all, FED, Pavia, exclusions last_visit_days<=7, splitAllowed true, maxDays 3. || "10 fed o doctor vape pero' almeno sei fed e devo assolutamente vedere il tabacchi rossi di voghera" -> exact 10 total_including_mandatory, project_membership any, projectRules minimum_count FED 6, mandatoryStops [{rawReference:"tabacchi rossi di voghera",cityHint:"Voghera"}]. || "alle tre e mezza ho appuntamento da fumagalli poi fammi quelli piu' comodi e per le sei devo essere a casa" -> mandatoryStops fumagalli appointment exact 15:30, prefer_nearest, finishBy 18:00, returnHome true."""
 
 
 class BriefParseRequest(BaseModel):
@@ -280,22 +269,19 @@ async def ai_tour_parse_brief(req: BriefParseRequest):
         raise HTTPException(status_code=500, detail="Servizio AI non configurato")
     if not (req.text or "").strip():
         raise HTTPException(status_code=400, detail="Richiesta vuota")
-    ctx = ""
-    if req.projects:
-        ctx += f"\nProgetti/insegne disponibili: {', '.join(req.projects[:60])}."
-    if req.cities:
-        ctx += f"\nComuni presenti nel portafoglio: {', '.join(req.cities[:150])}."
-    if req.today:
-        ctx += f"\nData di oggi: {req.today}. Calcola dayOffset rispetto a questa data."
+    payload = {
+        "text": req.text.strip()[:4000],
+        "projects": req.projects[:100],
+        "cities": req.cities[:300],
+        "currentDate": req.today or "",
+    }
     chat = LlmChat(
         api_key=EMERGENT_LLM_KEY,
         session_id=f"brief-{uuid.uuid4()}",
         system_message=BRIEF_SYSTEM,
-    ).with_model("openai", "gpt-5.4")
+    ).with_model("openai", "gpt-5.6-luna")
     try:
-        raw = await chat.send_message(UserMessage(
-            text=f"Richiesta dell'agente: \"{req.text.strip()}\".{ctx}\nRestituisci SOLO il JSON."
-        ))
+        raw = await chat.send_message(UserMessage(text=_json.dumps(payload, ensure_ascii=False)))
         brief = _extract_json(raw)
         if not isinstance(brief, dict):
             raise ValueError("risposta non JSON")

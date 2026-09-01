@@ -40,6 +40,7 @@ export default function NewInspectionScreen() {
   
   const [notes, setNotes] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
+  const [processingPhoto, setProcessingPhoto] = useState(false);
   const [location, setLocation] = useState<{ latitude: number; longitude: number; accuracy: number } | null>(null);
   const { stampPhoto, StamperView } = usePhotoStamper();
 
@@ -92,6 +93,7 @@ export default function NewInspectionScreen() {
   };
 
   const pickImage = async () => {
+    if (processingPhoto) return;
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
@@ -108,6 +110,8 @@ export default function NewInspectionScreen() {
       });
 
       if (!result.canceled && result.assets?.length > 0) {
+        setProcessingPhoto(true);
+        // Una foto alla volta: mai più bitmap in memoria contemporaneamente (telefoni low-end)
         for (const asset of result.assets) {
           const stamped = await stampPhoto(asset.uri);
           setPhotos(prev => [...prev, stamped]);
@@ -115,10 +119,13 @@ export default function NewInspectionScreen() {
       }
     } catch (error) {
       console.error('Error picking image:', error);
+    } finally {
+      setProcessingPhoto(false);
     }
   };
 
   const takePhoto = async () => {
+    if (processingPhoto) return;
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
@@ -132,11 +139,14 @@ export default function NewInspectionScreen() {
       });
 
       if (!result.canceled && result.assets?.[0]) {
+        setProcessingPhoto(true);
         const stamped = await stampPhoto(result.assets[0].uri);
         setPhotos(prev => [...prev, stamped]);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
+    } finally {
+      setProcessingPhoto(false);
     }
   };
 
@@ -322,11 +332,15 @@ export default function NewInspectionScreen() {
                 </TouchableOpacity>
               </View>
             ))}
-            <TouchableOpacity style={styles.addPhotoButton} onPress={takePhoto}>
-              <Ionicons name="camera" size={32} color="#6B7280" />
-              <Text style={styles.addPhotoText}>Scatta</Text>
+            <TouchableOpacity style={[styles.addPhotoButton, processingPhoto && styles.addPhotoDisabled]} onPress={takePhoto} disabled={processingPhoto}>
+              {processingPhoto ? (
+                <ActivityIndicator size="small" color="#6B7280" />
+              ) : (
+                <Ionicons name="camera" size={32} color="#6B7280" />
+              )}
+              <Text style={styles.addPhotoText}>{processingPhoto ? 'Elaboro...' : 'Scatta'}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.addPhotoButton} onPress={pickImage}>
+            <TouchableOpacity style={[styles.addPhotoButton, processingPhoto && styles.addPhotoDisabled]} onPress={pickImage} disabled={processingPhoto}>
               <Ionicons name="images" size={32} color="#6B7280" />
               <Text style={styles.addPhotoText}>Galleria</Text>
             </TouchableOpacity>
@@ -542,6 +556,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.border,
     borderStyle: 'dashed',
+  },
+  addPhotoDisabled: {
+    opacity: 0.5,
   },
   addPhotoText: {
     fontSize: 12,

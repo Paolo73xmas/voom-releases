@@ -102,10 +102,15 @@ export async function uploadPhotosToStorage(
 
   for (let i = 0; i < photos.length; i++) {
     const path = `${userId}/${entityId}/${timestamp}_${i}.jpg`;
-    // Un retry per foto: un singolo blip di rete non deve far perdere l'immagine
+    // Fino a 2 retry per foto con attese crescenti: su reti scarse un blip
+    // di connessione non deve far perdere l'immagine
     let url = await uploadSinglePhoto(photos[i].uri, path);
     if (!url) {
       await new Promise((r) => setTimeout(r, 1200));
+      url = await uploadSinglePhoto(photos[i].uri, path);
+    }
+    if (!url) {
+      await new Promise((r) => setTimeout(r, 3500));
       url = await uploadSinglePhoto(photos[i].uri, path);
     }
     if (url) {

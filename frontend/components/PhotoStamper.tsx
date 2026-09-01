@@ -1,11 +1,29 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { View, Image, Text, StyleSheet, Platform } from 'react-native';
+import { View, Image, Text, StyleSheet } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 interface StampJob {
   uri: string;
   timestamp: string;
   resolve: (uri: string) => void;
+}
+
+/**
+ * Riduce la foto a max 1600px lato lungo PRIMA di caricarla in memoria per il timbro.
+ * Le foto full-resolution (12-48MP sui device recenti) decodificate intere in RAM
+ * mandano in crash i telefoni con poca memoria (spesso alla seconda foto).
+ * Riduce anche drasticamente il peso dell'upload su reti scarse.
+ */
+async function shrinkPhoto(uri: string): Promise<string> {
+  try {
+    const image = await ImageManipulator.manipulate(uri).resize({ width: 1600 }).renderAsync();
+    const saved = await image.saveAsync({ compress: 0.7, format: SaveFormat.JPEG });
+    return saved.uri;
+  } catch (err) {
+    console.warn('[PhotoStamper] shrinkPhoto:', err);
+    return uri;
+  }
 }
 
 /**
@@ -17,6 +35,9 @@ export function usePhotoStamper() {
   const viewRef = useRef<View>(null);
   const [job, setJob] = useState<StampJob | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  // Coda: una foto alla volta (un doppio tap o la selezione multipla non devono
+  // sovrapporre i job né tenere più bitmap in memoria contemporaneamente)
+  const queueRef = useRef<Promise<unknown>>(Promise.resolve());
 
   // When image loads, capture the composite view
   useEffect(() => {
@@ -48,18 +69,25 @@ export function usePhotoStamper() {
   }, [job, imageLoaded]);
 
   const stampPhoto = useCallback((photoUri: string): Promise<string> => {
-    const now = new Date();
-    const day = now.getDate().toString().padStart(2, '0');
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const year = now.getFullYear();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const timestamp = `${day}/${month}/${year} ${hours}:${minutes}`;
+    const run = async (): Promise<string> => {
+      // Ridimensiona PRIMA di montare l'immagine: mai bitmap full-res in RAM
+      const smallUri = await shrinkPhoto(photoUri);
+      const now = new Date();
+      const day = now.getDate().toString().padStart(2, '0');
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const year = now.getFullYear();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const timestamp = `${day}/${month}/${year} ${hours}:${minutes}`;
 
-    return new Promise((resolve) => {
-      setImageLoaded(false);
-      setJob({ uri: photoUri, timestamp, resolve });
-    });
+      return new Promise((resolve) => {
+        setImageLoaded(false);
+        setJob({ uri: smallUri, timestamp, resolve });
+      });
+    };
+    const result = queueRef.current.then(run, run);
+    queueRef.current = result.catch(() => {});
+    return result;
   }, []);
 
   const StamperView = useCallback(() => {

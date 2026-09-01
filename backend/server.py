@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Request, UploadFile, File
+from fastapi.responses import FileResponse
 from fastapi.responses import FileResponse, StreamingResponse, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -261,6 +262,14 @@ async def ai_tour_transcribe(audio: UploadFile = File(...)):
             os.unlink(tmp.name)
         except Exception:
             pass
+
+
+@api_router.get("/manual/aitour-video")
+async def download_aitour_video():
+    path = "/app/manual/video/aitour-tutorial-completo-v2.mp4"
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Video non trovato")
+    return FileResponse(path, media_type="video/mp4", filename="AI-Tour-Tutorial.mp4")
 
 
 @api_router.post("/ai-tour/parse-brief")

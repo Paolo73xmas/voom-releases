@@ -30,6 +30,7 @@ import { planTour, planFixedOrder, filterByArea, pickBestCluster, candidatesForD
 import { getStrategySummary, recommendDayType } from '../lib/aitour/ai';
 import { getSettings, saveTour, saveToursBatch, listTours, loadTourStops, deleteTour, replaceTourPlan, type SavedTour } from '../lib/aitour/tours';
 import { getActiveTour, loadLiveState, startLiveTour, type LiveState } from '../lib/aitour/live';
+import { fetchFollowUpsForDate, fetchOverdueFollowUps, type PendingFollowUp, type OverdueFollowUp } from '../lib/aitour/followups';
 import { geocodeAddress } from '../lib/aitour/osrm';
 import { LiveTourView } from '../components/aitour/LiveTourView';
 import { TourMapView, type TourMapStop } from '../components/aitour/TourMapView';
@@ -216,6 +217,11 @@ export default function AITourScreen() {
     drawnRings: [],
   });
   const [generating, setGenerating] = useState(false);
+  // Follow-up/appuntamenti in agenda per la data scelta (considera/ignora) + scaduti mai gestiti
+  const [followUps, setFollowUps] = useState<PendingFollowUp[]>([]);
+  const [fuIgnored, setFuIgnored] = useState<Set<string>>(new Set());
+  const [overdue, setOverdue] = useState<OverdueFollowUp[]>([]);
+  const [overdueSel, setOverdueSel] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
   const [errMsg, setErrMsg] = useState('');
@@ -360,6 +366,51 @@ export default function AITourScreen() {
   }, [tab, loadSavedTours]);
 
   const set = <K extends keyof FormValues>(k: K, val: FormValues[K]) => setForm((old) => ({ ...old, [k]: val }));
+
+  // Follow-up/appuntamenti in agenda per la data scelta: avviso consapevole (considera o ignora)
+  useEffect(() => {
+    let alive = true;
+    setFollowUps([]);
+    setFuIgnored(new Set());
+    if (!agentId) return;
+    fetchFollowUpsForDate(agentId, form.date)
+      .then((list) => { if (alive) setFollowUps(list); })
+      .catch((e) => console.warn('[AITour] follow-up agenda:', e));
+    return () => { alive = false; };
+  }, [agentId, form.date]);
+
+  // Follow-up dei giorni passati mai gestiti: segnalati con recupero opzionale
+  useEffect(() => {
+    let alive = true;
+    setOverdue([]);
+    setOverdueSel(new Set());
+    if (!agentId) return;
+    fetchOverdueFollowUps(agentId)
+      .then((list) => { if (alive) setOverdue(list); })
+      .catch((e) => console.warn('[AITour] follow-up scaduti:', e));
+    return () => { alive = false; };
+  }, [agentId]);
+
+  const toggleFollowUp = (customerId: string) => {
+    hap.light();
+    setFuIgnored((prev) => {
+      const next = new Set(prev);
+      if (next.has(customerId)) next.delete(customerId); else next.add(customerId);
+      return next;
+    });
+  };
+
+  const toggleOverdue = (customerId: string) => {
+    hap.light();
+    setOverdueSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(customerId)) next.delete(customerId); else next.add(customerId);
+      return next;
+    });
+  };
+
+  // Scaduti già presenti tra i follow-up del giorno: mostrati solo nel pannello del giorno
+  const overdueVisible = overdue.filter((o) => !followUps.some((f) => f.customerId === o.customerId));
 
   const stepTime = (field: 'startTime' | 'endTime', deltaMin: number) => {
     hap.light();
@@ -605,6 +656,34 @@ export default function AITourScreen() {
           if (idx >= 0) candidates = candidates.map((c, i) => (i === idx ? cand : c));
           else candidates = [...candidates, cand];
         }
+      }
+      // Follow-up/appuntamenti del giorno confermati dall'agente + scaduti da recuperare: tappe obbligatorie riconoscibili
+      const fuIncluded = followUps
+        .filter((f) => !fuIgnored.has(f.customerId) && !v.mandatoryCustomerIds.includes(f.customerId))
+        .map((f) => ({ id: f.customerId, time: f.time as string | undefined, od: undefined as string | undefined }));
+      const odIncluded = overdueVisible
+        .filter((o) => overdueSel.has(o.customerId) && !v.mandatoryCustomerIds.includes(o.customerId) && !fuIncluded.some((f) => f.id === o.customerId))
+        .map((o) => ({ id: o.customerId, time: undefined as string | undefined, od: o.date as string | undefined }));
+      for (const fu of [...fuIncluded, ...odIncluded]) {
+        const all = [...loaded.clients, ...loaded.prospects, ...loaded.orphans];
+        const found = all.find((c) => c.customerId === fu.id);
+        if (!found) continue;
+        const cand: TourCandidate = {
+          ...found,
+          isFollowUp: true,
+          reason: fu.od
+            ? `Follow-up SCADUTO del ${new Date(`${fu.od}T12:00:00`).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })} mai gestito. ${found.reason}`
+            : `Follow-up in agenda${fu.time ? ` alle ${fu.time}` : ''}. ${found.reason}`,
+          ...(fu.time && !fu.od
+            ? { preferredSlots: [{ id: `fu_${fu.id}`, label: `follow-up ore ${fu.time}`, start: timeToMin(fu.time), end: timeToMin(fu.time) }] }
+            : {}),
+        };
+        mandatoryKeys.add(cand.key);
+        const fIdx = candidates.findIndex((c) => c.key === cand.key);
+        if (fIdx >= 0) candidates = candidates.map((c, i) => (i === fIdx ? cand : c));
+        else candidates = [...candidates, cand];
+        // Stesso cliente presente nel pool con altra chiave (es. prospect E orfano): tieni solo la tappa follow-up
+        candidates = candidates.filter((c) => c.customerId !== fu.id || c.key === cand.key);
       }
       if (candidates.length === 0) {
         setErrMsg('Nessun soggetto disponibile con i filtri scelti');
@@ -1371,11 +1450,11 @@ export default function AITourScreen() {
   };
 
   // Dalla Vista Settimanale: genera il tour ottimizzato di un singolo giorno
-  const generateFromWeek = async (day: WeekDayPlan, start: GeoPoint, end: GeoPoint | null) => {
+  const generateFromWeek = async (day: WeekDayPlan, start: GeoPoint, end: GeoPoint | null, mandatoryKeys?: Set<string>) => {
     try {
       const newPlan = await planTour({
         candidates: day.candidates,
-        mandatoryKeys: new Set<string>(),
+        mandatoryKeys: mandatoryKeys || new Set<string>(),
         start,
         end,
         tourDate: day.date,
@@ -1446,6 +1525,7 @@ export default function AITourScreen() {
             daysSinceVisit: null,
             followUpDate: null,
             appointmentAt: null,
+            isFollowUp: !!s.is_follow_up,
             notes: null,
             orphanStatus: null,
             estimatedRevenue: null,
@@ -1584,6 +1664,90 @@ export default function AITourScreen() {
           );
         })}
       </ScrollView>
+
+      {/* Follow-up in agenda per la data scelta: considera (obbligatoria) o ignora */}
+      {followUps.length > 0 && (
+        <View style={styles.fuPanel} testID="aitour-followup-panel">
+          <View style={styles.fuPanelHeader}>
+            <Ionicons name="calendar-outline" size={14} color="#86198F" />
+            <Text style={styles.fuPanelTitle}>
+              {followUps.length === 1 ? '1 follow-up in agenda' : `${followUps.length} follow-up in agenda`} per il{' '}
+              {new Date(`${form.date}T12:00:00`).toLocaleDateString('it-IT')}
+            </Text>
+          </View>
+          <Text style={styles.fuPanelHint}>
+            I follow-up spuntati verranno inseriti nel giro come tappe obbligatorie (riconoscibili). Togli la spunta per ignorarli.
+          </Text>
+          {followUps.map((f) => {
+            const on = !fuIgnored.has(f.customerId);
+            return (
+              <TouchableOpacity
+                key={f.customerId}
+                style={styles.fuItem}
+                onPress={() => toggleFollowUp(f.customerId)}
+                activeOpacity={0.7}
+                testID={`aitour-followup-item-${f.customerId}`}
+              >
+                <Ionicons name={on ? 'checkbox' : 'square-outline'} size={22} color={on ? '#C026D3' : DS.inkMuted} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fuItemName}>
+                    {f.businessName}
+                    {f.city ? <Text style={styles.fuItemCity}> · {f.city}</Text> : null}
+                    <Text style={styles.fuItemTime}> · ore {f.time}</Text>
+                    <Text style={styles.fuItemType}> ({f.type === 'follow_up' ? 'follow-up' : 'appuntamento'})</Text>
+                  </Text>
+                  {f.reason ? (
+                    <Text style={styles.fuItemReason} numberOfLines={1}>
+                      {f.reason}
+                    </Text>
+                  ) : null}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Follow-up SCADUTI mai gestiti (ultimi 60 giorni): recupero opzionale */}
+      {overdueVisible.length > 0 && (
+        <View style={styles.odPanel} testID="aitour-overdue-panel">
+          <View style={styles.fuPanelHeader}>
+            <Ionicons name="warning-outline" size={14} color="#991B1B" />
+            <Text style={styles.odPanelTitle}>
+              {overdueVisible.length === 1 ? '1 follow-up SCADUTO mai gestito' : `${overdueVisible.length} follow-up SCADUTI mai gestiti`} (ultimi 60 giorni)
+            </Text>
+          </View>
+          <Text style={styles.odPanelHint}>Spunta quelli da recuperare: verranno inseriti in questo giro come tappe obbligatorie.</Text>
+          {overdueVisible.map((o) => {
+            const on = overdueSel.has(o.customerId);
+            return (
+              <TouchableOpacity
+                key={o.customerId}
+                style={styles.odItem}
+                onPress={() => toggleOverdue(o.customerId)}
+                activeOpacity={0.7}
+                testID={`aitour-overdue-item-${o.customerId}`}
+              >
+                <Ionicons name={on ? 'checkbox' : 'square-outline'} size={22} color={on ? '#DC2626' : DS.inkMuted} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fuItemName}>
+                    {o.businessName}
+                    {o.city ? <Text style={styles.fuItemCity}> · {o.city}</Text> : null}
+                    <Text style={styles.odItemDate}>
+                      {' '}· era per il {new Date(`${o.date}T12:00:00`).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
+                    </Text>
+                  </Text>
+                  {o.reason ? (
+                    <Text style={styles.fuItemReason} numberOfLines={1}>
+                      {o.reason}
+                    </Text>
+                  ) : null}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       {/* Orari */}
       <View style={styles.timesRow}>
@@ -2054,6 +2218,11 @@ export default function AITourScreen() {
             </View>
             <View style={styles.stopBadges}>
               <CandidateEntityBadge candidate={s.candidate} />
+              {s.candidate.isFollowUp && (
+                <View style={styles.fuBadge} testID={`aitour-agenda-followup-${s.sequence}`}>
+                  <Text style={styles.fuBadgeText}>FOLLOW-UP</Text>
+                </View>
+              )}
               <View style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[s.candidate.priorityClass] + '1A' }]}>
                 <Text style={[styles.priorityBadgeText, { color: PRIORITY_COLORS[s.candidate.priorityClass] }]}>
                   {s.candidate.priorityClass} · {s.candidate.score}/100
@@ -2721,6 +2890,46 @@ const styles = StyleSheet.create({
   },
   slotBadgeWarn: { borderColor: '#DC2626' },
   slotBadgeText: { fontFamily: JAKARTA.medium, fontSize: 9.5, color: '#B45309' },
+  // Pannelli follow-up in agenda / scaduti (parità web: fucsia = agenda, rosso = scaduti)
+  fuPanel: { backgroundColor: '#FDF4FF', borderWidth: 1, borderColor: '#F0ABFC', borderRadius: 10, padding: 10, marginTop: 10 },
+  odPanel: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 10, padding: 10, marginTop: 10 },
+  fuPanelHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  fuPanelTitle: { flex: 1, fontFamily: JAKARTA.bold, fontSize: 12, color: '#86198F' },
+  odPanelTitle: { flex: 1, fontFamily: JAKARTA.bold, fontSize: 12, color: '#991B1B' },
+  fuPanelHint: { fontFamily: JAKARTA.regular, fontSize: 10.5, color: '#A21CAF', marginTop: 3, marginBottom: 7, lineHeight: 14 },
+  odPanelHint: { fontFamily: JAKARTA.regular, fontSize: 10.5, color: '#B91C1C', marginTop: 3, marginBottom: 7, lineHeight: 14 },
+  fuItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F5D0FE',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 9,
+    marginTop: 5,
+  },
+  odItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 9,
+    marginTop: 5,
+  },
+  fuItemName: { fontFamily: JAKARTA.semibold, fontSize: 12, color: '#1E293B', lineHeight: 17 },
+  fuItemCity: { fontFamily: JAKARTA.regular, color: '#64748B' },
+  fuItemTime: { fontFamily: JAKARTA.bold, color: '#A21CAF' },
+  fuItemType: { fontFamily: JAKARTA.regular, fontSize: 10, color: '#64748B' },
+  odItemDate: { fontFamily: JAKARTA.bold, color: '#B91C1C' },
+  fuItemReason: { fontFamily: JAKARTA.regular, fontSize: 10.5, color: '#64748B', marginTop: 1 },
+  fuBadge: { backgroundColor: '#C026D3', borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 },
+  fuBadgeText: { fontFamily: JAKARTA.bold, fontSize: 8.5, color: '#FFF', letterSpacing: 0.3 },
   stopBadges: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 9, flexWrap: 'wrap' },
   priorityBadge: { borderRadius: 6, paddingVertical: 3, paddingHorizontal: 7 },
   priorityBadgeText: { fontFamily: JAKARTA.semibold, fontSize: 10 },

@@ -48,6 +48,8 @@ export interface TourCandidate {
   daysSinceVisit: number | null;
   followUpDate: string | null;
   appointmentAt: string | null;
+  /** Tappa inserita da follow-up/appuntamento in agenda confermato dall'agente */
+  isFollowUp?: boolean;
   notes: string | null;
   orphanStatus: 'orphan_a' | 'orphan_b' | null;
   estimatedRevenue: number | null;

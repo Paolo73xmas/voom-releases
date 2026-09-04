@@ -1330,6 +1330,11 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
                   <Text style={styles.mandBadgeText}>Obbligatoria</Text>
                 </View>
               )}
+              {next.candidate.isFollowUp && (
+                <View style={[styles.mandBadge, { backgroundColor: '#C026D3' }]} testID="aitour-live-followup-badge">
+                  <Text style={styles.mandBadgeText}>Follow-up</Text>
+                </View>
+              )}
               {next.addedByAdmin && (
                 <View style={[styles.mandBadge, { backgroundColor: '#EA580C' }]}>
                   <Text style={styles.mandBadgeText}>Inserita dall&apos;admin</Text>

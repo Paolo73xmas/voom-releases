@@ -76,6 +76,7 @@ export function stopToCandidate(s: SavedStop & { outcome?: string | null; follow
     daysSinceVisit: null,
     followUpDate: null,
     appointmentAt: null,
+    isFollowUp: !!s.is_follow_up,
     notes: null,
     orphanStatus: null,
     estimatedRevenue: null,

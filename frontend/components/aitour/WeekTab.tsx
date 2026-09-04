@@ -12,8 +12,9 @@ import { buildWeekPlan, mondayOf, nextMonday, addDays, type WeekPlan, type WeekD
 import { planTour } from '../../lib/aitour/planner';
 import { getStrategySummary } from '../../lib/aitour/ai';
 import { saveToursBatch } from '../../lib/aitour/tours';
+import { fetchFollowUpsForDates, fetchOverdueFollowUps, type PendingFollowUp, type OverdueFollowUp } from '../../lib/aitour/followups';
 import { TourNameDialog } from './TourNameDialog';
-import type { AiTourSettings, GeoPoint, TourPlan } from '../../lib/aitour/types';
+import type { AiTourSettings, GeoPoint, TourPlan, TourCandidate } from '../../lib/aitour/types';
 import { ENTITY_COLORS, fmtDur, timeToMin } from '../../lib/aitour/types';
 
 export interface WeekPreset {
@@ -31,7 +32,7 @@ interface Props {
   agentId: string;
   settings: AiTourSettings;
   resolvePoint: (mode: string, address: string, start: GeoPoint | null) => Promise<GeoPoint | null>;
-  onGenerateDay: (day: WeekDayPlan, start: GeoPoint, end: GeoPoint | null) => Promise<void>;
+  onGenerateDay: (day: WeekDayPlan, start: GeoPoint, end: GeoPoint | null, mandatoryKeys?: Set<string>) => Promise<void>;
   preset?: WeekPreset | null;
   onPresetConsumed?: () => void;
 }
@@ -80,6 +81,12 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
   const [savingWeek, setSavingWeek] = useState(false);
   const [saveProgress, setSaveProgress] = useState('');
   const [okMsg, setOkMsg] = useState('');
+  // Follow-up in agenda per i giorni pianificati + follow-up scaduti mai gestiti
+  const [weekPool, setWeekPool] = useState<TourCandidate[]>([]);
+  const [weekFu, setWeekFu] = useState<Record<string, PendingFollowUp[]>>({});
+  const [wfuIgnored, setWfuIgnored] = useState<Set<string>>(new Set());
+  const [weekOverdue, setWeekOverdue] = useState<OverdueFollowUp[]>([]);
+  const [wOverdueSel, setWOverdueSel] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setWeek(null);
@@ -129,6 +136,23 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
         setStartPoint(start);
         setEndPoint(end);
         setExpanded(null);
+        // Follow-up in agenda per i giorni pianificati + follow-up scaduti mai gestiti
+        setWeekPool(all);
+        setWfuIgnored(new Set());
+        setWOverdueSel(new Set());
+        setWeekFu({});
+        setWeekOverdue([]);
+        try {
+          const [fu, od] = await Promise.all([
+            fetchFollowUpsForDates(agentId, plan.days.map((d) => d.date)),
+            fetchOverdueFollowUps(agentId),
+          ]);
+          setWeekFu(fu);
+          const fuIds = new Set(Object.values(fu).flat().map((f) => f.customerId));
+          setWeekOverdue(od.filter((o) => !fuIds.has(o.customerId)));
+        } catch (err) {
+          console.warn('[AITour][week] follow-up agenda:', err);
+        }
       } catch (err) {
         console.error('[AITour][week] generate:', err);
         setErrMsg('Errore nella pianificazione della settimana');
@@ -159,10 +183,78 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
     hap.medium();
     setGenDay(idx);
     try {
-      await onGenerateDay(week.days[idx], startPoint, endPoint);
+      const adj = applyFollowUps(week.days[idx], followUpTargets());
+      await onGenerateDay({ ...week.days[idx], candidates: adj.candidates }, startPoint, endPoint, adj.mandatory);
     } finally {
       setGenDay(null);
     }
+  };
+
+  const fmtIt = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+
+  // Mappa cliente -> giorno di destinazione dei follow-up considerati (scaduti -> primo giorno)
+  const followUpTargets = (): Map<string, { date: string; time?: string; overdueDate?: string }> => {
+    const map = new Map<string, { date: string; time?: string; overdueDate?: string }>();
+    if (!week) return map;
+    for (const d of week.days) {
+      for (const f of weekFu[d.date] || []) {
+        if (!wfuIgnored.has(`${d.date}|${f.customerId}`)) map.set(f.customerId, { date: d.date, time: f.time });
+      }
+    }
+    const firstDate = week.days[0]?.date;
+    if (firstDate) {
+      for (const o of weekOverdue) {
+        if (wOverdueSel.has(o.customerId) && !map.has(o.customerId)) map.set(o.customerId, { date: firstDate, overdueDate: o.date });
+      }
+    }
+    return map;
+  };
+
+  // Applica i follow-up considerati a un giorno: tappa obbligatoria nel giorno giusto, rimossa dagli altri
+  const applyFollowUps = (d: WeekDayPlan, targets: Map<string, { date: string; time?: string; overdueDate?: string }>) => {
+    let cands = d.candidates.filter((c) => {
+      const t = c.customerId ? targets.get(c.customerId) : undefined;
+      return !t || t.date === d.date;
+    });
+    const mandatory = new Set<string>();
+    for (const [cid, t] of targets) {
+      if (t.date !== d.date) continue;
+      const found = weekPool.find((c) => c.customerId === cid);
+      if (!found) continue;
+      cands = cands.filter((c) => c.customerId !== cid);
+      const cand: TourCandidate = {
+        ...found,
+        isFollowUp: true,
+        reason: t.overdueDate
+          ? `Follow-up SCADUTO del ${fmtIt(t.overdueDate)} mai gestito. ${found.reason}`
+          : `Follow-up in agenda${t.time ? ` alle ${t.time}` : ''}. ${found.reason}`,
+        ...(t.time && !t.overdueDate
+          ? { preferredSlots: [{ id: `fu_${cid}`, label: `follow-up ore ${t.time}`, start: timeToMin(t.time), end: timeToMin(t.time) }] }
+          : {}),
+      };
+      cands.push(cand);
+      mandatory.add(cand.key);
+    }
+    return { candidates: cands, mandatory };
+  };
+
+  const toggleWfu = (date: string, customerId: string) => {
+    hap.light();
+    setWfuIgnored((prev) => {
+      const key = `${date}|${customerId}`;
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleWOverdue = (customerId: string) => {
+    hap.light();
+    setWOverdueSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(customerId)) next.delete(customerId); else next.add(customerId);
+      return next;
+    });
   };
 
   const totalVisits = week ? week.days.reduce((s, d) => s + d.candidates.length, 0) : 0;
@@ -176,13 +268,16 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
     setOkMsg('');
     setErrMsg('');
     try {
-      const daysToSave = week.days.filter((d) => d.candidates.length > 0);
+      const targets = followUpTargets();
+      const adjDays = week.days
+        .map((d) => ({ d, adj: applyFollowUps(d, targets) }))
+        .filter((x) => x.adj.candidates.length > 0);
       const plans: TourPlan[] = [];
-      for (const d of daysToSave) {
-        setSaveProgress(`Calcolo percorso di ${d.dow} (${plans.length + 1}/${daysToSave.length})...`);
+      for (const { d, adj } of adjDays) {
+        setSaveProgress(`Calcolo percorso di ${d.dow} (${plans.length + 1}/${adjDays.length})...`);
         const p = await planTour({
-          candidates: d.candidates,
-          mandatoryKeys: new Set<string>(),
+          candidates: adj.candidates,
+          mandatoryKeys: adj.mandatory,
           start: startPoint,
           end: endPoint,
           tourDate: d.date,
@@ -363,6 +458,38 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
               </Text>
             </View>
           )}
+          {weekOverdue.length > 0 && (
+            <View style={styles.odPanel} testID="week-overdue-panel">
+              <View style={styles.fuPanelHeader}>
+                <Ionicons name="warning-outline" size={13} color="#991B1B" />
+                <Text style={styles.odPanelTitle}>
+                  {weekOverdue.length === 1 ? '1 follow-up SCADUTO mai gestito' : `${weekOverdue.length} follow-up SCADUTI mai gestiti`} (ultimi 60 giorni)
+                </Text>
+              </View>
+              <Text style={styles.odPanelHint}>
+                Spunta quelli da recuperare: verranno inseriti come tappe obbligatorie nel primo giorno della settimana.
+              </Text>
+              {weekOverdue.map((o) => {
+                const on = wOverdueSel.has(o.customerId);
+                return (
+                  <TouchableOpacity
+                    key={o.customerId}
+                    style={[styles.fuItemRow, { borderColor: '#FECACA' }]}
+                    onPress={() => toggleWOverdue(o.customerId)}
+                    activeOpacity={0.7}
+                    testID={`week-overdue-item-${o.customerId}`}
+                  >
+                    <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? '#DC2626' : DS.inkMuted} />
+                    <Text style={styles.fuItemName} numberOfLines={1}>
+                      {o.businessName}
+                      {o.city ? <Text style={styles.fuItemCity}> · {o.city}</Text> : null}
+                    </Text>
+                    <Text style={styles.odItemDate}>era per il {fmtIt(o.date)}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
           {week.days.map((d, idx) => (
             <View key={d.date} style={styles.dayCard}>
               <View style={styles.dayHeader}>
@@ -380,6 +507,33 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
                 <Text style={{ color: '#DC2626', fontFamily: JAKARTA.semibold }}>{d.dueCount} in scadenza</Text> · {fmtDur(d.estVisitMin)} visite ·
                 ~{fmtDur(d.estDriveMin)} guida ({d.estKm} km)
               </Text>
+              {(weekFu[d.date] || []).length > 0 && (
+                <View style={styles.fuPanel} testID={`week-followup-panel-${idx}`}>
+                  <View style={styles.fuPanelHeader}>
+                    <Ionicons name="calendar-outline" size={13} color="#86198F" />
+                    <Text style={styles.fuPanelTitle}>Follow-up in agenda ({(weekFu[d.date] || []).length})</Text>
+                  </View>
+                  {(weekFu[d.date] || []).map((f) => {
+                    const on = !wfuIgnored.has(`${d.date}|${f.customerId}`);
+                    return (
+                      <TouchableOpacity
+                        key={f.customerId}
+                        style={styles.fuItemRow}
+                        onPress={() => toggleWfu(d.date, f.customerId)}
+                        activeOpacity={0.7}
+                        testID={`week-followup-item-${idx}-${f.customerId}`}
+                      >
+                        <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? '#C026D3' : DS.inkMuted} />
+                        <Text style={styles.fuItemName} numberOfLines={1}>
+                          {f.businessName}
+                        </Text>
+                        <Text style={styles.fuItemTime}>ore {f.time}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                  <Text style={styles.fuPanelHint}>Spuntati = tappa obbligatoria nel giro del giorno</Text>
+                </View>
+              )}
               {(expanded === idx ? d.candidates : d.candidates.slice(0, 6)).map((c) => (
                 <View key={c.key} style={styles.candRow}>
                   <View style={[styles.candDot, { backgroundColor: ENTITY_COLORS[c.entityType] }]} />
@@ -405,9 +559,12 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
               )}
               {d.candidates.length === 0 && <Text style={styles.noVisits}>Nessuna visita assegnata</Text>}
               <TouchableOpacity
-                style={[styles.dayGenBtn, (d.candidates.length === 0 || genDay !== null) && { opacity: 0.5 }]}
+                style={[
+                  styles.dayGenBtn,
+                  ((d.candidates.length === 0 && !(weekFu[d.date] || []).some((f) => !wfuIgnored.has(`${d.date}|${f.customerId}`))) || genDay !== null) && { opacity: 0.5 },
+                ]}
                 onPress={() => genDayTour(idx)}
-                disabled={d.candidates.length === 0 || genDay !== null}
+                disabled={(d.candidates.length === 0 && !(weekFu[d.date] || []).some((f) => !wfuIgnored.has(`${d.date}|${f.customerId}`))) || genDay !== null}
                 activeOpacity={0.75}
               >
                 {genDay === idx ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="sparkles" size={13} color="#FFF" />}
@@ -550,4 +707,28 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   dayGenText: { fontFamily: JAKARTA.semibold, fontSize: 12, color: '#FFF' },
+  // Pannelli follow-up in agenda / scaduti (parità web: fucsia = agenda, rosso = scaduti)
+  fuPanel: { backgroundColor: '#FDF4FF', borderWidth: 1, borderColor: '#F0ABFC', borderRadius: 8, padding: 8, marginBottom: 6 },
+  odPanel: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 8, padding: 8, marginTop: 8 },
+  fuPanelHeader: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  fuPanelTitle: { flex: 1, fontFamily: JAKARTA.bold, fontSize: 11, color: '#86198F' },
+  odPanelTitle: { flex: 1, fontFamily: JAKARTA.bold, fontSize: 11, color: '#991B1B' },
+  fuPanelHint: { fontFamily: JAKARTA.regular, fontSize: 9.5, color: '#A21CAF', marginTop: 4, lineHeight: 13 },
+  odPanelHint: { fontFamily: JAKARTA.regular, fontSize: 10, color: '#B91C1C', marginTop: 3, marginBottom: 4, lineHeight: 13 },
+  fuItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F5D0FE',
+    borderRadius: 7,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginTop: 4,
+  },
+  fuItemName: { flex: 1, fontFamily: JAKARTA.semibold, fontSize: 11.5, color: '#1E293B' },
+  fuItemCity: { fontFamily: JAKARTA.regular, color: '#64748B' },
+  fuItemTime: { fontFamily: JAKARTA.bold, fontSize: 11, color: '#A21CAF' },
+  odItemDate: { fontFamily: JAKARTA.bold, fontSize: 10.5, color: '#B91C1C' },
 });

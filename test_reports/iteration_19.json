@@ -1,0 +1,47 @@
+{
+  "summary": "FEATURE 'AI Tour: follow-up in agenda' — mobile (Expo/RN) verificata parzialmente su preview. TEST 1 (form Genera + pannelli FU/Overdue) PASS al 100%: entrambi i pannelli renderizzano con i testID corretti (aitour-followup-panel fucsia, aitour-overdue-panel rosso), dati corretti dal DB Supabase ('TEST FollowUp Bar · Milano · ore 10:00 (follow-up)' con checkbox spuntata di default; 'TEST Overdue Tabacchi · Milano · era per il 28/08' con checkbox NON spuntata di default), toggle checkbox funzionante (icona cambia checkbox <-> square-outline su tap). TEST 2/3/4/5 NON completabili nella preview per limite ambientale: la geocodifica Nominatim (https://nominatim.openstreetmap.org/search) è BLOCCATA da CORS sull'origine voom-ios.preview.emergentagent.com — 'Access to fetch ... has been blocked by CORS policy'. Senza geocode l'input Partenza=Indirizzo non produce lat/lng e il flusso di generazione fallisce con toast 'Errore nella pianificazione' + errore Supabase 22P02 (uuid vuoto). Non è un bug della feature follow-up: sono blocked upstream dal geocoder. Panels di TEST 4 (Vista Settimanale) non renderizzati perché week.days è vuoto quando il plan fallisce. Cleanup DB completato: 0 customers TEST, 0 appointments, 0 tours residui su gdeintinis (verificato via SELECT).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "WeekTab / ai-tour week generator", "issue": "Quando la geocodifica dell'indirizzo di partenza fallisce (Nominatim CORS su preview / network down), il flow 'Pianifica settimana' produce l'errore Postgres 22P02 'invalid input syntax for type uuid: \"\"' invece di un guard early che fermi la richiesta con messaggio esplicito. Il fallback toast 'Errore nella pianificazione della settimana' è mostrato ma il vero problema (geocode ko / lat-lng mancanti) non è comunicato all'utente. Reference: components/aitour/WeekTab.tsx (funzione generate/plan) — controllare prima della chiamata RPC che start_lat/start_lng siano numeri finiti.", "testID": "week-overdue-panel/week-followup-panel-N", "priority": "MEDIA"}
+    ],
+    "integration_issues": [
+      {"flow": "Geocoding Nominatim in preview", "issue": "CORS: fetch verso https://nominatim.openstreetmap.org/search bloccato dall'origine di preview. Blocca tutti i test che richiedono Partenza=Indirizzo sul preview web (Test 2/3/4/5 in questo review). In Expo Go / build nativa il problema non si presenta perché non c'è policy CORS del browser. Nessun fix richiesto per il rilascio mobile; possibile mitigazione: proxy geocoder via backend /api/geocode o Nominatim con header User-Agent + endpoint self-hosted.", "affected_testIDs": ["aitour-agenda-followup-N", "week-overdue-panel", "week-followup-panel-N"]}
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "shadow* / props.pointerEvents (RN-Web)", "issue": "Warning di deprecazione già segnalati in iterazioni precedenti — non-blocking."},
+      {"component": "Supabase auth 'Legacy API key migration'", "issue": "Console log 'Auth: Legacy API key migration: local session invalidated' seguito da un ri-SIGN_IN automatico su ogni navigazione client-side verso /ai-tour. Non-blocking (auth self-recovery) ma introduce un flicker/attesa di ~1-2s. Da verificare se un logout istantaneo può causare fetch con agentId='' e panelli vuoti in altri flussi. Reference: /app/frontend/lib/supabase.ts o context di auth."}
+    ]
+  },
+  "test_report_links": [
+    "/app/frontend/scripts/seed_followup_test.mjs",
+    "/app/frontend/scripts/cleanup_followup_test.mjs",
+    "/app/frontend/scripts/verify_seed_query.mjs"
+  ],
+  "action_items": [
+    "TEST 1 confermato working — nessun fix richiesto sui pannelli form Genera.",
+    "TEST 2/3/4/5 vanno RIVERIFICATI in Expo Go o in build nativa (no CORS su native http client). In preview web non è possibile senza un proxy backend per Nominatim. Suggerito: aggiungere un endpoint /api/geocode (backend proxy) e usarlo come primary geocoder da mobile web preview; fallback Nominatim diretto in native.",
+    "ROBUSTEZZA WeekTab: nel generatore settimana aggiungere un guard 'if (!Number.isFinite(startLat) || !Number.isFinite(startLng)) return setErr(\"Impossibile geolocalizzare l'indirizzo di partenza\")' prima di chiamare la RPC — evita l'errore 22P02 e comunica il problema reale all'agente.",
+    "OPZIONALE: aggiungere testID sui date-chips di ai-tour.tsx (es. 'aitour-date-chip-{yyyy-mm-dd}') per rendere l'automazione più stabile.",
+    "OPZIONALE: aggiungere testID sui giorni della settimana WeekTab (es. 'week-day-{yyyy-mm-dd}') e sul bottone 'Pianifica settimana' ('week-plan-btn'). Attualmente il click funziona via text selector."
+  ],
+  "critical_code_review_comments": [
+    "lib/aitour/followups.ts: fetchFollowUpsForDates e fetchOverdueFollowUps sono corretti — la query filtra per agent_id + status='scheduled', il join su customers(business_name, city) è ok, la de-duplicazione per customerId funziona. Il rowToFollowUp gestisce time slice(11,16) — attenzione: se appointment_date viene ritornato in UTC (Z) e il locale è diverso da +00, l'ora mostrata potrebbe divergere da quella nell'app. Nei nostri seed abbiamo salvato senza TZ e il DB ha aggiunto '+00:00' — la UI mostra 'ore 10:00' correttamente.",
+    "app/ai-tour.tsx L413 overdueVisible = overdue.filter(!followUps.same customerId): correttamente nasconde nel pannello scaduti i clienti già presenti nel pannello del giorno — comportamento verificato.",
+    "tours.ts L80 is_follow_up: !!s.candidate.isFollowUp — chiave salvata correttamente in ai_tour_stops. NON verificata end-to-end la persistenza in DB in questa iterazione (Test 3 non eseguito).",
+    "components/aitour/WeekTab.tsx L461-491 week-overdue-panel: rendering corretto ma condizionato a weekOverdue.length>0 e week.days.length>0 (implicito nel .map post-panel). In preview web con Nominatim ko il plan fallisce e il pannello non appare — è per design ma l'UX potrebbe mostrare il pannello anche in caso di errore plan (i follow-up scaduti non dipendono dal plan)."
+  ],
+  "updated_files": [
+    "/app/frontend/scripts/seed_followup_test.mjs (nuovo — seed 2 clienti + 2 appuntamenti gdeintinis)",
+    "/app/frontend/scripts/cleanup_followup_test.mjs (nuovo — cleanup atomico test data)",
+    "/app/frontend/scripts/verify_seed_query.mjs (nuovo — diagnostica query follow-up)",
+    "/app/frontend/scripts/probe_appointments_schema.mjs (nuovo — probe schema RLS)"
+  ],
+  "success_rate": {"backend": "N/A (skip per direttiva)", "frontend": "TEST 1 100% (2/2 pannelli + toggle). TEST 2/3/4/5 non completati in preview web per CORS Nominatim. Feature nucleo dei pannelli è confermata working; la parte 'genera + persisti is_follow_up' richiede test in Expo Go / native."},
+  "seed_data_creation": "SEED (poi ELIMINATO): 2 clienti temporanei ('TEST FollowUp Bar' 45.4642/9.19, 'TEST Overdue Tabacchi' 45.47/9.20) su agent gdeintinis + 2 appointments (2026-09-05T10:00 follow_up scheduled su bar, 2026-08-28T11:00 follow_up scheduled su tabacchi). Cleanup finale eseguito: 0 residui verificati via SELECT (script cleanup_followup_test.mjs).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Per rieseguire Test 2/3/4/5 in preview web serve mitigare CORS Nominatim: (a) opzione più semplice: usare Expo Go via QR code (nessun CORS lato client nativo); (b) alternativa: aggiungere backend proxy /api/geocode?q=... che chiami Nominatim con proprio User-Agent e ritorni lat/lng, poi patchare frontend/lib/aitour/geocode per preferire il proxy quando siamo su web. Note ambiente: (1) TEST customers vanno seedati con questi campi NOT NULL: business_name, agent_id, city, province, address, latitude, longitude, vat_number (random 11 cifre), fiscal_code, postal_code, contact_name, contact_surname, notes, customer_type='bar', category='prospect' (valori accettati dal check constraint: 'prospect' verificato — altri da verificare), first_visit_date, last_visit_date. Il vat_number NULL è consentito ma qui abbiamo usato random per sicurezza. Appointments richiede created_by_id=agent uid. (2) Session Supabase su preview mostra 'Legacy API key migration' che invalida la session e si ri-autentica al giro successivo (self-heal in ~1-2s). Se agentId=='' nel primo render, useEffect di follow-up ritorna presto → pannelli vuoti finché la SIGNED_IN event non fa re-render. Nel test finale ho aggirato con page.wait_for_timeout(10s) su /ai-tour dopo goto. (3) Flow login: privacy-terms modal → 3 checkbox Dichiaro → Accetta e Continua → /login → email/pass → Accedi (nth(count-1) del text 'Accedi', il primo è il titolo).",
+  "rca_of_issue": "TEST 4 fail RCA: WeekTab plan fallisce con Supabase code 22P02 'invalid input syntax for type uuid: \"\"'. Origine: fetch fallito su Nominatim (CORS su preview browser) → geocoded start point undefined → uno dei parametri UUID passati alla RPC di generazione settimana risulta stringa vuota. Il vero blocker è la CORS policy del browser sul preview, non un bug della feature follow-up. Fix consigliato al main agent: (a) hardening client — non chiamare RPC se lat/lng non finiti, mostrare toast 'Indirizzo non geolocalizzato'; (b) infra — proxy geocode via backend /api/geocode (mitigato CORS)."
+}

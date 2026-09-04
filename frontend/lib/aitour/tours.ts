@@ -77,6 +77,7 @@ function buildStopRows(plan: TourPlan) {
     status: 'planned',
     ai_reason: s.candidate.reason,
     preferred_slots: s.candidate.preferredSlots || null,
+    is_follow_up: !!s.candidate.isFollowUp,
   }));
 }
 
@@ -213,6 +214,7 @@ export interface SavedStop {
   mandatory: boolean;
   status: string;
   ai_reason: string | null;
+  is_follow_up?: boolean;
   added_live?: boolean;
   added_by_admin?: boolean;
 }

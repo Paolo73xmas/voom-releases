@@ -359,7 +359,7 @@ export default function ProductsScreen() {
   const filteredProducts = useMemo(() => debouncedSearch.trim()
     ? products.filter(p =>
         (p.short_description || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        p.sku.toLowerCase().includes(debouncedSearch.toLowerCase())
+        (p.sku || '').toLowerCase().includes(debouncedSearch.toLowerCase())
       )
     : products, [debouncedSearch, products]);
 

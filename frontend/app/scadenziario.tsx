@@ -72,8 +72,8 @@ export default function ScadenziarioScreen() {
     const t = search.trim().toLowerCase();
     if (!t) return rows;
     return rows.filter((r) =>
-      r.invoiceNumber.toLowerCase().includes(t) ||
-      r.customerName.toLowerCase().includes(t) ||
+      (r.invoiceNumber || '').toLowerCase().includes(t) ||
+      (r.customerName || '').toLowerCase().includes(t) ||
       (r.agentName || '').toLowerCase().includes(t)
     );
   }, [rows, search]);

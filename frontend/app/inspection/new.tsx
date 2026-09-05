@@ -224,8 +224,8 @@ export default function NewInspectionScreen() {
   };
 
   const filteredCustomers = customers.filter(c =>
-    c.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.city.toLowerCase().includes(searchQuery.toLowerCase())
+    (c.business_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.city || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

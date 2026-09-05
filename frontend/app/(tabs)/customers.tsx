@@ -120,12 +120,14 @@ export default function CustomersScreen() {
   const filteredCustomers = useMemo(() => {
     if (!debouncedSearch.trim()) return customers;
     const term = debouncedSearch.toLowerCase();
-    return customers.filter(c =>
-      c.business_name.toLowerCase().includes(term) ||
-      c.city.toLowerCase().includes(term) ||
-      c.contact_name.toLowerCase().includes(term) ||
-      c.contact_phone.includes(term)
-    );
+    // Null-safe: city/contact_name/contact_phone possono essere null a DB
+    return customers.filter(c => {
+      const haystack = [c.business_name, c.city, c.contact_name, c.contact_phone]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(term);
+    });
   }, [debouncedSearch, customers]);
 
   const onRefresh = useCallback(async () => {

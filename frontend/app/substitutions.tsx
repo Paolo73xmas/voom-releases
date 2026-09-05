@@ -377,7 +377,7 @@ export default function SubstitutionsScreen() {
             const tokens = customerSearch.toLowerCase().split(/\s+/).filter(Boolean);
             const filteredCust = tokens.length > 0
               ? customers.filter(c => tokens.every(t =>
-                  c.business_name.toLowerCase().includes(t) ||
+                  (c.business_name || '').toLowerCase().includes(t) ||
                   (c.city || '').toLowerCase().includes(t) ||
                   (c.province || '').toLowerCase().includes(t)))
               : customers;

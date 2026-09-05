@@ -23,6 +23,7 @@ import { supabase } from '../../lib/supabase';
 import { getDraftCount } from '../../lib/drafts';
 import { getCache, setCache, clearCache } from '../../lib/memory-cache';
 import { fetchScadenziarioCached, ScadenziarioKpi } from '../../lib/api/scadenziario';
+import { fetchOverdueFollowUps, type OverdueFollowUp } from '../../lib/aitour/followups';
 import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
 import { Avatar } from '../../components/Avatar';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
@@ -55,6 +56,9 @@ export default function Dashboard() {
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [aptsLoaded, setAptsLoaded] = useState(false);
+  // Follow-up scaduti mai gestiti (ultimi 60 giorni): promemoria in dashboard
+  const [overdueFu, setOverdueFu] = useState<OverdueFollowUp[]>([]);
+  const [overdueExpanded, setOverdueExpanded] = useState(false);
 
   const loadStats = async (force: boolean = false) => {
     if (!user) return;
@@ -172,6 +176,7 @@ export default function Dashboard() {
       getDraftCount().then(setDraftCount);
       loadUpcomingAppointments();
       loadAiTourBadge();
+      loadOverdueFollowUps();
       // Stats: respects 60s cache, only refetches if expired
       loadStats(false);
       return () => setStatusBarStyle('light');
@@ -193,6 +198,16 @@ export default function Dashboard() {
       if (!error) setAiTourBadge(count || 0);
     } catch (e) {
       console.warn('[Dashboard] AI Tour badge error:', e);
+    }
+  };
+
+  // Follow-up dei giorni passati mai gestiti (status ancora 'scheduled'): nessun cliente dimenticato
+  const loadOverdueFollowUps = async () => {
+    if (!user) return;
+    try {
+      setOverdueFu(await fetchOverdueFollowUps(user.id));
+    } catch (e) {
+      console.warn('[Dashboard] follow-up scaduti:', e);
     }
   };
 
@@ -235,7 +250,7 @@ export default function Dashboard() {
     await loadStats(true);
     const dc = await getDraftCount();
     setDraftCount(dc);
-    await Promise.all([loadUpcomingAppointments(), loadScadenziario(true)]);
+    await Promise.all([loadUpcomingAppointments(), loadScadenziario(true), loadOverdueFollowUps()]);
     setRefreshing(false);
   };
 
@@ -364,6 +379,76 @@ export default function Dashboard() {
           </View>
         )}
       </Animated.View>
+
+      {/* Follow-up SCADUTI mai gestiti — promemoria per non dimenticare nessun cliente */}
+      {overdueFu.length > 0 && (
+        <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.odCard} testID="dashboard-overdue-panel">
+          <View style={styles.odHeader}>
+            <View style={styles.odIconChip}>
+              <Ionicons name="alarm-outline" size={16} color="#DC2626" />
+            </View>
+            <Text style={styles.odTitle}>
+              {overdueFu.length === 1 ? '1 follow-up scaduto' : `${overdueFu.length} follow-up scaduti`} da gestire
+            </Text>
+            <View style={styles.odCountBadge}>
+              <Text style={styles.odCountText}>{overdueFu.length}</Text>
+            </View>
+          </View>
+          <Text style={styles.odHint}>Promemoria in agenda mai gestiti negli ultimi 60 giorni. Tocca un cliente per aprire la scheda.</Text>
+          {(overdueExpanded ? overdueFu : overdueFu.slice(0, 3)).map((o) => (
+            <TouchableOpacity
+              key={o.customerId}
+              style={styles.odRow}
+              onPress={() => {
+                hap.light();
+                router.push(`/customer/${o.customerId}`);
+              }}
+              activeOpacity={0.7}
+              testID={`dashboard-overdue-item-${o.customerId}`}
+            >
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.odRowName} numberOfLines={1}>
+                  {o.businessName}
+                  {o.city ? <Text style={styles.odRowCity}> · {o.city}</Text> : null}
+                </Text>
+                {o.reason ? (
+                  <Text style={styles.odRowReason} numberOfLines={1}>{o.reason}</Text>
+                ) : null}
+              </View>
+              <Text style={styles.odRowDate}>
+                era per il {new Date(`${o.date}T12:00:00`).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
+              </Text>
+              <Ionicons name="chevron-forward" size={15} color={DS.inkMuted} />
+            </TouchableOpacity>
+          ))}
+          {overdueFu.length > 3 && (
+            <TouchableOpacity
+              onPress={() => {
+                hap.light();
+                setOverdueExpanded(!overdueExpanded);
+              }}
+              activeOpacity={0.7}
+              hitSlop={8}
+            >
+              <Text style={styles.odExpand}>
+                {overdueExpanded ? 'Mostra meno' : `Mostra tutti (${overdueFu.length})`}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={styles.odCta}
+            onPress={() => {
+              hap.medium();
+              router.push('/ai-tour');
+            }}
+            activeOpacity={0.8}
+            testID="dashboard-overdue-cta"
+          >
+            <Ionicons name="sparkles" size={14} color="#FFF" />
+            <Text style={styles.odCtaText}>Recuperali in un giro con AI Tour</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       {/* Panoramica — griglia stats 2x2 */}
       <Text style={styles.sectionTitle}>Panoramica</Text>
@@ -621,6 +706,61 @@ const styles = StyleSheet.create({
     color: DS.inkMuted,
     flex: 1,
   },
+
+  // Follow-up scaduti (promemoria)
+  odCard: {
+    backgroundColor: DS.surface,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 28,
+  },
+  odHeader: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  odIconChip: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  odTitle: { flex: 1, fontFamily: JAKARTA.bold, fontSize: 14, color: DS.ink },
+  odCountBadge: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+  },
+  odCountText: { fontFamily: JAKARTA.bold, fontSize: 12, color: '#FFF' },
+  odHint: { fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted, marginTop: 5, marginBottom: 4, lineHeight: 15 },
+  odRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 9,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: DS.border,
+  },
+  odRowName: { fontFamily: JAKARTA.semibold, fontSize: 13, color: DS.ink },
+  odRowCity: { fontFamily: JAKARTA.regular, color: DS.inkMuted },
+  odRowReason: { fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted, marginTop: 1 },
+  odRowDate: { fontFamily: JAKARTA.bold, fontSize: 11, color: '#DC2626' },
+  odExpand: { fontFamily: JAKARTA.semibold, fontSize: 12, color: DS.brand, marginTop: 8, textAlign: 'center' },
+  odCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: '#DC2626',
+    borderRadius: 12,
+    paddingVertical: 11,
+    marginTop: 10,
+  },
+  odCtaText: { fontFamily: JAKARTA.bold, fontSize: 12.5, color: '#FFF', letterSpacing: 0.2 },
 
   // Stats 2x2
   statsGrid: {

@@ -377,3 +377,9 @@ Richiesta utente: in zone con rete dati scarsa gran parte dei processi AI Tour f
 ## [06/09] Check globale app (richiesto dall'utente) — iteration_20
 - Testing agent PASS 100%: dashboard/widget scaduti, mappa (563 punti), clienti+ricerca (fix crash confermato), ordini+ricerca, menu; AI Tour: pannelli follow-up + generazione con badge (gdeintinis, seed+cleanup 0 residui), Dillo all'AI (BriefModal) si apre, read-only con roberto.beretta (7 scaduti reali visibili in form e dashboard).
 - Unico rilievo (MEDIA): hang 'PIANIFICAZIONE...' della settimana in un run del tester; NON riprodotto dal main agent (roberto, week OK in 8s con pannello scaduti reale). Mitigazione: timeout 15s su loadNeverVisitedFillers in WeekTab (Promise.race, in caso di timeout pianifica senza fillers). tsc/lint puliti.
+
+## [06/09-b] Verifica impatto ultimi commit web (4 nuovi dopo 593604c)
+- 3c891f9 + 7e5d3b1: solo documentazione AI/zip — zero impatto.
+- 4dbe2af Security hardening (migrations GIÀ applicate al DB condiviso): DB-01 zz_customer_merge_backup revoke (mobile non la usa), DB-04 tabaccherie_ricerca solo authenticated (mobile usa la tabella `tabaccherie`, non toccata), DB-02/SEC-003 bucket assegni privato + token monouso (mobile non usa assegni/check_upload_tokens), A4 bucket CV privato (non usato). Bucket mobile visit-photos NON toccato; order-photos/whatsapp-media esplicitamente esclusi dall'hardening.
+- 8b55120 Jack MCP (server ChatGPT esterno): zero impatto.
+- VERIFICA RUNTIME (REST, gdeintinis): tabaccherie SELECT ok, ai_tour_free_tabaccherie ok (firma app), ai_tour_comune_centroid ok, find_customer_by_vat ok. NESSUN allineamento mobile necessario per questi 4 commit. Restano in backlog (da giro precedente): Tab Bozze/Preventivi (b2e2983+a7ece71+593604c), fix totali ordini (3a4ba76, 92f8c8f), provvigioni estero (admin).

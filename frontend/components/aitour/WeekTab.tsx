@@ -121,7 +121,11 @@ export function WeekTab({ agentId, settings, resolvePoint, onGenerateDay, preset
         }
         if (v.includeFillers) {
           try {
-            const extra = await loadNeverVisitedFillers(agentId, all, v.useTerritory ? myZones : [], settings, 150);
+            // Timeout esplicito: se il registro risponde lento, si pianifica senza fillers (mai hang)
+            const extra = await Promise.race([
+              loadNeverVisitedFillers(agentId, all, v.useTerritory ? myZones : [], settings, 150),
+              new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout fillers (15s)')), 15000)),
+            ]);
             if (extra.length > 0) all = [...all, ...scoreCandidates(extra, settings)];
           } catch (err) {
             console.warn('[AITour][week] fillers mai visitate:', err);

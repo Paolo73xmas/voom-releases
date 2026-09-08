@@ -24,6 +24,7 @@ export function TourNameDialog({ visible, title, description, saving, progress, 
           <Text style={styles.desc}>{description}</Text>
           <Text style={styles.label}>Nome del tour (facoltativo)</Text>
           <TextInput
+            testID="aitour-tourname-input"
             style={styles.input}
             value={name}
             onChangeText={setName}
@@ -39,10 +40,10 @@ export function TourNameDialog({ visible, title, description, saving, progress, 
             </View>
           ) : null}
           <View style={styles.btnRow}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} disabled={saving} activeOpacity={0.7}>
+            <TouchableOpacity testID="aitour-tourname-cancel" style={styles.cancelBtn} onPress={onClose} disabled={saving} activeOpacity={0.7}>
               <Text style={styles.cancelText}>Annulla</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={() => onConfirm(name.trim())} disabled={saving} activeOpacity={0.8}>
+            <TouchableOpacity testID="aitour-tourname-save" style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={() => onConfirm(name.trim())} disabled={saving} activeOpacity={0.8}>
               {saving ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="save-outline" size={15} color="#FFF" />}
               <Text style={styles.saveText}>Salva</Text>
             </TouchableOpacity>

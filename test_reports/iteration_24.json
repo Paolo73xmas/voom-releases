@@ -1,0 +1,70 @@
+{
+  "summary": "FASE 2/3 BLOCCATE (identico blocco di iteration_23, NON un falso allarme). Root cause CONFERMATO empiricamente: dopo signInWithPassword da UI Web e dopo qualsiasi page.goto, localStorage contiene SOLO 'supabase_publishable_key_migration_2026_07=1', MAI 'sb-gorwxfzzyzxmxnizmebw-auth-token'. Conseguenza: useAuthStore.user è null, quindi agentId='' in ai-tour.tsx. Prova schiacciante: la GET Supabase in /rest/v1/customers viene chiamata con `agent_id=eq.` (vuoto) → HTTP 400 → results=[] → nessun risultato per la ricerca 'SMOKE Tappa' → non è possibile aggiungere le 3 tappe obbligatorie. Verificato in due modi indipendenti: (i) via response listener Playwright, URL: rest/v1/customers?...&agent_id=eq.&latitude=not.is.null&or=... → 400; (ii) via Node script con lo stesso agent (uid 8046b9d5...) e stessa query .or(): 200 con 3 risultati SMOKE Tappa 1/2/3 (latitude/longitude popolati). Su Playwright, il tentativo di login via placeholder 'Email' fallisce anche perché su root '/' l'app NON mostra il form di login dopo un goto (probabile mancata gate su rotte protette o cache di route Expo). NIENTE tour SMOKE 3Tappe creato, NIENTE ordine, NIENTE visite/eventi live → FASE 4 cleanup di ai_tour/orders/visits non necessario. I 6 clienti SMOKE seed restano intatti per il retest. Nessun testID mancante identificato bloccante: il blocco è puramente autenticazione. Bug sessione: NON un falso allarme.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "authStore / lib/supabase.ts — session persistence on Web (REGRESSION unresolved)",
+        "issue": "Dopo signInWithPassword riuscito, NESSUNA chiave 'sb-<ref>-auth-token' viene mai scritta in localStorage. Unica chiave: supabase_publishable_key_migration_2026_07=1. useAuthStore.user resta null, agentId='' in ai-tour.tsx (L~460). Qualsiasi query Supabase filtrata per agent_id restituisce 400 (es. customers.select?agent_id=eq.& → 400). Prova: iteration_24 logga la RESP Playwright '400 https://gorwxfzzyzxmxnizmebw.supabase.co/rest/v1/customers?...agent_id=eq.&...'. La stessa query da Node con lo stesso login torna 200 con dati → problema è nello storage adapter Web / persistSession di supabase-js con publishable key. Ipotesi (invariata da iter_23): mancano flowType:'pkce' e storageKey esplicito in createClient (lib/supabase.ts L44-50). runApiKeyMigration è già flag-gated (flag già presente in LS) quindi NON è la causa attuale.",
+        "testID": "N/A",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "Route guarding / login redirect",
+        "issue": "page.goto('https://voom-ios.preview.emergentagent.com/ai-tour') senza sessione RENDERA la schermata AI Tour comunque (senza user). Non c'è redirect a /login. Va bene per la SPA ma rende difficile la diagnosi: l'utente/testing pensa di essere loggato mentre invece agentId=''. Sarebbe opportuno un redirect esplicito o un badge visibile 'Sessione non attiva'.",
+        "testID": "N/A",
+        "priority": "HIGH"
+      },
+      {
+        "component": "ai-tour.tsx — search agentId guard",
+        "issue": "useEffect di ricerca clienti (L331-350) non ha guard su `if (!agentId) return;`. Con agentId='' viene comunque inviato .eq('agent_id', '') → 400 in Supabase. Aggiungere: `if (!agentId || search.trim().length < 2) { setResults([]); return; }`.",
+        "testID": "N/A",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "ai-tour.tsx — generate silent guard",
+        "issue": "L465 `if (!agentId) return;` ancora silenzioso — ripetizione da iter_23. Aggiungere setErrMsg utente-visibile o router.replace('/login').",
+        "testID": "aitour-generate-btn",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Search visite obbligatorie in AI Tour",
+        "issue": "Su Web senza sessione persistente, ricerca ritorna sempre 400. E2E impossibile senza risolvere l'auth persistence.",
+        "affected_testIDs": ["aitour-generate-btn", "search-input"]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/f2_search_dbg.png",
+    "/tmp/f2_search_scroll.png",
+    "/tmp/f2_before_gen.png",
+    "/tmp/smoke_seed_ids.json (invariato dalla iter_22)"
+  ],
+  "action_items": [
+    "CRITICAL: risolvere la persistenza sessione Supabase su Web. Passi concreti proposti: (a) In /app/frontend/lib/supabase.ts aggiungere alla createClient: `storageKey: 'sb-<project-ref>-auth-token'` e `flowType: 'pkce'`. (b) Aggiungere log temporanei in customStorage.setItem/getItem per stampare le chiavi effettivamente scritte dopo signInWithPassword — se non arriva mai una chiave contenente 'auth-token', il problema è supabase-js che con publishable key non scrive la sessione. (c) Verificare che runApiKeyMigration NON venga eseguito dopo l'inizializzazione del client (già flag-gated, ma controllare timing). (d) Fallback esplicito: in authStore, dopo signInWithPassword, chiamare `await supabase.auth.setSession({...})` con la sessione appena ricevuta, così da forzare persistSession.",
+    "MEDIUM: In ai-tour.tsx L331 aggiungere guard `if (!agentId) return;` al useEffect di ricerca clienti per evitare 400 continui in console.",
+    "HIGH: Non un'azione bloccante ma diagnostico: aggiungere in AITourScreen un banner rosso 'Sessione scaduta, riaccedi' quando `!agentId` — così i test capiscono immediatamente lo stato.",
+    "I 6 clienti SMOKE seed RESTANO in DB per il retest (agent 8046b9d5-a920-499c-85d2-0755c9cce262). Nessuna cleanup eseguita perché nessun dato nuovo creato in questa iterazione.",
+    "Dopo aver risolto la persistenza sessione, il testing agent dovrà rieseguire FASE 2 (script unico) + FASE 3 (Tour Live) + FASE 4 (cleanup)."
+  ],
+  "critical_code_review_comments": [
+    "lib/supabase.ts L44-50: manca `storageKey` esplicito e `flowType: 'pkce'`. Con publishable key supabase-js v2.45+ raccomanda entrambi.",
+    "authStore.ts L75-89 runApiKeyMigration già flag-gated → probabilmente NON è più la causa (il flag è già in LS). Focus altrove.",
+    "ai-tour.tsx L331-350 (search useEffect): manca `if (!agentId) return;` — quando agentId='' emette una GET /rest/v1/customers?...agent_id=eq. che ritorna 400 e riempie la console di errori.",
+    "ai-tour.tsx L465: guard silenziosa `if (!agentId) return;` in generate — nessun feedback utente."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (skip)",
+    "frontend": "FASE 2: 0% (blocked su ricerca clienti a causa dell'auth). FASE 3: NON eseguita (dipende da FASE 2). FASE 4: NON necessaria (nessun dato nuovo creato)."
+  },
+  "seed_data_creation": "Nessuna nuova. I 6 SMOKE customers (94728cad..., 26f01349..., 6270c45f..., 000ca9b9..., 623f096d..., 220043ae...) di agent gdeintinis restano nel DB.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "PREREQUISITO ASSOLUTO (non aggirabile): risolvere la persistenza sessione Supabase su Web. Sanity check UNO: dopo il login gdeintinis in Playwright, `page.evaluate('() => Object.keys(localStorage)')` DEVE contenere almeno una chiave che matcha /auth-token/. In iteration_24 la chiave è ASSENTE — confermato empiricamente. Sanity check DUE: intercettare le response con `page.on('response', ...)` e verificare che NON compaiano URL con `agent_id=eq.&` (vuoto). Se questi due sanity check passano, riprendere il playbook: (1) grant_permissions + set_geolocation prima del goto; (2) login gdeintinis; (3) privacy: get_by_text(/^Dichiaro/).nth(0..2).click + get_by_text('Accetta e Continua'); (4) goto /ai-tour; (5) chip aitour-chip-posizione-corrente; (6) get_by_text('Domani',exact=True); (7) placeholder 'Cerca per nome, referente, indirizzo o città...' fill 'SMOKE Tappa 1' → wait 1.5s → get_by_text('SMOKE Tappa 1', exact=False).last.click; ripetere per 2 e 3; (8) aitour-generate-btn; (9) se compare aitour-multiday-confirm → click; (10) attendere aitour-edit-btn; (11) FASE 2 verifiche a-e: apri modal, aitour-edit-down-1 + aitour-apply-order-btn; rimuovi aitour-edit-remove-1 + apply; aitour-edit-search + aitour-edit-add-mandatory-<key> + apply; aitour-save-btn → aitour-tourname-input 'SMOKE 3Tappe' → aitour-tourname-save → attendi 'Salvato'; (12) FASE 3: apri 'I miei Tour' → apri 'SMOKE 3Tappe' → 'Avvia Tour' → context.on('page') per intercettare popup maps → 'Sono arrivato' → order-collection... (playbook completo nel brief); (13) FASE 4 cleanup completo nell'ordine indicato. Il cleanup dei 6 clienti SMOKE deve avvenire SOLO al termine dell'intera iterazione B+C.",
+  "rca_of_issue": "ROOT CAUSE (conferma iter_23): supabase-js v2 con publishable key + persistSession:true + customStorage(localStorage) su Expo Web NON scrive mai la chiave di sessione. Ricerca in /rest/v1/customers usa `.eq('agent_id', agentId)` con agentId='' → PostgREST rifiuta con 400 perché la comparazione uuid=eq.'' è invalida. Riproduzione: (1) goto https://voom-ios.preview.emergentagent.com/ai-tour; (2) `Object.keys(localStorage)` → solo ['supabase_publishable_key_migration_2026_07']; (3) fill placeholder Cerca 'SMOKE'; (4) response listener cattura RESP 400 https://.../rest/v1/customers?...&agent_id=eq.&... . MITIGAZIONE (main agent): aggiungere in createClient (lib/supabase.ts) `storageKey: 'sb-gorwxfzzyzxmxnizmebw-auth-token'` e `flowType: 'pkce'`; verificare in customStorage.setItem con console.log che venga effettivamente chiamato con quella chiave subito dopo signInWithPassword. Se ancora niente, fallback in authStore: post-signIn chiamare `supabase.auth.setSession({access_token, refresh_token})` esplicitamente per forzare la scrittura."
+}

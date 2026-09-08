@@ -329,7 +329,7 @@ export default function AITourScreen() {
 
   // Ricerca clienti per visite obbligatorie
   useEffect(() => {
-    if (search.trim().length < 2) {
+    if (!agentId || search.trim().length < 2) {
       setResults([]);
       return;
     }
@@ -1608,6 +1608,7 @@ export default function AITourScreen() {
   const renderChip = (label: string, active: boolean, onPress: () => void, disabled = false, key?: string) => (
     <TouchableOpacity
       key={key || label}
+      testID={`aitour-chip-${(key || label).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
       style={[styles.chip, active && styles.chipActive, disabled && styles.chipDisabled]}
       onPress={() => {
         if (disabled) return;
@@ -1754,11 +1755,11 @@ export default function AITourScreen() {
         <View style={styles.timeCol}>
           <Text style={styles.label}>Ora inizio</Text>
           <View style={styles.stepper}>
-            <TouchableOpacity style={styles.stepBtn} onPress={() => stepTime('startTime', -15)} hitSlop={8}>
+            <TouchableOpacity testID="aitour-starttime-minus" style={styles.stepBtn} onPress={() => stepTime('startTime', -15)} hitSlop={8}>
               <Ionicons name="remove" size={18} color={DS.ink2} />
             </TouchableOpacity>
             <Text style={styles.stepValue}>{form.startTime}</Text>
-            <TouchableOpacity style={styles.stepBtn} onPress={() => stepTime('startTime', 15)} hitSlop={8}>
+            <TouchableOpacity testID="aitour-starttime-plus" style={styles.stepBtn} onPress={() => stepTime('startTime', 15)} hitSlop={8}>
               <Ionicons name="add" size={18} color={DS.ink2} />
             </TouchableOpacity>
           </View>
@@ -1766,11 +1767,11 @@ export default function AITourScreen() {
         <View style={styles.timeCol}>
           <Text style={styles.label}>Ora fine</Text>
           <View style={styles.stepper}>
-            <TouchableOpacity style={styles.stepBtn} onPress={() => stepTime('endTime', -15)} hitSlop={8}>
+            <TouchableOpacity testID="aitour-endtime-minus" style={styles.stepBtn} onPress={() => stepTime('endTime', -15)} hitSlop={8}>
               <Ionicons name="remove" size={18} color={DS.ink2} />
             </TouchableOpacity>
             <Text style={styles.stepValue}>{form.endTime}</Text>
-            <TouchableOpacity style={styles.stepBtn} onPress={() => stepTime('endTime', 15)} hitSlop={8}>
+            <TouchableOpacity testID="aitour-endtime-plus" style={styles.stepBtn} onPress={() => stepTime('endTime', 15)} hitSlop={8}>
               <Ionicons name="add" size={18} color={DS.ink2} />
             </TouchableOpacity>
           </View>
@@ -1970,7 +1971,7 @@ export default function AITourScreen() {
       )}
 
       {/* Genera */}
-      <TouchableOpacity style={styles.generateBtn} onPress={generate} disabled={generating} activeOpacity={0.8}>
+      <TouchableOpacity testID="aitour-generate-btn" style={styles.generateBtn} onPress={generate} disabled={generating} activeOpacity={0.8}>
         <Ionicons name="sparkles" size={18} color="#FFF" />
         <Text style={styles.generateBtnText}>GENERA CON AI</Text>
       </TouchableOpacity>
@@ -2047,6 +2048,7 @@ export default function AITourScreen() {
           )}
           {!readOnly && (
             <TouchableOpacity
+              testID="aitour-save-btn"
               style={[styles.actionBtn, styles.saveBtn, savedTourId != null && styles.savedBtn]}
               onPress={() => { hap.light(); setSaveNameOpen(true); }}
               disabled={saving || savedTourId != null}
@@ -2515,10 +2517,10 @@ export default function AITourScreen() {
               richiesta: sarà una tua scelta se rientrare davvero al punto di partenza o fermarti dove finisce il giro
               e riprendere da lì.
             </Text>
-            <TouchableOpacity style={styles.multiDayYes} onPress={continueMultiDay} activeOpacity={0.8}>
+            <TouchableOpacity testID="aitour-multiday-confirm" style={styles.multiDayYes} onPress={continueMultiDay} activeOpacity={0.8}>
               <Text style={styles.multiDayYesText}>Sì, crea più giornate</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.multiDayNo} onPress={() => { hap.light(); setMultiDayAsk(null); }} activeOpacity={0.7}>
+            <TouchableOpacity testID="aitour-multiday-cancel" style={styles.multiDayNo} onPress={() => { hap.light(); setMultiDayAsk(null); }} activeOpacity={0.7}>
               <Text style={styles.multiDayNoText}>No, solo questa giornata</Text>
             </TouchableOpacity>
           </View>

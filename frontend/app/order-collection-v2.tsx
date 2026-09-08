@@ -1145,8 +1145,10 @@ export default function OrderCollectionV2() {
       if (eligible.length > 0 && discountAmount > 0) {
         const eligibleMapped = eligible.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
         const distributed = distributeDiscountToItems(eligibleMapped, discountAmount);
+        // ✅ Parità web: il prezzo unitario è GIÀ scontato (spalmato), quindi discount_percent
+        // resta 0 — altrimenti il ricalcolo del totale lato server applica il 25% due volte.
         finalItems = [
-          ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 25, original_unit_price: d.original_unit_price })),
+          ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 0, original_unit_price: d.original_unit_price })),
           ...excluded.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 })),
         ];
       } else {

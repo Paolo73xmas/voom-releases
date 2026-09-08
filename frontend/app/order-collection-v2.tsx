@@ -963,6 +963,20 @@ export default function OrderCollectionV2() {
     });
   };
 
+  // ✅ Parità web + fix blocco ordine: la rottamazione scelta si azzera quando non è più valida
+  // o la sua sezione non è più visibile (carrello sotto soglia, prodotti Rott.No, ordine Estero,
+  // CashBack o Sconto Benvenuto attivi). Senza questo reset il submit veniva bloccato da
+  // "Inserisci la descrizione della merce da rottamare" con il campo descrizione irraggiungibile.
+  useEffect(() => {
+    if (rottamazioneAmount <= 0) return;
+    const sectionHidden = isForeignOrder || cashBackToUse > 0 || scontoBenvenuto;
+    if (sectionHidden || !getAvailableRottamazioneLots().includes(rottamazioneAmount)) {
+      setRottamazioneAmount(0);
+      setRottamazioneDescription('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart, isForeignOrder, cashBackToUse, scontoBenvenuto, rottamazioneLots, rottamazioneMultiplier, rottamazioneIvaRate, rottamazioneAmount]);
+
   // ═══════════════════════════════════════════════════
   // CART MANAGEMENT
   // ═══════════════════════════════════════════════════
@@ -1013,7 +1027,7 @@ export default function OrderCollectionV2() {
   const clearCart = () => {
     Alert.alert('Svuota carrello', 'Sei sicuro?', [
       { text: 'Annulla', style: 'cancel' },
-      { text: 'Svuota', style: 'destructive', onPress: () => setCart([]) },
+      { text: 'Svuota', style: 'destructive', onPress: () => { setCart([]); setRottamazioneAmount(0); setRottamazioneDescription(''); } },
     ]);
   };
 
@@ -1528,7 +1542,13 @@ export default function OrderCollectionV2() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[s.customerRow, selectedCustomer?.id === item.id && s.customerRowSelected]}
-            onPress={() => setSelectedCustomer(item)}
+            onPress={() => {
+              // Parità web: al cambio cliente si azzerano rottamazione e CashBack
+              setSelectedCustomer(item);
+              setRottamazioneAmount(0);
+              setRottamazioneDescription('');
+              setCashBackToUse(0);
+            }}
           >
             <Ionicons name={selectedCustomer?.id === item.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={selectedCustomer?.id === item.id ? '#7C3AED' : '#D1D5DB'} />
             <View style={{ flex: 1, marginLeft: 10 }}>

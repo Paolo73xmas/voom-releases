@@ -16,6 +16,7 @@ interface OrderStats {
 }
 
 interface CustomerRow {
+  disabled?: boolean;
   id: string;
   business_name: string;
   category: string;
@@ -187,6 +188,7 @@ function toCandidate(
 }
 
 export interface CandidatePool {
+  registry?: TourCandidate[];
   clients: TourCandidate[];
   prospects: TourCandidate[];
   orphans: TourCandidate[];
@@ -237,16 +239,23 @@ export function isNoInterestBlocked(c: TourCandidate, block: NoInterestBlock): b
 }
 
 export async function loadCandidates(agentId: string, settings: AiTourSettings): Promise<CandidatePool> {
-  const { data: customers, error } = await supabase
+  if (!agentId) throw new Error('Sessione agente non disponibile');
+  const customers: CustomerRow[] = [];
+  for (let offset = 0; ; offset += 500) {
+  const { data, error } = await supabase
     .from('customers')
     .select('id, business_name, category, address, city, province, latitude, longitude, last_visit_date, last_order_date, notes, estimated_revenue, tabaccheria_id, project_type, preferred_visit_slots, excluded_visit_days')
     .eq('agent_id', agentId)
+    .eq('disabled', false)
     .not('latitude', 'is', null)
-    .not('longitude', 'is', null);
+    .not('longitude', 'is', null).order('id').range(offset, offset + 499);
   if (error) throw error;
+  customers.push(...(data || []) as CustomerRow[]);
+  if (!data || data.length < 500) break;
+  }
 
   const rows = ((customers || []) as CustomerRow[]).filter(
-    (r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude))
+    (r) => !r.disabled && Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude))
   );
   const clientRows = rows.filter((r) => r.category === 'client');
   const prospectRows = rows.filter((r) => r.category === 'prospect' || r.category === 'lead');
@@ -283,6 +292,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
       .from('tabaccherie')
       .select('id, denominazione, codice_rivendita, indirizzo, comune, provincia, gps_lat, gps_lng, customer_id')
       .in('id', batch)
+      .eq('chiusa', false)
       .not('gps_lat', 'is', null)
       .not('gps_lng', 'is', null);
     if (tabErr) {
@@ -294,9 +304,12 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
     const crmNames = new Map<string, string>();
     const crmSlots = new Map<string, unknown>();
     const crmExDays = new Map<string, unknown>();
+    const disabledCustomers = new Set<string>();
     if (linkedIds.length > 0) {
-      const { data: linked } = await supabase.from('customers').select('id, business_name, preferred_visit_slots, excluded_visit_days').in('id', linkedIds);
+      const { data: linked, error: linkedError } = await supabase.from('customers').select('id, business_name, preferred_visit_slots, excluded_visit_days, disabled').in('id', linkedIds);
+      if (linkedError) throw linkedError;
       for (const c of linked || []) {
+        if (c.disabled) disabledCustomers.add(c.id);
         crmNames.set(c.id as string, (c.business_name as string) || '');
         crmSlots.set(c.id as string, (c as { preferred_visit_slots?: unknown }).preferred_visit_slots);
         crmExDays.set(c.id as string, (c as { excluded_visit_days?: unknown }).excluded_visit_days);
@@ -308,6 +321,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
       const lng = Number(t.gps_lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
       const linkedCustomerId = (t.customer_id as string | null) || null;
+      if (linkedCustomerId && disabledCustomers.has(linkedCustomerId)) continue;
       orphans.push({
         key: `orphan:${t.id}`,
         entityType: 'orphan',
@@ -391,6 +405,7 @@ export async function loadFreeTabaccherie(
   settings: AiTourSettings,
   filters: FreeTabFilters = {},
   limit = 60,
+  throwOnError = false,
 ): Promise<TourCandidate[]> {
   const { data, error } = await supabase.rpc('ai_tour_free_tabaccherie', {
     p_min_lat: bounds.minLat,
@@ -406,8 +421,10 @@ export async function loadFreeTabaccherie(
   });
   if (error) {
     console.warn('[AITour][data] ai_tour_free_tabaccherie:', error);
+    if (throwOnError) throw new Error('Ricerca nel registro tabaccherie non disponibile: riprova. Non è un risultato senza soggetti.');
     return [];
   }
+  if (throwOnError && data && data.length >= limit) throw new Error('Area di sviluppo troppo ampia per una ricerca completa: riduci raggio o corridoio e riprova');
   const noBlock = await getNoInterestBlock();
   const out: TourCandidate[] = [];
   for (const t of (data || []) as { id: string; denominazione: string | null; codice_rivendita: string | null; indirizzo: string | null; comune: string | null; provincia: string | null; lat: number; lng: number; assigned: boolean | null }[]) {

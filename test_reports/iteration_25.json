@@ -1,0 +1,87 @@
+{
+  "summary": "Backend AI Tour parse-brief v4.1 verificato con pytest (6/6 PASS, incluse regressioni capability 409 e JSON malformed 502 con fake LLM). Frontend preview mobile carica correttamente, login reale riuscito e token auth presente in localStorage, ma il flusso 'Dillo all'AI' resta bloccato da errore UI 'Sessione agente non disponibile' (agentId non idratato nel modulo brief). Nessuna scrittura su dati Supabase reali eseguita durante i test UI (blocco writes attivo).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "BriefModal / loadBriefCustomers",
+        "issue": "In AI Tour, dopo login valido, clic su 'Interpreta la richiesta' mostra sempre 'Sessione agente non disponibile'. Il modal riceve agentId vuoto e loadBriefCustomers lancia errore in brief-customers.ts:9.",
+        "testID": "brief-interpret, brief-error",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "Auth gate AI Tour",
+        "issue": "Schermata /ai-tour accessibile anche con user non idratato; molte azioni dipendono da agentId ma non espongono stato sessione coerente (guardie silenziose/errore runtime solo nel modal).",
+        "testID": "aitour-generate-btn",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Login/Privacy Terms",
+        "issue": "Elementi interattivi principali (input login, checkbox privacy, accetta) senza testID: test E2E fragile.",
+        "testID": "MISSING",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "AI Tour chips",
+        "issue": "testID duplicati tra Partenza/Rientro (es. aitour-chip-indirizzo, aitour-chip-casa, aitour-chip-sede).",
+        "testID": "aitour-chip-indirizzo / aitour-chip-casa / aitour-chip-sede",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Login -> AI Tour -> Dillo all'AI -> Interpreta",
+        "issue": "Token auth presente (sb-gorwxfzzyzxmxnizmebw-auth-token), ma agentId resta non disponibile nel brief flow: interpretazione non parte lato frontend anche se backend /api/ai-tour/parse-brief è operativo.",
+        "affected_testIDs": [
+          "brief-request-input",
+          "brief-interpret",
+          "brief-error"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Expo logs",
+        "issue": "Warning ricorrenti pacchetti Expo non allineati e shadow* deprecated; non bloccanti in questo test run."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ai_tour_brief_v41.py",
+    "/app/test_reports/pytest/pytest_results_iteration_25.xml",
+    "/app/test_reports/artifacts_iter25/ui_load.png",
+    "/app/test_reports/artifacts_iter25/ai_tour_route_probe.png",
+    "/app/test_reports/artifacts_iter25/brief_interpreted.png",
+    "/app/test_reports/artifacts_iter25/brief_after_login.png"
+  ],
+  "action_items": [
+    "Fix CRITICAL: in ai-tour.tsx assicurare agentId disponibile prima di aprire/interpretare BriefModal (es. bloccare apertura con messaggio sessione + retry initialize auth).",
+    "Aggiungere stato sessione esplicito in /ai-tour (banner/redirect login) quando user null per evitare errori in runtime.",
+    "Aggiungere testID a login/privacy terms per automazione stabile.",
+    "Ridurre duplicazione testID nei chip Partenza/Rientro con prefisso di sezione.",
+    "(Facoltativo) Migrare on_event shutdown backend a lifespan per rimuovere warning deprecazione FastAPI."
+  ],
+  "critical_code_review_comments": [
+    "brief-customers.ts:9 lancia errore hard su !agentId; con idratazione auth non pronta rompe il flusso brief. Serve guard a monte in UI + sincronizzazione con authStore.",
+    "ai-tour.tsx mantiene guardie !agentId ma UX non coerente: alcune azioni ritornano silenziosamente o con errore tardivo nel modal.",
+    "lib/supabase.ts non imposta storageKey/flowType espliciti; ora il token appare in localStorage, ma la gestione auth resta fragile lato idratazione schermata.",
+    "Mancano testID su aree critiche auth/privacy, riducendo affidabilità regressione mobile-web preview."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_ai_tour_brief_v41.py",
+    "/app/backend/tests/test_ai_tour_brief.py (deleted)"
+  ],
+  "success_rate": {
+    "backend": "100% (6/6)",
+    "frontend": "60% (load/login/route OK; brief interpret flow FAIL)"
+  },
+  "seed_data_creation": "Nessuna creazione/modifica seed. Nessuna mutazione volontaria su Supabase reale.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+    "context_for_next_testing_agent": "File di riferimento web /tmp/voomweb/tests/aitour non presente in questo ambiente (path inesistente), quindi porting test web non verificabile qui. Per retest UI: login gdeintinis, aprire /ai-tour, aprire modal 'Dillo all'AI', verificare agentId disponibile prima del click brief-interpret. Tenere blocco writes Supabase nei test browser (consentire solo auth).",
+  "rca_of_issue": "RCA frontend: errore riproducibile in 3 run. Repro: login valido -> /ai-tour -> apri modal -> inserisci testo -> brief-interpret. Risultato: brief-error='Sessione agente non disponibile'. Evidenza: localStorage contiene token auth, ma il modal usa agentId vuoto; loadBriefCustomers(agentId) fallisce immediatamente (brief-customers.ts). Mitigazione: garantire idratazione auth prima di rendere operativo BriefModal e/o passare agentId da session corrente Supabase quando store user è temporaneamente nullo."
+}

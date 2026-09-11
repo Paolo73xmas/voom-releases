@@ -25,7 +25,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { listAllZones, pointInZones, zoneLabel, intersectDrawnWithZones, type TerritoryZone } from '../lib/aitour/territories';
 import { loadCandidates, loadFreeTabaccherie, type CandidatePool } from '../lib/aitour/data';
-import { scoreCandidates, computePortfolioStats } from '../lib/aitour/scoring';
+import { scoreCandidates, computePortfolioStats, splitRecentlyServed, isRecentlyServed } from '../lib/aitour/scoring';
 import { planTour, planFixedOrder, filterByArea, pickBestCluster, candidatesForDayType, sweepPartition, type AreaFilter } from '../lib/aitour/planner';
 import { getStrategySummary, recommendDayType } from '../lib/aitour/ai';
 import { getSettings, saveTour, saveToursBatch, listTours, loadTourStops, deleteTour, replaceTourPlan, type SavedTour } from '../lib/aitour/tours';
@@ -39,7 +39,15 @@ import { TourEditModal } from '../components/aitour/TourEditModal';
 import { DrawAreasMap } from '../components/aitour/DrawAreasMap';
 import { BriefModal } from '../components/aitour/BriefModal';
 import { TourNameDialog } from '../components/aitour/TourNameDialog';
-import { selectCandidatesV4, resolveStopRefs, applyAppointment, targetCap, withinRadiusOfAnchors, type TourBriefV4 } from '../lib/aitour/brief-v4';
+import { selectCandidatesV4, applyAppointment, targetCap, withinRadiusOfAnchors, type TourBriefV4 } from '../lib/aitour/brief-v4';
+import { loadBriefCustomers } from '../lib/aitour/brief-customers';
+import { briefReviewProblems } from '../lib/aitour/brief-review';
+import { bindSavedBriefPlaces } from '../lib/aitour/brief-saved-places';
+import { inBriefArea, matchesArea } from '../lib/aitour/brief-area';
+import { assignJourneyStages, balanceJourneyCandidates, bindJourneyEnd, journeyLabel } from '../lib/aitour/brief-journey';
+import { loadBriefDevelopment } from '../lib/aitour/brief-development';
+import { assertMandatoryFeasible, mandatoryProblems } from '../lib/aitour/brief-feasibility';
+import { restoreBriefCandidate, assertCompleteReplan } from '../lib/aitour/brief-live';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
 import { CandidateEntityBadge } from '../components/aitour/OrphanHistoryBadge';
@@ -187,7 +195,7 @@ async function getCurrentPositionMobile(onPhase?: (msg: string) => void): Promis
 export default function AITourScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user } = useAuthStore();
+  const { user, isLoading: sessionLoading } = useAuthStore();
   const agentId = user?.id || '';
 
   const [tab, setTab] = useState<'genera' | 'settimana' | 'mensile' | 'portafoglio' | 'tours'>('genera');
@@ -341,6 +349,7 @@ export default function AITourScreen() {
         .from('customers')
         .select('id, business_name, city, address, contact_name, contact_surname')
         .eq('agent_id', agentId)
+        .eq('disabled', false)
         .not('latitude', 'is', null)
         .or(`business_name.ilike.${pat},contact_name.ilike.${pat},contact_surname.ilike.${pat},address.ilike.${pat},city.ilike.${pat}`)
         .limit(10);
@@ -640,6 +649,8 @@ export default function AITourScreen() {
         }
       }
 
+      const recent = splitRecentlyServed(candidates);
+      candidates = recent.kept;
       // Le obbligatorie entrano anche se fuori area/tipo giornata
       const mandatoryKeys = new Set<string>();
       for (const id of v.mandatoryCustomerIds) {
@@ -708,6 +719,7 @@ export default function AITourScreen() {
         area,
       });
       newPlan.areaLabel = areaLabel;
+      if (recent.excluded.length) newPlan.warnings.unshift(`${recent.excluded.length} soggetti esclusi: già visitati o con ordine negli ultimi 15 giorni (salvo appuntamenti/follow-up/richieste esplicite)`);
       newPlan.aiRecommendation = recommendation;
 
       if (newPlan.stops.length === 0) {
@@ -745,7 +757,7 @@ export default function AITourScreen() {
           const inBox = (c: { lat: number; lng: number }) =>
             c.lat >= fillBounds.minLat && c.lat <= fillBounds.maxLat && c.lng >= fillBounds.minLng && c.lng <= fillBounds.maxLng;
           // orfani vicini non ancora nel giro
-          let fillers = loaded.orphans.filter((c) => !plannedKeys.has(c.key) && inBox(c));
+          let fillers = loaded.orphans.filter((c) => !plannedKeys.has(c.key) && inBox(c) && !isRecentlyServed(c));
           if (isTerritory && territoryZones.length > 0) {
             fillers = fillers.filter((c) => pointInZones(c.lat, c.lng, territoryZones));
           }
@@ -1037,6 +1049,10 @@ export default function AITourScreen() {
     setDayIdx(0);
     setMultiDayAsk(null);
     try {
+      brief = bindJourneyEnd(bindSavedBriefPlaces(brief, settings));
+      setProgress('Verifico clienti e luoghi confermati...');
+      const reviewErrors = briefReviewProblems(brief, await loadBriefCustomers(agentId));
+      if (reviewErrors.length) throw new Error(reviewErrors.join('. '));
       // Data richiesta: oggi/domani/esplicita; per date future niente aggancio all'ora corrente
       const todayStr = localDateStr();
       let date = todayStr;
@@ -1045,7 +1061,7 @@ export default function AITourScreen() {
       } else if ((brief.requestedDate.type === 'explicit' || brief.requestedDate.type === 'selected') && brief.requestedDate.value) {
         date = brief.requestedDate.value;
       }
-      if (date < todayStr) date = todayStr;
+      if (date < todayStr) throw new Error('La data richiesta è già passata: correggi il giorno prima di generare');
       const startTime = brief.route.startTime || settings.work_start;
       let endTime = brief.route.endTime || settings.work_end;
       // finishBy = fine tassativa: comprime l'orario e rende il rientro NON flessibile
@@ -1065,7 +1081,7 @@ export default function AITourScreen() {
 
       setProgress('Determino il punto di partenza...');
       // Timeout complessivo di sicurezza: mai schermata bloccata su questa fase
-      let start = await withTimeout(
+      let start = brief.route.startPlace?.point || await withTimeout(
         resolvePoint(form.startMode, form.startAddress, null, (m) => setProgress(`Determino il punto di partenza... (${m})`)),
         30000
       );
@@ -1084,14 +1100,10 @@ export default function AITourScreen() {
       }
       // Rientro: al punto di partenza o a casa anagrafica; ritorno flessibile (può sforare)
       // salvo finishBy tassativo detto dall'agente
-      const wantsReturn = brief.route.returnHome || brief.route.returnToStart;
-      let briefEnd: GeoPoint | null = null;
+      const wantsReturn = brief.route.returnHome || brief.route.returnToStart || !!brief.route.endPlace;
+      let briefEnd: GeoPoint | null = brief.route.endPlace?.point || null;
       if (brief.route.returnToStart) briefEnd = { lat: start.lat, lng: start.lng, label: 'Rientro al punto di partenza' };
-      else if (brief.route.returnHome) {
-        briefEnd = settings.home_lat && settings.home_lng
-          ? { lat: settings.home_lat, lng: settings.home_lng, label: 'Rientro a casa' }
-          : { lat: start.lat, lng: start.lng, label: 'Rientro al punto di partenza' };
-      }
+      else if (brief.route.returnHome && !briefEnd) throw new Error('Configura e conferma Casa nelle impostazioni prima di generare');
       const returnFlexible = wantsReturn && !brief.route.finishBy;
 
       setProgress('Analisi del portafoglio commerciale...');
@@ -1101,50 +1113,23 @@ export default function AITourScreen() {
       setViewedTourStatus(null);
 
       setProgress('Applico la tua richiesta...');
+      const excludeTabs = new Set([...loaded.clients, ...loaded.prospects, ...loaded.orphans].map((c) => c.tabaccheriaId).filter((id): id is string => !!id));
+      loaded.registry = await loadBriefDevelopment(brief, agentId, settings, excludeTabs, start);
+      scoreCandidates(loaded.registry, settings);
       const sel = selectCandidatesV4(brief, loaded);
-      let candidates = sel.candidates;
+      const recent = splitRecentlyServed(sel.candidates);
+      let candidates = brief.includeAutomatic === false ? [] : recent.kept;
       const briefWarnings: string[] = [...sel.warnings];
+      if (recent.excluded.length && brief.includeAutomatic !== false) briefWarnings.push(`${recent.excluded.length} soggetti esclusi: già visitati o con ordine negli ultimi 15 giorni`);
 
       // Aree multiple: include (unione), exclude, prefer (boost punteggio)
-      let placeCenter: GeoPoint | null = null;
+      const placeCenter = brief.areas.find((a) => a.mode === 'include' && a.point)?.point || null;
       const includes = brief.areas.filter((a) => a.mode === 'include');
-      const excludes = brief.areas.filter((a) => a.mode === 'exclude');
       const prefers = brief.areas.filter((a) => a.mode === 'prefer');
-      if (includes.length > 0) {
-        const keep = new Set<string>();
-        for (const a of includes) {
-          if (a.kind === 'city') filterByArea(candidates, { mode: 'city', city: a.value }, start).forEach((c) => keep.add(c.key));
-          else if (a.kind === 'province') filterByArea(candidates, { mode: 'province', province: a.value }, start).forEach((c) => keep.add(c.key));
-          else {
-            const g = await geocodeAddress(a.value);
-            if (g) {
-              if (!placeCenter) placeCenter = { lat: g.lat, lng: g.lng, label: a.value };
-              candidates.filter((c) => haversineKm(g.lat, g.lng, c.lat, c.lng) <= 30).forEach((c) => keep.add(c.key));
-            } else {
-              briefWarnings.push(`Luogo "${a.value}" non trovato: filtro zona non applicato`);
-            }
-          }
-        }
-        if (keep.size > 0) candidates = candidates.filter((c) => keep.has(c.key));
-      }
-      for (const a of excludes) {
-        if (a.kind === 'city') candidates = candidates.filter((c) => (c.city || '').trim().toLowerCase() !== a.value.trim().toLowerCase());
-        else if (a.kind === 'province') candidates = candidates.filter((c) => (c.province || '').trim().toUpperCase() !== a.value.trim().toUpperCase());
-        else {
-          const g = await geocodeAddress(a.value);
-          if (g) candidates = candidates.filter((c) => haversineKm(g.lat, g.lng, c.lat, c.lng) > 10);
-        }
-      }
-      if (prefers.length > 0) {
-        const prefCities = new Set(prefers.filter((a) => a.kind === 'city').map((a) => a.value.trim().toLowerCase()));
-        const prefProv = new Set(prefers.filter((a) => a.kind === 'province').map((a) => a.value.trim().toUpperCase()));
-        candidates = candidates.map((c) =>
-          prefCities.has((c.city || '').trim().toLowerCase()) || prefProv.has((c.province || '').trim().toUpperCase())
-            ? { ...c, score: c.score + 15 } : c);
-      }
+      candidates = candidates.filter((c) => inBriefArea(c, brief.areas, brief.journey)).map((c) => prefers.some((a) => matchesArea(c, a)) ? { ...c, score: c.score + 15 } : c);
 
       // new_around: nuovi punti vendita da acquisire vicino alle ancore (top clienti o bacino)
-      if (sel.newAround) {
+      if (sel.newAround && brief.includeAutomatic !== false) {
         const radius = sel.newAround.radiusKm;
         const anchors = sel.anchors.filter((a) => candidates.some((c) => c.key === a.key));
         const base = anchors.length > 0 ? anchors : candidates;
@@ -1157,42 +1142,44 @@ export default function AITourScreen() {
           const dLat = radius / 111, dLng = radius / 80;
           const bounds = { minLat: minLat - dLat, maxLat: maxLat + dLat, minLng: minLng - dLng, maxLng: maxLng + dLng };
           const exclude = new Set(candidates.map((c) => c.tabaccheriaId).filter((x): x is string => !!x));
-          let free = await loadFreeTabaccherie(bounds, exclude, settings, { refLat: (minLat + maxLat) / 2, refLng: (minLng + maxLng) / 2, agentId }, 60);
+          let free = await loadFreeTabaccherie(bounds, exclude, settings, { refLat: (minLat + maxLat) / 2, refLng: (minLng + maxLng) / 2, agentId }, 501, true);
           free = withinRadiusOfAnchors(free, base, radius);
           const inKeys = new Set(candidates.map((c) => c.key));
           const extra = withinRadiusOfAnchors([...loaded.prospects, ...loaded.orphans].filter((c) => !inKeys.has(c.key)), base, radius);
           scoreCandidates(free, settings);
-          candidates = [...candidates, ...free, ...extra];
+          candidates = [...candidates, ...free, ...extra].filter((c) => inBriefArea(c, brief.areas, brief.journey) && !isRecentlyServed(c));
         }
       }
 
       // Tappe nominate dall'agente: risoluzione fuzzy sul portafoglio reale
       const allPool = [...loaded.clients, ...loaded.prospects, ...loaded.orphans];
       const mandatoryKeys = new Set<string>();
-      const mandResolved = resolveStopRefs(brief.mandatoryStops, allPool);
-      for (const r of mandResolved) {
-        if (r.candidate) {
-          const withAppt = applyAppointment(r.candidate, r.ref.appointment);
+      const requiredStops: NonNullable<TourPlan['requiredStops']> = [];
+      for (const r of brief.mandatoryStops.filter((s) => s.areaDecision !== 'exclude')) {
+        const candidate = allPool.find((c) => c.customerId === r.selectedCustomerId);
+        if (candidate) {
+          const withAppt = { ...applyAppointment(candidate, r.appointment), requestedPriority: r.priority || 2 };
           const idx = candidates.findIndex((c) => c.key === withAppt.key);
           if (idx >= 0) candidates[idx] = withAppt; else candidates.push(withAppt);
           mandatoryKeys.add(withAppt.key);
+          requiredStops.push({ key: withAppt.key, name: withAppt.name, priority: r.priority || 2 });
         } else {
-          const opts = r.options.map((o) => `${o.name}${o.city ? ` (${o.city})` : ''}`).slice(0, 3).join(' / ');
-          briefWarnings.push(`Tappa obbligatoria "${r.ref.rawReference}": ${r.status === 'ambiguous' ? `più clienti possibili (${opts}) — precisa il nome o la città` : 'cliente non trovato nel portafoglio'} — NON inserita`);
+          throw new Error(`Il cliente obbligatorio ${r.rawReference} non è più disponibile con coordinate valide nel portafoglio: ricontrolla la selezione`);
         }
       }
-      for (const r of resolveStopRefs(brief.preferredStops, allPool)) {
-        if (r.candidate) {
-          const boosted = { ...r.candidate, score: r.candidate.score + 30 };
+      for (const r of brief.preferredStops.filter((s) => s.areaDecision !== 'exclude')) {
+        const candidate = allPool.find((c) => c.customerId === r.selectedCustomerId);
+        if (candidate) {
+          const boosted = { ...candidate, score: candidate.score + 30 };
           const idx = candidates.findIndex((c) => c.key === boosted.key);
           if (idx >= 0) candidates[idx] = boosted; else candidates.push(boosted);
         } else {
-          briefWarnings.push(`Tappa desiderata "${r.ref.rawReference}": cliente non identificato — ignorata`);
+          throw new Error(`Tappa desiderata ${r.rawReference}: cliente non più disponibile. Ricontrolla la selezione`);
         }
       }
 
       // Compatto: clustering, ma gli obbligatori restano SEMPRE nel giro
-      if (brief.route.compact !== 'off' && candidates.length > 0) {
+      if (!brief.journey && brief.route.compact !== 'off' && candidates.length > 0) {
         const center = placeCenter || start;
         const cluster = pickBestCluster(candidates, center);
         if (cluster.list.length > 0) {
@@ -1202,11 +1189,14 @@ export default function AITourScreen() {
       }
 
       // Target visite: "tutti" = obbligatorie; cap secondo mode e scope
+      candidates = assignJourneyStages([...new Map(candidates.map((c) => [c.tabaccheriaId || c.customerId || c.key, c])).values()], brief.journey);
+      const journeyStageCounts = brief.journey?.stages.map((s, index) => ({ index, label: journeyLabel(s), eligible: candidates.filter((c) => c.journeyStage === index).length }));
       if (brief.visitTarget.mode === 'all') candidates.forEach((c) => mandatoryKeys.add(c.key));
       const cap = targetCap(brief.visitTarget);
       if (cap && candidates.length > cap) {
         const mand = candidates.filter((c) => mandatoryKeys.has(c.key));
-        const rest = candidates.filter((c) => !mandatoryKeys.has(c.key)).sort((a, b) => b.score - a.score);
+        const optional = candidates.filter((c) => !mandatoryKeys.has(c.key));
+        const rest = brief.journey ? balanceJourneyCandidates(optional) : optional.sort((a, b) => b.score - a.score);
         candidates = brief.visitTarget.scope === 'automatic_plus_mandatory'
           ? [...mand, ...rest.slice(0, cap)]
           : [...mand, ...rest.slice(0, Math.max(0, cap - mand.length))];
@@ -1217,6 +1207,7 @@ export default function AITourScreen() {
 
       if (candidates.length === 0) {
         setErrMsg('Nessun soggetto corrisponde alla richiesta: modifica i chip e riprova');
+        setBriefOpen(true);
         setGenerating(false);
         return;
       }
@@ -1224,7 +1215,7 @@ export default function AITourScreen() {
       const resolved: Exclude<DayType, 'ai'> = brief.dayType || 'mista';
       const bufferPct = resolved === 'clienti' ? settings.buffer_pct_clienti : resolved === 'sviluppo' ? settings.buffer_pct_sviluppo : settings.buffer_pct_mista;
       const firstArea = includes[0] || prefers[0] || null;
-      const areaLabel = firstArea?.value || (brief.route.compact !== 'off' ? 'zona compatta' : '');
+      const areaLabel = brief.journey ? brief.journey.stages.map(journeyLabel).join(' → ') : firstArea?.value || (brief.route.compact !== 'off' ? 'zona compatta' : '');
       const areaFilter: AreaFilter = firstArea?.kind === 'city'
         ? { mode: 'city', city: firstArea.value }
         : firstArea?.kind === 'province'
@@ -1236,7 +1227,7 @@ export default function AITourScreen() {
         candidates, mandatoryKeys, start, end: briefEnd, tourDate: date,
         startMin: effStartMin, endMin,
         dayType: resolved, resolvedDayType: resolved, bufferPct, bufferMaxMin: settings.buffer_max_min,
-        area: areaFilter, returnFlexible,
+        area: areaFilter, returnFlexible, enforceJourneyOrder: !!brief.journey,
       });
       if (plan1.stops.length === 0) {
         setErrMsg('Nessuna visita pianificabile con la richiesta indicata: prova ad ampliare la zona o l\'orario');
@@ -1252,9 +1243,10 @@ export default function AITourScreen() {
       if (wantVal && plan1.stops.length < wantVal) {
         plan1.warnings.unshift(`Pianificate ${plan1.stops.length} visite delle ${brief.visitTarget.mode === 'approximately' ? '~' : ''}${wantVal} richieste: soggetti disponibili, orario o zona compatta non permettono di più`);
       }
-      if (firstArea?.kind === 'city' || firstArea?.kind === 'province') {
-        plan1.areaFilter = { mode: firstArea.kind, city: firstArea.kind === 'city' ? firstArea.value : undefined, province: firstArea.kind === 'province' ? firstArea.value : undefined };
-      }
+      plan1.areaFilter = { mode: 'auto', briefAreas: brief.areas, briefJourney: brief.journey, journeyStageCounts };
+      plan1.requiredStops = requiredStops;
+      plan1.returnFlexible = returnFlexible;
+      assertMandatoryFeasible(plan1);
 
       setProgress("L'AI sta scrivendo la strategia del giro...");
       plan1.aiSummary = await getStrategySummary(plan1);
@@ -1263,7 +1255,7 @@ export default function AITourScreen() {
       setPhase('result');
       hap.success();
       // Giro troppo grande: proponi più giornate salvo divieto esplicito ("devono stare tutti oggi")
-      if (brief.route.splitAllowed !== false) {
+      if (!brief.journey && requiredStops.length === 0 && brief.route.splitAllowed !== false) {
         const plannedKeys = new Set(plan1.stops.map((s) => s.candidate.key));
         const leftoverAll = candidates.filter((c) => !plannedKeys.has(c.key));
         const effFinish1 = plan1.finishMin - (returnFlexible ? plan1.returnMin : 0);
@@ -1289,7 +1281,8 @@ export default function AITourScreen() {
       }
     } catch (err) {
       console.error('[AITour] brief generate:', err);
-      setErrMsg('Errore nella generazione del giro');
+      setErrMsg(err instanceof Error ? err.message : 'Errore nella generazione del giro');
+      setBriefOpen(true);
     } finally {
       setGenerating(false);
       setProgress('');
@@ -1328,8 +1321,10 @@ export default function AITourScreen() {
     try {
       const byKey = new Map(allCandidates.map((c) => [c.key, c]));
       // Le tappe di un tour salvato possono non esistere nel pool (chiavi diverse): fallback ai candidati del piano
-      for (const s of plan.stops) if (!byKey.has(s.candidate.key)) byKey.set(s.candidate.key, s.candidate);
-      const chosen = keys.map((k) => byKey.get(k)).filter((c): c is TourCandidate => !!c);
+      for (const s of plan.stops) byKey.set(s.candidate.key, s.candidate);
+      const chosen = assignJourneyStages(keys.map((k) => byKey.get(k)).filter((c): c is TourCandidate => !!c), plan.areaFilter?.briefJourney);
+      const existing = new Set(plan.stops.map((s) => s.candidate.key));
+      if (chosen.some((c) => !existing.has(c.key) && !inBriefArea(c, plan.areaFilter?.briefAreas || [], plan.areaFilter?.briefJourney))) throw new Error('La nuova tappa è fuori dalla zona confermata: modifica prima la richiesta');
       let next: TourPlan;
       if (fixedOrder) {
         next = await planFixedOrder(chosen, plan);
@@ -1345,6 +1340,8 @@ export default function AITourScreen() {
           dayType: plan.dayType,
           resolvedDayType: plan.resolvedDayType,
           bufferPct: 0,
+          enforceJourneyOrder: !!plan.areaFilter?.briefJourney,
+          returnFlexible: plan.returnFlexible,
           area: { mode: 'auto' },
         });
         // Le obbligatorie "vere" scelte dall'utente restano marcate
@@ -1353,6 +1350,10 @@ export default function AITourScreen() {
       next.areaLabel = plan.areaLabel;
       next.aiRecommendation = plan.aiRecommendation;
       next.areaFilter = plan.areaFilter;
+      next.requiredStops = plan.requiredStops;
+      next.returnFlexible = plan.returnFlexible;
+      assertCompleteReplan(next, chosen);
+      assertMandatoryFeasible(next);
       next.aiSummary = await getStrategySummary(next);
       setPlan(next);
       setEditOpen(false);
@@ -1366,7 +1367,7 @@ export default function AITourScreen() {
       }
     } catch (err) {
       console.error('[AITour] recalc:', err);
-      setErrMsg('Errore nel ricalcolo');
+      setErrMsg(err instanceof Error ? err.message : 'Errore nel ricalcolo');
     } finally {
       setRecalcing(false);
     }
@@ -1391,7 +1392,7 @@ export default function AITourScreen() {
       hap.success();
     } catch (err) {
       console.error('[AITour] save:', err);
-      setErrMsg('Errore nel salvataggio del tour: nessun tour salvato');
+      setErrMsg(err instanceof Error ? err.message : 'Errore nel salvataggio del tour: nessun tour salvato');
     } finally {
       setSaving(false);
     }
@@ -1405,6 +1406,7 @@ export default function AITourScreen() {
     setErrMsg('');
     try {
       let tourId = savedTourId;
+      assertMandatoryFeasible(plan);
       if (!tourId) {
         tourId = await saveTour(agentId, plan);
         setSavedTourId(tourId);
@@ -1415,7 +1417,7 @@ export default function AITourScreen() {
       hap.success();
     } catch (err) {
       console.error('[AITour] startLive:', err);
-      setErrMsg("Errore nell'avvio del tour");
+      setErrMsg(err instanceof Error ? err.message : "Errore nell'avvio del tour");
     } finally {
       setStarting(false);
     }
@@ -1503,15 +1505,15 @@ export default function AITourScreen() {
       const { stops, geometry } = await loadTourStops(tour.id);
       const planLike: TourPlan = {
         stops: stops.map((s) => ({
-          candidate: {
-            key: `${s.entity_type}:${s.customer_id || s.id}`,
+          candidate: restoreBriefCandidate({
+            key: `${s.entity_type}:${s.customer_id || s.tabaccheria_id || s.id}`,
             entityType: s.entity_type as EntityType,
             customerId: s.customer_id,
-            tabaccheriaId: null,
+            tabaccheriaId: s.tabaccheria_id || null,
             name: s.business_name,
             address: s.address || '',
             city: s.city || '',
-            province: '',
+            province: s.province || '',
             lat: s.latitude,
             lng: s.longitude,
             lastVisitDate: null,
@@ -1534,9 +1536,9 @@ export default function AITourScreen() {
             reason: s.ai_reason || '',
             nextSuggestedVisit: null,
             visitMinutes: s.planned_duration_minutes || 20,
-            preferredSlots: ((s as unknown as { preferred_slots?: TourCandidate['preferredSlots'] }).preferred_slots) || null,
+            preferredSlots: s.preferred_slots || null,
             potentialValue: 0,
-          },
+          }, tour),
           sequence: s.planned_sequence,
           arrivalMin: s.planned_arrival ? timeToMin(s.planned_arrival) : 0,
           departureMin: s.planned_departure ? timeToMin(s.planned_departure) : 0,
@@ -1557,16 +1559,19 @@ export default function AITourScreen() {
         driveMin: tour.planned_drive_minutes || 0,
         visitMin: tour.planned_visit_minutes || 0,
         bufferMin: tour.planned_buffer_minutes || 0,
-        returnMin: 0,
+        returnMin: tour.area_filter?.returnMin || 0,
         returnKm: 0,
-        finishMin: timeToMin(tour.start_time) + (tour.planned_drive_minutes || 0) + (tour.planned_visit_minutes || 0),
+        finishMin: tour.area_filter?.finishMin ?? timeToMin(tour.start_time) + (tour.planned_drive_minutes || 0) + (tour.planned_visit_minutes || 0),
         potentialValue: Number(tour.potential_value || 0),
         avgScore: stops.length ? Math.round(stops.reduce((a, s) => a + (s.priority_score || 0), 0) / stops.length) : 0,
         excluded: [],
         aiSummary: tour.ai_summary || '',
         aiRecommendation: null,
         warnings: [],
-        routingFallback: false,
+        routingFallback: tour.area_filter?.routingFallback ?? false,
+        areaFilter: tour.area_filter,
+        requiredStops: (tour.area_filter?.briefRequirements || []).map((r) => ({ key: r.key, name: r.name, priority: r.priority })),
+        returnFlexible: tour.area_filter?.returnFlexible,
       };
       setPlan(planLike);
       setSavedTourId(tour.id);
@@ -1625,7 +1630,7 @@ export default function AITourScreen() {
   const renderForm = () => (
     <View>
       {/* Dillo all'AI: brief in linguaggio naturale (voce o testo) */}
-      <TouchableOpacity style={styles.briefCard} onPress={openBrief} activeOpacity={0.85}>
+      <TouchableOpacity testID="aitour-open-brief" style={styles.briefCard} onPress={openBrief} activeOpacity={0.85}>
         <View style={styles.briefIcon}>
           <Ionicons name="mic" size={20} color="#FFF" />
         </View>
@@ -1806,10 +1811,10 @@ export default function AITourScreen() {
       {/* Partenza */}
       <Text style={styles.label}>Partenza</Text>
       <View style={styles.chipRow}>
-        {renderChip('Posizione corrente', form.startMode === 'current', () => set('startMode', 'current'))}
-        {renderChip('Indirizzo', form.startMode === 'address', () => set('startMode', 'address'))}
-        {renderChip('Casa', form.startMode === 'home', () => set('startMode', 'home'), !settings.home_lat)}
-        {renderChip('Sede', form.startMode === 'office', () => set('startMode', 'office'), !settings.office_lat)}
+        {renderChip('Posizione corrente', form.startMode === 'current', () => set('startMode', 'current'), false, 'start-current')}
+        {renderChip('Indirizzo', form.startMode === 'address', () => set('startMode', 'address'), false, 'start-address')}
+        {renderChip('Casa', form.startMode === 'home', () => set('startMode', 'home'), !settings.home_lat, 'start-home')}
+        {renderChip('Sede', form.startMode === 'office', () => set('startMode', 'office'), !settings.office_lat, 'start-office')}
       </View>
       {form.startMode === 'address' && (
         <TextInput
@@ -1824,11 +1829,11 @@ export default function AITourScreen() {
       {/* Rientro */}
       <Text style={styles.label}>Rientro</Text>
       <View style={styles.chipRow}>
-        {renderChip('Nessuno', form.endMode === 'none', () => set('endMode', 'none'))}
-        {renderChip('Partenza', form.endMode === 'start', () => set('endMode', 'start'))}
-        {renderChip('Indirizzo', form.endMode === 'address', () => set('endMode', 'address'))}
-        {renderChip('Casa', form.endMode === 'home', () => set('endMode', 'home'), !settings.home_lat)}
-        {renderChip('Sede', form.endMode === 'office', () => set('endMode', 'office'), !settings.office_lat)}
+        {renderChip('Nessuno', form.endMode === 'none', () => set('endMode', 'none'), false, 'end-none')}
+        {renderChip('Partenza', form.endMode === 'start', () => set('endMode', 'start'), false, 'end-start')}
+        {renderChip('Indirizzo', form.endMode === 'address', () => set('endMode', 'address'), false, 'end-address')}
+        {renderChip('Casa', form.endMode === 'home', () => set('endMode', 'home'), !settings.home_lat, 'end-home')}
+        {renderChip('Sede', form.endMode === 'office', () => set('endMode', 'office'), !settings.office_lat, 'end-office')}
       </View>
       {form.endMode === 'address' && (
         <TextInput
@@ -1981,6 +1986,7 @@ export default function AITourScreen() {
 
   const renderResult = () => {
     if (!plan) return null;
+    const blocking = mandatoryProblems(plan);
     const counts: Record<EntityType, number> = { client: 0, prospect: 0, orphan: 0, free: 0, never: 0 };
     for (const s of plan.stops) counts[s.candidate.entityType]++;
     const kpis: { label: string; value: string }[] = [
@@ -2041,7 +2047,7 @@ export default function AITourScreen() {
             <Text style={styles.actionBtnText}>Nuovo</Text>
           </TouchableOpacity>
           {!readOnly && (
-            <TouchableOpacity style={styles.actionBtn} onPress={generate} disabled={generating} activeOpacity={0.7}>
+            <TouchableOpacity testID="aitour-regenerate-btn" style={styles.actionBtn} onPress={plan.areaFilter?.briefAreas || plan.areaFilter?.briefJourney || plan.requiredStops?.length ? () => setBriefOpen(true) : generate} disabled={generating} activeOpacity={0.7}>
               <Ionicons name="refresh" size={15} color={DS.ink2} />
               <Text style={styles.actionBtnText}>Rigenera</Text>
             </TouchableOpacity>
@@ -2051,7 +2057,7 @@ export default function AITourScreen() {
               testID="aitour-save-btn"
               style={[styles.actionBtn, styles.saveBtn, savedTourId != null && styles.savedBtn]}
               onPress={() => { hap.light(); setSaveNameOpen(true); }}
-              disabled={saving || savedTourId != null}
+              disabled={saving || savedTourId != null || blocking.length > 0}
               activeOpacity={0.7}
             >
               {saving ? (
@@ -2091,6 +2097,7 @@ export default function AITourScreen() {
         />
 
         {/* Meta */}
+        {blocking.length > 0 && <View testID="aitour-plan-blocked" style={styles.alertBox}><Text testID="aitour-plan-blocked-reasons" style={styles.alertText}>{blocking.join('\n')}</Text></View>}
         <Text style={styles.resultMeta}>
           {fmtTourDate(plan.tourDate)} · {TOUR_TYPE_LABELS[plan.resolvedDayType] || plan.resolvedDayType}
           {plan.areaLabel ? ` · ${plan.areaLabel}` : ''}
@@ -2127,7 +2134,7 @@ export default function AITourScreen() {
         {plan.warnings.map((w, i) => (
           <View key={i} style={[styles.alertBox, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
             <Ionicons name="warning" size={14} color="#DC2626" />
-            <Text style={[styles.alertText, { color: '#991B1B' }]}>{w}</Text>
+            <Text testID={`aitour-plan-warning-${i}`} style={[styles.alertText, { color: '#991B1B' }]}>{w}</Text>
           </View>
         ))}
         {plan.routingFallback && <Text style={styles.fallbackNote}>Tempi stimati (servizio routing temporaneamente non disponibile).</Text>}
@@ -2341,8 +2348,14 @@ export default function AITourScreen() {
     </View>
   );
 
+  if (!agentId) return <View testID="aitour-session-gate" style={[styles.container, { paddingTop: insets.top + 32 }]}>
+    {sessionLoading ? <ActivityIndicator testID="aitour-session-loading" color={AI_PURPLE} /> : null}
+    <Text testID="aitour-session-message" style={styles.label}>{sessionLoading ? 'Caricamento della sessione…' : 'Accedi per pianificare i tuoi giri visita.'}</Text>
+    {!sessionLoading && <TouchableOpacity testID="aitour-session-login" style={styles.actionBtn} onPress={() => router.replace('/login')}><Text testID="aitour-session-login-label" style={styles.actionBtnText}>Accedi</Text></TouchableOpacity>}
+  </View>;
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View testID="aitour-session-ready" style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
@@ -2359,7 +2372,7 @@ export default function AITourScreen() {
           <TouchableOpacity
             style={styles.headerStartBtn}
             onPress={startLive}
-            disabled={starting}
+            disabled={starting || (plan ? mandatoryProblems(plan).length > 0 : false)}
             activeOpacity={0.8}
           >
             {starting ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="play" size={15} color="#FFF" />}
@@ -2480,6 +2493,9 @@ export default function AITourScreen() {
       )}
 
       <BriefModal
+        agentId={agentId || ''}
+        settings={settings}
+        generationError={errMsg}
         visible={briefOpen}
         onClose={() => setBriefOpen(false)}
         onConfirm={generateFromBrief}

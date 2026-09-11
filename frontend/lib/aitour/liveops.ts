@@ -8,10 +8,13 @@ import type { SavedTour } from './tours';
 import { addLiveStop, updateLiveSequence, logTourEvent } from './live';
 import { planFixedOrder, planTour, candidatesForDayType } from './planner';
 import { loadCandidates, loadFreeTabaccherie } from './data';
-import { scoreCandidates } from './scoring';
+import { scoreCandidates, isRecentlyServed } from './scoring';
 import { listAllZones, pointInZones, ringsToSyntheticZones } from './territories';
 import type { VisitSlot } from '../visit-slots';
 import { isoWeekday } from '../visit-slots';
+import { inBriefArea } from './brief-area';
+import { assignJourneyStages, nearestJourneyStage } from './brief-journey';
+import { assertCompleteReplan, protectLivePlan, restoreBriefCandidate } from './brief-live';
 
 export interface LiveStopRef {
   id: string;
@@ -43,7 +46,7 @@ export interface LiveOpResult {
 
 function baseFor(ctx: ReplanContext, ordered: LiveStopRef[], end: GeoPoint | null): TourPlan {
   const stops = ordered.map((s, i): PlannedStop => ({
-    candidate: s.candidate, sequence: i + 1, arrivalMin: 0, departureMin: 0,
+    candidate: restoreBriefCandidate(s.candidate, ctx.tour), sequence: i + 1, arrivalMin: 0, departureMin: 0,
     travelMinFromPrev: 0, travelKmFromPrev: 0, mandatory: s.mandatory,
   }));
   return {
@@ -56,6 +59,9 @@ function baseFor(ctx: ReplanContext, ordered: LiveStopRef[], end: GeoPoint | nul
     endMin: ctx.endMin,
     dayType: ctx.tour.tour_type as DayType,
     resolvedDayType: (ctx.tour.resolved_tour_type || 'mista') as Exclude<DayType, 'ai'>,
+    areaFilter: ctx.tour.area_filter ? { ...ctx.tour.area_filter, journeyStageCounts: [] } : null,
+    requiredStops: (ctx.tour.area_filter?.briefRequirements || []).filter((r) => ordered.some((s) => r.customerId ? s.candidate.customerId === r.customerId : s.candidate.key === r.key)),
+    returnFlexible: ctx.tour.area_filter?.returnFlexible,
   } as unknown as TourPlan;
 }
 
@@ -65,6 +71,8 @@ async function persistSequence(
   byKey: Map<string, LiveStopRef>,
   geometry: [number, number][],
 ): Promise<void> {
+  const plannedKeys = new Set(planned.map((p) => p.candidate.key));
+  if (plannedKeys.size !== planned.length || [...byKey.keys()].some((k) => !plannedKeys.has(k))) throw new Error('Ricalcolo incompleto: nessuna tappa esistente può essere rimossa');
   const base = ctx.seqBase || 0;
   const updates = planned
     .filter((p) => byKey.has(p.candidate.key))
@@ -78,7 +86,7 @@ async function persistSequence(
 
 function aiInput(ctx: ReplanContext, candidates: TourCandidate[], mandatoryKeys: Set<string>, start: GeoPoint, startMin: number) {
   return {
-    candidates,
+    candidates: assignJourneyStages(candidates.map((c) => restoreBriefCandidate(c, ctx.tour)), ctx.tour.area_filter?.briefJourney),
     mandatoryKeys,
     start,
     end: ctx.endPoint,
@@ -91,6 +99,8 @@ function aiInput(ctx: ReplanContext, candidates: TourCandidate[], mandatoryKeys:
     bufferMaxMin: ctx.settings.buffer_max_min,
     area: { mode: 'auto' as const },
     skipDayExclusion: true,
+    enforceJourneyOrder: !!ctx.tour.area_filter?.briefJourney,
+    returnFlexible: ctx.tour.area_filter?.returnFlexible,
   };
 }
 
@@ -98,6 +108,27 @@ export interface InsertOpts {
   mandatory: boolean;
   byAdmin?: boolean;
   adminName?: string;
+}
+
+// Nei tour con vincoli il calcolo precede SEMPRE la prima scrittura.
+async function insertProtectedStop(ctx: ReplanContext, pending: LiveStopRef[], candidate: TourCandidate, placement: PlacementChoice, opts: InsertOpts): Promise<LiveOpResult> {
+  const inArea = await areaCheckForTour(ctx.tour, pending);
+  if (!inArea(candidate)) throw new Error('La tappa è fuori dalla zona o da una fase rimanente del percorso confermato');
+  if (pending.some((s) => s.candidate.key === candidate.key || (candidate.customerId && s.candidate.customerId === candidate.customerId) || (candidate.tabaccheriaId && s.candidate.tabaccheriaId === candidate.tabaccheriaId))) throw new Error('Questo punto vendita è già nel giro');
+  const cand = restoreBriefCandidate({ ...candidate, ...(placement.mode === 'slot' ? { preferredSlots: placement.slots } : {}) }, ctx.tour);
+  const provisional: LiveStopRef = { id: 'pending-calculation', candidate: cand, mandatory: opts.mandatory };
+  const ordered = pending.map((s) => ({ ...s, candidate: restoreBriefCandidate(s.candidate, ctx.tour) }));
+  const index = placement.mode === 'now' ? 0 : placement.mode === 'after' ? ordered.findIndex((s) => s.id === placement.afterStopId) + 1 : ordered.length;
+  ordered.splice(index < 0 ? ordered.length : index, 0, provisional);
+  const all = ordered.map((s) => s.candidate);
+  const plan = placement.mode === 'slot' ? await planTour(aiInput(ctx, all, new Set(all.map((c) => c.key)), { ...ctx.startPos, label: 'Posizione attuale' }, ctx.startMin))
+    : await planFixedOrder(all, baseFor(ctx, ordered, ctx.endPoint));
+  assertCompleteReplan(plan, all);
+  protectLivePlan(plan, ctx.tour, all);
+  const id = await addLiveStop(ctx.tour, cand, (ctx.seqBase || 0) + ordered.length, { mandatory: opts.mandatory, byAdmin: opts.byAdmin, adminName: opts.adminName, placement: placement.mode });
+  provisional.id = id;
+  await persistSequence(ctx, plan.stops, new Map(ordered.map((s) => [s.candidate.key, s])), plan.geometry);
+  return { warnings: plan.warnings, droppedNames: [] };
 }
 
 // Inserisce una tappa a giro avviato e ripianifica secondo il posizionamento scelto.
@@ -110,6 +141,7 @@ export async function insertLiveStop(
   placement: PlacementChoice,
   opts: InsertOpts,
 ): Promise<LiveOpResult> {
+  if (ctx.tour.area_filter?.briefJourney || ctx.tour.area_filter?.briefRequirements?.length) return insertProtectedStop(ctx, pending, cand, placement, opts);
   if (placement.mode === 'slot' && placement.slots && placement.slots.length > 0) {
     cand.preferredSlots = placement.slots;
   }
@@ -140,7 +172,7 @@ export async function insertLiveStop(
           firstStop.departureMin,
         ));
       }
-      if (!restPlan || restPlan.stops.length === 0) {
+      if (!restPlan || restPlan.stops.length < pending.length) {
         // Tempo insufficiente per riottimizzare: ordine fisso, nessuna tappa rimossa
         const ordered = [newRef, ...pending];
         const fb = await planFixedOrder(ordered.map((s) => s.candidate), baseFor(ctx, ordered, ctx.endPoint));
@@ -177,7 +209,7 @@ export async function insertLiveStop(
       { lat: ctx.startPos.lat, lng: ctx.startPos.lng, label: 'Posizione attuale' },
       ctx.startMin,
     ));
-    if (plan.stops.length === 0 || !plan.stops.some((p) => p.candidate.key === cand.key)) {
+    if (plan.stops.length < pending.length + 1 || !plan.stops.some((p) => p.candidate.key === cand.key)) {
       // Guardia: non azzerare nulla — ordine fisso con la nuova tappa in coda
       const ordered = [...pending, newRef];
       const fb = await planFixedOrder(ordered.map((s) => s.candidate), baseFor(ctx, ordered, ctx.endPoint));
@@ -201,7 +233,10 @@ export async function insertLiveStop(
 
 // Riordino manuale: percorso e orari ricalcolati mantenendo ESATTAMENTE l'ordine scelto
 export async function reorderLiveStops(ctx: ReplanContext, ordered: LiveStopRef[]): Promise<LiveOpResult> {
-  const plan = await planFixedOrder(ordered.map((s) => s.candidate), baseFor(ctx, ordered, ctx.endPoint));
+  const candidates = ordered.map((s) => restoreBriefCandidate(s.candidate, ctx.tour));
+  const plan = await planFixedOrder(candidates, baseFor(ctx, ordered, ctx.endPoint));
+  assertCompleteReplan(plan, candidates);
+  protectLivePlan(plan, ctx.tour, candidates);
   await persistSequence(ctx, plan.stops, new Map(ordered.map((s) => [s.candidate.key, s] as [string, LiveStopRef])), plan.geometry);
   await logTourEvent(ctx.tour.id, 'manual_reorder', null, { stops: ordered.length });
   return { warnings: plan.warnings, droppedNames: [] };
@@ -215,16 +250,21 @@ type AreaCheck = (c: { lat: number; lng: number; province?: string; city?: strin
 
 export async function areaCheckForTour(tour: SavedTour, pending: Pick<LiveStopRef, 'candidate'>[]): Promise<AreaCheck> {
   const af = tour.area_filter || null;
+  if (af?.briefJourney || af?.briefAreas?.length) {
+    const journey = af.briefJourney;
+    const minStage = journey && pending.length ? Math.min(...pending.map((s) => nearestJourneyStage(s.candidate, journey))) : journey ? journey.stages.length - 1 : 0;
+    return (c) => inBriefArea({ ...c, city: c.city || '', province: c.province || '' }, af.briefAreas || [], journey) && (!journey || nearestJourneyStage(c, journey) >= minStage);
+  }
   try {
     if (af?.mode === 'draw' && (af.drawnRings || []).length > 0) {
       const zones = ringsToSyntheticZones(af.drawnRings!);
       if (zones.length > 0) return (c) => pointInZones(c.lat, c.lng, zones);
-      return () => true;
+      return () => false;
     }
     if (af?.mode === 'territory' && (af.zoneIds || []).length > 0) {
       const zones = (await listAllZones()).filter((z) => af.zoneIds!.includes(z.id));
       if (zones.length > 0) return (c) => pointInZones(c.lat, c.lng, zones);
-      return () => true;
+      return () => false;
     }
     if (af?.mode === 'province' && af.province) {
       const p = af.province.trim().toUpperCase();
@@ -259,6 +299,7 @@ export async function areaCheckForTour(tour: SavedTour, pending: Pick<LiveStopRe
     }
   } catch (err) {
     console.warn('[AITour][liveops] filtro area estensione:', err);
+    return () => false;
   }
   return () => true; // mode 'auto' o nessuna zona: comanda la vicinanza al percorso
 }
@@ -294,6 +335,7 @@ export async function extendTourVisits(
   const inArea = await areaCheckForTour(ctx.tour, pending);
   const tourDow = isoWeekday(ctx.tour.tour_date);
   candidates = candidates.filter((c) =>
+    !isRecentlyServed(c) &&
     !(c.customerId && excludeCustomerIds.has(c.customerId)) &&
     !(c.tabaccheriaId && excludeTabIds.has(c.tabaccheriaId)) &&
     !(Array.isArray(c.excludedDays) && c.excludedDays.includes(tourDow)) &&
@@ -339,12 +381,14 @@ export async function extendTourVisits(
     ctx.startMin,
   ));
   const newStops = plan.stops.filter((p) => !pendingKeys.has(p.candidate.key));
+  assertCompleteReplan(plan, pending.map((s) => s.candidate));
+  protectLivePlan(plan, ctx.tour, pending.map((s) => s.candidate));
   if (newStops.length === 0) {
     return { warnings: [`Non c'è spazio per altre visite entro le ${minToTime(ctx.endMin)}: il giro resta invariato`], droppedNames: [], addedNames: [] };
   }
 
   const byKey = new Map<string, LiveStopRef>(pending.map((s) => [s.candidate.key, s]));
-  let seq = pending.length;
+  let seq = (ctx.seqBase || 0) + pending.length;
   for (const p of newStops) {
     const id = await addLiveStop(ctx.tour, p.candidate, ++seq, { placement: 'extend' });
     byKey.set(p.candidate.key, { id, candidate: p.candidate, mandatory: false });

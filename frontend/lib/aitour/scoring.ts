@@ -13,6 +13,17 @@ export function cadenceWeeksFor(c: TourCandidate, settings?: CadenceSettings): n
   return c.orderCount >= 5 ? active : low;
 }
 
+export const RECENT_CONTACT_DAYS = 15;
+export function isRecentlyServed(c: TourCandidate, days = RECENT_CONTACT_DAYS): boolean {
+  if (c.appointmentAt || c.followUpDate || c.isFollowUp) return false;
+  return (c.daysSinceVisit != null && c.daysSinceVisit < days) || (c.daysSinceOrder != null && c.daysSinceOrder < days);
+}
+export function splitRecentlyServed(candidates: TourCandidate[], days = RECENT_CONTACT_DAYS) {
+  const kept: TourCandidate[] = [], excluded: TourCandidate[] = [];
+  for (const c of candidates) (isRecentlyServed(c, days) ? excluded : kept).push(c);
+  return { kept, excluded };
+}
+
 function classify(score: number): PriorityClass {
   if (score >= 80) return 'Urgente';
   if (score >= 60) return 'Alta';

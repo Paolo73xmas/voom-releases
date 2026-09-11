@@ -1,9 +1,11 @@
 // TourBrief V4: contratto "Dillo all'AI" (Fase 1) — normalizzazione, selezione candidati,
 // risoluzione clienti nominati LATO CLIENT (l'anagrafica non viene mai inviata al modello).
 // L'interpretazione testo→JSON avviene sul backend (/api/ai-tour/parse-brief, prompt V4).
-import type { TourCandidate } from './types';
+import type { TourCandidate, GeoPoint } from './types';
 import type { CandidatePool } from './data';
 import { haversineKm, timeToMin } from './types';
+import { inBriefArea, provinceCode, type TourAreaConstraint } from './brief-area';
+import { normalizeJourney, type BriefJourney } from './brief-journey';
 
 export interface BriefCondition {
   type: string;
@@ -17,10 +19,13 @@ export interface BriefCondition {
   values?: string[];
 }
 
-export interface BriefArea {
-  kind: 'city' | 'province' | 'place';
-  value: string;
-  mode: 'include' | 'exclude' | 'prefer';
+export type BriefArea = TourAreaConstraint;
+export interface BriefPlace {
+  source?: 'journey';
+  kind: 'home' | 'office' | 'address' | 'customer';
+  rawReference: string;
+  cityHint?: string | null;
+  point?: GeoPoint;
 }
 
 export interface BriefAppointment {
@@ -31,6 +36,10 @@ export interface BriefAppointment {
 }
 
 export interface BriefStopRef {
+  priority?: number;
+  selectedCustomerId?: string;
+  areaDecision?: 'include' | 'exclude';
+  areaConsent?: string;
   rawReference: string;
   cityHint?: string | null;
   appointment?: BriefAppointment | null;
@@ -45,6 +54,8 @@ export interface BriefVisitTarget {
 }
 
 export interface BriefRoute {
+  startPlace?: BriefPlace | null;
+  endPlace?: BriefPlace | null;
   compact: 'off' | 'prefer' | 'required';
   startTime: string | null;
   endTime: string | null;
@@ -56,6 +67,9 @@ export interface BriefRoute {
 }
 
 export interface TourBriefV4 {
+  journey?: BriefJourney | null;
+  sourceText?: string;
+  includeAutomatic?: boolean;
   version: string;
   dayType: 'clienti' | 'sviluppo' | 'mista' | null;
   requestedDate: { type: 'selected' | 'today' | 'tomorrow' | 'explicit' | 'unspecified'; value: string | null };
@@ -73,7 +87,7 @@ export interface TourBriefV4 {
   summary: string;
 }
 
-const isTime = (s: unknown): s is string => typeof s === 'string' && /^\d{2}:\d{2}$/.test(s);
+const isTime = (s: unknown): s is string => typeof s === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(s);
 const isDate = (s: unknown): s is string => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
 function normAppointment(a: unknown): BriefAppointment | null {
@@ -96,9 +110,17 @@ function normStops(list: unknown): BriefStopRef[] {
       rawReference: typeof s.rawReference === 'string' ? s.rawReference.trim() : '',
       cityHint: typeof s.cityHint === 'string' ? s.cityHint : null,
       appointment: normAppointment(s.appointment),
+      priority: typeof s.priority === 'number' && Number.isFinite(s.priority) ? Math.max(1, Math.min(3, Math.round(s.priority))) : 2,
     }))
     .filter((s) => s.rawReference)
-    .slice(0, 10);
+    .slice(0, 60);
+}
+
+function normPlace(p: unknown): BriefPlace | null {
+  if (!p || typeof p !== 'object') return null;
+  const r = p as BriefPlace;
+  if (!['home', 'office', 'address', 'customer'].includes(r.kind) || typeof r.rawReference !== 'string' || !r.rawReference.trim()) return null;
+  return { kind: r.kind, rawReference: r.rawReference.trim(), cityHint: typeof r.cityHint === 'string' ? r.cityHint : null };
 }
 
 // Appiattisce gruppi annidati in condizioni piatte (Fase 1: un solo livello logico)
@@ -124,10 +146,12 @@ export function normalizeBriefV4(raw: Record<string, unknown>): TourBriefV4 {
   const conditions = flattenConditions((r.selection as { conditions?: unknown } | undefined)?.conditions);
   const areas: BriefArea[] = (Array.isArray(r.areas) ? r.areas : [])
     .filter((a): a is BriefArea => !!a && typeof a === 'object' && ['city', 'province', 'place'].includes((a as BriefArea).kind) && typeof (a as BriefArea).value === 'string' && !!(a as BriefArea).value.trim())
-    .map((a) => ({ kind: a.kind, value: a.value.trim(), mode: ['include', 'exclude', 'prefer'].includes(a.mode) ? a.mode : 'include' }))
+    .map((a) => ({ kind: a.kind, value: a.kind === 'province' ? provinceCode(a.value.trim()) || a.value.trim() : a.value.trim(), mode: ['include', 'exclude', 'prefer'].includes(a.mode) ? a.mode : 'include' }))
     .slice(0, 6);
   return {
     version: '4.0',
+    journey: normalizeJourney(r.journey),
+    includeAutomatic: typeof r.includeAutomatic === 'boolean' ? r.includeAutomatic : normStops(r.mandatoryStops).length === 0,
     dayType: r.dayType === 'clienti' || r.dayType === 'sviluppo' || r.dayType === 'mista' ? r.dayType : null,
     requestedDate: {
       type: ['selected', 'today', 'tomorrow', 'explicit', 'unspecified'].includes(rd.type) ? rd.type : 'unspecified',
@@ -154,6 +178,8 @@ export function normalizeBriefV4(raw: Record<string, unknown>): TourBriefV4 {
       scope: vtRaw.scope === 'automatic_plus_mandatory' ? 'automatic_plus_mandatory' : 'total_including_mandatory',
     },
     route: {
+      startPlace: normPlace(routeRaw.startPlace),
+      endPlace: normPlace(routeRaw.endPlace),
       compact: routeRaw.compact === 'prefer' || routeRaw.compact === 'required' ? routeRaw.compact : 'off',
       startTime: isTime(routeRaw.startTime) ? routeRaw.startTime : null,
       endTime: isTime(routeRaw.endTime) ? routeRaw.endTime : null,
@@ -216,7 +242,7 @@ function sourceList(cond: BriefCondition, pool: CandidatePool, anchors: TourCand
       const list = [...pool.orphans].sort((a, b) => b.score - a.score);
       return cond.count && cond.count > 0 ? list.slice(0, cond.count) : list;
     }
-    case 'prospects': return pool.prospects;
+    case 'prospects': return [...pool.prospects, ...(pool.registry || [])];
     default: return [];
   }
 }
@@ -248,6 +274,7 @@ export interface SelectionV4 {
 }
 
 export function selectCandidatesV4(brief: TourBriefV4, pool: CandidatePool): SelectionV4 {
+  pool = { ...pool, clients: pool.clients.filter((c) => inBriefArea(c, brief.areas, brief.journey)), prospects: pool.prospects.filter((c) => inBriefArea(c, brief.areas, brief.journey)), orphans: pool.orphans.filter((c) => inBriefArea(c, brief.areas, brief.journey)), registry: pool.registry?.filter((c) => inBriefArea(c, brief.areas, brief.journey)) };
   const warnings: string[] = [];
   const anchors: TourCandidate[] = [];
   let newAround: { radiusKm: number } | null = null;
@@ -271,7 +298,8 @@ export function selectCandidatesV4(brief: TourBriefV4, pool: CandidatePool): Sel
     if (f) filters.push(f);
     else warnings.push(`Criterio "${cond.type}" non ancora supportato: ignorato`);
   }
-  let base = hasSource ? dedup(sources) : [...pool.clients];
+  const development = [...pool.prospects, ...pool.orphans, ...(pool.registry || [])];
+  let base = hasSource ? dedup(sources) : brief.dayType === 'sviluppo' ? development : brief.dayType === 'mista' ? [...pool.clients, ...development] : [...pool.clients];
   if (filters.length > 0) {
     if (brief.selection.operator === 'OR') {
       const extra = pool.clients.filter((c) => filters.some((f) => f(c)));
@@ -282,7 +310,7 @@ export function selectCandidatesV4(brief: TourBriefV4, pool: CandidatePool): Sel
   }
   // Esclusioni obbligatorie
   for (const ex of brief.exclusions) {
-    if (ex.type === 'prospects') base = base.filter((c) => c.entityType !== 'prospect');
+    if (ex.type === 'prospects') base = base.filter((c) => !['prospect', 'free', 'never'].includes(c.entityType));
     else if (ex.type === 'orphans') base = base.filter((c) => c.entityType !== 'orphan');
     else if (ex.type === 'project_membership' || ex.type === 'project') {
       const names = Array.isArray(ex.names) ? ex.names : (ex as { name?: string }).name ? [(ex as { name?: string }).name as string] : [];

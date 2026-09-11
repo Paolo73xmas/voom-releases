@@ -2,6 +2,7 @@
 import { supabase } from '../supabase';
 import type { AiTourSettings, TourPlan, SavedAreaFilter } from './types';
 import { DEFAULT_SETTINGS, minToTime } from './types';
+import { assertMandatoryFeasible, planAreaMetadata } from './brief-feasibility';
 
 export async function getSettings(agentId: string): Promise<AiTourSettings> {
   const { data, error } = await supabase
@@ -83,6 +84,7 @@ function buildStopRows(plan: TourPlan) {
 
 // Colonne ai_tours ricavate dal piano (usate sia dal salvataggio singolo che dal batch server-side)
 function buildTourRow(agentId: string, plan: TourPlan, name?: string) {
+  assertMandatoryFeasible(plan);
   return {
     agent_id: agentId,
     name: name?.trim() || null,
@@ -110,11 +112,12 @@ function buildTourRow(agentId: string, plan: TourPlan, name?: string) {
     potential_value: Math.round(plan.potentialValue),
     ai_summary: plan.aiSummary,
     route_geometry: plan.geometry,
-    area_filter: plan.areaFilter ?? null,
+    area_filter: planAreaMetadata(plan),
   };
 }
 
 export async function saveTour(agentId: string, plan: TourPlan, name?: string): Promise<string> {
+  assertMandatoryFeasible(plan);
   const { data: tour, error } = await supabase
     .from('ai_tours')
     .insert(buildTourRow(agentId, plan, name))
@@ -152,6 +155,7 @@ export async function saveToursBatch(agentId: string, plans: TourPlan[], name?: 
  * update dell'header + delete/insert atomici delle tappe (parità web replaceTourPlan).
  */
 export async function replaceTourPlan(tourId: string, plan: TourPlan): Promise<void> {
+  assertMandatoryFeasible(plan);
   const { error: upErr } = await supabase
     .from('ai_tours')
     .update({
@@ -165,6 +169,7 @@ export async function replaceTourPlan(tourId: string, plan: TourPlan): Promise<v
       potential_value: Math.round(plan.potentialValue),
       ai_summary: plan.aiSummary,
       route_geometry: plan.geometry,
+      area_filter: planAreaMetadata(plan),
     })
     .eq('id', tourId)
     .eq('status', 'planned');
@@ -195,6 +200,9 @@ export async function listTours(agentId: string): Promise<SavedTour[]> {
 }
 
 export interface SavedStop {
+  province?: string | null;
+  tabaccheria_id?: string | null;
+  preferred_slots?: import('./types').TourCandidate['preferredSlots'];
   id: string;
   entity_type: string;
   customer_id: string | null;

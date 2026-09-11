@@ -1,7 +1,7 @@
 // Vista Settimanale: soggetti in scadenza visita (ultima visita + cadenza) distribuiti in territori per giorno.
 import type { TourCandidate, AiTourSettings } from './types';
 import { haversineKm, timeToMin } from './types';
-import { cadenceWeeksFor } from './scoring';
+import { cadenceWeeksFor, isRecentlyServed } from './scoring';
 import { isoWeekday } from '../visit-slots';
 
 export interface WeekDayPlan {
@@ -209,7 +209,7 @@ export function buildWeekPlan(opts: WeekOptions): WeekPlan {
   const capacityPerDay = Math.max(4, Math.floor(usable / (settings.visit_minutes_client + 12)));
   const totalCap = capacityPerDay * activeDays.length;
 
-  const due = candidates.filter((c) => isVisitDue(c, weekEndMs, settings)).sort((a, b) => b.score - a.score);
+  const due = candidates.filter((c) => isVisitDue(c, weekEndMs, settings) && !isRecentlyServed(c)).sort((a, b) => b.score - a.score);
   const dueKeys = new Set(due.map((c) => c.key));
   let selected = due.slice(0, totalCap);
   const overflow = due.slice(totalCap);
@@ -217,7 +217,7 @@ export function buildWeekPlan(opts: WeekOptions): WeekPlan {
     // I riempitivi restano nella geografia reale del giro: vicino alla partenza o ai clienti in scadenza
     const anchors = selected.length > 0 ? selected : candidates.filter((c) => c.entityType === 'client');
     const fillers = candidates
-      .filter((c) => (c.entityType === 'prospect' || c.entityType === 'orphan' || c.entityType === 'never' || c.entityType === 'free') && !dueKeys.has(c.key))
+      .filter((c) => (c.entityType === 'prospect' || c.entityType === 'orphan' || c.entityType === 'never' || c.entityType === 'free') && !dueKeys.has(c.key) && !isRecentlyServed(c))
       .filter((c) => {
         if (start && haversineKm(start.lat, start.lng, c.lat, c.lng) <= 60) return true;
         return anchors.some((a) => haversineKm(a.lat, a.lng, c.lat, c.lng) <= 25);

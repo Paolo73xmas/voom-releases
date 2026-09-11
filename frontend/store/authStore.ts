@@ -337,6 +337,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 // =============================================================================
 
 let authListenersInitialized = false;
+let profileRequestGeneration = 0;
 
 export function initializeAuthListeners() {
   if (authListenersInitialized) return;
@@ -381,7 +382,7 @@ export function initializeAuthListeners() {
   }
 
   // --- LIVELLO 2: onAuthStateChange ---
-  supabase.auth.onAuthStateChange(async (event, session) => {
+  supabase.auth.onAuthStateChange((event, session) => {
     console.log('[Auth] event:', event, '| user:', session?.user?.email || 'none');
 
     if (event === 'TOKEN_REFRESHED') {
@@ -390,6 +391,7 @@ export function initializeAuthListeners() {
     }
 
     if (event === 'SIGNED_OUT') {
+      profileRequestGeneration++;
       // SIGNED_OUT può scattare per: logout volontario, token revocato, refresh fallito.
       // NON facciamo silent re-login qui per evitare duplicati con recoverSession().
       // Il silent re-login avviene SOLO in initialize() e AppState foreground.
@@ -405,18 +407,20 @@ export function initializeAuthListeners() {
     }
 
     if (event === 'SIGNED_IN' && session?.user) {
+      const generation = ++profileRequestGeneration;
       // Aggiorna lo store con il profilo aggiornato (solo se non già autenticato)
       const current = useAuthStore.getState();
       if (!current.isAuthenticated || current.user?.id !== session.user.id) {
-        const profile = await fetchProfileById(session.user.id);
-        if (profile && profile.is_active) {
-          useAuthStore.setState({
-            user: profileToUser(profile),
-            profile,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-        }
+        // Supabase attende la fine dei callback sotto il lock Auth. Una query
+        // fatta qui richiede lo stesso lock: eseguirla nel task successivo.
+        setTimeout(() => {
+          void fetchProfileById(session.user.id).then((profile) => {
+            if (generation !== profileRequestGeneration || !profile?.is_active) return;
+            const latest = useAuthStore.getState();
+            if (latest.user && latest.user.id !== session.user.id) return;
+            useAuthStore.setState({ user: profileToUser(profile), profile, isAuthenticated: true, isLoading: false });
+          }).catch((error) => console.warn('[Auth] Profile hydration failed:', error));
+        }, 0);
       }
     }
   });

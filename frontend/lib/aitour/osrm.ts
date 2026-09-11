@@ -2,6 +2,30 @@
 // OSRM usa lon,lat; Leaflet usa lat,lng. Max ~30 punti per la matrice (demo server).
 import { supabase } from '../supabase';
 import { haversineKm } from './types';
+import { normalizeLocality } from './brief-area';
+
+// Restituisce alternative etichettate: una correzione non viene mai scelta in silenzio.
+export async function geocodePlaceChoices(address: string, cityHint?: string, localityOnly = false): Promise<import('./types').GeoPoint[]> {
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(address + ', Italia')}&limit=6&countrycode=IT${localityOnly ? '&layer=city' : ''}`;
+  const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: timeoutSignal(12000) });
+  if (!res.ok) throw new Error('Ricerca luoghi non disponibile. Riprova.');
+  const data = await res.json();
+  if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) throw new Error('Risposta geografica incompleta: riprova');
+  const points: import('./types').GeoPoint[] = [];
+  for (const f of data.features || []) {
+    const p = f.properties || {}, xy = f.geometry?.coordinates;
+    if (p.countrycode?.toUpperCase() !== 'IT' || !Array.isArray(xy) || !Number.isFinite(xy[0]) || !Number.isFinite(xy[1])) continue;
+    if (localityOnly && !(p.type === 'city' || ['city', 'town', 'village'].includes(p.osm_value))) continue;
+    if (cityHint && ![p.city, p.town, p.village, p.name].some((v) => typeof v === 'string' && normalizeLocality(v) === normalizeLocality(cityHint))) continue;
+    const label = [...new Set([p.name, [p.street, p.housenumber].filter(Boolean).join(' '), p.city, p.county, p.state, p.country].filter(Boolean))].join(', ');
+    if (!points.some((x) => x.label === label && Math.abs(x.lat - xy[1]) < 0.0001 && Math.abs(x.lng - xy[0]) < 0.0001)) points.push({ lat: xy[1], lng: xy[0], label });
+  }
+  if (localityOnly) {
+    const exact = points.filter((p) => normalizeLocality((p.label || '').split(',')[0]) === normalizeLocality(address));
+    if (exact.length) return exact;
+  }
+  return points;
+}
 
 // AbortSignal.timeout non e' garantito su Hermes/React Native: fallback con AbortController
 export function timeoutSignal(ms: number): AbortSignal | undefined {

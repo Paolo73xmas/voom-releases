@@ -35,6 +35,8 @@ export interface TourMapStop {
 }
 
 interface Props {
+  onReadyChange?: (ready: boolean) => void;
+  regions?: import('../../lib/aitour/brief-journey').JourneyPreview['regions'];
   stops: TourMapStop[];
   geometry: [number, number][];
   start: { lat: number; lng: number; label?: string };
@@ -44,15 +46,16 @@ interface Props {
   onStopSelect?: (key: string) => void;
 }
 
-function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Props['start'], end: Props['end'], dots: TabPoint[], selectable: boolean): string {
+function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Props['start'], end: Props['end'], dots: TabPoint[], selectable: boolean, regions?: Props['regions']): string {
   const payload = JSON.stringify({
     stops,
     geometry,
     start,
     end: end || null,
     selectable,
+    regions: regions || [],
     dots: dots.map((p) => ({ lat: Math.round(p.lat * 1e5) / 1e5, lng: Math.round(p.lng * 1e5) / 1e5 })),
-  });
+  }).replace(/</g, '\\u003c');
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -78,6 +81,9 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
   var DATA = ${payload};
   var map = L.map('map', { zoomControl: true, attributionControl: false, zoomSnap: 0.25, zoomDelta: 0.5 });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  // I renderer SVG/canvas necessitano di bounds già inizializzati prima
+  // dell'aggiunta degli overlay e dei listener zoomend dei puntini.
+  map.setView([DATA.start.lat, DATA.start.lng], 10);
 
   function sendMessage(msg) {
     var str = JSON.stringify(msg);
@@ -127,6 +133,18 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
     }
   } catch (e) {}
 
+  // Stesso motore mappa mobile: sovrappone le zone/corridoi verificati del brief.
+  var regionBounds = null;
+  if (DATA.regions && DATA.regions.length) {
+    var regionColors = ['#7C3AED', '#0284C7', '#059669', '#D97706'];
+    DATA.regions.forEach(function(region, i) {
+      var layer = L.geoJSON(region, { style: { color: regionColors[i % regionColors.length], weight: 2, fillOpacity: 0.14 } }).addTo(map);
+      var validBounds = layer.getBounds();
+      if (validBounds && validBounds.isValid()) {
+        if (regionBounds) regionBounds.extend(validBounds); else regionBounds = validBounds;
+      }
+    });
+  }
   // Percorso pianificato
   if (DATA.geometry && DATA.geometry.length > 1) {
     L.polyline(DATA.geometry, { color: '#7C3AED', weight: 4, opacity: 0.75 }).addTo(map);
@@ -164,6 +182,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
   var pts = [[DATA.start.lat, DATA.start.lng]];
   DATA.stops.forEach(function(s) { pts.push([s.lat, s.lng]); });
   if (DATA.end) pts.push([DATA.end.lat, DATA.end.lng]);
+  if (regionBounds && regionBounds.isValid()) { pts.push(regionBounds.getSouthWest(), regionBounds.getNorthEast()); }
   var fitting = false, userTouched = false;
   function fitAll() {
     fitting = true;
@@ -174,6 +193,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
   }
   map.on('dragstart zoomstart', function() { if (!fitting) userTouched = true; });
   fitAll();
+  requestAnimationFrame(function(){ sendMessage({ type: 'map-ready' }); });
   setTimeout(function() { if (!userTouched) fitAll(); }, 300);
   setTimeout(function() { if (!userTouched) fitAll(); }, 900);
   window.addEventListener('resize', function() {
@@ -209,7 +229,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
 </html>`;
 }
 
-export function TourMapView({ stops, geometry, start, end, height = 420, onStopSelect }: Props) {
+export function TourMapView({ stops, geometry, start, end, height = 420, onStopSelect, regions, onReadyChange }: Props) {
   // Puntini neri: tabaccherie del registro nel riquadro del percorso + ~10 km di margine.
   // Caricati una volta per composizione del giro ed embedded nell'HTML della mappa.
   const [dots, setDots] = useState<TabPoint[]>([]);
@@ -255,10 +275,11 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
   }, [stops, start, end]);
 
   const html = useMemo(
-    () => buildHtml(stops, geometry, start, end, dotsVisible ? dots : [], !!onStopSelect),
-    [stops, geometry, start, end, dots, dotsVisible, onStopSelect],
+    () => buildHtml(stops, geometry, start, end, dotsVisible ? dots : [], !!onStopSelect, regions),
+    [stops, geometry, start, end, dots, dotsVisible, onStopSelect, regions],
   );
   const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => { onReadyChange?.(false); }, [html, onReadyChange]);
   const insets = useSafeAreaInsets();
 
   // Posizione dell'agente sulla mappa: watch GPS (solo se il permesso è GIÀ concesso,
@@ -310,9 +331,12 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
 
   const onStopSelectRef = React.useRef(onStopSelect);
   onStopSelectRef.current = onStopSelect;
+  const onReadyRef = useRef(onReadyChange);
+  onReadyRef.current = onReadyChange;
   const handleMessage = useCallback((raw: string) => {
     try {
       const msg = JSON.parse(raw);
+      if (msg.type === 'map-ready') onReadyRef.current?.(true);
       if (msg.type === 'navigate') openNavigation(msg.lat, msg.lng);
       else if (msg.type === 'stopSelect' && msg.key && onStopSelectRef.current) onStopSelectRef.current(String(msg.key));
     } catch {
@@ -324,6 +348,7 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const listener = (e: MessageEvent) => {
+      if (e.source !== iframeRef.current?.contentWindow && e.source !== iframeRefFull.current?.contentWindow) return;
       if (typeof e.data === 'string') handleMessage(e.data);
     };
     (globalThis as unknown as Window).addEventListener?.('message', listener);
@@ -360,6 +385,7 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
       <View style={[styles.box, { height }]}>
         {renderMap()}
         <TouchableOpacity
+          testID={regions ? 'brief-map-expand' : 'tourmap-expand'}
           style={styles.expandBtn}
           onPress={() => setFullscreen(true)}
           activeOpacity={0.8}
@@ -382,6 +408,7 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
         <View style={styles.fullRoot}>
           {fullscreen && renderMap(true)}
           <TouchableOpacity
+            testID={regions ? 'brief-map-reduce' : 'tourmap-reduce'}
             style={[styles.reduceBtn, { top: insets.top + 10 }]}
             onPress={() => setFullscreen(false)}
             activeOpacity={0.8}

@@ -7,6 +7,9 @@ import { timeToMin, haversineKm } from './types';
 import type { SavedTour, SavedStop } from './tours';
 import { loadTourStops } from './tours';
 import { loadFreeTabaccherie } from './data';
+import { restoreBriefCandidate, assertSavedJourneyReady } from './brief-live';
+import { isoWeekday } from '../visit-slots';
+import { nearestJourneyStage } from './brief-journey';
 
 export type LiveStopStatus = 'planned' | 'arrived' | 'completed' | 'skipped' | 'cancelled';
 
@@ -55,14 +58,14 @@ export async function getCurrentPos(): Promise<{ lat: number; lng: number } | nu
 
 export function stopToCandidate(s: SavedStop & { outcome?: string | null; follow_up_date?: string | null }): TourCandidate {
   return {
-    key: `${s.entity_type}:${s.customer_id || s.id}`,
+    key: `${s.entity_type}:${s.customer_id || s.tabaccheria_id || s.id}`,
     entityType: s.entity_type as EntityType,
     customerId: s.customer_id,
     tabaccheriaId: (s as { tabaccheria_id?: string | null }).tabaccheria_id || null,
     name: s.business_name,
     address: s.address || '',
     city: s.city || '',
-    province: '',
+    province: s.province || '',
     lat: Number(s.latitude),
     lng: Number(s.longitude),
     lastVisitDate: null,
@@ -125,7 +128,7 @@ export async function loadLiveState(tour: SavedTour): Promise<LiveState> {
     tour,
     stops: ordered.map((s) => ({
       id: s.id,
-      candidate: { ...stopToCandidate(s), crmName: s.customer_id ? crmNames.get(s.customer_id) || null : null },
+      candidate: restoreBriefCandidate({ ...stopToCandidate(s), crmName: s.customer_id ? crmNames.get(s.customer_id) || null : null }, tour),
       status: (s.status as LiveStopStatus) || 'planned',
       mandatory: s.mandatory,
       plannedArrival: s.planned_arrival,
@@ -155,7 +158,38 @@ export async function startLiveTour(tourId: string): Promise<void> {
   const d = new Date();
   const localToday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   // Un agente ha un solo giro live: chiudi eventuali tour rimasti attivi (es. giro abbandonato)
-  const { data: cur } = await supabase.from('ai_tours').select('agent_id').eq('id', tourId).single();
+  const { data: cur, error: curErr } = await supabase.from('ai_tours').select('*').eq('id', tourId).single();
+  if (curErr || !cur) throw curErr || new Error('Tour non disponibile');
+  assertSavedJourneyReady(cur as SavedTour);
+  const required = cur.area_filter?.briefRequirements || [];
+  if (required.length || cur.area_filter?.briefJourney) {
+    if (cur.tour_date !== localToday) throw new Error('Il tour contiene vincoli confermati per un altro giorno. Ricalcola per oggi prima di avviarlo.');
+    if (cur.area_filter.routingFallback) throw new Error('Percorso non verificato: ricalcola il tour prima di avviarlo');
+    const { stops } = await loadTourStops(tourId);
+    for (const r of required) {
+      const stop = stops.find((s) => r.customerId ? s.customer_id === r.customerId : stopToCandidate(s).key === r.key);
+      if (!stop || stop.status !== 'planned') throw new Error(`${r.name}: tappa obbligatoria non disponibile nel piano salvato`);
+      if (r.excludedDays?.includes(isoWeekday(localToday))) throw new Error(`${r.name}: non riceve visite oggi`);
+    }
+    const af = cur.area_filter;
+    const startMin = timeToMin(cur.start_time), offset = Math.max(0, nowMin() - startMin);
+    const last = stops[stops.length - 1];
+    const finish = Number.isFinite(af.finishMin) ? af.finishMin : last?.planned_departure ? timeToMin(last.planned_departure) + (af.returnMin || 0) : NaN;
+    if (!Number.isFinite(finish) || finish + offset - (af.returnFlexible ? af.returnMin || 0 : 0) > timeToMin(cur.end_time)) throw new Error('Con l’orario attuale non sono più rispettati visite e arrivo finale: ricalcola prima di avviare');
+    let previousStage = -1;
+    for (const stop of stops) {
+      const candidate = restoreBriefCandidate(stopToCandidate(stop), cur as SavedTour);
+      if (stop.planned_arrival && candidate.preferredSlots?.length) {
+        const arrival = timeToMin(stop.planned_arrival) + offset;
+        if (!candidate.preferredSlots.some((s) => arrival >= s.start - (s.strict ? 0 : 30) && arrival <= s.end + (s.strict ? 0 : 30))) throw new Error(`${candidate.name}: l’appuntamento non è più raggiungibile con l’orario attuale. Ricalcola prima di avviare`);
+      }
+      if (af.briefJourney) {
+        const stage = nearestJourneyStage(candidate, af.briefJourney);
+        if (stage < previousStage) throw new Error('Ordine delle zone non valido: ricalcola prima di avviare');
+        previousStage = stage;
+      }
+    }
+  }
   if (cur?.agent_id) {
     const { data: others } = await supabase
       .from('ai_tours')

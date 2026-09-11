@@ -1,6 +1,6 @@
 // "Dillo all'AI": l'agente descrive il giro a voce o per iscritto, l'AI interpreta
 // la richiesta e mostra dei chip modificabili prima di generare il giro.
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,9 @@ import {
   Platform,
   Alert,
   Switch,
+  KeyboardAvoidingView,
 } from 'react-native';
+import Constants from 'expo-constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -36,8 +38,17 @@ import {
   dateChipLabel,
   type TourBriefV4,
 } from '../../lib/aitour/brief-v4';
+import { loadBriefCustomers, type BriefCustomer } from '../../lib/aitour/brief-customers';
+import { briefReviewProblems, identifyBriefStops } from '../../lib/aitour/brief-review';
+import { bindSavedBriefPlaces } from '../../lib/aitour/brief-saved-places';
+import { bindJourneyEnd } from '../../lib/aitour/brief-journey';
+import type { AiTourSettings } from '../../lib/aitour/types';
+import { BriefPlacePicker } from './brief/BriefPlacePicker';
+import { BriefStopsReview } from './brief/BriefStopsReview';
+import { BriefJourneyReview } from './brief/BriefJourneyReview';
+import { reviewStyles } from './brief/controls';
 
-const API = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
+const API = `${Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
 
 const DAY_OPTIONS: { value: Exclude<TourBriefV4['dayType'], null>; label: string }[] = [
   { value: 'clienti', label: 'Clienti' },
@@ -46,6 +57,9 @@ const DAY_OPTIONS: { value: Exclude<TourBriefV4['dayType'], null>; label: string
 ];
 
 interface Props {
+  agentId: string;
+  settings: AiTourSettings;
+  generationError?: string;
   visible: boolean;
   onClose: () => void;
   onConfirm: (brief: TourBriefV4) => void;
@@ -53,7 +67,7 @@ interface Props {
   cities: string[];
 }
 
-export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Props) {
+export function BriefModal({ visible, onClose, onConfirm, projects, cities, agentId, settings, generationError }: Props) {
   const insets = useSafeAreaInsets();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [text, setText] = useState('');
@@ -62,8 +76,20 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
   const [parsing, setParsing] = useState(false);
   const [brief, setBrief] = useState<TourBriefV4 | null>(null);
   const [err, setErr] = useState('');
+  const [customers, setCustomers] = useState<BriefCustomer[]>([]);
+  const epoch = useRef(0);
+  const parsedRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => { epoch.current++; parsedRequest.current?.abort(); }, []);
+  useEffect(() => { if (visible && generationError) setErr(generationError); }, [generationError, visible]);
+  const reviewed = brief ? bindJourneyEnd(bindSavedBriefPlaces(brief, settings)) : null;
+  const problems = reviewed ? briefReviewProblems(reviewed, customers) : [];
+  const updateBrief = (b: TourBriefV4) => { setBrief(bindJourneyEnd(bindSavedBriefPlaces(b, settings))); setErr(''); };
 
   const reset = () => {
+    epoch.current++;
+    parsedRequest.current?.abort();
+    setParsing(false);
+    setTranscribing(false);
     setText('');
     setBrief(null);
     setErr('');
@@ -71,6 +97,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
   };
 
   const close = () => {
+    if (recording) void recorder.stop().catch(() => {});
     reset();
     onClose();
   };
@@ -126,6 +153,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
   };
 
   const transcribe = async (uri: string) => {
+    const token = epoch.current;
     setTranscribing(true);
     setErr('');
     try {
@@ -143,17 +171,19 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
       const res = await fetch(`${API}/ai-tour/transcribe`, { method: 'POST', body: fd });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (epoch.current !== token) return;
       const t = (data.text || '').trim();
       if (!t) {
         setErr('Non ho capito l\'audio, riprova o scrivi la richiesta');
         return;
       }
       setText((prev) => (prev.trim() ? `${prev.trim()} ${t}` : t));
+      setBrief(null);
     } catch (e) {
       console.warn('[BriefModal] transcribe:', e);
-      setErr('Trascrizione non riuscita, scrivi pure la richiesta');
+      if (epoch.current === token) setErr('Trascrizione non riuscita, scrivi pure la richiesta');
     } finally {
-      setTranscribing(false);
+      if (epoch.current === token) setTranscribing(false);
     }
   };
 
@@ -161,24 +191,35 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
     if (!text.trim()) return;
     hap.medium();
     setParsing(true);
+    setBrief(null);
     setErr('');
+    const token = ++epoch.current;
+    const controller = new AbortController();
+    parsedRequest.current = controller;
+    const timer = setTimeout(() => controller.abort(), 100000);
     try {
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const res = await fetch(`${API}/ai-tour/parse-brief`, {
+      const [res, portfolio] = await Promise.all([fetch(`${API}/ai-tour/parse-brief`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim(), projects, cities, today }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        body: JSON.stringify({ text: text.trim(), projects, cities, today, capabilities: ['ordered_journey_v1'] }),
+        signal: controller.signal,
+      }), loadBriefCustomers(agentId)]);
       const raw = await res.json();
-      setBrief(applyReturnHomeFallback(normalizeBriefV4(raw), text));
+      if (!res.ok) throw new Error(raw.detail || raw.error || `HTTP ${res.status}`);
+      if (token !== epoch.current) return;
+      if (raw.contractVersion !== '4.1' || !raw.capabilities?.includes('ordered_journey_v1') || !raw.brief || !Object.hasOwn(raw.brief, 'journey')) throw new Error('L’interprete AI non supporta ancora questa versione del giro. Riprova più tardi.');
+      const normalized = applyReturnHomeFallback(normalizeBriefV4(raw.brief), text);
+      setCustomers(portfolio);
+      updateBrief({ ...normalized, sourceText: text.trim(), mandatoryStops: identifyBriefStops(normalized.mandatoryStops, portfolio), preferredStops: identifyBriefStops(normalized.preferredStops, portfolio) });
       hap.success();
     } catch (e) {
       console.warn('[BriefModal] parse:', e);
-      setErr('Interpretazione non riuscita, riprova');
+      if (token === epoch.current) setErr(controller.signal.aborted ? 'Interpretazione scaduta: riprova' : e instanceof Error ? e.message : 'Interpretazione non riuscita, riprova');
     } finally {
-      setParsing(false);
+      clearTimeout(timer);
+      if (token === epoch.current) setParsing(false);
     }
   };
 
@@ -186,8 +227,6 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
   const rmExclusion = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, exclusions: b.exclusions.filter((_, x) => x !== i) })); };
   const rmPreference = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, preferences: b.preferences.filter((_, x) => x !== i) })); };
   const rmArea = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, areas: b.areas.filter((_, x) => x !== i) })); };
-  const rmMandatory = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, mandatoryStops: b.mandatoryStops.filter((_, x) => x !== i) })); };
-  const rmPreferred = (i: number) => { hap.light(); setBrief((b) => b && ({ ...b, preferredStops: b.preferredStops.filter((_, x) => x !== i) })); };
 
   const setTarget = (v: number | null) => {
     if (!brief) return;
@@ -206,18 +245,18 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
 
   const alerts = brief ? [...brief.interpretation.warnings, ...brief.interpretation.unresolvedEntities.map((e) => `Non riconosciuto: ${e}`)] : [];
 
-  const busy = transcribing || parsing;
+  const busy = transcribing || parsing || recording;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
-      <View style={styles.overlay}>
+    <Modal testID="brief-modal" visible={visible} animationType="slide" transparent onRequestClose={close}>
+      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
           <View style={styles.header}>
             <View style={styles.headerTitle}>
               <Ionicons name="sparkles" size={18} color={AI_PURPLE_TEXT} />
               <Text style={styles.title}>{"Dillo all'AI"}</Text>
             </View>
-            <TouchableOpacity onPress={close} hitSlop={10}>
+            <TouchableOpacity testID="brief-close" onPress={close} hitSlop={10} style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center' }}>
               <Ionicons name="close" size={24} color={DS.ink2} />
             </TouchableOpacity>
           </View>
@@ -229,15 +268,17 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
 
             <View style={styles.inputWrap}>
               <TextInput
+                testID="brief-request-input"
                 style={styles.input}
                 value={text}
-                onChangeText={setText}
+                onChangeText={(t) => { setText(t); setBrief(null); setErr(''); }}
                 placeholder="Scrivi o detta la tua richiesta..."
                 placeholderTextColor={DS.inkMuted}
                 multiline
                 editable={!busy}
               />
               <TouchableOpacity
+                testID="brief-microphone"
                 style={[styles.micBtn, recording && styles.micBtnActive]}
                 onPress={recording ? stopRecording : startRecording}
                 disabled={transcribing || parsing}
@@ -250,14 +291,16 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                 )}
               </TouchableOpacity>
             </View>
-            {recording && <Text style={styles.recHint}>Sto ascoltando... tocca stop quando hai finito</Text>}
-            {transcribing && <Text style={styles.recHint}>Trascrizione in corso...</Text>}
-            {!!err && <Text style={styles.err}>{err}</Text>}
+            {recording && <Text testID="brief-recording-status" style={styles.recHint}>Sto ascoltando... tocca stop quando hai finito</Text>}
+            {transcribing && <Text testID="brief-transcribing-status" style={styles.recHint}>Trascrizione in corso...</Text>}
+            {!!err && <Text testID="brief-error" style={styles.err}>{err}</Text>}
+            {!agentId && <Text testID="brief-session-unavailable" style={styles.err}>Attendi il caricamento della sessione prima di interpretare la richiesta.</Text>}
 
             <TouchableOpacity
-              style={[styles.interpretBtn, (!text.trim() || busy) && styles.btnDisabled]}
+              testID="brief-interpret"
+              style={[styles.interpretBtn, (!text.trim() || busy || !agentId) && styles.btnDisabled]}
               onPress={interpret}
-              disabled={!text.trim() || busy}
+              disabled={!text.trim() || busy || !agentId}
               activeOpacity={0.85}
             >
               {parsing ? <ActivityIndicator size="small" color="#FFF" /> : <Ionicons name="color-wand" size={18} color="#FFF" />}
@@ -266,7 +309,24 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
 
             {brief && (
               <View style={styles.briefBox}>
-                {!!brief.summary && <Text style={styles.summary}>{brief.summary}</Text>}
+                {!!brief.summary && <Text testID="brief-summary" style={styles.summary}>{brief.summary}</Text>}
+                {reviewed && <>
+                  <BriefPlacePicker id="brief-start-place" label="Partenza" value={reviewed.route.startPlace} settings={settings} customers={customers} onChange={(p) => updateBrief({ ...reviewed, route: { ...reviewed.route, startPlace: p } })} />
+                  {reviewed.journey && <BriefJourneyReview value={reviewed.journey} customers={customers} onChange={(j) => { setBrief((current) => current ? bindJourneyEnd(bindSavedBriefPlaces({ ...current, journey: j }, settings)) : null); setErr(''); }} />}
+                  <BriefPlacePicker id="brief-end-place" label="Arrivo finale" value={reviewed.route.endPlace} settings={settings} customers={customers} onChange={(p) => updateBrief({ ...reviewed, route: { ...reviewed.route, endPlace: p, returnHome: p?.kind === 'home', returnToStart: false } })} />
+                  {reviewed.areas.map((a, i) => a.kind === 'place' ? <BriefPlacePicker key={i} id={`brief-area-place-${i}`} label={`Centro della zona: ${a.value}`} allowSaved={false} value={{ kind: 'address', rawReference: a.value, point: a.point }} settings={settings} customers={customers} onChange={(p) => p && updateBrief({ ...reviewed, areas: reviewed.areas.map((v, k) => k === i ? { ...v, value: p.rawReference, point: p.point } : v) })} /> : null)}
+                  <BriefStopsReview brief={reviewed} customers={customers} onChange={updateBrief} />
+                  <View style={styles.switchRow}>
+                    <Text testID="brief-automatic-label" style={styles.switchLabel}>Autorizzo altri clienti oltre a quelli nominati</Text>
+                    <Switch testID="brief-include-automatic" value={reviewed.includeAutomatic !== false} onValueChange={(includeAutomatic) => updateBrief({ ...reviewed, includeAutomatic })} trackColor={{ true: AI_PURPLE }} />
+                  </View>
+                  <Text testID="brief-date-label" style={reviewStyles.hint}>Data del giro (AAAA-MM-GG)</Text>
+                  <TextInput testID="brief-date-input" style={reviewStyles.input} value={reviewed.requestedDate.value || ''} placeholder="AAAA-MM-GG" onChangeText={(value) => updateBrief({ ...reviewed, requestedDate: { type: 'explicit', value } })} />
+                  {(['startTime', 'endTime', 'finishBy'] as const).map((field) => <View key={field} style={reviewStyles.card}>
+                    <Text testID={`brief-${field}-label`} style={reviewStyles.hint}>{{ startTime: 'Partenza HH:MM', endTime: 'Fine visite HH:MM', finishBy: 'Arrivo tassativo HH:MM (facoltativo)' }[field]}</Text>
+                    <TextInput testID={`brief-${field}-input`} style={reviewStyles.input} value={reviewed.route[field] || ''} placeholder="HH:MM" onChangeText={(value) => updateBrief({ ...reviewed, route: { ...reviewed.route, [field]: value || null } })} />
+                  </View>)}
+                </>}
 
                 {(brief.interpretation.needsConfirmation || alerts.length > 0) && (
                   <View style={styles.alertBox}>
@@ -277,7 +337,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                       </View>
                     )}
                     {alerts.map((w, i) => (
-                      <Text key={i} style={styles.alertText}>• {w}</Text>
+                      <Text testID={`brief-warning-${i}`} key={i} style={styles.alertText}>• {w}</Text>
                     ))}
                   </View>
                 )}
@@ -288,7 +348,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                   {brief.selection.conditions.map((c, i) => (
                     <View key={`c${i}`} style={styles.segChip}>
                       <Text style={styles.segChipText}>{conditionLabel(c)}</Text>
-                      <TouchableOpacity onPress={() => rmCondition(i)} hitSlop={8}>
+                      <TouchableOpacity testID={`brief-remove-condition-${i}`} onPress={() => rmCondition(i)} hitSlop={8}>
                         <Ionicons name="close-circle" size={16} color={AI_PURPLE_TEXT} />
                       </TouchableOpacity>
                     </View>
@@ -296,7 +356,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                   {brief.exclusions.map((c, i) => (
                     <View key={`ex${i}`} style={styles.exChip}>
                       <Text style={styles.exChipText}>NO {conditionLabel(c)}</Text>
-                      <TouchableOpacity onPress={() => rmExclusion(i)} hitSlop={8}>
+                      <TouchableOpacity testID={`brief-remove-exclusion-${i}`} onPress={() => rmExclusion(i)} hitSlop={8}>
                         <Ionicons name="close-circle" size={16} color="#EF4444" />
                       </TouchableOpacity>
                     </View>
@@ -304,41 +364,12 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                   {brief.preferences.map((p, i) => (
                     <View key={`pr${i}`} style={styles.prefChip}>
                       <Text style={styles.prefChipText}>{preferenceLabel(p)}</Text>
-                      <TouchableOpacity onPress={() => rmPreference(i)} hitSlop={8}>
+                      <TouchableOpacity testID={`brief-remove-preference-${i}`} onPress={() => rmPreference(i)} hitSlop={8}>
                         <Ionicons name="close-circle" size={16} color={AI_PURPLE_TEXT} />
                       </TouchableOpacity>
                     </View>
                   ))}
                 </View>
-
-                {(brief.mandatoryStops.length > 0 || brief.preferredStops.length > 0) && (
-                  <>
-                    <Text style={styles.groupLabel}>Tappe richieste <Text style={styles.groupHint}>(identificate in generazione)</Text></Text>
-                    <View style={styles.chipWrap}>
-                      {brief.mandatoryStops.map((s, i) => (
-                        <View key={`m${i}`} style={styles.mandChip}>
-                          <Ionicons name="lock-closed" size={12} color="#FFF" />
-                          <Text style={styles.mandChipText}>
-                            {s.rawReference}
-                            {s.appointment?.time ? ` · ${s.appointment.time}` : s.appointment?.from ? ` · ${s.appointment.from}-${s.appointment.to}` : ''}
-                          </Text>
-                          <TouchableOpacity onPress={() => rmMandatory(i)} hitSlop={8}>
-                            <Ionicons name="close-circle" size={16} color="#FFF" />
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                      {brief.preferredStops.map((s, i) => (
-                        <View key={`p${i}`} style={styles.wishChip}>
-                          <Ionicons name="star" size={12} color="#D97706" />
-                          <Text style={styles.wishChipText}>{s.rawReference}</Text>
-                          <TouchableOpacity onPress={() => rmPreferred(i)} hitSlop={8}>
-                            <Ionicons name="close-circle" size={16} color="#D97706" />
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </View>
-                  </>
-                )}
 
                 <Text style={styles.groupLabel}>Giorno e zone</Text>
                 <View style={styles.chipWrap}>
@@ -352,7 +383,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                       <Text style={a.mode === 'exclude' ? styles.exChipText : styles.metaChipText}>
                         {a.mode === 'exclude' ? 'NO ' : a.mode === 'prefer' ? 'pref. ' : ''}{a.value}
                       </Text>
-                      <TouchableOpacity onPress={() => rmArea(i)} hitSlop={8}>
+                      <TouchableOpacity testID={`brief-remove-area-${i}`} onPress={() => rmArea(i)} hitSlop={8}>
                         <Ionicons name="close-circle" size={16} color={a.mode === 'exclude' ? '#EF4444' : DS.inkMuted} />
                       </TouchableOpacity>
                     </View>
@@ -373,6 +404,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                     const active = brief.dayType === d.value;
                     return (
                       <TouchableOpacity
+                        testID={`brief-day-type-${d.value}`}
                         key={d.value}
                         style={[styles.optChip, active && styles.optChipActive]}
                         onPress={() => { hap.light(); setBrief({ ...brief, dayType: d.value }); }}
@@ -387,14 +419,16 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                 <Text style={styles.groupLabel}>Visite: {targetLabel(brief.visitTarget)}</Text>
                 <View style={styles.counterRow}>
                   <TouchableOpacity
+                    testID="brief-target-decrease"
                     style={styles.counterBtn}
                     onPress={() => setTarget(brief.visitTarget.value ? Math.max(1, brief.visitTarget.value - 5) : null)}
                     hitSlop={8}
                   >
                     <Ionicons name="remove" size={18} color={DS.ink2} />
                   </TouchableOpacity>
-                  <Text style={styles.counterValue}>{brief.visitTarget.value ?? 'Auto'}</Text>
+                  <Text testID="brief-target-value" style={styles.counterValue}>{brief.visitTarget.value ?? 'Auto'}</Text>
                   <TouchableOpacity
+                    testID="brief-target-increase"
                     style={styles.counterBtn}
                     onPress={() => setTarget(Math.min(60, (brief.visitTarget.value ?? 0) + 5))}
                     hitSlop={8}
@@ -402,7 +436,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                     <Ionicons name="add" size={18} color={DS.ink2} />
                   </TouchableOpacity>
                   {brief.visitTarget.value != null && (
-                    <TouchableOpacity onPress={() => setTarget(null)} style={styles.autoBtn}>
+                    <TouchableOpacity testID="brief-target-auto" onPress={() => setTarget(null)} style={styles.autoBtn}>
                       <Text style={styles.autoBtnText}>Auto</Text>
                     </TouchableOpacity>
                   )}
@@ -418,6 +452,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                     const active = brief.route.compact === m;
                     return (
                       <TouchableOpacity
+                        testID={`brief-compact-${m}`}
                         key={m}
                         style={[styles.optChip, active && styles.optChipActive]}
                         onPress={() => { hap.light(); setBrief({ ...brief, route: { ...brief.route, compact: m } }); }}
@@ -432,48 +467,56 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities }: Pr
                 <View style={styles.switchRow}>
                   <Text style={styles.switchLabel}>Rientro a casa</Text>
                   <Switch
+                    testID="brief-return-home"
                     value={brief.route.returnHome}
-                    onValueChange={(x) => { hap.light(); setBrief({ ...brief, route: { ...brief.route, returnHome: x, returnToStart: x ? false : brief.route.returnToStart } }); }}
+                    onValueChange={(x) => { hap.light(); updateBrief({ ...brief, route: { ...brief.route, endPlace: x ? { kind: 'home', rawReference: 'Casa' } : null, returnHome: x, returnToStart: x ? false : brief.route.returnToStart } }); }}
                     trackColor={{ true: AI_PURPLE }}
                   />
                 </View>
                 <View style={styles.switchRow}>
                   <Text style={styles.switchLabel}>Torno al punto di partenza</Text>
                   <Switch
+                    testID="brief-return-start"
                     value={brief.route.returnToStart}
-                    onValueChange={(x) => { hap.light(); setBrief({ ...brief, route: { ...brief.route, returnToStart: x, returnHome: x ? false : brief.route.returnHome } }); }}
+                    onValueChange={(x) => { hap.light(); updateBrief({ ...brief, route: { ...brief.route, endPlace: null, returnToStart: x, returnHome: x ? false : brief.route.returnHome } }); }}
                     trackColor={{ true: AI_PURPLE }}
                   />
                 </View>
                 <View style={styles.switchRow}>
                   <Text style={styles.switchLabel}>Più giornate se serve{brief.route.maxDays ? ` (max ${brief.route.maxDays})` : ''}</Text>
                   <Switch
-                    value={brief.route.splitAllowed !== false}
+                    testID="brief-allow-split"
+                    disabled={!!brief.journey || brief.mandatoryStops.some((r) => r.areaDecision !== 'exclude')}
+                    value={!brief.journey && !brief.mandatoryStops.some((r) => r.areaDecision !== 'exclude') && brief.route.splitAllowed !== false}
                     onValueChange={(x) => { hap.light(); setBrief({ ...brief, route: { ...brief.route, splitAllowed: x } }); }}
                     trackColor={{ true: AI_PURPLE }}
                   />
                 </View>
 
                 <TouchableOpacity
-                  style={[styles.generateBtn, brief.selection.conditions.length === 0 && brief.mandatoryStops.length === 0 && styles.btnDisabled]}
+                  testID="brief-generate"
+                  disabled={busy || problems.length > 0}
+                  style={[styles.generateBtn, (busy || problems.length > 0) && styles.btnDisabled]}
                   onPress={() => {
-                    if (brief.selection.conditions.length === 0 && brief.mandatoryStops.length === 0) {
+                    if (!reviewed || problems.length) return;
+                    if (brief.selection.conditions.length === 0 && brief.mandatoryStops.length === 0 && brief.preferredStops.length === 0 && !brief.journey && !brief.dayType) {
                       setErr('Serve almeno un criterio o una tappa richiesta');
                       return;
                     }
                     hap.medium();
-                    onConfirm(brief);
+                    onConfirm(reviewed);
                   }}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="navigate" size={18} color="#FFF" />
                   <Text style={styles.generateText}>Genera il giro</Text>
                 </TouchableOpacity>
+                {problems.length > 0 && <View testID="brief-blocking-errors" style={styles.alertBox}>{problems.map((p, i) => <Text testID={`brief-blocking-${i}`} key={p} style={styles.alertText}>{p}</Text>)}</View>}
               </View>
             )}
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -521,7 +564,7 @@ const styles = StyleSheet.create({
   optChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: DS.ink2 },
   optChipTextActive: { color: AI_PURPLE_TEXT },
   counterRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 8 },
-  counterBtn: { width: 40, height: 40, borderRadius: 10, borderWidth: 1, borderColor: DS.border, justifyContent: 'center', alignItems: 'center', backgroundColor: DS.surface2 },
+  counterBtn: { width: 44, height: 44, borderRadius: 10, borderWidth: 1, borderColor: DS.border, justifyContent: 'center', alignItems: 'center', backgroundColor: DS.surface2 },
   counterValue: { fontFamily: JAKARTA.semibold, fontSize: 16, color: DS.ink, minWidth: 54, textAlign: 'center' },
   autoBtn: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: DS.surface2, borderWidth: 1, borderColor: DS.border },
   autoBtnText: { fontFamily: JAKARTA.medium, fontSize: 12, color: DS.ink2 },

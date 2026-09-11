@@ -150,8 +150,11 @@ export default function PrivacyTermsScreen() {
     }
   };
 
-  const CheckboxRow = ({ checked, onPress, label }: { checked: boolean; onPress: () => void; label: string }) => (
+  const CheckboxRow = ({ checked, onPress, label, id }: { checked: boolean; onPress: () => void; label: string; id: string }) => (
     <TouchableOpacity 
+      testID={id}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
       style={styles.checkboxRow} 
       onPress={onPress} 
       activeOpacity={0.7}
@@ -159,7 +162,7 @@ export default function PrivacyTermsScreen() {
       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
         {checked && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
       </View>
-      <Text style={styles.checkboxLabel}>{label}</Text>
+      <Text testID={`${id}-label`} style={styles.checkboxLabel}>{label}</Text>
     </TouchableOpacity>
   );
 
@@ -173,6 +176,7 @@ export default function PrivacyTermsScreen() {
           {readOnly && (
             <TouchableOpacity 
               style={styles.backButton} 
+              testID="privacy-back"
               onPress={() => router.back()}
             >
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -197,7 +201,7 @@ export default function PrivacyTermsScreen() {
           showsVerticalScrollIndicator={true}
         >
           <Text style={styles.introText}>
-            Il presente documento disciplina, in un testo unico, l'informativa sul trattamento dei dati personali degli utenti del sistema CRM e i termini e le condizioni che regolano l'accesso e l'utilizzo del servizio.
+            {"Il presente documento disciplina, in un testo unico, l'informativa sul trattamento dei dati personali degli utenti del sistema CRM e i termini e le condizioni che regolano l'accesso e l'utilizzo del servizio."}
           </Text>
 
           <View style={styles.separator} />
@@ -227,16 +231,19 @@ export default function PrivacyTermsScreen() {
 
             <CheckboxRow
               checked={check1}
+              id="privacy-read-checkbox"
               onPress={() => setCheck1(!check1)}
               label={'Dichiaro di aver letto e compreso l\'Informativa Privacy relativa al CRM "CRM Jivea".'}
             />
             <CheckboxRow
               checked={check2}
+              id="privacy-terms-checkbox"
               onPress={() => setCheck2(!check2)}
               label={'Dichiaro di aver letto, compreso e accettato i Termini e le Condizioni di utilizzo del CRM "CRM Jivea".'}
             />
             <CheckboxRow
               checked={check3}
+              id="privacy-data-checkbox"
               onPress={() => setCheck3(!check3)}
               label={'Dichiaro di comprendere che il conferimento dei dati necessari è indispensabile per l\'accesso e l\'utilizzo del CRM.'}
             />
@@ -244,6 +251,7 @@ export default function PrivacyTermsScreen() {
             <TouchableOpacity
               style={[styles.acceptButton, !allChecked && styles.acceptButtonDisabled]}
               onPress={handleAccept}
+              testID="privacy-accept"
               disabled={!allChecked}
               activeOpacity={0.8}
             >
@@ -258,6 +266,7 @@ export default function PrivacyTermsScreen() {
           <View style={styles.readOnlyFooter}>
             <TouchableOpacity 
               style={styles.readOnlyButton} 
+              testID="privacy-close"
               onPress={() => router.back()}
             >
               <Text style={styles.readOnlyButtonText}>Chiudi</Text>

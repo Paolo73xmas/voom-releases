@@ -5,6 +5,9 @@ import { haversineKm } from './types';
 import { getMatrix, getRoute } from './osrm';
 import { pointInZones, type TerritoryZone } from './territories';
 import { VISIT_SLOT_TOLERANCE_MIN, WEEKDAY_NAMES, isoWeekday } from '../visit-slots';
+import { balanceJourneyCandidates } from './brief-journey';
+import { assertMandatoryFeasible } from './brief-feasibility';
+import { provinceCode } from './brief-area';
 
 // Finestre di arrivo ammesse dalla fascia preferita del cliente:
 // tolleranza ±30 minuti su tutte le fasce TRANNE quelle "strict" (pranzo 11.30-14.30)
@@ -44,6 +47,7 @@ export interface AreaFilter {
 }
 
 export interface PlanInput {
+  enforceJourneyOrder?: boolean;
   candidates: TourCandidate[];
   mandatoryKeys: Set<string>;
   start: GeoPoint;
@@ -69,7 +73,7 @@ export function filterByArea(candidates: TourCandidate[], area: AreaFilter, star
     return candidates.filter((c) => pointInZones(c.lat, c.lng, area.zones!));
   }
   if (area.mode === 'province' && area.province) {
-    return candidates.filter((c) => (c.province || '').trim().toUpperCase() === area.province!.trim().toUpperCase());
+    return candidates.filter((c) => !!provinceCode(area.province!) && provinceCode(c.province || '') === provinceCode(area.province!));
   }
   if (area.mode === 'city' && area.city) {
     return candidates.filter((c) => (c.city || '').trim().toLowerCase() === area.city!.trim().toLowerCase());
@@ -140,7 +144,9 @@ function evalOrder(
   startMin: number,
   hasEnd: boolean,
   endIdx: number,
+  enforceJourneyOrder = false,
 ): { violations: number; finish: number; drive: number; cost: number } {
+  if (enforceJourneyOrder && order.some((idx, i) => i > 0 && (pool[order[i - 1] - 1].journeyStage ?? 0) > (pool[idx - 1].journeyStage ?? 0))) return { violations: Infinity, finish: Infinity, drive: Infinity, cost: Infinity };
   let t = startMin;
   let cur = 0;
   let drive = 0;
@@ -175,8 +181,9 @@ function improveOrder(
   startMin: number,
   hasEnd: boolean,
   endIdx: number,
+  enforceJourneyOrder = false,
 ): number[] {
-  const ev = (o: number[]) => evalOrder(o, pool, durMin, startMin, hasEnd, endIdx).cost;
+  const ev = (o: number[]) => evalOrder(o, pool, durMin, startMin, hasEnd, endIdx, enforceJourneyOrder).cost;
   let best = [...order];
   let bestCost = ev(best);
   let improved = true;
@@ -364,8 +371,9 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
 
   // Ordina per punteggio, obbligatorie sempre incluse, cap per matrice OSRM
   const sorted = [...dayCandidates].sort((a, b) => b.score - a.score);
-  const mandatory = sorted.filter((c) => input.mandatoryKeys.has(c.key));
-  const optional = sorted.filter((c) => !input.mandatoryKeys.has(c.key));
+  const mandatory = sorted.filter((c) => input.mandatoryKeys.has(c.key)).sort((a, b) => (a.requestedPriority ?? 2) - (b.requestedPriority ?? 2) || b.score - a.score);
+  const optionalSorted = sorted.filter((c) => !input.mandatoryKeys.has(c.key));
+  const optional = input.enforceJourneyOrder ? balanceJourneyCandidates(optionalSorted) : optionalSorted;
   const capOptional = Math.max(0, MAX_MATRIX_POINTS - 2 - mandatory.length);
   const pool = [...mandatory, ...optional.slice(0, capOptional)];
 
@@ -393,7 +401,7 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     let bestI = -1;
     let bestT = Infinity;
     for (const i of mandatoryLeft) {
-      const t = durMin(currentIdx, i);
+      const t = (input.enforceJourneyOrder ? (pool[i - 1].journeyStage ?? 0) * 1000000 : 0) + (pool[i - 1].requestedPriority ?? 2) * 10000 + durMin(currentIdx, i);
       if (t < bestT) { bestT = t; bestI = i; }
     }
     const cand = pool[bestI - 1];
@@ -430,6 +438,7 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     for (let i = 1; i <= pool.length; i++) {
       if (inTour.has(i)) continue;
       const cand = pool[i - 1];
+      if (input.enforceJourneyOrder && currentIdx > 0 && (cand.journeyStage ?? 0) < (pool[currentIdx - 1].journeyStage ?? 0)) continue;
       const wa = windowArrival(cand, clock + durMin(currentIdx, i));
       if (wa.outside) { windowBlockedKeys.add(cand.key); continue; }
       if (wa.wait > 60) { windowBlockedKeys.add(cand.key); continue; } // attesa eccessiva ora: riconsiderato piu' avanti nel giro
@@ -455,12 +464,13 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
 
   // Miglioramento dell'ordine (2-opt + Or-opt, fasce orarie mai peggiorate: il costo
   // penalizza le violazioni, quindi si accettano solo ordini con violazioni <= greedy)
-  let optimized = selected.length > 2 ? improveOrder(selected, pool, durMin, startMin, !!end, endIdx) : [...selected];
+  if (input.enforceJourneyOrder) selected.sort((a, b) => (pool[a - 1].journeyStage ?? 0) - (pool[b - 1].journeyStage ?? 0));
+  let optimized = selected.length > 2 ? improveOrder(selected, pool, durMin, startMin, !!end, endIdx, input.enforceJourneyOrder) : [...selected];
 
   // Il percorso ottimizzato libera tempo: inserisce i candidati rimasti fuori nella
   // POSIZIONE MIGLIORE del giro (non in coda) — niente piu' "passato davanti e ignorato"
   if (optimized.length > 0) {
-    let current = evalOrder(optimized, pool, durMin, startMin, !!end, endIdx);
+    let current = evalOrder(optimized, pool, durMin, startMin, !!end, endIdx, input.enforceJourneyOrder);
     const remaining = pool
       .map((c, i) => ({ c, idx: i + 1 }))
       .filter(({ idx }) => !inTour.has(idx))
@@ -471,9 +481,10 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
       let bestCost = Infinity;
       for (let j = 0; j <= optimized.length; j++) {
         const alt = [...optimized.slice(0, j), idx, ...optimized.slice(j)];
-        const e = evalOrder(alt, pool, durMin, startMin, !!end, endIdx);
+        const e = evalOrder(alt, pool, durMin, startMin, !!end, endIdx, input.enforceJourneyOrder);
         if (e.violations > current.violations) continue;
-        if (e.finish > usableUntil) continue;
+        const returnLeg = end && input.returnFlexible ? durMin(alt[alt.length - 1], endIdx) : 0;
+        if (e.finish - returnLeg > usableUntil) continue;
         if (e.cost < bestCost) {
           bestCost = e.cost;
           bestAlt = alt;
@@ -483,12 +494,12 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
         optimized = bestAlt;
         inTour.add(idx);
         windowBlockedKeys.delete(c.key);
-        current = evalOrder(optimized, pool, durMin, startMin, !!end, endIdx);
+        current = evalOrder(optimized, pool, durMin, startMin, !!end, endIdx, input.enforceJourneyOrder);
         inserted = true;
       }
     }
     // Rifinitura dopo gli inserimenti
-    if (inserted && optimized.length > 2) optimized = improveOrder(optimized, pool, durMin, startMin, !!end, endIdx);
+    if (inserted && optimized.length > 2) optimized = improveOrder(optimized, pool, durMin, startMin, !!end, endIdx, input.enforceJourneyOrder);
   }
 
   // Percorso finale per geometria e tempi reali
@@ -625,6 +636,7 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
     aiRecommendation: null,
     warnings,
     routingFallback: matrix.fallback || route.fallback,
+    returnFlexible: input.returnFlexible,
   };
 }
 
@@ -707,7 +719,7 @@ export async function planFixedOrder(ordered: TourCandidate[], base: TourPlan): 
   const warnings: string[] = [...windowWarnings];
   if (t > base.endMin) warnings.push('La sequenza manuale termina oltre l\'orario di fine configurato');
   const scores = stops.map((s) => s.candidate.score);
-  return {
+  const result: TourPlan = {
     ...base,
     stops,
     geometry: route.latlngs,
@@ -727,4 +739,6 @@ export async function planFixedOrder(ordered: TourCandidate[], base: TourPlan): 
     warnings,
     routingFallback: route.fallback,
   };
+  assertMandatoryFeasible(result);
+  return result;
 }

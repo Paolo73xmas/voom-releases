@@ -11,6 +11,9 @@ import { hap } from '../../lib/haptics';
 import { AI_PURPLE, AI_PURPLE_SOFT, AI_PURPLE_TEXT, AI_PURPLE_BORDER, openNavigation } from './shared';
 import { EsitoModal, type EsitoExtras } from './EsitoModal';
 import { SkipModal } from './SkipModal';
+import { VerificationRequestModal } from './VerificationRequestModal';
+import { isVerificationPoint, type VerificationSubject } from '../../lib/api/customer-verification';
+import { useAuthStore } from '../../store/authStore';
 import { TourMapView, type TourMapStop } from './TourMapView';
 import { createTourInspection } from '../../lib/api/inspections';
 import { supabase } from '../../lib/supabase';
@@ -22,6 +25,7 @@ import {
   scheduleRevisit, revisitSlotFor, isRevisitCandidate, startLunchBreak, endLunchBreak, extendTourEndTime, trashStop, TRASH_REASON,
 } from '../../lib/aitour/live';
 import { insertLiveStop, reorderLiveStops, extendTourVisits, areaCheckForTour, type PlacementChoice, type ReplanContext } from '../../lib/aitour/liveops';
+import { restoreBriefCandidate, protectLivePlan, assertCompleteReplan } from '../../lib/aitour/brief-live';
 import { AddStopModal } from './AddStopModal';
 import { ReorderStopsModal } from './ReorderStopsModal';
 import { OwnStaminaChip } from './OwnStaminaChip';
@@ -56,6 +60,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [suggestion, setSuggestion] = useState<{ cand: TourCandidate; slack: number } | null>(null);
   const [esitoOpen, setEsitoOpen] = useState(false);
   const [skipOpen, setSkipOpen] = useState(false);
+  const [verificationTarget, setVerificationTarget] = useState<{ stopId: string; subject: VerificationSubject } | null>(null);
+  const actorId = useAuthStore((s) => s.user?.id);
   const [reassigned, setReassigned] = useState<{ name: string; prevAgent: string } | null>(null);
   const [recapOpen, setRecapOpen] = useState(false);
   const [acquireKind, setAcquireKind] = useState<'inspection' | 'order' | null>(null);
@@ -90,7 +96,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const pendingTrashRecalcRef = useRef(false);
   // Vero mentre l'agente sta compilando un dialog o c'è un'operazione in corso: il sync non deve strappare la vista
   const uiBusyRef = useRef(false);
-  uiBusyRef.current = busy || recalcing || esitoOpen || skipOpen || recapOpen || !!acquireKind || !!trashTarget || !!detailStop || addOpen || reorderOpen || extendOpen;
+  uiBusyRef.current = busy || recalcing || esitoOpen || skipOpen || !!verificationTarget || recapOpen || !!acquireKind || !!trashTarget || !!detailStop || addOpen || reorderOpen || extendOpen;
 
   // Retry di rete per le azioni critiche del live: 3 tentativi con attesa crescente (dati mai persi in silenzio)
   const withRetry = useCallback(async <T,>(fn: () => Promise<T>, label: string): Promise<T> => {
@@ -292,7 +298,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         // Il ricalcolo NON rimuove mai le tappe previste (tutte obbligatorie):
         // alleggerire il giro spetta all'agente col cestino rosso o "Salta".
         const plan = await planTour({
-          candidates: remaining.map((s) => s.candidate),
+          candidates: remaining.map((s) => restoreBriefCandidate(s.candidate, tour)),
           mandatoryKeys: new Set(remaining.map((s) => s.candidate.key)),
           start,
           end: initial.endPoint,
@@ -305,17 +311,21 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           bufferMaxMin: settings.buffer_max_min,
           area: { mode: 'auto' },
           skipDayExclusion: true,
+          enforceJourneyOrder: !!tour.area_filter?.briefJourney,
+          returnFlexible: tour.area_filter?.returnFlexible,
         });
         // Guardia anti-azzeramento: se il planner non restituisce nulla non toccare il giro
-        if (plan.stops.length === 0) {
+        if (plan.stops.length < remaining.length) {
           setMessage(`Tempo residuo insufficiente per ripianificare entro le ${minToTime(effEnd)}: il giro non viene modificato. Le ${remaining.length} tappe restano attive — prosegui manualmente o termina il tour.`);
           return;
         }
 
+        assertCompleteReplan(plan, remaining.map((s) => s.candidate));
+        protectLivePlan(plan, tour, remaining.map((s) => s.candidate));
         const stopByKey = new Map(remaining.map((s) => [s.candidate.key, s]));
         const updates = plan.stops.map((p, i) => {
           const s = stopByKey.get(p.candidate.key)!;
-          return { stopId: s.id, seq: i + 1, arrival: minToTime(p.arrivalMin), travelMin: p.travelMinFromPrev, travelKm: p.travelKmFromPrev };
+          return { stopId: s.id, seq: currentStops.filter((s) => s.status !== 'planned').length + i + 1, arrival: minToTime(p.arrivalMin), travelMin: p.travelMinFromPrev, travelKm: p.travelKmFromPrev };
         });
         await updateLiveSequence(tour.id, updates);
 
@@ -351,13 +361,14 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           for (const id of proxDismissedRef.current) exclude.add(id);
           if (proxSuggestionRef.current?.tabaccheriaId) exclude.add(proxSuggestionRef.current.tabaccheriaId);
           const sugg = await suggestNearby(pos, exclude, settings);
-          if (sugg) setSuggestion({ cand: sugg, slack: Math.round(slack) });
+          const inArea = await areaCheckForTour(tour, remaining);
+          if (sugg && inArea(sugg)) setSuggestion({ cand: sugg, slack: Math.round(slack) });
         } else {
           setSuggestion(null);
         }
       } catch (err) {
         console.error('[AITour][live] recalc:', err);
-        setMessage('Errore nel ricalcolo del giro');
+        setMessage(err instanceof Error ? err.message : 'Errore nel ricalcolo del giro');
       } finally {
         setRecalcing(false);
         recalcingRef.current = false;
@@ -380,7 +391,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const AUTO_RECALC_DELAY_MIN = 15;
   useEffect(() => {
     const iv = setInterval(() => {
-      if (busy || recalcing || esitoOpen || skipOpen || recapOpen || acquireKind || addOpen || reorderOpen) return;
+      if (busy || recalcing || esitoOpen || skipOpen || verificationTarget || recapOpen || acquireKind || addOpen || reorderOpen) return;
       if (lunch) return; // in pausa pranzo: il ritardo e' voluto, niente ricalcolo automatico
       if (nowMin() >= endMin) return; // oltre fine tour: il ricalcolo azzererebbe il giro
       const current = stopsRef.current;
@@ -392,7 +403,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       }
     }, 60000);
     return () => clearInterval(iv);
-  }, [busy, recalcing, esitoOpen, skipOpen, recapOpen, acquireKind, addOpen, reorderOpen, lunch, runRecalc, endMin]);
+  }, [busy, recalcing, esitoOpen, skipOpen, verificationTarget, recapOpen, acquireKind, addOpen, reorderOpen, lunch, runRecalc, endMin]);
 
   // Countdown pausa pranzo: al termine naturale registra la fine e riparte
   useEffect(() => {
@@ -774,6 +785,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     if (!suggestion) return;
     setBusy(true);
     try {
+      if (tour.area_filter?.briefJourney || tour.area_filter?.briefRequirements?.length) {
+        await insertLiveStop(await buildCtx(), stops.filter((s) => s.status === 'planned'), suggestion.cand, { mode: 'slot' }, { mandatory: false });
+        await reloadFromDb(); setSuggestion(null); setMessage('Visita aggiunta rispettando i vincoli del giro'); return;
+      }
       const id = await addLiveStop(tour, suggestion.cand, stops.length + 1);
       const newStop: LiveStop = {
         id,
@@ -795,7 +810,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       await runRecalc(updated);
     } catch (err) {
       console.error('[AITour][live] add suggestion:', err);
-      setMessage("Errore nell'aggiunta della visita");
+      setMessage(err instanceof Error ? err.message : "Errore nell'aggiunta della visita");
     } finally {
       setBusy(false);
     }
@@ -837,6 +852,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     if (!proxSuggestion) return;
     setBusy(true);
     try {
+      if (tour.area_filter?.briefJourney || tour.area_filter?.briefRequirements?.length) {
+        await insertLiveStop(await buildCtx(), stops.filter((s) => s.status === 'planned'), proxSuggestion, { mode: 'slot' }, { mandatory: false });
+        await reloadFromDb(); setProxSuggestion(null); setMessage('Visita aggiunta rispettando i vincoli del giro'); return;
+      }
       const id = await addLiveStop(tour, proxSuggestion, stops.length + 1);
       const newStop: LiveStop = {
         id,
@@ -859,7 +878,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       await runRecalc(updated, `"${proxSuggestion.name}" aggiunta al giro`);
     } catch (err) {
       console.error('[AITour][live] prox add:', err);
-      setMessage("Errore nell'aggiunta della visita");
+      setMessage(err instanceof Error ? err.message : "Errore nell'aggiunta della visita");
     } finally {
       setBusy(false);
     }
@@ -894,10 +913,6 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     setExtendError(null);
     setBusy(true);
     try {
-      if (newEndMin !== endMin) {
-        await extendTourEndTime(tour.id, minToTime(newEndMin));
-        setEndMin(newEndMin);
-      }
       const ctx = { ...(await buildCtx()), endMin: newEndMin };
       const pendingPlanned = stops.filter((s) => s.status === 'planned');
       const res = await extendTourVisits(
@@ -906,6 +921,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         new Set(stops.map((s) => s.candidate.customerId).filter((x): x is string => !!x)),
         new Set(stops.map((s) => s.candidate.tabaccheriaId).filter((x): x is string => !!x)),
       );
+      if (newEndMin !== endMin) {
+        await extendTourEndTime(tour.id, minToTime(newEndMin));
+        setEndMin(newEndMin);
+      }
       await reloadFromDb();
       setExtendOpen(false);
       if (res.addedNames.length > 0) {
@@ -920,7 +939,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       }
     } catch (err) {
       console.error('[AITour][live] estensione visite:', err);
-      setMessage("Errore nell'aggiunta delle visite");
+      const message = err instanceof Error ? err.message : "Errore nell'aggiunta delle visite";
+      setMessage(message); setExtendError(message);
     } finally {
       setBusy(false);
     }
@@ -957,7 +977,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       setMessage(parts.join(' '));
     } catch (err) {
       console.error('[AITour][live] aggiunta tappa:', err);
-      setMessage("Errore nell'aggiunta della tappa");
+      setMessage(err instanceof Error ? err.message : "Errore nell'aggiunta della tappa");
     } finally {
       setBusy(false);
     }
@@ -1272,7 +1292,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       {message ? (
         <View style={styles.msgBox}>
           <Ionicons name="sparkles" size={13} color="#7C3AED" />
-          <Text style={styles.msgText}>{message}</Text>
+          <Text testID="aitour-live-message" style={styles.msgText}>{message}</Text>
           <TouchableOpacity onPress={() => setMessage(null)} hitSlop={8}>
             <Ionicons name="close" size={14} color="#7C3AED" />
           </TouchableOpacity>
@@ -1392,6 +1412,14 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           )}
 
           {/* Azioni */}
+          <TouchableOpacity testID="aitour-live-verify" accessibilityRole="button" activeOpacity={0.75} disabled={busy || recalcing || !actorId} style={styles.verificationButton}
+            onPress={() => {
+              const gps = { lat: next.candidate.lat, lng: next.candidate.lng };
+              setVerificationTarget({ stopId: next.id, subject: { customerId: next.candidate.customerId || null, tabaccheriaId: next.candidate.tabaccheriaId || null, name: next.candidate.name, gps: isVerificationPoint(gps) ? gps : null } });
+            }}>
+            <Ionicons name="alert-circle-outline" size={20} color={AI_PURPLE_TEXT} />
+            <Text testID="aitour-live-verify-label" style={styles.verificationButtonText}>Manda in verifica</Text>
+          </TouchableOpacity>
           <View style={styles.actionsGrid}>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: '#7C3AED' }]}
@@ -1548,6 +1576,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       )}
 
       <EsitoModal visible={esitoOpen} stopName={next?.candidate.name || ''} stopId={next?.id || null} customerId={next?.candidate.customerId || null} saving={busy} uploadPct={uploadPct} onClose={() => setEsitoOpen(false)} onConfirm={handleEsito} />
+      {verificationTarget && <VerificationRequestModal key={`${actorId}:${tour.id}:${verificationTarget.stopId}`} agentId={actorId || ''} contextKey={`${tour.id}:${verificationTarget.stopId}`} subject={verificationTarget.subject}
+        onClose={() => setVerificationTarget(null)} onSuccess={(withoutGps) => { setVerificationTarget(null); setMessage(`Segnalazione inviata${withoutGps ? ' senza posizione GPS' : ''}. Lo staff verificherà il punto vendita. La tappa resta nel giro.`); }} />}
 
       {/* Dettaglio tappa: informazioni cliente + Fallo Ora */}
       <Modal visible={!!detailStop} animationType="fade" transparent onRequestClose={() => setDetailStop(null)}>
@@ -1885,6 +1915,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
 }
 
 const styles = StyleSheet.create({
+  verificationButton: { minHeight: 48, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: AI_PURPLE_BORDER, backgroundColor: AI_PURPLE_SOFT, borderRadius: 12, padding: 12, marginBottom: 14 },
+  verificationButtonText: { fontFamily: JAKARTA.semibold, fontSize: 14, color: AI_PURPLE_TEXT },
   content: { padding: 12, paddingBottom: 40 },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   liveBadge: {

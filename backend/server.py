@@ -1,5 +1,4 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Request, UploadFile, File
-from fastapi.responses import FileResponse
 from fastapi.responses import FileResponse, StreamingResponse, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -9,6 +8,8 @@ import logging
 import re
 import json as _json
 import tempfile
+import asyncio
+from brief_contract import BRIEF_V41_RULES, CAPABILITY, validate_brief_contract
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List
@@ -206,6 +207,7 @@ ESEMPI: "domani una dozzina di fed e doctor vape a pavia quelli che non ordinano
 
 
 class BriefParseRequest(BaseModel):
+    capabilities: List[str] = Field(default_factory=list)
     text: str
     projects: List[str] = Field(default_factory=list)
     cities: List[str] = Field(default_factory=list)
@@ -287,14 +289,27 @@ async def ai_tour_parse_brief(req: BriefParseRequest):
     chat = LlmChat(
         api_key=EMERGENT_LLM_KEY,
         session_id=f"brief-{uuid.uuid4()}",
-        system_message=BRIEF_SYSTEM,
-    ).with_model("openai", "gpt-5.6-luna")
+        system_message=BRIEF_SYSTEM + BRIEF_V41_RULES,
+    ).with_model("openai", "gpt-5.6-luna").with_params(max_tokens=6000)
     try:
-        raw = await chat.send_message(UserMessage(text=_json.dumps(payload, ensure_ascii=False)))
-        brief = _extract_json(raw)
-        if not isinstance(brief, dict):
-            raise ValueError("risposta non JSON")
-        return brief
+        # Endpoint deliberatamente non-streaming: il planner accetta solo JSON
+        # completo e validato. Mantiene l'API della libreria già in uso nell'app.
+        raw = await asyncio.wait_for(
+            chat.send_message(UserMessage(text=_json.dumps(payload, ensure_ascii=False))),
+            timeout=90,
+        )
+        brief = validate_brief_contract(_extract_json(raw))
+        if CAPABILITY not in req.capabilities:
+            if brief.get("journey") or brief["route"].get("startPlace") or brief["route"].get("endPlace") or brief.get("mandatoryStops"):
+                raise HTTPException(status_code=409, detail="Questa richiesta richiede la versione aggiornata di AI Tour")
+            return brief
+        return {"brief": brief, "contractVersion": "4.1", "capabilities": [CAPABILITY]}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="L'AI sta impiegando troppo tempo. Riprova l'interpretazione")
     except Exception as e:
         logger.error(f"[ai-tour] parse-brief: {e}")
         raise HTTPException(status_code=500, detail="Interpretazione non riuscita")

@@ -1,0 +1,81 @@
+{
+  "summary": "Post-fix retest executed for backend + mobile AI Tour functional suite. Backend pytest remains green (6/6). New mobile-adapted AI Tour unit suite ran 5 files (4 pass, 1 fail). UI E2E login->dashboard->AI Tour->Dillo all'AI could not complete due Privacy gate acceptance flow blocking progression in automation.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Privacy Terms gate",
+        "issue": "Automation remained blocked on privacy screen; 'Accetta e Continua' did not transition despite scroll + checkboxes, so downstream login/dashboard/AI Tour path could not be validated in this run.",
+        "testID": "privacy-read-checkbox, privacy-terms-checkbox, privacy-gps-checkbox, privacy-accept",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Login screen",
+        "issue": "Inline error exists, but login flow still invokes Alert.alert for validation/auth errors (conflicts with 'no window.alert-style error' requirement for web regression checks).",
+        "testID": "login-error",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "AI Tour save guard before writes",
+        "issue": "Unit test observed a DB write path reached during saveTour guard scenario where mandatory feasibility should block before first write.",
+        "affected_testIDs": ["aitour-save-btn"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Expo web preview",
+        "issues": [
+          "Runtime warning spam: deprecated shadow* style props in web logs (non-blocking)."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ai_tour_brief_v41.py",
+    "/app/test_reports/pytest/pytest_results_iteration_26.xml",
+    "/app/tests/aitour/run_suite.sh",
+    "/app/tests/aitour/core_journey_planner.unit.ts",
+    "/app/tests/aitour/brief_customer_area_dev_saved.unit.ts",
+    "/app/tests/aitour/normalize_recent15_feasibility.unit.ts",
+    "/app/tests/aitour/live_save_guards.unit.ts",
+    "/app/tests/aitour/liveops_protected.unit.ts",
+    "/app/test_reports/artifacts_iter26/aitour_suite_iter26.log"
+  ],
+  "action_items": [
+    "Fix saveTour/write pipeline guard so mandatory infeasibility blocks before any Supabase write (see failing live_save_guards unit).",
+    "Harden privacy acceptance flow testability/state transition so mobile web automation can proceed to login/dashboard reliably.",
+    "Align login web error behavior with inline-only requirement (avoid alert-based error UX for invalid credentials).",
+    "After fixes, rerun: /app/tests/aitour/run_suite.sh and mobile E2E privacy->login->dashboard->ai-tour->brief path."
+  ],
+  "critical_code_review_comments": [
+    "Guard-order bug suspected in save flow: feasibility check appears not to stop first write in tested scenario.",
+    "Login.tsx still calls Alert.alert in handleLogin() and biometric-login error path.",
+    "AI Tour brief subcomponents expose testIDs broadly (good), but privacy gate still blocks deterministic automation progression."
+  ],
+  "updated_files": [
+    "/app/tests/stubs/expo-location.js",
+    "/app/tests/aitour/core_journey_planner.unit.ts",
+    "/app/tests/aitour/brief_customer_area_dev_saved.unit.ts",
+    "/app/tests/aitour/normalize_recent15_feasibility.unit.ts",
+    "/app/tests/aitour/live_save_guards.unit.ts",
+    "/app/tests/aitour/liveops_protected.unit.ts",
+    "/app/tests/aitour/ws-preload.mjs",
+    "/app/tests/aitour/run_suite.sh",
+    "/app/test_reports/iteration_26.json"
+  ],
+  "success_rate": {
+    "backend": "100% (6/6)",
+    "frontend": "Functional suite 80% (4/5 unit files), UI E2E blocked before AI Tour entry"
+  },
+  "seed_data_creation": "None. No DB seed/write operations executed intentionally.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Rerunnable command: /app/tests/aitour/run_suite.sh. Current failing file: live_save_guards.unit.ts (asserts no writes before feasibility). UI automation attempts stopped after 3 failures at AI Tour selector due privacy gate not transitioning.",
+  "rca_of_issue": "Repro (guard): run /app/tests/aitour/run_suite.sh -> live_save_guards fails with writes=1 expected 0. This indicates save guard path likely performs insert earlier than mandatory feasibility rejection for that scenario. Repro (UI): open app web preview in mobile viewport -> privacy screen appears; even after scroll/checking required boxes and clicking privacy-accept, app does not advance to login/dashboard in automation, so AI Tour flow cannot be completed in this run."
+}

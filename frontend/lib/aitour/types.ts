@@ -1,4 +1,5 @@
 // Tipi condivisi AI Tour (Fase 1: pianificazione)
+import { currentThemeMode } from '../theme';
 
 export type EntityType = 'client' | 'prospect' | 'orphan' | 'free' | 'never';
 export type DayType = 'clienti' | 'sviluppo' | 'mista' | 'ai';
@@ -29,6 +30,8 @@ export interface TourCandidate {
   name: string;
   /** Nome commerciale della scheda cliente CRM quando differisce dalla denominazione del registro */
   crmName?: string | null;
+  requestedPriority?: number;
+  journeyStage?: number;
   address: string;
   city: string;
   province: string;
@@ -70,6 +73,14 @@ export interface TourCandidate {
 
 /** Area scelta alla creazione del giro: le operazioni live (es. "Più Visite") la rispettano */
 export interface SavedAreaFilter {
+  briefJourney?: import('./brief-journey').BriefJourney | null;
+  journeyStageCounts?: { index: number; label: string; eligible: number }[];
+  briefRequirements?: { customerId: string | null; key: string; name: string; priority: number; excludedDays?: number[] | null }[];
+  returnFlexible?: boolean;
+  returnMin?: number;
+  finishMin?: number;
+  routingFallback?: boolean;
+  briefAreas?: import('./brief-area').TourAreaConstraint[];
   mode: 'auto' | 'territory' | 'province' | 'city' | 'radius' | 'draw';
   province?: string;
   city?: string;
@@ -124,6 +135,8 @@ export interface TourPlan {
   routingFallback: boolean;
   /** Filtro area del form di generazione, persistito sul tour salvato */
   areaFilter?: SavedAreaFilter | null;
+  requiredStops?: { key: string; name: string; priority: number }[];
+  returnFlexible?: boolean;
 }
 
 export interface AiTourSettings {
@@ -176,8 +189,6 @@ export const ENTITY_LABELS: Record<EntityType, string> = {
   free: 'Da acquisire',
   never: 'Mai visitata',
 };
-
-import { currentThemeMode } from '../theme';
 
 /** Colori saturi per marker mappa e dot con testo bianco (uguali in entrambi i temi) */
 export const ENTITY_COLORS: Record<EntityType, string> = {

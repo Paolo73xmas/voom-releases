@@ -33,6 +33,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   // Biometrics state
   const [biometricSupported, setBiometricSupported] = useState(false);
@@ -101,7 +102,8 @@ export default function LoginScreen() {
           await login(storedEmail, storedPassword);
           router.replace('/(tabs)');
         } catch (e: any) {
-          Alert.alert('Errore di Login', e?.message || 'Credenziali non valide. Inseriscile manualmente.');
+          setLoginError(e?.message || 'Credenziali non valide. Inseriscile manualmente.');
+          if (Platform.OS !== 'web') Alert.alert('Errore di Login', e?.message || 'Credenziali non valide. Inseriscile manualmente.');
         } finally {
           setLoading(false);
         }
@@ -112,8 +114,10 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    setLoginError('');
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Errore', 'Inserisci email e password');
+      setLoginError('Inserisci email e password');
+      if (Platform.OS !== 'web') Alert.alert('Errore', 'Inserisci email e password');
       return;
     }
 
@@ -153,7 +157,8 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       }
     } catch (error: any) {
-      Alert.alert('Errore di Login', error.message || 'Errore durante il login');
+      setLoginError(error.message || 'Errore durante il login');
+      if (Platform.OS !== 'web') Alert.alert('Errore di Login', error.message || 'Errore durante il login');
     } finally {
       setLoading(false);
     }
@@ -188,6 +193,7 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
             <TextInput
+              testID="login-email"
               style={styles.input}
               placeholder="Email"
               placeholderTextColor={COLORS.textLight}
@@ -207,6 +213,7 @@ export default function LoginScreen() {
             <TextInput
               style={styles.input}
               placeholder="Password"
+              testID="login-password"
               placeholderTextColor={COLORS.textLight}
               value={password}
               onChangeText={setPassword}
@@ -219,6 +226,7 @@ export default function LoginScreen() {
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}
+              testID="login-toggle-password"
               style={styles.eyeButton}
             >
               <Ionicons
@@ -230,9 +238,11 @@ export default function LoginScreen() {
           </View>
 
           {/* Ricordami toggle */}
+          {!!loginError && <Text testID="login-error" accessibilityRole="alert" style={styles.errorText}>{loginError}</Text>}
           <TouchableOpacity
             style={styles.rememberRow}
             onPress={() => setRememberMe(!rememberMe)}
+            testID="login-remember-me"
             activeOpacity={0.7}
           >
             <View style={[styles.rememberCheckbox, rememberMe && styles.rememberCheckboxChecked]}>
@@ -251,6 +261,7 @@ export default function LoginScreen() {
           <TouchableOpacity
             style={[styles.button, (loading || isLoading) && styles.buttonDisabled]}
             onPress={handleLogin}
+            testID="login-submit"
             disabled={loading || isLoading}
           >
             {(loading || isLoading) ? (
@@ -264,6 +275,7 @@ export default function LoginScreen() {
           {biometricSupported && biometricEnabled && savedEmail && Platform.OS !== 'web' && (
             <TouchableOpacity
               style={styles.bioButton}
+              testID="login-biometric"
               onPress={async () => {
                 const creds = await loadSavedCredentials();
                 if (creds) promptBiometricLogin(creds.email, creds.password);
@@ -283,6 +295,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  errorText: { fontSize: 14, lineHeight: 20, color: COLORS.danger, marginBottom: 12 },
   container: {
     flex: 1,
     backgroundColor: '#5B21B6',

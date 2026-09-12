@@ -102,7 +102,14 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Controllo funzionale completo VOOM CRM e correzione errori, preservando funzioni e dati reali. Dati test riconoscibili autorizzati con cleanup ID-based."
+user_problem_statement: "Ultima priorità: correggere fallimento EAS iOS install dependencies Vitest5/Node20.19.4, solo dipendenze/codice, senza Docker/env/DB. Storico: audit funzionale e bug flussi CRM."
+
+eas_dependency_fix_20260912:
+  original_error: "vitest@5.0.0 engine node requires22.12+, EASworker20.19.4"
+  correction: "Vitest4.1.11 exact + targeted yarn.lock update; runtime dependencies unchanged"
+  self_verified: ["clean frozen yarn install Node20.19.4", "17 unit tests Node20.19.4", "tsc Node20.19.4", "iOS JS export Node20.19.4"]
+  remote_ipa_build_verified: false
+  report: "/app/test_reports/eas_node20_dependency_fix.md"
 
 audit_completo_corrente:
   implemented: true

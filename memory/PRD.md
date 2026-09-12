@@ -1,5 +1,13 @@
 # VOOM Sales Mobile App - PRD
 
+## 12/09/2026 — fix build iOS dipendenze Node20
+- Ultima richiesta: correggere errore EAS iOS `INSTALL_DEPENDENCIES` senza modifiche Docker/database/funzionalità. Build53fce907-b255-4ec1-9b85-e4d4fb5db0f0 usava Node20.19.4, mentre Vitest5 aggiunto durante audit richiede22.12+.
+- Correzione verificata: pin devDependency Vitest **4.1.11** via package manager e aggiornamento mirato yarn.lock. Vite8.3.0 è compatibile secondo registry (Node20.19+) ed è stato mantenuto. Tutte le dependencies runtime, main e scripts invariati.
+- Prove pulite sotto Node20.19.4: frozen install includendo devDependencies/enginechecks PASS,17testunit PASS,TypeScript PASS,export bundleJS iOS2866moduli PASS.
+- Hermes bytecode non verificabile nel sandboxARM64 col binarioLinuxx86_64: flag `--no-bytecode` SOLO nel test, appHermes/config invariati. Nessuna nuova build remota/IPA generata: resta da confermare l'intero ciclo EAS.
+- Riferimento dettagliato: `test_reports/eas_node20_dependency_fix.md`. Non applicare proposte generiche su envpackager/supervisor/gitignore: non causano il blocco loggato e sono fuori scope/protette.
+- Secondo controllo statico rieseguito: status generico fail per gitignore.env/supervisor--tunnel, nessuna correzione infrastrutturale applicata. Non dichiarare healthcheckglobalePASS né IPA riuscita; installazione fallita originale riprodotta e verificata PASS su Node20.19.4.
+
 ## Aggiornamento 12/09/2026 — ordini rapidi, appuntamenti e audit
 
 ### Richieste attuali e implementazione

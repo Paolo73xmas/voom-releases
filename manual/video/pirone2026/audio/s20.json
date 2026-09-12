@@ -1,0 +1,298 @@
+{
+  "id": "s20",
+  "sha256": "3920b355d017a9aaa1766d8c09ede579f06a0068966edc26cc7125ab690b14d0",
+  "audioDuration": 32.064,
+  "duration": 33.28,
+  "words": [
+    {
+      "text": "La",
+      "start": 0.102625,
+      "end": 0.326291
+    },
+    {
+      "text": "conferma",
+      "start": 0.339458,
+      "end": 0.892083
+    },
+    {
+      "text": "vale",
+      "start": 0.90525,
+      "end": 1.2605
+    },
+    {
+      "text": "per",
+      "start": 1.273666,
+      "end": 1.471041
+    },
+    {
+      "text": "la",
+      "start": 1.484208,
+      "end": 1.589458
+    },
+    {
+      "text": "configurazione",
+      "start": 1.602625,
+      "end": 2.576291
+    },
+    {
+      "text": "appena",
+      "start": 2.589458,
+      "end": 2.944708
+    },
+    {
+      "text": "controllata",
+      "start": 2.957875,
+      "end": 3.839458
+    },
+    {
+      "text": "Se",
+      "start": 4.763166,
+      "end": 4.999999
+    },
+    {
+      "text": "cambi",
+      "start": 5.013166,
+      "end": 5.368416
+    },
+    {
+      "text": "la",
+      "start": 5.381583,
+      "end": 5.513166
+    },
+    {
+      "text": "direzione",
+      "start": 5.526333,
+      "end": 6.276333
+    },
+    {
+      "text": "il",
+      "start": 6.447375,
+      "end": 6.64475
+    },
+    {
+      "text": "raggio",
+      "start": 6.657875,
+      "end": 7.25
+    },
+    {
+      "text": "una",
+      "start": 7.460541,
+      "end": 7.710541
+    },
+    {
+      "text": "località",
+      "start": 7.723666,
+      "end": 8.276291
+    },
+    {
+      "text": "o",
+      "start": 8.289458,
+      "end": 8.381583
+    },
+    {
+      "text": "l'ordine",
+      "start": 8.39475,
+      "end": 8.868416
+    },
+    {
+      "text": "delle",
+      "start": 8.881583,
+      "end": 9.144749
+    },
+    {
+      "text": "zone",
+      "start": 9.157875,
+      "end": 9.618416
+    },
+    {
+      "text": "l'app",
+      "start": 9.75,
+      "end": 10.092125
+    },
+    {
+      "text": "richiede",
+      "start": 10.10525,
+      "end": 10.552625
+    },
+    {
+      "text": "una",
+      "start": 10.565791,
+      "end": 10.763166
+    },
+    {
+      "text": "nuova",
+      "start": 10.776333,
+      "end": 11.092124
+    },
+    {
+      "text": "verifica",
+      "start": 11.10525,
+      "end": 11.815791
+    },
+    {
+      "text": "Nell'esempio",
+      "start": 12.736833,
+      "end": 13.434208
+    },
+    {
+      "text": "passiamo",
+      "start": 13.447375,
+      "end": 13.89475
+    },
+    {
+      "text": "da",
+      "start": 13.907875,
+      "end": 14.026291
+    },
+    {
+      "text": "Nord-est",
+      "start": 14.039458,
+      "end": 14.592083
+    },
+    {
+      "text": "a",
+      "start": 14.60525,
+      "end": 14.736833
+    },
+    {
+      "text": "Est",
+      "start": 14.75,
+      "end": 15.052625
+    },
+    {
+      "text": "non",
+      "start": 15.342125,
+      "end": 15.513166
+    },
+    {
+      "text": "possiamo",
+      "start": 15.526333,
+      "end": 15.999999
+    },
+    {
+      "text": "riutilizzare",
+      "start": 16.013166,
+      "end": 16.776332
+    },
+    {
+      "text": "automaticamente",
+      "start": 16.789458,
+      "end": 17.749999
+    },
+    {
+      "text": "la",
+      "start": 17.763166,
+      "end": 17.855291
+    },
+    {
+      "text": "conferma",
+      "start": 17.868416,
+      "end": 18.434207
+    },
+    {
+      "text": "precedente",
+      "start": 18.447375,
+      "end": 19.236833
+    },
+    {
+      "text": "Ripeti",
+      "start": 20.171041,
+      "end": 20.736832
+    },
+    {
+      "text": "quindi",
+      "start": 20.75,
+      "end": 21.092125
+    },
+    {
+      "text": "la",
+      "start": 21.10525,
+      "end": 21.25
+    },
+    {
+      "text": "sequenza",
+      "start": 21.263166,
+      "end": 21.934207
+    },
+    {
+      "text": "verifica",
+      "start": 22.223666,
+      "end": 22.934207
+    },
+    {
+      "text": "guarda",
+      "start": 23.263166,
+      "end": 23.657916
+    },
+    {
+      "text": "la",
+      "start": 23.671041,
+      "end": 23.749999
+    },
+    {
+      "text": "mappa",
+      "start": 23.763166,
+      "end": 24.236832
+    },
+    {
+      "text": "conferma",
+      "start": 24.565791,
+      "end": 25.342124
+    },
+    {
+      "text": "È",
+      "start": 26.276333,
+      "end": 26.434208
+    },
+    {
+      "text": "una",
+      "start": 26.447375,
+      "end": 26.684208
+    },
+    {
+      "text": "protezione",
+      "start": 26.697375,
+      "end": 27.315791
+    },
+    {
+      "text": "contro",
+      "start": 27.328958,
+      "end": 27.684208
+    },
+    {
+      "text": "modifiche",
+      "start": 27.697375,
+      "end": 28.25
+    },
+    {
+      "text": "involontarie",
+      "start": 28.263166,
+      "end": 29.078957
+    },
+    {
+      "text": "non",
+      "start": 29.447375,
+      "end": 29.657916
+    },
+    {
+      "text": "un",
+      "start": 29.671041,
+      "end": 29.763166
+    },
+    {
+      "text": "passaggio",
+      "start": 29.776333,
+      "end": 30.263166
+    },
+    {
+      "text": "da",
+      "start": 30.276333,
+      "end": 30.421083
+    },
+    {
+      "text": "saltare",
+      "start": 30.434208,
+      "end": 31.118416
+    }
+  ]
+}

@@ -1,0 +1,527 @@
+[
+  {
+    "method": "POST",
+    "path": "/auth/v1/token",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_order_stats",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_learned_durations",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_no_interest_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_order_stats",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_learned_durations",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_no_interest_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_order_stats",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_learned_durations",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/functions/v1/ai-tour",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/appointments",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/ai_tours",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/ai_tour_stops",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "GET",
+    "path": "/rest/v1/ai_tours",
+    "result": "LOCAL_DEMONSTRATION_RESPONSE"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/agent_own_stamina",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_order_stats",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_learned_durations",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_no_interest_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_order_stats",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/ai_tour_learned_durations",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/rest/v1/rpc/get_orphan_tabaccherie_ids",
+    "result": "AUTH_OR_READ_ALLOWED"
+  },
+  {
+    "method": "POST",
+    "path": "/functions/v1/ai-tour",
+    "result": "AUTH_OR_READ_ALLOWED"
+  }
+]

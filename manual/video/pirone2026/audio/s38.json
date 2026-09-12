@@ -1,0 +1,353 @@
+{
+  "id": "s38",
+  "sha256": "b1349bbcfd3995e159625cc835867750f34e5cc11814ed7367de9f6d83a67155",
+  "audioDuration": 32.328,
+  "duration": 33.56,
+  "words": [
+    {
+      "text": "C'è",
+      "start": 0.102625,
+      "end": 0.3
+    },
+    {
+      "text": "una",
+      "start": 0.313166,
+      "end": 0.536832
+    },
+    {
+      "text": "distinzione",
+      "start": 0.55,
+      "end": 1.273666
+    },
+    {
+      "text": "da",
+      "start": 1.286833,
+      "end": 1.392083
+    },
+    {
+      "text": "ricordare",
+      "start": 1.40525,
+      "end": 2.142083
+    },
+    {
+      "text": "Un",
+      "start": 3.078958,
+      "end": 3.263166
+    },
+    {
+      "text": "impegno",
+      "start": 3.276333,
+      "end": 3.710541
+    },
+    {
+      "text": "libero",
+      "start": 3.723666,
+      "end": 4.118416
+    },
+    {
+      "text": "senza",
+      "start": 4.131583,
+      "end": 4.499999
+    },
+    {
+      "text": "luogo",
+      "start": 4.513166,
+      "end": 4.855291
+    },
+    {
+      "text": "viene",
+      "start": 4.868416,
+      "end": 5.171041
+    },
+    {
+      "text": "mostrato",
+      "start": 5.184208,
+      "end": 5.723666
+    },
+    {
+      "text": "come",
+      "start": 5.736833,
+      "end": 5.973666
+    },
+    {
+      "text": "promemoria",
+      "start": 5.986833,
+      "end": 6.723666
+    },
+    {
+      "text": "ma",
+      "start": 7.026333,
+      "end": 7.236874
+    },
+    {
+      "text": "non",
+      "start": 7.25,
+      "end": 7.39475
+    },
+    {
+      "text": "diventa",
+      "start": 7.407875,
+      "end": 7.802625
+    },
+    {
+      "text": "una",
+      "start": 7.815791,
+      "end": 8.013166
+    },
+    {
+      "text": "tappa",
+      "start": 8.026333,
+      "end": 8.355291
+    },
+    {
+      "text": "geografica",
+      "start": 8.368416,
+      "end": 9.171041
+    },
+    {
+      "text": "e",
+      "start": 9.184208,
+      "end": 9.236833
+    },
+    {
+      "text": "non",
+      "start": 9.25,
+      "end": 9.421041
+    },
+    {
+      "text": "blocca",
+      "start": 9.434208,
+      "end": 9.776333
+    },
+    {
+      "text": "automaticamente",
+      "start": 9.789458,
+      "end": 10.710499
+    },
+    {
+      "text": "gli",
+      "start": 10.723666,
+      "end": 10.828916
+    },
+    {
+      "text": "orari",
+      "start": 10.842125,
+      "end": 11.14475
+    },
+    {
+      "text": "del",
+      "start": 11.157875,
+      "end": 11.328916
+    },
+    {
+      "text": "percorso",
+      "start": 11.342125,
+      "end": 12.118458
+    },
+    {
+      "text": "Leggi",
+      "start": 13.039458,
+      "end": 13.552624
+    },
+    {
+      "text": "l'avvertenza",
+      "start": 13.565791,
+      "end": 14.381582
+    },
+    {
+      "text": "e",
+      "start": 14.39475,
+      "end": 14.460541
+    },
+    {
+      "text": "controlla",
+      "start": 14.473666,
+      "end": 15.078916
+    },
+    {
+      "text": "personalmente",
+      "start": 15.092125,
+      "end": 15.828958
+    },
+    {
+      "text": "eventuali",
+      "start": 15.842125,
+      "end": 16.43425
+    },
+    {
+      "text": "sovrapposizioni",
+      "start": 16.447375,
+      "end": 17.64475
+    },
+    {
+      "text": "Non",
+      "start": 18.578958,
+      "end": 18.815791
+    },
+    {
+      "text": "pensare",
+      "start": 18.828958,
+      "end": 19.315791
+    },
+    {
+      "text": "che",
+      "start": 19.328958,
+      "end": 19.473708
+    },
+    {
+      "text": "la",
+      "start": 19.486833,
+      "end": 19.618416
+    },
+    {
+      "text": "sola",
+      "start": 19.631583,
+      "end": 19.894749
+    },
+    {
+      "text": "presenza",
+      "start": 19.907875,
+      "end": 20.407875
+    },
+    {
+      "text": "della",
+      "start": 20.421041,
+      "end": 20.671041
+    },
+    {
+      "text": "riga",
+      "start": 20.684208,
+      "end": 20.947374
+    },
+    {
+      "text": "in",
+      "start": 20.960541,
+      "end": 21.065791
+    },
+    {
+      "text": "agenda",
+      "start": 21.078958,
+      "end": 21.513166
+    },
+    {
+      "text": "renda",
+      "start": 21.526333,
+      "end": 21.736874
+    },
+    {
+      "text": "impossibile",
+      "start": 21.75,
+      "end": 22.486833
+    },
+    {
+      "text": "pianificare",
+      "start": 22.5,
+      "end": 23.14475
+    },
+    {
+      "text": "una",
+      "start": 23.157875,
+      "end": 23.35525
+    },
+    {
+      "text": "visita",
+      "start": 23.368416,
+      "end": 23.842082
+    },
+    {
+      "text": "nello",
+      "start": 23.85525,
+      "end": 24.157875
+    },
+    {
+      "text": "stesso",
+      "start": 24.171041,
+      "end": 24.552624
+    },
+    {
+      "text": "intervallo",
+      "start": 24.565791,
+      "end": 25.368416
+    },
+    {
+      "text": "Questa",
+      "start": 25.552625,
+      "end": 25.881583
+    },
+    {
+      "text": "verifica",
+      "start": 25.89475,
+      "end": 26.368416
+    },
+    {
+      "text": "è",
+      "start": 26.381583,
+      "end": 26.434208
+    },
+    {
+      "text": "particolarmente",
+      "start": 26.447375,
+      "end": 27.210541
+    },
+    {
+      "text": "importante",
+      "start": 27.223666,
+      "end": 27.894707
+    },
+    {
+      "text": "per",
+      "start": 27.907875,
+      "end": 28.10525
+    },
+    {
+      "text": "riunioni",
+      "start": 28.118416,
+      "end": 28.592082
+    },
+    {
+      "text": "telefoniche",
+      "start": 28.60525,
+      "end": 29.315791
+    },
+    {
+      "text": "o",
+      "start": 29.328958,
+      "end": 29.394749
+    },
+    {
+      "text": "attività",
+      "start": 29.407875,
+      "end": 29.947333
+    },
+    {
+      "text": "che",
+      "start": 29.960541,
+      "end": 30.118416
+    },
+    {
+      "text": "non",
+      "start": 30.131583,
+      "end": 30.289458
+    },
+    {
+      "text": "hanno",
+      "start": 30.302625,
+      "end": 30.5
+    },
+    {
+      "text": "una",
+      "start": 30.513166,
+      "end": 30.684207
+    },
+    {
+      "text": "destinazione",
+      "start": 30.697375,
+      "end": 31.447375
+    },
+    {
+      "text": "fisica",
+      "start": 31.460541,
+      "end": 32.118416
+    }
+  ]
+}

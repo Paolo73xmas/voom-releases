@@ -1,0 +1,31 @@
+{
+  "video_exists": true,
+  "bytes": 47832021,
+  "sha256": "ad2113f6f00d15af95ce0a9d68cd0d4b083f93c1ba9cbdfa766c52528516fd5c",
+  "decode_pass": true,
+  "probe_duration": "00:26:16.36",
+  "has_1920x1080": true,
+  "has_25fps": true,
+  "has_h264": true,
+  "has_aac": true,
+  "chapter_count_from_probe": 8,
+  "srt_cues": 272,
+  "srt_order_ok": true,
+  "timeline_scenes": 48,
+  "timeline_chapters": 8,
+  "timeline_scene_monotonic": true,
+  "md_exists": true,
+  "qa_report_reference": {
+    "duration_seconds": 1576.36,
+    "voice_word_boundaries": "pass",
+    "caption_timing_order": "pass"
+  },
+  "sample_frames": [
+    "/app/test_reports/artifacts_iter35/frame_2s_iter35.jpg",
+    "/app/test_reports/artifacts_iter35/frame_366s_iter35.jpg",
+    "/app/test_reports/artifacts_iter35/frame_650s_iter35.jpg",
+    "/app/test_reports/artifacts_iter35/frame_1005s_iter35.jpg",
+    "/app/test_reports/artifacts_iter35/frame_1275s_iter35.jpg",
+    "/app/test_reports/artifacts_iter35/frame_1500s_iter35.jpg"
+  ]
+}

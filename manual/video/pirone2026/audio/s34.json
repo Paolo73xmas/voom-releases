@@ -1,0 +1,328 @@
+{
+  "id": "s34",
+  "sha256": "0687f07078b6cc16c994e4ceed42eea3a5534f0f03f195da91e262976eee34ec",
+  "audioDuration": 30.072,
+  "duration": 31.28,
+  "words": [
+    {
+      "text": "Compila",
+      "start": 0.102625,
+      "end": 0.563166
+    },
+    {
+      "text": "la",
+      "start": 0.576333,
+      "end": 0.681583
+    },
+    {
+      "text": "data",
+      "start": 0.69475,
+      "end": 1.0895
+    },
+    {
+      "text": "l'ora",
+      "start": 1.392125,
+      "end": 1.707916
+    },
+    {
+      "text": "locale",
+      "start": 1.721041,
+      "end": 2.194707
+    },
+    {
+      "text": "e",
+      "start": 2.207875,
+      "end": 2.247333
+    },
+    {
+      "text": "una",
+      "start": 2.260541,
+      "end": 2.536874
+    },
+    {
+      "text": "durata",
+      "start": 2.55,
+      "end": 2.957875
+    },
+    {
+      "text": "realistica",
+      "start": 2.971041,
+      "end": 3.839457
+    },
+    {
+      "text": "La",
+      "start": 4.763166,
+      "end": 5.013166
+    },
+    {
+      "text": "durata",
+      "start": 5.026333,
+      "end": 5.434208
+    },
+    {
+      "text": "non",
+      "start": 5.447375,
+      "end": 5.631583
+    },
+    {
+      "text": "è",
+      "start": 5.64475,
+      "end": 5.697375
+    },
+    {
+      "text": "un",
+      "start": 5.710541,
+      "end": 5.842124
+    },
+    {
+      "text": "dettaglio",
+      "start": 5.85525,
+      "end": 6.578916
+    },
+    {
+      "text": "un",
+      "start": 6.802625,
+      "end": 6.934208
+    },
+    {
+      "text": "incontro",
+      "start": 6.947375,
+      "end": 7.434208
+    },
+    {
+      "text": "di",
+      "start": 7.447375,
+      "end": 7.552625
+    },
+    {
+      "text": "mezz'ora",
+      "start": 7.565791,
+      "end": 8.078957
+    },
+    {
+      "text": "e",
+      "start": 8.092125,
+      "end": 8.14475
+    },
+    {
+      "text": "uno",
+      "start": 8.157875,
+      "end": 8.434208
+    },
+    {
+      "text": "di",
+      "start": 8.447375,
+      "end": 8.592125
+    },
+    {
+      "text": "due",
+      "start": 8.60525,
+      "end": 8.85525
+    },
+    {
+      "text": "ore",
+      "start": 8.868416,
+      "end": 9.092082
+    },
+    {
+      "text": "occupano",
+      "start": 9.10525,
+      "end": 9.631583
+    },
+    {
+      "text": "spazi",
+      "start": 9.64475,
+      "end": 10.065791
+    },
+    {
+      "text": "diversi",
+      "start": 10.078958,
+      "end": 10.592124
+    },
+    {
+      "text": "nella",
+      "start": 10.60525,
+      "end": 10.881583
+    },
+    {
+      "text": "giornata",
+      "start": 10.89475,
+      "end": 11.578958
+    },
+    {
+      "text": "Nelle",
+      "start": 12.5,
+      "end": 12.881583
+    },
+    {
+      "text": "note",
+      "start": 12.89475,
+      "end": 13.197375
+    },
+    {
+      "text": "scrivi",
+      "start": 13.210541,
+      "end": 13.657916
+    },
+    {
+      "text": "soltanto",
+      "start": 13.671041,
+      "end": 14.249999
+    },
+    {
+      "text": "ciò",
+      "start": 14.263166,
+      "end": 14.526332
+    },
+    {
+      "text": "che",
+      "start": 14.539458,
+      "end": 14.671041
+    },
+    {
+      "text": "ti",
+      "start": 14.684208,
+      "end": 14.855249
+    },
+    {
+      "text": "serve",
+      "start": 14.868416,
+      "end": 15.249999
+    },
+    {
+      "text": "per",
+      "start": 15.263166,
+      "end": 15.460541
+    },
+    {
+      "text": "ricordare",
+      "start": 15.473666,
+      "end": 15.960499
+    },
+    {
+      "text": "l'impegno",
+      "start": 15.973666,
+      "end": 16.657874
+    },
+    {
+      "text": "Prima",
+      "start": 17.578958,
+      "end": 17.881583
+    },
+    {
+      "text": "di",
+      "start": 17.89475,
+      "end": 18.0
+    },
+    {
+      "text": "salvare",
+      "start": 18.013166,
+      "end": 18.552624
+    },
+    {
+      "text": "rileggi",
+      "start": 18.85525,
+      "end": 19.381583
+    },
+    {
+      "text": "soprattutto",
+      "start": 19.39475,
+      "end": 20.118416
+    },
+    {
+      "text": "giorno",
+      "start": 20.131583,
+      "end": 20.539458
+    },
+    {
+      "text": "e",
+      "start": 20.552625,
+      "end": 20.618416
+    },
+    {
+      "text": "ora",
+      "start": 20.631583,
+      "end": 21.013166
+    },
+    {
+      "text": "Qui",
+      "start": 21.934208,
+      "end": 22.118416
+    },
+    {
+      "text": "mostriamo",
+      "start": 22.131583,
+      "end": 22.697374
+    },
+    {
+      "text": "il",
+      "start": 22.710541,
+      "end": 22.749999
+    },
+    {
+      "text": "modulo",
+      "start": 22.763166,
+      "end": 23.210541
+    },
+    {
+      "text": "compilato",
+      "start": 23.223666,
+      "end": 23.921041
+    },
+    {
+      "text": "ma",
+      "start": 24.197375,
+      "end": 24.342125
+    },
+    {
+      "text": "lo",
+      "start": 24.35525,
+      "end": 24.447375
+    },
+    {
+      "text": "chiudiamo",
+      "start": 24.460541,
+      "end": 25.026332
+    },
+    {
+      "text": "senza",
+      "start": 25.039458,
+      "end": 25.447333
+    },
+    {
+      "text": "premere",
+      "start": 25.460541,
+      "end": 25.815791
+    },
+    {
+      "text": "Salva",
+      "start": 25.828958,
+      "end": 26.368416
+    },
+    {
+      "text": "i",
+      "start": 26.631583,
+      "end": 26.749999
+    },
+    {
+      "text": "dati",
+      "start": 26.763166,
+      "end": 27.065791
+    },
+    {
+      "text": "dell'account",
+      "start": 27.078958,
+      "end": 27.776333
+    },
+    {
+      "text": "rimangono",
+      "start": 27.789458,
+      "end": 28.315791
+    },
+    {
+      "text": "invariati",
+      "start": 28.328958,
+      "end": 29.131583
+    }
+  ]
+}

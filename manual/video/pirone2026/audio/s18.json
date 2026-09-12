@@ -1,0 +1,328 @@
+{
+  "id": "s18",
+  "sha256": "6bb6149f915737a98c9cebd5541ecd41cb95ad5695a931d660305df7d0926860",
+  "audioDuration": 29.424,
+  "duration": 30.64,
+  "words": [
+    {
+      "text": "Il",
+      "start": 0.102625,
+      "end": 0.286833
+    },
+    {
+      "text": "secondo",
+      "start": 0.3,
+      "end": 0.8
+    },
+    {
+      "text": "pulsante",
+      "start": 0.813166,
+      "end": 1.365791
+    },
+    {
+      "text": "decisivo",
+      "start": 1.378958,
+      "end": 1.997374
+    },
+    {
+      "text": "si",
+      "start": 2.010541,
+      "end": 2.168416
+    },
+    {
+      "text": "trova",
+      "start": 2.181583,
+      "end": 2.523708
+    },
+    {
+      "text": "sotto",
+      "start": 2.536833,
+      "end": 2.878958
+    },
+    {
+      "text": "la",
+      "start": 2.892125,
+      "end": 2.971083
+    },
+    {
+      "text": "mappa",
+      "start": 2.984208,
+      "end": 3.444749
+    },
+    {
+      "text": "Confermo",
+      "start": 3.734208,
+      "end": 4.313166
+    },
+    {
+      "text": "queste",
+      "start": 4.326333,
+      "end": 4.655291
+    },
+    {
+      "text": "zone",
+      "start": 4.668416,
+      "end": 5.023666
+    },
+    {
+      "text": "e",
+      "start": 5.036833,
+      "end": 5.102624
+    },
+    {
+      "text": "questo",
+      "start": 5.115791,
+      "end": 5.444749
+    },
+    {
+      "text": "ordine",
+      "start": 5.457875,
+      "end": 5.984208
+    },
+    {
+      "text": "È",
+      "start": 6.921041,
+      "end": 7.118416
+    },
+    {
+      "text": "questo",
+      "start": 7.131583,
+      "end": 7.473708
+    },
+    {
+      "text": "il",
+      "start": 7.486833,
+      "end": 7.552624
+    },
+    {
+      "text": "comando",
+      "start": 7.565791,
+      "end": 8.013166
+    },
+    {
+      "text": "che",
+      "start": 8.026333,
+      "end": 8.184208
+    },
+    {
+      "text": "conclude",
+      "start": 8.197375,
+      "end": 8.7895
+    },
+    {
+      "text": "la",
+      "start": 8.802625,
+      "end": 8.89475
+    },
+    {
+      "text": "conferma",
+      "start": 8.907875,
+      "end": 9.684208
+    },
+    {
+      "text": "Se",
+      "start": 10.60525,
+      "end": 10.828916
+    },
+    {
+      "text": "hai",
+      "start": 10.842125,
+      "end": 10.973708
+    },
+    {
+      "text": "soltanto",
+      "start": 10.986833,
+      "end": 11.552624
+    },
+    {
+      "text": "premuto",
+      "start": 11.565791,
+      "end": 11.973666
+    },
+    {
+      "text": "Verifica",
+      "start": 11.986833,
+      "end": 12.539458
+    },
+    {
+      "text": "zone",
+      "start": 12.552625,
+      "end": 12.921041
+    },
+    {
+      "text": "e",
+      "start": 12.934208,
+      "end": 12.973666
+    },
+    {
+      "text": "mostra",
+      "start": 12.986833,
+      "end": 13.394708
+    },
+    {
+      "text": "la",
+      "start": 13.407875,
+      "end": 13.5
+    },
+    {
+      "text": "mappa",
+      "start": 13.513166,
+      "end": 13.921041
+    },
+    {
+      "text": "non",
+      "start": 14.223666,
+      "end": 14.394707
+    },
+    {
+      "text": "hai",
+      "start": 14.407875,
+      "end": 14.56575
+    },
+    {
+      "text": "ancora",
+      "start": 14.578958,
+      "end": 14.934208
+    },
+    {
+      "text": "dichiarato",
+      "start": 14.947375,
+      "end": 15.460541
+    },
+    {
+      "text": "che",
+      "start": 15.473666,
+      "end": 15.592082
+    },
+    {
+      "text": "l'area",
+      "start": 15.60525,
+      "end": 15.9605
+    },
+    {
+      "text": "è",
+      "start": 15.973666,
+      "end": 16.026291
+    },
+    {
+      "text": "corretta",
+      "start": 16.039458,
+      "end": 16.749999
+    },
+    {
+      "text": "Prima",
+      "start": 17.684208,
+      "end": 18.026333
+    },
+    {
+      "text": "controlli",
+      "start": 18.039458,
+      "end": 18.789458
+    },
+    {
+      "text": "poi",
+      "start": 19.092125,
+      "end": 19.381583
+    },
+    {
+      "text": "confermi",
+      "start": 19.39475,
+      "end": 20.236875
+    },
+    {
+      "text": "Questa",
+      "start": 21.157875,
+      "end": 21.5
+    },
+    {
+      "text": "distinzione",
+      "start": 21.513166,
+      "end": 22.171041
+    },
+    {
+      "text": "evita",
+      "start": 22.184208,
+      "end": 22.526333
+    },
+    {
+      "text": "che",
+      "start": 22.539458,
+      "end": 22.684208
+    },
+    {
+      "text": "il",
+      "start": 22.697375,
+      "end": 22.776333
+    },
+    {
+      "text": "giro",
+      "start": 22.789458,
+      "end": 23.039458
+    },
+    {
+      "text": "venga",
+      "start": 23.052625,
+      "end": 23.39475
+    },
+    {
+      "text": "costruito",
+      "start": 23.407875,
+      "end": 24.0
+    },
+    {
+      "text": "usando",
+      "start": 24.013166,
+      "end": 24.434207
+    },
+    {
+      "text": "una",
+      "start": 24.447375,
+      "end": 24.60525
+    },
+    {
+      "text": "località",
+      "start": 24.618416,
+      "end": 25.197374
+    },
+    {
+      "text": "o",
+      "start": 25.210541,
+      "end": 25.249999
+    },
+    {
+      "text": "un",
+      "start": 25.263166,
+      "end": 25.407916
+    },
+    {
+      "text": "orientamento",
+      "start": 25.421041,
+      "end": 26.131582
+    },
+    {
+      "text": "che",
+      "start": 26.14475,
+      "end": 26.2895
+    },
+    {
+      "text": "non",
+      "start": 26.302625,
+      "end": 26.447375
+    },
+    {
+      "text": "avevi",
+      "start": 26.460541,
+      "end": 26.973707
+    },
+    {
+      "text": "davvero",
+      "start": 27.157875,
+      "end": 27.736833
+    },
+    {
+      "text": "approvato",
+      "start": 27.75,
+      "end": 28.486833
+    }
+  ]
+}

@@ -1,0 +1,348 @@
+{
+  "id": "s17",
+  "sha256": "fbc5ed1c01d9080f56a7fb3ce980d8d98e589929996ef467a69b609eb02a2ad1",
+  "audioDuration": 29.976,
+  "duration": 31.2,
+  "words": [
+    {
+      "text": "Ora",
+      "start": 0.102625,
+      "end": 0.326291
+    },
+    {
+      "text": "osserva",
+      "start": 0.339458,
+      "end": 0.826291
+    },
+    {
+      "text": "la",
+      "start": 0.839458,
+      "end": 0.918416
+    },
+    {
+      "text": "mappa",
+      "start": 0.931583,
+      "end": 1.471041
+    },
+    {
+      "text": "Controlla",
+      "start": 2.39475,
+      "end": 2.947375
+    },
+    {
+      "text": "che",
+      "start": 2.960541,
+      "end": 3.105291
+    },
+    {
+      "text": "il",
+      "start": 3.118416,
+      "end": 3.197374
+    },
+    {
+      "text": "centro",
+      "start": 3.210541,
+      "end": 3.631582
+    },
+    {
+      "text": "sia",
+      "start": 3.64475,
+      "end": 3.868416
+    },
+    {
+      "text": "quello",
+      "start": 3.881583,
+      "end": 4.144749
+    },
+    {
+      "text": "atteso",
+      "start": 4.157875,
+      "end": 4.776291
+    },
+    {
+      "text": "che",
+      "start": 5.039458,
+      "end": 5.197333
+    },
+    {
+      "text": "il",
+      "start": 5.210541,
+      "end": 5.276332
+    },
+    {
+      "text": "settore",
+      "start": 5.289458,
+      "end": 5.789458
+    },
+    {
+      "text": "guardi",
+      "start": 5.802625,
+      "end": 6.157875
+    },
+    {
+      "text": "nella",
+      "start": 6.171041,
+      "end": 6.447374
+    },
+    {
+      "text": "direzione",
+      "start": 6.460541,
+      "end": 7.013166
+    },
+    {
+      "text": "giusta",
+      "start": 7.026333,
+      "end": 7.486874
+    },
+    {
+      "text": "e",
+      "start": 7.5,
+      "end": 7.565791
+    },
+    {
+      "text": "che",
+      "start": 7.578958,
+      "end": 7.723708
+    },
+    {
+      "text": "il",
+      "start": 7.736833,
+      "end": 7.802624
+    },
+    {
+      "text": "raggio",
+      "start": 7.815791,
+      "end": 8.289457
+    },
+    {
+      "text": "copra",
+      "start": 8.302625,
+      "end": 8.684208
+    },
+    {
+      "text": "l'area",
+      "start": 8.697375,
+      "end": 9.065791
+    },
+    {
+      "text": "in",
+      "start": 9.078958,
+      "end": 9.171083
+    },
+    {
+      "text": "cui",
+      "start": 9.184208,
+      "end": 9.421041
+    },
+    {
+      "text": "vuoi",
+      "start": 9.434208,
+      "end": 9.684208
+    },
+    {
+      "text": "lavorare",
+      "start": 9.697375,
+      "end": 10.342125
+    },
+    {
+      "text": "L'area",
+      "start": 11.276333,
+      "end": 11.723708
+    },
+    {
+      "text": "colorata",
+      "start": 11.736833,
+      "end": 12.263166
+    },
+    {
+      "text": "rappresenta",
+      "start": 12.276333,
+      "end": 12.881583
+    },
+    {
+      "text": "il",
+      "start": 12.89475,
+      "end": 12.947375
+    },
+    {
+      "text": "filtro",
+      "start": 12.960541,
+      "end": 13.381582
+    },
+    {
+      "text": "geografico",
+      "start": 13.39475,
+      "end": 14.171083
+    },
+    {
+      "text": "preparato",
+      "start": 14.184208,
+      "end": 14.842083
+    },
+    {
+      "text": "non",
+      "start": 15.14475,
+      "end": 15.2895
+    },
+    {
+      "text": "l'elenco",
+      "start": 15.302625,
+      "end": 15.736833
+    },
+    {
+      "text": "definitivo",
+      "start": 15.75,
+      "end": 16.407875
+    },
+    {
+      "text": "delle",
+      "start": 16.421041,
+      "end": 16.657874
+    },
+    {
+      "text": "visite",
+      "start": 16.671041,
+      "end": 17.249999
+    },
+    {
+      "text": "Se",
+      "start": 18.184208,
+      "end": 18.434208
+    },
+    {
+      "text": "qualcosa",
+      "start": 18.447375,
+      "end": 18.921041
+    },
+    {
+      "text": "non",
+      "start": 18.934208,
+      "end": 19.105249
+    },
+    {
+      "text": "torna",
+      "start": 19.118416,
+      "end": 19.539457
+    },
+    {
+      "text": "modifica",
+      "start": 19.828958,
+      "end": 20.407916
+    },
+    {
+      "text": "il",
+      "start": 20.421041,
+      "end": 20.473666
+    },
+    {
+      "text": "centro",
+      "start": 20.486833,
+      "end": 21.013166
+    },
+    {
+      "text": "il",
+      "start": 21.197375,
+      "end": 21.39475
+    },
+    {
+      "text": "raggio",
+      "start": 21.407875,
+      "end": 21.85525
+    },
+    {
+      "text": "o",
+      "start": 21.868416,
+      "end": 21.921041
+    },
+    {
+      "text": "la",
+      "start": 21.934208,
+      "end": 22.052624
+    },
+    {
+      "text": "direzione",
+      "start": 22.065791,
+      "end": 22.671041
+    },
+    {
+      "text": "e",
+      "start": 22.684208,
+      "end": 22.710541
+    },
+    {
+      "text": "ricrea",
+      "start": 22.723666,
+      "end": 23.144707
+    },
+    {
+      "text": "la",
+      "start": 23.157875,
+      "end": 23.236833
+    },
+    {
+      "text": "mappa",
+      "start": 23.25,
+      "end": 23.763166
+    },
+    {
+      "text": "Non",
+      "start": 24.684208,
+      "end": 24.934208
+    },
+    {
+      "text": "confermare",
+      "start": 24.947375,
+      "end": 25.513166
+    },
+    {
+      "text": "una",
+      "start": 25.526333,
+      "end": 25.736874
+    },
+    {
+      "text": "forma",
+      "start": 25.75,
+      "end": 26.052625
+    },
+    {
+      "text": "soltanto",
+      "start": 26.065791,
+      "end": 26.657916
+    },
+    {
+      "text": "perché",
+      "start": 26.671041,
+      "end": 27.013166
+    },
+    {
+      "text": "il",
+      "start": 27.026333,
+      "end": 27.105291
+    },
+    {
+      "text": "nome",
+      "start": 27.118416,
+      "end": 27.355249
+    },
+    {
+      "text": "del",
+      "start": 27.368416,
+      "end": 27.539457
+    },
+    {
+      "text": "comune",
+      "start": 27.552625,
+      "end": 27.934208
+    },
+    {
+      "text": "sembra",
+      "start": 27.947375,
+      "end": 28.302625
+    },
+    {
+      "text": "corretto",
+      "start": 28.315791,
+      "end": 29.039457
+    }
+  ]
+}

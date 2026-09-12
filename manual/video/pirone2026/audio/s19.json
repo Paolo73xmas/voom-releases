@@ -1,0 +1,318 @@
+{
+  "id": "s19",
+  "sha256": "069327b05ec9121688fe03f413ba6f6f62bd5c222c7d1cd4398f994e1d88e342",
+  "audioDuration": 30.624,
+  "duration": 31.84,
+  "words": [
+    {
+      "text": "Dopo",
+      "start": 0.102625,
+      "end": 0.457875
+    },
+    {
+      "text": "il",
+      "start": 0.471041,
+      "end": 0.549999
+    },
+    {
+      "text": "tocco",
+      "start": 0.563166,
+      "end": 1.076332
+    },
+    {
+      "text": "il",
+      "start": 1.3,
+      "end": 1.497375
+    },
+    {
+      "text": "pannello",
+      "start": 1.510541,
+      "end": 1.997374
+    },
+    {
+      "text": "mostra",
+      "start": 2.010541,
+      "end": 2.418416
+    },
+    {
+      "text": "Zone",
+      "start": 2.431583,
+      "end": 2.813166
+    },
+    {
+      "text": "e",
+      "start": 2.826333,
+      "end": 2.892124
+    },
+    {
+      "text": "ordine",
+      "start": 2.90525,
+      "end": 3.326291
+    },
+    {
+      "text": "confermati",
+      "start": 3.339458,
+      "end": 4.247333
+    },
+    {
+      "text": "Cerca",
+      "start": 5.184208,
+      "end": 5.631583
+    },
+    {
+      "text": "proprio",
+      "start": 5.64475,
+      "end": 6.052625
+    },
+    {
+      "text": "questa",
+      "start": 6.065791,
+      "end": 6.368416
+    },
+    {
+      "text": "indicazione",
+      "start": 6.381583,
+      "end": 7.065791
+    },
+    {
+      "text": "prima",
+      "start": 7.078958,
+      "end": 7.381583
+    },
+    {
+      "text": "di",
+      "start": 7.39475,
+      "end": 7.5
+    },
+    {
+      "text": "proseguire",
+      "start": 7.513166,
+      "end": 8.236832
+    },
+    {
+      "text": "Ora",
+      "start": 9.171041,
+      "end": 9.394707
+    },
+    {
+      "text": "la",
+      "start": 9.407875,
+      "end": 9.513125
+    },
+    {
+      "text": "configurazione",
+      "start": 9.526333,
+      "end": 10.486874
+    },
+    {
+      "text": "geografica",
+      "start": 10.5,
+      "end": 11.289458
+    },
+    {
+      "text": "visualizzata",
+      "start": 11.302625,
+      "end": 12.10525
+    },
+    {
+      "text": "è",
+      "start": 12.118416,
+      "end": 12.171041
+    },
+    {
+      "text": "stata",
+      "start": 12.184208,
+      "end": 12.486833
+    },
+    {
+      "text": "approvata",
+      "start": 12.5,
+      "end": 13.184208
+    },
+    {
+      "text": "Puoi",
+      "start": 14.10525,
+      "end": 14.342083
+    },
+    {
+      "text": "continuare",
+      "start": 14.35525,
+      "end": 15.026291
+    },
+    {
+      "text": "a",
+      "start": 15.039458,
+      "end": 15.078916
+    },
+    {
+      "text": "controllare",
+      "start": 15.092125,
+      "end": 15.855291
+    },
+    {
+      "text": "gli",
+      "start": 15.868416,
+      "end": 16.026291
+    },
+    {
+      "text": "altri",
+      "start": 16.039458,
+      "end": 16.355249
+    },
+    {
+      "text": "vincoli",
+      "start": 16.368416,
+      "end": 16.802624
+    },
+    {
+      "text": "del",
+      "start": 16.815791,
+      "end": 16.973666
+    },
+    {
+      "text": "giro",
+      "start": 16.986833,
+      "end": 17.460499
+    },
+    {
+      "text": "Se",
+      "start": 18.381583,
+      "end": 18.605249
+    },
+    {
+      "text": "il",
+      "start": 18.618416,
+      "end": 18.723666
+    },
+    {
+      "text": "pulsante",
+      "start": 18.736833,
+      "end": 19.289458
+    },
+    {
+      "text": "è",
+      "start": 19.302625,
+      "end": 19.342083
+    },
+    {
+      "text": "ancora",
+      "start": 19.35525,
+      "end": 19.723666
+    },
+    {
+      "text": "disattivato",
+      "start": 19.736833,
+      "end": 20.407874
+    },
+    {
+      "text": "oppure",
+      "start": 20.421041,
+      "end": 20.842082
+    },
+    {
+      "text": "resta",
+      "start": 20.85525,
+      "end": 21.157875
+    },
+    {
+      "text": "un",
+      "start": 21.171041,
+      "end": 21.302624
+    },
+    {
+      "text": "messaggio",
+      "start": 21.315791,
+      "end": 21.802624
+    },
+    {
+      "text": "di",
+      "start": 21.815791,
+      "end": 21.934207
+    },
+    {
+      "text": "preparazione",
+      "start": 21.947375,
+      "end": 22.815791
+    },
+    {
+      "text": "attendi",
+      "start": 22.999333,
+      "end": 23.551958
+    },
+    {
+      "text": "o",
+      "start": 23.565125,
+      "end": 23.61775
+    },
+    {
+      "text": "risolvi",
+      "start": 23.630916,
+      "end": 24.104582
+    },
+    {
+      "text": "la",
+      "start": 24.11775,
+      "end": 24.223
+    },
+    {
+      "text": "richiesta",
+      "start": 24.236166,
+      "end": 24.736166
+    },
+    {
+      "text": "mostrata",
+      "start": 24.749333,
+      "end": 25.341458
+    },
+    {
+      "text": "non",
+      "start": 25.630916,
+      "end": 25.788791
+    },
+    {
+      "text": "interpretare",
+      "start": 25.801958,
+      "end": 26.446708
+    },
+    {
+      "text": "un",
+      "start": 26.459875,
+      "end": 26.591458
+    },
+    {
+      "text": "semplice",
+      "start": 26.604625,
+      "end": 27.15725
+    },
+    {
+      "text": "caricamento",
+      "start": 27.170375,
+      "end": 27.841416
+    },
+    {
+      "text": "come",
+      "start": 27.854625,
+      "end": 28.052
+    },
+    {
+      "text": "una",
+      "start": 28.065125,
+      "end": 28.249333
+    },
+    {
+      "text": "conferma",
+      "start": 28.2625,
+      "end": 28.828291
+    },
+    {
+      "text": "già",
+      "start": 28.841458,
+      "end": 29.038833
+    },
+    {
+      "text": "avvenuta",
+      "start": 29.051958,
+      "end": 29.683541
+    }
+  ]
+}

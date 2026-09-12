@@ -1,0 +1,59 @@
+{
+  "status": "pass",
+  "file": "aitour-guida-pirone-2026.mp4",
+  "bytes": 47832021,
+  "sha256": "ad2113f6f00d15af95ce0a9d68cd0d4b083f93c1ba9cbdfa766c52528516fd5c",
+  "duration_seconds": 1576.36,
+  "video_frames": 39409,
+  "audio_samples": 75665280,
+  "audio_sample_rate": 48000,
+  "resolution": [
+    1920,
+    1080
+  ],
+  "fps": 25,
+  "chapters": [
+    {
+      "title": "01 · Il metodo",
+      "start": 0
+    },
+    {
+      "title": "02 · CHIP e territorio",
+      "start": 168.60000000000002
+    },
+    {
+      "title": "03 · Confermare una zona",
+      "start": 366.4800000000001
+    },
+    {
+      "title": "04 · Più comuni e corridoi",
+      "start": 650.5600000000001
+    },
+    {
+      "title": "05 · Filtri e anteprima",
+      "start": 806.96
+    },
+    {
+      "title": "06 · Calendario e follow-up",
+      "start": 1005.16
+    },
+    {
+      "title": "07 · Manda in verifica",
+      "start": 1274.9999999999998
+    },
+    {
+      "title": "08 · Riepilogo",
+      "start": 1499.92
+    }
+  ],
+  "subtitle_cues": 272,
+  "scenes": 48,
+  "full_audio_video_decode": "pass",
+  "sample_frame_timeline_difference_seconds": 0,
+  "voice_word_boundaries": "pass",
+  "caption_timing_order": "pass",
+  "credentials_in_narration_or_downloadable_text": false,
+  "recording_mode": "read_only_with_clearly_labelled_local_demonstrations",
+  "operational_mutations_sent_by_recorder": 0,
+  "qualitative_qa": "Intro and zone-confirmation clips inspected for audio/subtitle/readability. The confirmation button in s18 is intentionally not pressed; s19 shows the confirmed state."
+}

@@ -1,0 +1,328 @@
+{
+  "id": "s26",
+  "sha256": "fec31cf7c7584d4185909f4c533541735ad760061316455ad1f9f0bce566f13f",
+  "audioDuration": 32.544,
+  "duration": 33.76,
+  "words": [
+    {
+      "text": "Prima",
+      "start": 0.102625,
+      "end": 0.44475
+    },
+    {
+      "text": "di",
+      "start": 0.457875,
+      "end": 0.55
+    },
+    {
+      "text": "generare",
+      "start": 0.563166,
+      "end": 1.286832
+    },
+    {
+      "text": "fai",
+      "start": 1.589458,
+      "end": 1.892083
+    },
+    {
+      "text": "un",
+      "start": 1.90525,
+      "end": 2.063125
+    },
+    {
+      "text": "ultimo",
+      "start": 2.076333,
+      "end": 2.497374
+    },
+    {
+      "text": "controllo",
+      "start": 2.510541,
+      "end": 3.128957
+    },
+    {
+      "text": "dei",
+      "start": 3.142125,
+      "end": 3.326333
+    },
+    {
+      "text": "campi",
+      "start": 3.339458,
+      "end": 3.734208
+    },
+    {
+      "text": "operativi",
+      "start": 3.747375,
+      "end": 4.471041
+    },
+    {
+      "text": "data",
+      "start": 4.747375,
+      "end": 5.273708
+    },
+    {
+      "text": "orari",
+      "start": 5.589458,
+      "end": 6.115791
+    },
+    {
+      "text": "partenza",
+      "start": 6.339458,
+      "end": 7.023666
+    },
+    {
+      "text": "rientro",
+      "start": 7.352625,
+      "end": 7.971041
+    },
+    {
+      "text": "numero",
+      "start": 8.289458,
+      "end": 8.736833
+    },
+    {
+      "text": "desiderato",
+      "start": 8.75,
+      "end": 9.434208
+    },
+    {
+      "text": "di",
+      "start": 9.447375,
+      "end": 9.565791
+    },
+    {
+      "text": "visite",
+      "start": 9.578958,
+      "end": 10.039499
+    },
+    {
+      "text": "e",
+      "start": 10.052625,
+      "end": 10.092083
+    },
+    {
+      "text": "zone",
+      "start": 10.10525,
+      "end": 10.447375
+    },
+    {
+      "text": "confermate",
+      "start": 10.460541,
+      "end": 11.328957
+    },
+    {
+      "text": "Se",
+      "start": 12.263166,
+      "end": 12.539499
+    },
+    {
+      "text": "ci",
+      "start": 12.552625,
+      "end": 12.697375
+    },
+    {
+      "text": "sono",
+      "start": 12.710541,
+      "end": 12.947374
+    },
+    {
+      "text": "nomi",
+      "start": 12.960541,
+      "end": 13.210541
+    },
+    {
+      "text": "ambigui",
+      "start": 13.223666,
+      "end": 13.749999
+    },
+    {
+      "text": "eccezioni",
+      "start": 14.013166,
+      "end": 14.710541
+    },
+    {
+      "text": "fuori",
+      "start": 14.723666,
+      "end": 15.092082
+    },
+    {
+      "text": "zona",
+      "start": 15.10525,
+      "end": 15.447375
+    },
+    {
+      "text": "o",
+      "start": 15.460541,
+      "end": 15.578957
+    },
+    {
+      "text": "altri",
+      "start": 15.592125,
+      "end": 15.907916
+    },
+    {
+      "text": "avvisi",
+      "start": 15.921041,
+      "end": 16.421041
+    },
+    {
+      "text": "risolvili",
+      "start": 16.684208,
+      "end": 17.276333
+    },
+    {
+      "text": "prima",
+      "start": 17.289458,
+      "end": 17.565791
+    },
+    {
+      "text": "di",
+      "start": 17.578958,
+      "end": 17.684208
+    },
+    {
+      "text": "proseguire",
+      "start": 17.697375,
+      "end": 18.407916
+    },
+    {
+      "text": "Poi",
+      "start": 19.342125,
+      "end": 19.631583
+    },
+    {
+      "text": "premi",
+      "start": 19.64475,
+      "end": 19.973708
+    },
+    {
+      "text": "Genera",
+      "start": 19.986833,
+      "end": 20.434208
+    },
+    {
+      "text": "con",
+      "start": 20.447375,
+      "end": 20.657916
+    },
+    {
+      "text": "queste",
+      "start": 20.671041,
+      "end": 20.960499
+    },
+    {
+      "text": "indicazioni",
+      "start": 20.973666,
+      "end": 21.855249
+    },
+    {
+      "text": "Generare",
+      "start": 22.789458,
+      "end": 23.302624
+    },
+    {
+      "text": "un'anteprima",
+      "start": 23.315791,
+      "end": 23.947374
+    },
+    {
+      "text": "non",
+      "start": 23.960541,
+      "end": 24.131582
+    },
+    {
+      "text": "equivale",
+      "start": 24.14475,
+      "end": 24.671083
+    },
+    {
+      "text": "a",
+      "start": 24.684208,
+      "end": 24.749999
+    },
+    {
+      "text": "salvare",
+      "start": 24.763166,
+      "end": 25.223707
+    },
+    {
+      "text": "o",
+      "start": 25.236833,
+      "end": 25.328958
+    },
+    {
+      "text": "avviare",
+      "start": 25.342125,
+      "end": 25.736875
+    },
+    {
+      "text": "un",
+      "start": 25.75,
+      "end": 25.868416
+    },
+    {
+      "text": "Tour",
+      "start": 25.881583,
+      "end": 26.105249
+    },
+    {
+      "text": "Live",
+      "start": 26.118416,
+      "end": 26.486832
+    },
+    {
+      "text": "sono",
+      "start": 26.763166,
+      "end": 26.986832
+    },
+    {
+      "text": "azioni",
+      "start": 27.0,
+      "end": 27.381583
+    },
+    {
+      "text": "distinte",
+      "start": 27.39475,
+      "end": 28.092125
+    },
+    {
+      "text": "da",
+      "start": 28.368416,
+      "end": 28.605249
+    },
+    {
+      "text": "compiere",
+      "start": 28.618416,
+      "end": 29.144749
+    },
+    {
+      "text": "solo",
+      "start": 29.157875,
+      "end": 29.4605
+    },
+    {
+      "text": "quando",
+      "start": 29.473666,
+      "end": 29.776291
+    },
+    {
+      "text": "hai",
+      "start": 29.789458,
+      "end": 29.907874
+    },
+    {
+      "text": "controllato",
+      "start": 29.921041,
+      "end": 30.644707
+    },
+    {
+      "text": "il",
+      "start": 30.657875,
+      "end": 30.723666
+    },
+    {
+      "text": "risultato",
+      "start": 30.736833,
+      "end": 31.605249
+    }
+  ]
+}

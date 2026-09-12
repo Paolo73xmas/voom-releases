@@ -1,0 +1,308 @@
+{
+  "id": "s14",
+  "sha256": "29de03b936efd9edd2a8404308b9a29698c514a7eaa8e8886acbe18cfc6371c6",
+  "audioDuration": 31.224,
+  "duration": 32.44,
+  "words": [
+    {
+      "text": "Le",
+      "start": 0.102625,
+      "end": 0.326291
+    },
+    {
+      "text": "direzioni",
+      "start": 0.339458,
+      "end": 1.036833
+    },
+    {
+      "text": "seguono",
+      "start": 1.05,
+      "end": 1.536833
+    },
+    {
+      "text": "la",
+      "start": 1.55,
+      "end": 1.65525
+    },
+    {
+      "text": "bussola",
+      "start": 1.668416,
+      "end": 2.181582
+    },
+    {
+      "text": "Nord",
+      "start": 2.471041,
+      "end": 2.852624
+    },
+    {
+      "text": "Nord-est",
+      "start": 3.142125,
+      "end": 3.8
+    },
+    {
+      "text": "Est",
+      "start": 4.063166,
+      "end": 4.418416
+    },
+    {
+      "text": "Sud-est",
+      "start": 4.707875,
+      "end": 5.286833
+    },
+    {
+      "text": "Sud",
+      "start": 5.576333,
+      "end": 5.892124
+    },
+    {
+      "text": "Sud-ovest",
+      "start": 6.181583,
+      "end": 6.905249
+    },
+    {
+      "text": "Ovest",
+      "start": 7.19475,
+      "end": 7.655291
+    },
+    {
+      "text": "e",
+      "start": 7.668416,
+      "end": 7.707874
+    },
+    {
+      "text": "Nord-ovest",
+      "start": 7.721041,
+      "end": 8.471041
+    },
+    {
+      "text": "Puoi",
+      "start": 9.39475,
+      "end": 9.631583
+    },
+    {
+      "text": "indicarle",
+      "start": 9.64475,
+      "end": 10.210541
+    },
+    {
+      "text": "nella",
+      "start": 10.223666,
+      "end": 10.486832
+    },
+    {
+      "text": "frase",
+      "start": 10.5,
+      "end": 10.842125
+    },
+    {
+      "text": "oppure",
+      "start": 10.85525,
+      "end": 11.302625
+    },
+    {
+      "text": "selezionarle",
+      "start": 11.315791,
+      "end": 12.118416
+    },
+    {
+      "text": "nel",
+      "start": 12.131583,
+      "end": 12.302624
+    },
+    {
+      "text": "pannello",
+      "start": 12.315791,
+      "end": 13.013166
+    },
+    {
+      "text": "Se",
+      "start": 13.934208,
+      "end": 14.171041
+    },
+    {
+      "text": "vuoi",
+      "start": 14.184208,
+      "end": 14.421041
+    },
+    {
+      "text": "togliere",
+      "start": 14.434208,
+      "end": 14.907874
+    },
+    {
+      "text": "la",
+      "start": 14.921041,
+      "end": 15.026291
+    },
+    {
+      "text": "restrizione",
+      "start": 15.039458,
+      "end": 15.736833
+    },
+    {
+      "text": "direzionale",
+      "start": 15.75,
+      "end": 16.60525
+    },
+    {
+      "text": "scegli",
+      "start": 16.828958,
+      "end": 17.249999
+    },
+    {
+      "text": "Intera",
+      "start": 17.263166,
+      "end": 17.618416
+    },
+    {
+      "text": "zona",
+      "start": 17.631583,
+      "end": 18.171041
+    },
+    {
+      "text": "Qui",
+      "start": 19.092125,
+      "end": 19.276333
+    },
+    {
+      "text": "mostriamo",
+      "start": 19.289458,
+      "end": 19.881583
+    },
+    {
+      "text": "prima",
+      "start": 19.89475,
+      "end": 20.157916
+    },
+    {
+      "text": "Nord",
+      "start": 20.171041,
+      "end": 20.499999
+    },
+    {
+      "text": "e",
+      "start": 20.513166,
+      "end": 20.605291
+    },
+    {
+      "text": "poi",
+      "start": 20.618416,
+      "end": 20.868416
+    },
+    {
+      "text": "Nord-est",
+      "start": 20.881583,
+      "end": 21.539458
+    },
+    {
+      "text": "così",
+      "start": 21.776333,
+      "end": 22.092124
+    },
+    {
+      "text": "puoi",
+      "start": 22.10525,
+      "end": 22.315791
+    },
+    {
+      "text": "vedere",
+      "start": 22.328958,
+      "end": 22.684208
+    },
+    {
+      "text": "quale",
+      "start": 22.697375,
+      "end": 22.986833
+    },
+    {
+      "text": "CHIP",
+      "start": 23.0,
+      "end": 23.25
+    },
+    {
+      "text": "risulta",
+      "start": 23.263166,
+      "end": 23.749999
+    },
+    {
+      "text": "selezionata",
+      "start": 23.763166,
+      "end": 24.631582
+    },
+    {
+      "text": "Ricorda",
+      "start": 25.552625,
+      "end": 26.131583
+    },
+    {
+      "text": "che",
+      "start": 26.14475,
+      "end": 26.276333
+    },
+    {
+      "text": "la",
+      "start": 26.289458,
+      "end": 26.407874
+    },
+    {
+      "text": "direzione",
+      "start": 26.421041,
+      "end": 27.026291
+    },
+    {
+      "text": "va",
+      "start": 27.039458,
+      "end": 27.157874
+    },
+    {
+      "text": "letta",
+      "start": 27.171041,
+      "end": 27.447374
+    },
+    {
+      "text": "insieme",
+      "start": 27.460541,
+      "end": 27.947374
+    },
+    {
+      "text": "al",
+      "start": 27.960541,
+      "end": 28.052666
+    },
+    {
+      "text": "centro",
+      "start": 28.065791,
+      "end": 28.486832
+    },
+    {
+      "text": "e",
+      "start": 28.5,
+      "end": 28.552625
+    },
+    {
+      "text": "al",
+      "start": 28.565791,
+      "end": 28.657916
+    },
+    {
+      "text": "raggio",
+      "start": 28.671041,
+      "end": 29.157874
+    },
+    {
+      "text": "non",
+      "start": 29.473666,
+      "end": 29.644707
+    },
+    {
+      "text": "da",
+      "start": 29.657875,
+      "end": 29.789458
+    },
+    {
+      "text": "sola",
+      "start": 29.802625,
+      "end": 30.302625
+    }
+  ]
+}

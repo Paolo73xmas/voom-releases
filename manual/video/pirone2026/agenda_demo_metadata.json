@@ -1,0 +1,60 @@
+{
+  "customerId": "3c2a112f-da80-448a-bc4c-d35bfa9295cb",
+  "demoOnly": true,
+  "rows": [
+    {
+      "agent_id": "83ca397d-08f6-4e0e-9b1b-8c794f7b0c95",
+      "created_by_id": "83ca397d-08f6-4e0e-9b1b-8c794f7b0c95",
+      "appointment_type": "follow_up",
+      "status": "scheduled",
+      "completed_at": null,
+      "duration_minutes": 30,
+      "notes": "ESEMPIO DIDATTICO NON SALVATO",
+      "follow_up_reason": "ESEMPIO DIDATTICO NON SALVATO",
+      "id": "00000000-0000-4000-8000-000000000101",
+      "customer_id": "3c2a112f-da80-448a-bc4c-d35bfa9295cb",
+      "appointment_date": "2026-09-14T11:00:00+02:00",
+      "customers": {
+        "id": "3c2a112f-da80-448a-bc4c-d35bfa9295cb",
+        "business_name": "CLIENTE DIMOSTRATIVO",
+        "city": "Milano",
+        "address": "",
+        "contact_phone": ""
+      }
+    },
+    {
+      "agent_id": "83ca397d-08f6-4e0e-9b1b-8c794f7b0c95",
+      "created_by_id": "83ca397d-08f6-4e0e-9b1b-8c794f7b0c95",
+      "appointment_type": "follow_up",
+      "status": "scheduled",
+      "completed_at": null,
+      "duration_minutes": 30,
+      "notes": "ESEMPIO DIDATTICO NON SALVATO",
+      "follow_up_reason": "ESEMPIO DIDATTICO NON SALVATO",
+      "id": "00000000-0000-4000-8000-000000000102",
+      "customer_id": null,
+      "appointment_date": "2026-09-14T08:30:00+02:00",
+      "quick_customer_name": "DEMO · Riunione organizzativa",
+      "quick_customer_address": "",
+      "quick_customer_city": "",
+      "quick_customer_phone": ""
+    },
+    {
+      "agent_id": "83ca397d-08f6-4e0e-9b1b-8c794f7b0c95",
+      "created_by_id": "83ca397d-08f6-4e0e-9b1b-8c794f7b0c95",
+      "appointment_type": "follow_up",
+      "status": "scheduled",
+      "completed_at": null,
+      "duration_minutes": 30,
+      "notes": "ESEMPIO DIDATTICO NON SALVATO",
+      "follow_up_reason": "ESEMPIO DIDATTICO NON SALVATO",
+      "id": "00000000-0000-4000-8000-000000000103",
+      "customer_id": null,
+      "appointment_date": "2026-09-14T15:00:00+02:00",
+      "quick_customer_name": "DEMO · Incontro in centro",
+      "quick_customer_address": "Piazza del Duomo",
+      "quick_customer_city": "Milano",
+      "quick_customer_phone": ""
+    }
+  ]
+}

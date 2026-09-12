@@ -1,0 +1,363 @@
+{
+  "id": "s03",
+  "sha256": "dfe1127739791ee484482a88feb625e0ba491f7fb2a94facb8e3daf83515585e",
+  "audioDuration": 31.488,
+  "duration": 32.72,
+  "words": [
+    {
+      "text": "Cominciamo",
+      "start": 0.102625,
+      "end": 0.734208
+    },
+    {
+      "text": "dalla",
+      "start": 0.747375,
+      "end": 1.023708
+    },
+    {
+      "text": "data",
+      "start": 1.036833,
+      "end": 1.523666
+    },
+    {
+      "text": "Scegli",
+      "start": 2.446708,
+      "end": 2.894083
+    },
+    {
+      "text": "il",
+      "start": 2.90725,
+      "end": 2.973041
+    },
+    {
+      "text": "giorno",
+      "start": 2.986166,
+      "end": 3.288791
+    },
+    {
+      "text": "in",
+      "start": 3.301958,
+      "end": 3.394083
+    },
+    {
+      "text": "cui",
+      "start": 3.40725,
+      "end": 3.604625
+    },
+    {
+      "text": "farai",
+      "start": 3.61775,
+      "end": 3.959875
+    },
+    {
+      "text": "davvero",
+      "start": 3.973041,
+      "end": 4.420416
+    },
+    {
+      "text": "il",
+      "start": 4.433541,
+      "end": 4.472999
+    },
+    {
+      "text": "giro",
+      "start": 4.486166,
+      "end": 4.920374
+    },
+    {
+      "text": "poi",
+      "start": 5.065125,
+      "end": 5.341458
+    },
+    {
+      "text": "controlla",
+      "start": 5.354625,
+      "end": 5.920416
+    },
+    {
+      "text": "l'ora",
+      "start": 5.933541,
+      "end": 6.183541
+    },
+    {
+      "text": "di",
+      "start": 6.196708,
+      "end": 6.315124
+    },
+    {
+      "text": "partenza",
+      "start": 6.328291,
+      "end": 6.907249
+    },
+    {
+      "text": "e",
+      "start": 6.920375,
+      "end": 6.959833
+    },
+    {
+      "text": "l'ora",
+      "start": 6.973041,
+      "end": 7.196707
+    },
+    {
+      "text": "entro",
+      "start": 7.209875,
+      "end": 7.486208
+    },
+    {
+      "text": "cui",
+      "start": 7.499333,
+      "end": 7.709874
+    },
+    {
+      "text": "vuoi",
+      "start": 7.723041,
+      "end": 7.959874
+    },
+    {
+      "text": "terminare",
+      "start": 7.973041,
+      "end": 8.696707
+    },
+    {
+      "text": "Se",
+      "start": 9.631583,
+      "end": 9.868416
+    },
+    {
+      "text": "programmi",
+      "start": 9.881583,
+      "end": 10.499999
+    },
+    {
+      "text": "per",
+      "start": 10.513166,
+      "end": 10.657916
+    },
+    {
+      "text": "oggi",
+      "start": 10.671041,
+      "end": 11.092082
+    },
+    {
+      "text": "non",
+      "start": 11.407875,
+      "end": 11.592083
+    },
+    {
+      "text": "impostare",
+      "start": 11.60525,
+      "end": 12.131583
+    },
+    {
+      "text": "un",
+      "start": 12.14475,
+      "end": 12.2895
+    },
+    {
+      "text": "orario",
+      "start": 12.302625,
+      "end": 12.7105
+    },
+    {
+      "text": "già",
+      "start": 12.723666,
+      "end": 12.894707
+    },
+    {
+      "text": "passato",
+      "start": 12.907875,
+      "end": 13.56575
+    },
+    {
+      "text": "Se",
+      "start": 14.486833,
+      "end": 14.723666
+    },
+    {
+      "text": "dici",
+      "start": 14.736833,
+      "end": 15.052624
+    },
+    {
+      "text": "diciassette",
+      "start": 15.065791,
+      "end": 15.776332
+    },
+    {
+      "text": "come",
+      "start": 15.789458,
+      "end": 16.026291
+    },
+    {
+      "text": "termine",
+      "start": 16.039458,
+      "end": 16.618416
+    },
+    {
+      "text": "stai",
+      "start": 16.75,
+      "end": 17.039458
+    },
+    {
+      "text": "indicando",
+      "start": 17.052625,
+      "end": 17.592083
+    },
+    {
+      "text": "un",
+      "start": 17.60525,
+      "end": 17.671041
+    },
+    {
+      "text": "limite",
+      "start": 17.684208,
+      "end": 18.236833
+    },
+    {
+      "text": "un",
+      "start": 18.513166,
+      "end": 18.723707
+    },
+    {
+      "text": "giro",
+      "start": 18.736833,
+      "end": 19.013166
+    },
+    {
+      "text": "che",
+      "start": 19.026333,
+      "end": 19.184208
+    },
+    {
+      "text": "soddisfa",
+      "start": 19.197375,
+      "end": 19.763166
+    },
+    {
+      "text": "le",
+      "start": 19.776333,
+      "end": 19.842124
+    },
+    {
+      "text": "visite",
+      "start": 19.85525,
+      "end": 20.289458
+    },
+    {
+      "text": "richieste",
+      "start": 20.302625,
+      "end": 20.828958
+    },
+    {
+      "text": "può",
+      "start": 20.842125,
+      "end": 21.0395
+    },
+    {
+      "text": "finire",
+      "start": 21.052625,
+      "end": 21.5
+    },
+    {
+      "text": "anche",
+      "start": 21.513166,
+      "end": 21.749999
+    },
+    {
+      "text": "prima",
+      "start": 21.763166,
+      "end": 22.223707
+    },
+    {
+      "text": "Quando",
+      "start": 23.14475,
+      "end": 23.486875
+    },
+    {
+      "text": "usi",
+      "start": 23.5,
+      "end": 23.75
+    },
+    {
+      "text": "una",
+      "start": 23.763166,
+      "end": 23.934207
+    },
+    {
+      "text": "richiesta",
+      "start": 23.947375,
+      "end": 24.473708
+    },
+    {
+      "text": "scritta",
+      "start": 24.486833,
+      "end": 25.065791
+    },
+    {
+      "text": "specifica",
+      "start": 25.38025,
+      "end": 26.077625
+    },
+    {
+      "text": "la",
+      "start": 26.090791,
+      "end": 26.182916
+    },
+    {
+      "text": "data",
+      "start": 26.196041,
+      "end": 26.446041
+    },
+    {
+      "text": "oppure",
+      "start": 26.459208,
+      "end": 26.906583
+    },
+    {
+      "text": "verifica",
+      "start": 26.91975,
+      "end": 27.446083
+    },
+    {
+      "text": "che",
+      "start": 27.459208,
+      "end": 27.617083
+    },
+    {
+      "text": "quella",
+      "start": 27.63025,
+      "end": 27.906583
+    },
+    {
+      "text": "interpretata",
+      "start": 27.91975,
+      "end": 28.656583
+    },
+    {
+      "text": "coincida",
+      "start": 28.66975,
+      "end": 29.261875
+    },
+    {
+      "text": "con",
+      "start": 29.275,
+      "end": 29.498666
+    },
+    {
+      "text": "il",
+      "start": 29.511833,
+      "end": 29.603958
+    },
+    {
+      "text": "giorno",
+      "start": 29.617125,
+      "end": 29.91975
+    },
+    {
+      "text": "scelto",
+      "start": 29.932875,
+      "end": 30.551291
+    }
+  ]
+}

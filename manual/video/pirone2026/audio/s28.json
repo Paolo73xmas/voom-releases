@@ -1,0 +1,343 @@
+{
+  "id": "s28",
+  "sha256": "503666a8ed30cea0c08f1bf42c15c74972a3b3c0464bfd2f9ba188bf0ed8c797",
+  "audioDuration": 32.04,
+  "duration": 33.24,
+  "words": [
+    {
+      "text": "Il",
+      "start": 0.102625,
+      "end": 0.313166
+    },
+    {
+      "text": "filtro",
+      "start": 0.326333,
+      "end": 0.721083
+    },
+    {
+      "text": "dei",
+      "start": 0.734208,
+      "end": 0.918416
+    },
+    {
+      "text": "quindici",
+      "start": 0.931583,
+      "end": 1.431583
+    },
+    {
+      "text": "giorni",
+      "start": 1.44475,
+      "end": 1.878958
+    },
+    {
+      "text": "non",
+      "start": 1.892125,
+      "end": 2.0895
+    },
+    {
+      "text": "è",
+      "start": 2.102625,
+      "end": 2.168416
+    },
+    {
+      "text": "un",
+      "start": 2.181583,
+      "end": 2.339458
+    },
+    {
+      "text": "divieto",
+      "start": 2.352625,
+      "end": 2.734208
+    },
+    {
+      "text": "assoluto",
+      "start": 2.747375,
+      "end": 3.286833
+    },
+    {
+      "text": "di",
+      "start": 3.3,
+      "end": 3.40525
+    },
+    {
+      "text": "incontrare",
+      "start": 3.418416,
+      "end": 3.971041
+    },
+    {
+      "text": "un",
+      "start": 3.984208,
+      "end": 4.102624
+    },
+    {
+      "text": "cliente",
+      "start": 4.115791,
+      "end": 4.773666
+    },
+    {
+      "text": "Appuntamenti",
+      "start": 5.710541,
+      "end": 6.631582
+    },
+    {
+      "text": "follow-up",
+      "start": 6.815791,
+      "end": 7.447374
+    },
+    {
+      "text": "e",
+      "start": 7.460541,
+      "end": 7.513166
+    },
+    {
+      "text": "richieste",
+      "start": 7.526333,
+      "end": 8.013166
+    },
+    {
+      "text": "esplicite",
+      "start": 8.026333,
+      "end": 8.710541
+    },
+    {
+      "text": "possono",
+      "start": 8.723666,
+      "end": 9.171041
+    },
+    {
+      "text": "costituire",
+      "start": 9.184208,
+      "end": 9.842083
+    },
+    {
+      "text": "eccezioni",
+      "start": 9.85525,
+      "end": 10.684208
+    },
+    {
+      "text": "Un",
+      "start": 11.618416,
+      "end": 11.802624
+    },
+    {
+      "text": "impegno",
+      "start": 11.815791,
+      "end": 12.249999
+    },
+    {
+      "text": "già",
+      "start": 12.263166,
+      "end": 12.434207
+    },
+    {
+      "text": "concordato",
+      "start": 12.447375,
+      "end": 13.171041
+    },
+    {
+      "text": "non",
+      "start": 13.184208,
+      "end": 13.368416
+    },
+    {
+      "text": "va",
+      "start": 13.381583,
+      "end": 13.486833
+    },
+    {
+      "text": "confuso",
+      "start": 13.5,
+      "end": 14.10525
+    },
+    {
+      "text": "con",
+      "start": 14.118416,
+      "end": 14.315791
+    },
+    {
+      "text": "una",
+      "start": 14.328958,
+      "end": 14.473708
+    },
+    {
+      "text": "visita",
+      "start": 14.486833,
+      "end": 14.894708
+    },
+    {
+      "text": "scelta",
+      "start": 14.907875,
+      "end": 15.328916
+    },
+    {
+      "text": "automaticamente",
+      "start": 15.342125,
+      "end": 16.473708
+    },
+    {
+      "text": "Controlla",
+      "start": 17.39475,
+      "end": 17.947375
+    },
+    {
+      "text": "quindi",
+      "start": 17.960541,
+      "end": 18.315791
+    },
+    {
+      "text": "perché",
+      "start": 18.328958,
+      "end": 18.697374
+    },
+    {
+      "text": "quel",
+      "start": 18.710541,
+      "end": 18.894749
+    },
+    {
+      "text": "cliente",
+      "start": 18.907875,
+      "end": 19.407875
+    },
+    {
+      "text": "è",
+      "start": 19.421041,
+      "end": 19.473666
+    },
+    {
+      "text": "stato",
+      "start": 19.486833,
+      "end": 19.763166
+    },
+    {
+      "text": "incluso",
+      "start": 19.776333,
+      "end": 20.473708
+    },
+    {
+      "text": "Un'eccezione",
+      "start": 21.39475,
+      "end": 22.184208
+    },
+    {
+      "text": "alla",
+      "start": 22.197375,
+      "end": 22.35525
+    },
+    {
+      "text": "recenza",
+      "start": 22.368416,
+      "end": 22.894749
+    },
+    {
+      "text": "non",
+      "start": 22.907875,
+      "end": 23.052625
+    },
+    {
+      "text": "rende",
+      "start": 23.065791,
+      "end": 23.355249
+    },
+    {
+      "text": "però",
+      "start": 23.368416,
+      "end": 23.644749
+    },
+    {
+      "text": "possibile",
+      "start": 23.657875,
+      "end": 24.2105
+    },
+    {
+      "text": "un",
+      "start": 24.223666,
+      "end": 24.381541
+    },
+    {
+      "text": "appuntamento",
+      "start": 24.39475,
+      "end": 25.026333
+    },
+    {
+      "text": "irraggiungibile",
+      "start": 25.039458,
+      "end": 25.960499
+    },
+    {
+      "text": "e",
+      "start": 25.973666,
+      "end": 26.013124
+    },
+    {
+      "text": "non",
+      "start": 26.026333,
+      "end": 26.197374
+    },
+    {
+      "text": "annulla",
+      "start": 26.210541,
+      "end": 26.644749
+    },
+    {
+      "text": "le",
+      "start": 26.657875,
+      "end": 26.736833
+    },
+    {
+      "text": "altre",
+      "start": 26.75,
+      "end": 27.039458
+    },
+    {
+      "text": "conferme",
+      "start": 27.052625,
+      "end": 27.763166
+    },
+    {
+      "text": "per",
+      "start": 28.039458,
+      "end": 28.223666
+    },
+    {
+      "text": "esempio",
+      "start": 28.236833,
+      "end": 28.657874
+    },
+    {
+      "text": "quella",
+      "start": 28.671041,
+      "end": 28.947374
+    },
+    {
+      "text": "richiesta",
+      "start": 28.960541,
+      "end": 29.499999
+    },
+    {
+      "text": "per",
+      "start": 29.513166,
+      "end": 29.657916
+    },
+    {
+      "text": "una",
+      "start": 29.671041,
+      "end": 29.855249
+    },
+    {
+      "text": "tappa",
+      "start": 29.868416,
+      "end": 30.249999
+    },
+    {
+      "text": "fuori",
+      "start": 30.263166,
+      "end": 30.552624
+    },
+    {
+      "text": "zona",
+      "start": 30.565791,
+      "end": 31.092124
+    }
+  ]
+}

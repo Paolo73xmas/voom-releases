@@ -11,6 +11,7 @@ import tempfile
 import asyncio
 from brief_contract import BRIEF_V41_RULES, CAPABILITY, validate_brief_contract
 from pathlib import Path
+from media_response import ranged_file_response
 from pydantic import BaseModel, Field
 from typing import List
 import uuid
@@ -101,6 +102,29 @@ async def get_voice_sample(name: str):
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Campione non trovato")
     return FileResponse(path, media_type="audio/mpeg", filename=f"campione-voce-{name}.mp3")
+
+
+@api_router.api_route("/manual/aitour-guida-pirone/{asset}", methods=["GET", "HEAD"])
+async def get_pirone_tutorial(asset: str, request: Request, download: bool = False):
+    """Guida con capitoli e risorse: streaming byte-range compatibile con iOS."""
+    resources = {
+        "video": ("aitour-guida-pirone-2026.mp4", "video/mp4"),
+        "sottotitoli": ("aitour-guida-pirone-2026.srt", "application/x-subrip"),
+        "copione": ("aitour-guida-pirone-2026.md", "text/markdown"),
+    }
+    resource = resources.get(asset)
+    if resource is None:
+        raise HTTPException(status_code=404, detail="Risorsa non trovata")
+    filename, media_type = resource
+    path = Path(VIDEO_DIR) / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Risorsa non ancora disponibile")
+    if asset == "video" and not (Path(VIDEO_DIR) / "aitour-guida-pirone-2026.ready.json").is_file():
+        raise HTTPException(status_code=404, detail="Video in preparazione")
+    return ranged_file_response(
+        path, request, media_type,
+        "attachment" if download or asset != "video" else "inline",
+    )
 
 @api_router.api_route("/video-tutorial/{num}", methods=["GET", "HEAD"])
 async def get_video_tutorial(num: str, request: Request):

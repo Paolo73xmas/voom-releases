@@ -1,0 +1,313 @@
+{
+  "id": "s04",
+  "sha256": "a7d9861be6c77d4345e47e3e31c326012868cb9c6c0e7d1b04a3fd76ec39db26",
+  "audioDuration": 30.888,
+  "duration": 32.12,
+  "words": [
+    {
+      "text": "Il",
+      "start": 0.102625,
+      "end": 0.352625
+    },
+    {
+      "text": "tipo",
+      "start": 0.365791,
+      "end": 0.642124
+    },
+    {
+      "text": "di",
+      "start": 0.65525,
+      "end": 0.7605
+    },
+    {
+      "text": "giornata",
+      "start": 0.773666,
+      "end": 1.273666
+    },
+    {
+      "text": "determina",
+      "start": 1.286833,
+      "end": 1.905249
+    },
+    {
+      "text": "l'obiettivo",
+      "start": 1.918416,
+      "end": 2.497374
+    },
+    {
+      "text": "della",
+      "start": 2.510541,
+      "end": 2.773707
+    },
+    {
+      "text": "pianificazione",
+      "start": 2.786833,
+      "end": 3.826291
+    },
+    {
+      "text": "Giro",
+      "start": 4.763166,
+      "end": 5.105291
+    },
+    {
+      "text": "Clienti",
+      "start": 5.118416,
+      "end": 5.684207
+    },
+    {
+      "text": "è",
+      "start": 5.697375,
+      "end": 5.723708
+    },
+    {
+      "text": "adatto",
+      "start": 5.736833,
+      "end": 6.171041
+    },
+    {
+      "text": "quando",
+      "start": 6.184208,
+      "end": 6.499999
+    },
+    {
+      "text": "vuoi",
+      "start": 6.513166,
+      "end": 6.776332
+    },
+    {
+      "text": "lavorare",
+      "start": 6.789458,
+      "end": 7.302624
+    },
+    {
+      "text": "sul",
+      "start": 7.315791,
+      "end": 7.526332
+    },
+    {
+      "text": "portafoglio",
+      "start": 7.539458,
+      "end": 8.131583
+    },
+    {
+      "text": "esistente",
+      "start": 8.14475,
+      "end": 8.947375
+    },
+    {
+      "text": "Giro",
+      "start": 9.881583,
+      "end": 10.171041
+    },
+    {
+      "text": "Acquisizione",
+      "start": 10.184208,
+      "end": 10.986833
+    },
+    {
+      "text": "serve",
+      "start": 11.0,
+      "end": 11.381583
+    },
+    {
+      "text": "allo",
+      "start": 11.39475,
+      "end": 11.578958
+    },
+    {
+      "text": "sviluppo",
+      "start": 11.592125,
+      "end": 12.131583
+    },
+    {
+      "text": "di",
+      "start": 12.14475,
+      "end": 12.25
+    },
+    {
+      "text": "nuovi",
+      "start": 12.263166,
+      "end": 12.565791
+    },
+    {
+      "text": "contatti",
+      "start": 12.578958,
+      "end": 13.368416
+    },
+    {
+      "text": "Giro",
+      "start": 14.302625,
+      "end": 14.64475
+    },
+    {
+      "text": "Misto",
+      "start": 14.657875,
+      "end": 15.013125
+    },
+    {
+      "text": "combina",
+      "start": 15.026333,
+      "end": 15.499999
+    },
+    {
+      "text": "i",
+      "start": 15.513166,
+      "end": 15.578957
+    },
+    {
+      "text": "due",
+      "start": 15.592125,
+      "end": 15.815791
+    },
+    {
+      "text": "obiettivi",
+      "start": 15.828958,
+      "end": 16.618416
+    },
+    {
+      "text": "Nel",
+      "start": 17.552625,
+      "end": 17.815791
+    },
+    {
+      "text": "nostro",
+      "start": 17.828958,
+      "end": 18.157916
+    },
+    {
+      "text": "esempio",
+      "start": 18.171041,
+      "end": 18.605249
+    },
+    {
+      "text": "scegliamo",
+      "start": 18.618416,
+      "end": 19.171041
+    },
+    {
+      "text": "Giro",
+      "start": 19.184208,
+      "end": 19.447374
+    },
+    {
+      "text": "Clienti",
+      "start": 19.460541,
+      "end": 20.210541
+    },
+    {
+      "text": "Non",
+      "start": 21.14475,
+      "end": 21.39475
+    },
+    {
+      "text": "cambiare",
+      "start": 21.407875,
+      "end": 21.842083
+    },
+    {
+      "text": "tipo",
+      "start": 21.85525,
+      "end": 22.171041
+    },
+    {
+      "text": "di",
+      "start": 22.184208,
+      "end": 22.289458
+    },
+    {
+      "text": "giornata",
+      "start": 22.302625,
+      "end": 22.815791
+    },
+    {
+      "text": "solo",
+      "start": 22.828958,
+      "end": 23.144749
+    },
+    {
+      "text": "per",
+      "start": 23.157875,
+      "end": 23.289458
+    },
+    {
+      "text": "ottenere",
+      "start": 23.302625,
+      "end": 23.776291
+    },
+    {
+      "text": "più",
+      "start": 23.789458,
+      "end": 23.960499
+    },
+    {
+      "text": "tappe",
+      "start": 23.973666,
+      "end": 24.486832
+    },
+    {
+      "text": "prima",
+      "start": 24.776333,
+      "end": 25.052666
+    },
+    {
+      "text": "chiediti",
+      "start": 25.065791,
+      "end": 25.618416
+    },
+    {
+      "text": "se",
+      "start": 25.631583,
+      "end": 25.776333
+    },
+    {
+      "text": "le",
+      "start": 25.789458,
+      "end": 25.868416
+    },
+    {
+      "text": "persone",
+      "start": 25.881583,
+      "end": 26.355249
+    },
+    {
+      "text": "proposte",
+      "start": 26.368416,
+      "end": 26.855249
+    },
+    {
+      "text": "corrispondono",
+      "start": 26.868416,
+      "end": 27.657874
+    },
+    {
+      "text": "al",
+      "start": 27.671041,
+      "end": 27.736832
+    },
+    {
+      "text": "lavoro",
+      "start": 27.75,
+      "end": 28.092125
+    },
+    {
+      "text": "commerciale",
+      "start": 28.10525,
+      "end": 28.802625
+    },
+    {
+      "text": "che",
+      "start": 28.815791,
+      "end": 28.973666
+    },
+    {
+      "text": "vuoi",
+      "start": 28.986833,
+      "end": 29.236833
+    },
+    {
+      "text": "svolgere",
+      "start": 29.25,
+      "end": 29.921041
+    }
+  ]
+}

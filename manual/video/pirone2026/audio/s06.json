@@ -1,0 +1,348 @@
+{
+  "id": "s06",
+  "sha256": "42d20c94d53a66ac4406dcd7f8f9d5aec5c5bf98323fbe25945e37e5dbb72561",
+  "audioDuration": 32.784,
+  "duration": 34.0,
+  "words": [
+    {
+      "text": "Questi",
+      "start": 0.102625,
+      "end": 0.484208
+    },
+    {
+      "text": "piccoli",
+      "start": 0.497375,
+      "end": 0.94475
+    },
+    {
+      "text": "pulsanti",
+      "start": 0.957875,
+      "end": 1.536833
+    },
+    {
+      "text": "arrotondati",
+      "start": 1.55,
+      "end": 2.273666
+    },
+    {
+      "text": "sono",
+      "start": 2.286833,
+      "end": 2.549999
+    },
+    {
+      "text": "le",
+      "start": 2.563166,
+      "end": 2.681582
+    },
+    {
+      "text": "CHIP",
+      "start": 2.69475,
+      "end": 3.05
+    },
+    {
+      "text": "Il",
+      "start": 3.986833,
+      "end": 4.197374
+    },
+    {
+      "text": "colore",
+      "start": 4.210541,
+      "end": 4.565791
+    },
+    {
+      "text": "ti",
+      "start": 4.578958,
+      "end": 4.723708
+    },
+    {
+      "text": "aiuta",
+      "start": 4.736833,
+      "end": 5.131583
+    },
+    {
+      "text": "a",
+      "start": 5.14475,
+      "end": 5.184208
+    },
+    {
+      "text": "capire",
+      "start": 5.197375,
+      "end": 5.64475
+    },
+    {
+      "text": "quale",
+      "start": 5.657875,
+      "end": 5.934208
+    },
+    {
+      "text": "scelta",
+      "start": 5.947375,
+      "end": 6.381583
+    },
+    {
+      "text": "è",
+      "start": 6.39475,
+      "end": 6.460541
+    },
+    {
+      "text": "attiva",
+      "start": 6.473666,
+      "end": 7.065791
+    },
+    {
+      "text": "In",
+      "start": 7.986833,
+      "end": 8.197374
+    },
+    {
+      "text": "alcuni",
+      "start": 8.210541,
+      "end": 8.605291
+    },
+    {
+      "text": "gruppi",
+      "start": 8.618416,
+      "end": 9.144749
+    },
+    {
+      "text": "come",
+      "start": 9.276333,
+      "end": 9.499999
+    },
+    {
+      "text": "il",
+      "start": 9.513166,
+      "end": 9.605291
+    },
+    {
+      "text": "tipo",
+      "start": 9.618416,
+      "end": 9.894749
+    },
+    {
+      "text": "di",
+      "start": 9.907875,
+      "end": 10.06575
+    },
+    {
+      "text": "area",
+      "start": 10.078958,
+      "end": 10.513166
+    },
+    {
+      "text": "selezionare",
+      "start": 10.789458,
+      "end": 11.526291
+    },
+    {
+      "text": "un'opzione",
+      "start": 11.539458,
+      "end": 12.144708
+    },
+    {
+      "text": "sostituisce",
+      "start": 12.157875,
+      "end": 12.934208
+    },
+    {
+      "text": "quella",
+      "start": 12.947375,
+      "end": 13.236833
+    },
+    {
+      "text": "precedente",
+      "start": 13.25,
+      "end": 14.039458
+    },
+    {
+      "text": "In",
+      "start": 14.973666,
+      "end": 15.184207
+    },
+    {
+      "text": "altri",
+      "start": 15.197375,
+      "end": 15.513166
+    },
+    {
+      "text": "punti",
+      "start": 15.526333,
+      "end": 15.973708
+    },
+    {
+      "text": "puoi",
+      "start": 15.986833,
+      "end": 16.236833
+    },
+    {
+      "text": "avere",
+      "start": 16.25,
+      "end": 16.539458
+    },
+    {
+      "text": "più",
+      "start": 16.552625,
+      "end": 16.75
+    },
+    {
+      "text": "condizioni",
+      "start": 16.763166,
+      "end": 17.421041
+    },
+    {
+      "text": "contemporaneamente",
+      "start": 17.434208,
+      "end": 18.736833
+    },
+    {
+      "text": "Quindi",
+      "start": 19.657875,
+      "end": 20.026291
+    },
+    {
+      "text": "non",
+      "start": 20.039458,
+      "end": 20.210499
+    },
+    {
+      "text": "tutte",
+      "start": 20.223666,
+      "end": 20.578916
+    },
+    {
+      "text": "le",
+      "start": 20.592125,
+      "end": 20.710541
+    },
+    {
+      "text": "CHIP",
+      "start": 20.723666,
+      "end": 20.999999
+    },
+    {
+      "text": "si",
+      "start": 21.013166,
+      "end": 21.171041
+    },
+    {
+      "text": "comportano",
+      "start": 21.184208,
+      "end": 21.855249
+    },
+    {
+      "text": "nello",
+      "start": 21.868416,
+      "end": 22.157874
+    },
+    {
+      "text": "stesso",
+      "start": 22.171041,
+      "end": 22.539457
+    },
+    {
+      "text": "modo",
+      "start": 22.552625,
+      "end": 23.013166
+    },
+    {
+      "text": "Leggi",
+      "start": 23.934208,
+      "end": 24.447374
+    },
+    {
+      "text": "il",
+      "start": 24.460541,
+      "end": 24.552666
+    },
+    {
+      "text": "titolo",
+      "start": 24.565791,
+      "end": 24.973666
+    },
+    {
+      "text": "del",
+      "start": 24.986833,
+      "end": 25.157874
+    },
+    {
+      "text": "gruppo",
+      "start": 25.171041,
+      "end": 25.684207
+    },
+    {
+      "text": "e",
+      "start": 25.697375,
+      "end": 25.723708
+    },
+    {
+      "text": "il",
+      "start": 25.736833,
+      "end": 25.881583
+    },
+    {
+      "text": "riepilogo",
+      "start": 25.89475,
+      "end": 26.736875
+    },
+    {
+      "text": "sono",
+      "start": 27.039458,
+      "end": 27.394708
+    },
+    {
+      "text": "loro",
+      "start": 27.407875,
+      "end": 27.671041
+    },
+    {
+      "text": "a",
+      "start": 27.684208,
+      "end": 27.736833
+    },
+    {
+      "text": "dirti",
+      "start": 27.75,
+      "end": 28.184208
+    },
+    {
+      "text": "se",
+      "start": 28.197375,
+      "end": 28.35525
+    },
+    {
+      "text": "stai",
+      "start": 28.368416,
+      "end": 28.592082
+    },
+    {
+      "text": "scegliendo",
+      "start": 28.60525,
+      "end": 29.157875
+    },
+    {
+      "text": "un'alternativa",
+      "start": 29.171041,
+      "end": 29.986832
+    },
+    {
+      "text": "oppure",
+      "start": 30.0,
+      "end": 30.447375
+    },
+    {
+      "text": "aggiungendo",
+      "start": 30.460541,
+      "end": 31.092124
+    },
+    {
+      "text": "un",
+      "start": 31.10525,
+      "end": 31.236833
+    },
+    {
+      "text": "vincolo",
+      "start": 31.25,
+      "end": 31.842125
+    }
+  ]
+}

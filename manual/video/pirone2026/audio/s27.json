@@ -1,0 +1,333 @@
+{
+  "id": "s27",
+  "sha256": "1e255c0e34c08259a353925b10dc3e8bcc45ccc288796693d1bc7b95a1383bf3",
+  "audioDuration": 30.408,
+  "duration": 31.64,
+  "words": [
+    {
+      "text": "Una",
+      "start": 0.102625,
+      "end": 0.352625
+    },
+    {
+      "text": "regola",
+      "start": 0.365791,
+      "end": 0.707916
+    },
+    {
+      "text": "importante",
+      "start": 0.721041,
+      "end": 1.365791
+    },
+    {
+      "text": "riguarda",
+      "start": 1.378958,
+      "end": 1.839499
+    },
+    {
+      "text": "i",
+      "start": 1.852625,
+      "end": 1.918416
+    },
+    {
+      "text": "quindici",
+      "start": 1.931583,
+      "end": 2.378958
+    },
+    {
+      "text": "giorni",
+      "start": 2.392125,
+      "end": 2.971083
+    },
+    {
+      "text": "Nella",
+      "start": 3.907875,
+      "end": 4.368416
+    },
+    {
+      "text": "selezione",
+      "start": 4.381583,
+      "end": 4.973708
+    },
+    {
+      "text": "ordinaria",
+      "start": 4.986833,
+      "end": 5.736833
+    },
+    {
+      "text": "l'app",
+      "start": 6.052625,
+      "end": 6.368416
+    },
+    {
+      "text": "esclude",
+      "start": 6.381583,
+      "end": 6.815791
+    },
+    {
+      "text": "i",
+      "start": 6.828958,
+      "end": 6.894749
+    },
+    {
+      "text": "soggetti",
+      "start": 6.907875,
+      "end": 7.473666
+    },
+    {
+      "text": "che",
+      "start": 7.486833,
+      "end": 7.644708
+    },
+    {
+      "text": "risultano",
+      "start": 7.657875,
+      "end": 8.236833
+    },
+    {
+      "text": "già",
+      "start": 8.25,
+      "end": 8.421041
+    },
+    {
+      "text": "visitati",
+      "start": 8.434208,
+      "end": 9.052624
+    },
+    {
+      "text": "o",
+      "start": 9.065791,
+      "end": 9.171041
+    },
+    {
+      "text": "con",
+      "start": 9.184208,
+      "end": 9.407874
+    },
+    {
+      "text": "un",
+      "start": 9.421041,
+      "end": 9.513166
+    },
+    {
+      "text": "ordine",
+      "start": 9.526333,
+      "end": 9.921083
+    },
+    {
+      "text": "recente",
+      "start": 9.934208,
+      "end": 10.421041
+    },
+    {
+      "text": "entro",
+      "start": 10.434208,
+      "end": 10.710541
+    },
+    {
+      "text": "questa",
+      "start": 10.723666,
+      "end": 11.078916
+    },
+    {
+      "text": "finestra",
+      "start": 11.092125,
+      "end": 11.736875
+    },
+    {
+      "text": "Quindi",
+      "start": 12.657875,
+      "end": 13.013125
+    },
+    {
+      "text": "non",
+      "start": 13.026333,
+      "end": 13.236874
+    },
+    {
+      "text": "si",
+      "start": 13.25,
+      "end": 13.368416
+    },
+    {
+      "text": "tratta",
+      "start": 13.381583,
+      "end": 13.763166
+    },
+    {
+      "text": "soltanto",
+      "start": 13.776333,
+      "end": 14.342124
+    },
+    {
+      "text": "degli",
+      "start": 14.35525,
+      "end": 14.618416
+    },
+    {
+      "text": "ordini",
+      "start": 14.631583,
+      "end": 15.118416
+    },
+    {
+      "text": "anche",
+      "start": 15.368416,
+      "end": 15.631582
+    },
+    {
+      "text": "una",
+      "start": 15.64475,
+      "end": 15.842125
+    },
+    {
+      "text": "visita",
+      "start": 15.85525,
+      "end": 16.263125
+    },
+    {
+      "text": "recente",
+      "start": 16.276333,
+      "end": 16.763166
+    },
+    {
+      "text": "può",
+      "start": 16.776333,
+      "end": 16.921083
+    },
+    {
+      "text": "incidere",
+      "start": 16.934208,
+      "end": 17.578958
+    },
+    {
+      "text": "Nell'anteprima",
+      "start": 18.513166,
+      "end": 19.289499
+    },
+    {
+      "text": "trovi",
+      "start": 19.302625,
+      "end": 19.618416
+    },
+    {
+      "text": "il",
+      "start": 19.631583,
+      "end": 19.671041
+    },
+    {
+      "text": "messaggio",
+      "start": 19.684208,
+      "end": 20.315791
+    },
+    {
+      "text": "con",
+      "start": 20.328958,
+      "end": 20.539499
+    },
+    {
+      "text": "il",
+      "start": 20.552625,
+      "end": 20.64475
+    },
+    {
+      "text": "numero",
+      "start": 20.657875,
+      "end": 20.973666
+    },
+    {
+      "text": "di",
+      "start": 20.986833,
+      "end": 21.105249
+    },
+    {
+      "text": "esclusioni",
+      "start": 21.118416,
+      "end": 21.973666
+    },
+    {
+      "text": "Questo",
+      "start": 22.907875,
+      "end": 23.223666
+    },
+    {
+      "text": "aiuta",
+      "start": 23.236833,
+      "end": 23.578958
+    },
+    {
+      "text": "a",
+      "start": 23.592125,
+      "end": 23.64475
+    },
+    {
+      "text": "evitare",
+      "start": 23.657875,
+      "end": 24.092083
+    },
+    {
+      "text": "passaggi",
+      "start": 24.10525,
+      "end": 24.657875
+    },
+    {
+      "text": "troppo",
+      "start": 24.671041,
+      "end": 25.052624
+    },
+    {
+      "text": "ravvicinati",
+      "start": 25.065791,
+      "end": 25.815791
+    },
+    {
+      "text": "e",
+      "start": 25.828958,
+      "end": 25.868416
+    },
+    {
+      "text": "a",
+      "start": 25.881583,
+      "end": 25.934208
+    },
+    {
+      "text": "concentrare",
+      "start": 25.947375,
+      "end": 26.684208
+    },
+    {
+      "text": "il",
+      "start": 26.697375,
+      "end": 26.776333
+    },
+    {
+      "text": "tempo",
+      "start": 26.789458,
+      "end": 27.210499
+    },
+    {
+      "text": "sui",
+      "start": 27.223666,
+      "end": 27.421041
+    },
+    {
+      "text": "clienti",
+      "start": 27.434208,
+      "end": 27.999999
+    },
+    {
+      "text": "che",
+      "start": 28.013166,
+      "end": 28.157916
+    },
+    {
+      "text": "richiedono",
+      "start": 28.171041,
+      "end": 28.657874
+    },
+    {
+      "text": "attenzione",
+      "start": 28.671041,
+      "end": 29.447374
+    }
+  ]
+}

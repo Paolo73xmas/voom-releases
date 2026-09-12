@@ -1,0 +1,148 @@
+
+
+AI Tour
+Pianificazione AI dei giri visita
+
+Avvia Tour
+Genera
+Settimana
+Mese
+Portafoglio
+I miei Tour
+
+Nuovo
+
+Rigenera
+
+Salva
+
+Modifica
+lun 14/09/26 · Giro Clienti · Milano → Rozzano → Pieve Emanuele
+ORARIO
+09:00 → 11:43
+VISITE
+8
+KM
+47
+GUIDA
+1h 23m
+IN VISITA
+1h 20m
+BUFFER
+5h 17m
+VALORE POT.
+1922 €
+PRIORITÀ MEDIA
+69/100
+COMPOSIZIONE
+8 CLI
+
+Ho capito che vuoi pianificare 8 visite ai tuoi clienti lunedì 14 settembre 2026, dalle 09:00 alle 17:00. Il percorso parte da Piazza del Duomo a Milano, segue nell’ordine Milano, Rozzano e Pieve Emanuele, includendo le aree entro 8 km e i corridoi tra le località entro 3 km, con rientro al punto di partenza.
+
+Abbiamo pianificato un giro visite nell'area di Milano, Rozzano e Pieve Emanuele, con un focus su 8 clienti, tutti selezionati per l'urgenza dei loro ordini. Le visite sono state organizzate in base alla priorità, con particolare attenzione a clienti che non venivano visitati da tempo, risparmiando tempo prezioso grazie all'esclusione di 20 soggetti già visitati di recente. Il tempo totale di visita è di 80 minuti, mentre il viaggio richiederà 83 minuti, rispettando l'orario previsto di conclusione alle 11:43. Questa strategia ci permette di massimizzare l'efficacia del nostro intervento commerciale, garantendo un servizio tempestivo ai clienti più bisognosi.
+
+20 soggetti esclusi: già visitati o con ordine negli ultimi 15 giorni
+
+Elenco
+
+Mappa
+
+09:00 · Partenza da Piazza del Duomo, Milano, Lombardia, Italia
+
+9 min · 3.4 km
+1
+TABACCHERIA DI CAPOLONGO RINO
+METRO STAZIONE MM LIMA, MILANO
+09:09
+→ 09:19
+Cliente
+Bassa · 30/100
+
+Naviga
+Presente nella zona del giro
+
+5 min · 2.7 km
+2
+TABACCHERIA RIGOLI GIUSEPPINA
+PIAZZALE LAGOSTA, 9, Milano
+09:24
+→ 09:34
+Cliente
+Urgente · 80/100
+
+Naviga
+Ultimo ordine 110 gg fa, oltre la frequenza abituale di 14 gg. Passaggio molto in ritardo: ultima visita 110 gg fa (cadenza 5 settimane)
+
+7 min · 4.0 km
+3
+TABACCHERIA DI ROMANO CLAUDIA
+PIAZZA SIRE RAUL 1, MILANO
+09:41
+→ 09:51
+Cliente
+Alta · 60/100
+
+Naviga
+Riordino previsto a breve (frequenza media 26 gg). Passaggio molto in ritardo: ultima visita 155 gg fa (cadenza 5 settimane)
+
+5 min · 2.5 km
+4
+O.S. TABACCHI
+VIA PADOVA 281, MILANO
+09:56
+→ 10:06
+Cliente
+Alta · 78/100
+
+Naviga
+Cliente progetto LaserVideo. Ultimo ordine 68 gg fa. Passaggio in scadenza: ultima visita 68 gg fa (cadenza 8 settimane)
+
+17 min · 9.2 km
+5
+Tabaccheria Carnevali Nadia
+via Benaco 32, Milano
+10:23
+→ 10:33
+Cliente
+Urgente · 88/100
+
+Naviga
+Ultimo ordine 109 gg fa, oltre la frequenza abituale di 44 gg. Passaggio molto in ritardo: ultima visita 109 gg fa (cadenza 8 settimane)
+
+2 min · 0.9 km
+6
+BAR TABACCHI DI HU DAISY
+Via Marco d`Agrate 15, Milano
+10:35
+→ 10:45
+Cliente
+Urgente · 80/100
+
+Naviga
+Ultimo ordine 92 gg fa, vicino alla frequenza abituale di 74 gg. Passaggio molto in ritardo: ultima visita 241 gg fa (cadenza 8 settimane)
+
+16 min · 10.1 km
+7
+TABACCHERIA DI MAFFEZZONI IDA MARIA - RIV. 9
+VIA DEGLI OLEANDRI, 33, ROZZANO
+11:01
+→ 11:11
+Cliente
+Urgente · 80/100
+
+Naviga
+Ultimo ordine 47 gg fa, oltre la frequenza abituale di 12 gg. Passaggio molto in ritardo: ultima visita 47 gg fa (cadenza 5 settimane)
+
+3 min · 2.0 km
+8
+Tabaccheria di Gianluca Becchio
+Viale Lombardia, 52, Rozzano
+11:15
+→ 11:25
+Cliente
+Media · 53/100
+
+Naviga
+Cliente progetto DoctorVape. Fatturato 6 mesi 2354 EUR (fascia alta)
+
+11:43 · Rientro a Rientro al punto di partenza

@@ -1,0 +1,86 @@
+
+
+AI Tour
+Pianificazione AI dei giri visita
+Genera
+Settimana
+Mese
+Portafoglio
+I miei Tour
+
+Dillo all'AI
+Descrivi il giro a voce o per iscritto e lascia che l'AI lo costruisca
+
+oppure imposta manualmente
+Data
+Oggi
+12/09
+Domani
+13/09
+Lun
+14/09
+Mar
+15/09
+Mer
+16/09
+Gio
+17/09
+Ven
+18/09
+Impegni liberi in agenda
+Conferma un luogo per inserire l’impegno come tappa obbligatoria. Senza luogo resta un promemoria: verifica che gli orari del giro non si sovrappongano.
+08:30 · DEMO · Riunione organizzativa · 30 min
+ESEMPIO DIDATTICO NON SALVATO
+Senza luogo · solo promemoria, non tappa
+15:00 · DEMO · Incontro in centro · 30 min
+ESEMPIO DIDATTICO NON SALVATO
+Piazza del Duomo, Milano
+Cerca e conferma luogo per il giro
+
+1 follow-up in agenda per il 14/09/2026
+I follow-up spuntati verranno inseriti nel giro come tappe obbligatorie (riconoscibili). Togli la spunta per ignorarli.
+
+CLIENTE DIMOSTRATIVO · Milano · ore 11:00 (follow-up)
+ESEMPIO DIDATTICO NON SALVATO
+Ora inizio
+
+08:00
+
+Ora fine
+
+18:00
+
+Tipo giornata
+
+Giro Clienti
+Clienti già acquisiti da rivisitare
+
+Sviluppo Territorio
+Prospect, orfani, mai visitate e recuperi
+
+Giornata Mista
+Mix ragionato di clienti e sviluppo
+
+Decidi tu AI
+L'AI analizza il portafoglio e sceglie
+Partenza
+Posizione corrente
+Indirizzo
+Casa
+Sede
+Rientro
+Nessuno
+Partenza
+Indirizzo
+Casa
+Sede
+Area
+Automatica (AI)
+Provincia
+Comune
+Raggio km
+Visite obbligatorie (facoltativo)
+
+
+GENERA CON AI
+Selezione commerciale → clustering → pianificazione temporale

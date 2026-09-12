@@ -1,0 +1,80 @@
+
+
+AI Tour
+Pianificazione AI dei giri visita
+Genera
+Settimana
+Mese
+Portafoglio
+I miei Tour
+
+Per oggi l'orario di fine (17:00) è già passato: di' ad esempio "domani" nella richiesta
+
+
+Dillo all'AI
+Descrivi il giro a voce o per iscritto e lascia che l'AI lo costruisca
+
+oppure imposta manualmente
+Data
+Oggi
+12/09
+Domani
+13/09
+Lun
+14/09
+Mar
+15/09
+Mer
+16/09
+Gio
+17/09
+Ven
+18/09
+
+1 follow-up SCADUTO mai gestito (ultimi 60 giorni)
+Spunta quelli da recuperare: verranno inseriti in questo giro come tappe obbligatorie.
+
+Cliente · era per il 21/08
+[AI Tour] Follow-up: trattativa — Da tornare
+Ora inizio
+
+08:00
+
+Ora fine
+
+18:00
+
+Tipo giornata
+
+Giro Clienti
+Clienti già acquisiti da rivisitare
+
+Sviluppo Territorio
+Prospect, orfani, mai visitate e recuperi
+
+Giornata Mista
+Mix ragionato di clienti e sviluppo
+
+Decidi tu AI
+L'AI analizza il portafoglio e sceglie
+Partenza
+Posizione corrente
+Indirizzo
+Casa
+Sede
+Rientro
+Nessuno
+Partenza
+Indirizzo
+Casa
+Sede
+Area
+Automatica (AI)
+Provincia
+Comune
+Raggio km
+Visite obbligatorie (facoltativo)
+
+
+GENERA CON AI
+Selezione commerciale → clustering → pianificazione temporale

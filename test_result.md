@@ -102,7 +102,27 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Ultima priorità: correggere fallimento EAS iOS install dependencies Vitest5/Node20.19.4, solo dipendenze/codice, senza Docker/env/DB. Storico: audit funzionale e bug flussi CRM."
+user_problem_statement: "Ultima priorità: completare verifiche e consegnare video AI Tour completo con Salvatore Pirone, voce maschile italiana, capitoli e sottotitoli sincronizzati; sola lettura e anteprime, nessuna modifica ai dati operativi."
+
+tutorial_pirone_final_delivery:
+  implemented: true
+  working: true
+  needs_retesting: false
+  native_playback_verified: false
+  user_accepted: false
+  browser_playback_automation: "Inconclusive: metadata timeout; RCA indica limite codec del browser. Decode integrale PASS; prova dispositivo utente ancora richiesta."
+  priority: high
+  files: [backend/server.py, backend/media_response.py, manual/video/pirone2026/qa_report.json]
+  status_history:
+    - agent: main
+      comment: "FINALE iteration35 letto:13/13 HTTPpytestPASS,3file identici originali,fullAVdecodePASS,1576.36s/1080p25fps/H264AAC/8capitoli/48scene/272SRT ordinati. QA audiovisiva finale senza difetti rilevanti; nessuna certificazione frame-perfect percettiva. Browser automatico non completa metadata/seek, RCA codec browser; nessuna patch speculativa, prova reale utente pending. Test aggiunti (backend/tests/test_manual_media_delivery_pirone.py,tests/validate_pirone_media_iter35.py) letti, solo file test dal tester. Nessun login/scrittura CRM nella consegna. Voce sintetica Diego, NON di Salvatore. Report35 conservato con limite e final_delivery_media.md distingue check tecnici dalla prova utente."
+    - agent: main
+      comment: "Self-retest byte-range PASS206 Content-Length2 per bytes0-1. Primo tentativo helper aveva header duplicati per case mismatch: diagnosi RCA e fix lowercase; lintsPythonPASS. Screenshot app preview caricata senza login. Tester: usare codice aggiornato, approfondire GET/HEAD/range/download/playback e integrità media; nessun test CRM necessario."
+    - agent: main
+      comment: "Utente conferma verifica finale e consegna. MP4 presente 47832021byte,26:16.36,1080p25fps H264/AAC,8capitoli. GET pieno video identico SHA256 al locale; SRT/copione identici byte-per-byte. Range0-1 restituisce200: Starlette0.37.2 non supporta range FileResponse. Aggiunto helper dedicato nuovo endpoint, nessuna modifica app/dati/env/dipendenze. Verificare HEAD/206/416/suffix/If-Range/download e playback seek. NON eseguire script cattura o scritture Supabase. QA originale full decode/timelinePASS, completare verifica finale indipendente."
+  test_plan:
+    current_focus: [video_full_decode, timeline_subtitles, http_download_integrity, byte_range_resume, browser_playback_seek, readable_video_samples]
+    protected_data: "Test media pubblicati soltanto; nessun login o scrittura CRM necessario. Nessuna modifica Tour Live/GPS/clienti/appuntamenti."
 
 eas_dependency_fix_20260912:
   original_error: "vitest@5.0.0 engine node requires22.12+, EASworker20.19.4"

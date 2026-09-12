@@ -1,0 +1,348 @@
+{
+  "id": "s24",
+  "sha256": "b7c1cef239da40f1d9010c4216a9f61a6dfc2322df26c9f76ea93fe2c371801f",
+  "audioDuration": 28.704,
+  "duration": 29.92,
+  "words": [
+    {
+      "text": "Dopo",
+      "start": 0.102625,
+      "end": 0.44475
+    },
+    {
+      "text": "aver",
+      "start": 0.457875,
+      "end": 0.642083
+    },
+    {
+      "text": "aggiunto",
+      "start": 0.65525,
+      "end": 1.076291
+    },
+    {
+      "text": "i",
+      "start": 1.089458,
+      "end": 1.155249
+    },
+    {
+      "text": "comuni",
+      "start": 1.168416,
+      "end": 1.615791
+    },
+    {
+      "text": "e",
+      "start": 1.628958,
+      "end": 1.655291
+    },
+    {
+      "text": "impostato",
+      "start": 1.668416,
+      "end": 2.234207
+    },
+    {
+      "text": "il",
+      "start": 2.247375,
+      "end": 2.313166
+    },
+    {
+      "text": "corridoio",
+      "start": 2.326333,
+      "end": 3.102666
+    },
+    {
+      "text": "premi",
+      "start": 3.247375,
+      "end": 3.563166
+    },
+    {
+      "text": "di",
+      "start": 3.576333,
+      "end": 3.694749
+    },
+    {
+      "text": "nuovo",
+      "start": 3.707875,
+      "end": 4.023666
+    },
+    {
+      "text": "Verifica",
+      "start": 4.036833,
+      "end": 4.602624
+    },
+    {
+      "text": "zone",
+      "start": 4.615791,
+      "end": 4.997374
+    },
+    {
+      "text": "e",
+      "start": 5.010541,
+      "end": 5.049999
+    },
+    {
+      "text": "mostra",
+      "start": 5.063166,
+      "end": 5.457916
+    },
+    {
+      "text": "la",
+      "start": 5.471041,
+      "end": 5.563166
+    },
+    {
+      "text": "mappa",
+      "start": 5.576333,
+      "end": 6.089499
+    },
+    {
+      "text": "Osserva",
+      "start": 7.025666,
+      "end": 7.591457
+    },
+    {
+      "text": "tutte",
+      "start": 7.604625,
+      "end": 7.986208
+    },
+    {
+      "text": "le",
+      "start": 7.999333,
+      "end": 8.104583
+    },
+    {
+      "text": "aree",
+      "start": 8.11775,
+      "end": 8.446708
+    },
+    {
+      "text": "e",
+      "start": 8.459875,
+      "end": 8.499333
+    },
+    {
+      "text": "i",
+      "start": 8.5125,
+      "end": 8.604625
+    },
+    {
+      "text": "collegamenti",
+      "start": 8.61775,
+      "end": 9.36775
+    },
+    {
+      "text": "tra",
+      "start": 9.380916,
+      "end": 9.578291
+    },
+    {
+      "text": "loro",
+      "start": 9.591458,
+      "end": 10.012499
+    },
+    {
+      "text": "Controlla",
+      "start": 10.934208,
+      "end": 11.473666
+    },
+    {
+      "text": "che",
+      "start": 11.486833,
+      "end": 11.631583
+    },
+    {
+      "text": "non",
+      "start": 11.64475,
+      "end": 11.7895
+    },
+    {
+      "text": "ci",
+      "start": 11.802625,
+      "end": 11.986833
+    },
+    {
+      "text": "sia",
+      "start": 12.0,
+      "end": 12.210541
+    },
+    {
+      "text": "una",
+      "start": 12.223666,
+      "end": 12.434207
+    },
+    {
+      "text": "località",
+      "start": 12.447375,
+      "end": 12.960541
+    },
+    {
+      "text": "omonima",
+      "start": 12.973666,
+      "end": 13.421041
+    },
+    {
+      "text": "lontana",
+      "start": 13.434208,
+      "end": 14.013166
+    },
+    {
+      "text": "un",
+      "start": 14.289458,
+      "end": 14.473666
+    },
+    {
+      "text": "punto",
+      "start": 14.486833,
+      "end": 14.776291
+    },
+    {
+      "text": "invertito",
+      "start": 14.789458,
+      "end": 15.368416
+    },
+    {
+      "text": "o",
+      "start": 15.381583,
+      "end": 15.394749
+    },
+    {
+      "text": "una",
+      "start": 15.407875,
+      "end": 15.618416
+    },
+    {
+      "text": "fascia",
+      "start": 15.631583,
+      "end": 15.960541
+    },
+    {
+      "text": "troppo",
+      "start": 15.973666,
+      "end": 16.381541
+    },
+    {
+      "text": "ampia",
+      "start": 16.39475,
+      "end": 16.868416
+    },
+    {
+      "text": "Quando",
+      "start": 17.789458,
+      "end": 18.118416
+    },
+    {
+      "text": "tutto",
+      "start": 18.131583,
+      "end": 18.499999
+    },
+    {
+      "text": "corrisponde",
+      "start": 18.513166,
+      "end": 19.197374
+    },
+    {
+      "text": "alla",
+      "start": 19.210541,
+      "end": 19.368416
+    },
+    {
+      "text": "tua",
+      "start": 19.381583,
+      "end": 19.605249
+    },
+    {
+      "text": "intenzione",
+      "start": 19.618416,
+      "end": 20.394749
+    },
+    {
+      "text": "premi",
+      "start": 20.513166,
+      "end": 20.815791
+    },
+    {
+      "text": "ancora",
+      "start": 20.828958,
+      "end": 21.171083
+    },
+    {
+      "text": "Confermo",
+      "start": 21.184208,
+      "end": 21.789458
+    },
+    {
+      "text": "queste",
+      "start": 21.802625,
+      "end": 22.131583
+    },
+    {
+      "text": "zone",
+      "start": 22.14475,
+      "end": 22.513166
+    },
+    {
+      "text": "e",
+      "start": 22.526333,
+      "end": 22.592124
+    },
+    {
+      "text": "questo",
+      "start": 22.60525,
+      "end": 22.934208
+    },
+    {
+      "text": "ordine",
+      "start": 22.947375,
+      "end": 23.486833
+    },
+    {
+      "text": "Con",
+      "start": 24.421041,
+      "end": 24.631582
+    },
+    {
+      "text": "più",
+      "start": 24.64475,
+      "end": 24.802625
+    },
+    {
+      "text": "comuni",
+      "start": 24.815791,
+      "end": 25.236832
+    },
+    {
+      "text": "il",
+      "start": 25.25,
+      "end": 25.315791
+    },
+    {
+      "text": "controllo",
+      "start": 25.328958,
+      "end": 25.868416
+    },
+    {
+      "text": "visivo",
+      "start": 25.881583,
+      "end": 26.328958
+    },
+    {
+      "text": "è",
+      "start": 26.342125,
+      "end": 26.407916
+    },
+    {
+      "text": "ancora",
+      "start": 26.421041,
+      "end": 26.802624
+    },
+    {
+      "text": "più",
+      "start": 26.815791,
+      "end": 26.973666
+    },
+    {
+      "text": "importante",
+      "start": 26.986833,
+      "end": 27.776291
+    }
+  ]
+}

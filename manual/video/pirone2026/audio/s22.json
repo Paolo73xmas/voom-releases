@@ -1,0 +1,323 @@
+{
+  "id": "s22",
+  "sha256": "12b03324d7f78fee378874c78cd08f572d10e4e1b60c7b3b5b3edf8435728b22",
+  "audioDuration": 29.256,
+  "duration": 30.48,
+  "words": [
+    {
+      "text": "Il",
+      "start": 0.102625,
+      "end": 0.313166
+    },
+    {
+      "text": "corridoio",
+      "start": 0.326333,
+      "end": 0.997374
+    },
+    {
+      "text": "è",
+      "start": 1.010541,
+      "end": 1.049999
+    },
+    {
+      "text": "utile",
+      "start": 1.063166,
+      "end": 1.444749
+    },
+    {
+      "text": "quando",
+      "start": 1.457875,
+      "end": 1.773666
+    },
+    {
+      "text": "non",
+      "start": 1.786833,
+      "end": 1.971041
+    },
+    {
+      "text": "vuoi",
+      "start": 1.984208,
+      "end": 2.155249
+    },
+    {
+      "text": "considerare",
+      "start": 2.168416,
+      "end": 2.905249
+    },
+    {
+      "text": "soltanto",
+      "start": 2.918416,
+      "end": 3.497374
+    },
+    {
+      "text": "le",
+      "start": 3.510541,
+      "end": 3.589499
+    },
+    {
+      "text": "zone",
+      "start": 3.602625,
+      "end": 3.892083
+    },
+    {
+      "text": "intorno",
+      "start": 3.90525,
+      "end": 4.286833
+    },
+    {
+      "text": "ai",
+      "start": 4.3,
+      "end": 4.40525
+    },
+    {
+      "text": "comuni",
+      "start": 4.418416,
+      "end": 4.971041
+    },
+    {
+      "text": "ma",
+      "start": 5.14475,
+      "end": 5.421083
+    },
+    {
+      "text": "anche",
+      "start": 5.434208,
+      "end": 5.618416
+    },
+    {
+      "text": "i",
+      "start": 5.631583,
+      "end": 5.684208
+    },
+    {
+      "text": "clienti",
+      "start": 5.697375,
+      "end": 6.223708
+    },
+    {
+      "text": "compresi",
+      "start": 6.236833,
+      "end": 6.828958
+    },
+    {
+      "text": "nella",
+      "start": 6.842125,
+      "end": 7.105291
+    },
+    {
+      "text": "fascia",
+      "start": 7.118416,
+      "end": 7.473666
+    },
+    {
+      "text": "di",
+      "start": 7.486833,
+      "end": 7.578958
+    },
+    {
+      "text": "collegamento",
+      "start": 7.592125,
+      "end": 8.328958
+    },
+    {
+      "text": "tra",
+      "start": 8.342125,
+      "end": 8.513166
+    },
+    {
+      "text": "una",
+      "start": 8.526333,
+      "end": 8.736874
+    },
+    {
+      "text": "località",
+      "start": 8.75,
+      "end": 9.342125
+    },
+    {
+      "text": "e",
+      "start": 9.35525,
+      "end": 9.381583
+    },
+    {
+      "text": "la",
+      "start": 9.39475,
+      "end": 9.513166
+    },
+    {
+      "text": "successiva",
+      "start": 9.526333,
+      "end": 10.407916
+    },
+    {
+      "text": "Può",
+      "start": 11.328958,
+      "end": 11.499999
+    },
+    {
+      "text": "evitare",
+      "start": 11.513166,
+      "end": 11.934207
+    },
+    {
+      "text": "di",
+      "start": 11.947375,
+      "end": 12.065791
+    },
+    {
+      "text": "passare",
+      "start": 12.078958,
+      "end": 12.499999
+    },
+    {
+      "text": "vicino",
+      "start": 12.513166,
+      "end": 12.973707
+    },
+    {
+      "text": "a",
+      "start": 12.986833,
+      "end": 12.999999
+    },
+    {
+      "text": "un",
+      "start": 13.013166,
+      "end": 13.144749
+    },
+    {
+      "text": "cliente",
+      "start": 13.157875,
+      "end": 13.644708
+    },
+    {
+      "text": "interessante",
+      "start": 13.657875,
+      "end": 14.421041
+    },
+    {
+      "text": "senza",
+      "start": 14.434208,
+      "end": 14.828958
+    },
+    {
+      "text": "prenderlo",
+      "start": 14.842125,
+      "end": 15.302666
+    },
+    {
+      "text": "in",
+      "start": 15.315791,
+      "end": 15.407916
+    },
+    {
+      "text": "considerazione",
+      "start": 15.421041,
+      "end": 16.578916
+    },
+    {
+      "text": "Attenzione",
+      "start": 17.5125,
+      "end": 18.446708
+    },
+    {
+      "text": "il",
+      "start": 18.696708,
+      "end": 18.867749
+    },
+    {
+      "text": "corridoio",
+      "start": 18.880916,
+      "end": 19.670374
+    },
+    {
+      "text": "è",
+      "start": 19.683541,
+      "end": 19.736166
+    },
+    {
+      "text": "un",
+      "start": 19.749333,
+      "end": 19.894083
+    },
+    {
+      "text": "filtro",
+      "start": 19.90725,
+      "end": 20.315125
+    },
+    {
+      "text": "geografico",
+      "start": 20.328291,
+      "end": 21.262499
+    },
+    {
+      "text": "Non",
+      "start": 22.184208,
+      "end": 22.434208
+    },
+    {
+      "text": "è",
+      "start": 22.447375,
+      "end": 22.486833
+    },
+    {
+      "text": "ancora",
+      "start": 22.5,
+      "end": 22.85525
+    },
+    {
+      "text": "l'itinerario",
+      "start": 22.868416,
+      "end": 23.605249
+    },
+    {
+      "text": "stradale",
+      "start": 23.618416,
+      "end": 24.078957
+    },
+    {
+      "text": "definitivo",
+      "start": 24.092125,
+      "end": 24.921083
+    },
+    {
+      "text": "che",
+      "start": 25.092125,
+      "end": 25.25
+    },
+    {
+      "text": "verrà",
+      "start": 25.263166,
+      "end": 25.578957
+    },
+    {
+      "text": "calcolato",
+      "start": 25.592125,
+      "end": 26.223708
+    },
+    {
+      "text": "durante",
+      "start": 26.236833,
+      "end": 26.697374
+    },
+    {
+      "text": "la",
+      "start": 26.710541,
+      "end": 26.815791
+    },
+    {
+      "text": "pianificazione",
+      "start": 26.828958,
+      "end": 27.671083
+    },
+    {
+      "text": "del",
+      "start": 27.684208,
+      "end": 27.842083
+    },
+    {
+      "text": "giro",
+      "start": 27.85525,
+      "end": 28.315791
+    }
+  ]
+}

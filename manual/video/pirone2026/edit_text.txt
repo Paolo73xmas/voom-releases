@@ -1,0 +1,273 @@
+
+
+AI Tour
+Pianificazione AI dei giri visita
+
+Avvia Tour
+Genera
+Settimana
+Mese
+Portafoglio
+I miei Tour
+
+Nuovo
+
+Rigenera
+
+Salva
+
+Modifica
+lun 14/09/26 · Giro Clienti · Milano → Rozzano → Pieve Emanuele
+ORARIO
+09:00 → 11:43
+VISITE
+8
+KM
+47
+GUIDA
+1h 23m
+IN VISITA
+1h 20m
+BUFFER
+5h 17m
+VALORE POT.
+1922 €
+PRIORITÀ MEDIA
+69/100
+COMPOSIZIONE
+8 CLI
+
+Per lunedì 14 settembre vuoi fare esattamente 8 visite ai tuoi clienti nella zona nord-est di Milano, entro un raggio di 8 km. Partirai da Piazza del Duomo alle 9:00, lavorerai fino alle 17:00 e rientrerai alla partenza.
+
+Per la giornata del 14 settembre, abbiamo scelto l'area di Milano, Rozzano e Pieve Emanuele, puntando su 8 visite ai clienti, tutte con priorità elevate per massimizzare l'efficacia commerciale. Le visite selezionate includono clienti con passaggi molto in ritardo, garantendo così un recupero tempestivo delle relazioni e un aumento delle vendite. Non abbiamo escluso visite rilevanti, risparmiando tempo prezioso grazie all'esclusione di 20 soggetti già visitati o con ordini recenti, permettendoci di rispettare l'orario previsto di fine alle 11:43. Con un totale di 47 km percorsi e 80 minuti dedicati alle visite, la strategia si dimostra efficace e ben pianificata.
+
+20 soggetti esclusi: già visitati o con ordine negli ultimi 15 giorni
+
+Elenco
+
+Mappa
+
+09:00 · Partenza da Piazza del Duomo, Milano, Lombardia, Italia
+
+9 min · 3.4 km
+1
+TABACCHERIA DI CAPOLONGO RINO
+METRO STAZIONE MM LIMA, MILANO
+09:09
+→ 09:19
+Cliente
+Bassa · 30/100
+
+Naviga
+Presente nella zona del giro
+
+5 min · 2.7 km
+2
+TABACCHERIA RIGOLI GIUSEPPINA
+PIAZZALE LAGOSTA, 9, Milano
+09:24
+→ 09:34
+Cliente
+Urgente · 80/100
+
+Naviga
+Ultimo ordine 110 gg fa, oltre la frequenza abituale di 14 gg. Passaggio molto in ritardo: ultima visita 110 gg fa (cadenza 5 settimane)
+
+7 min · 4.0 km
+3
+TABACCHERIA DI ROMANO CLAUDIA
+PIAZZA SIRE RAUL 1, MILANO
+09:41
+→ 09:51
+Cliente
+Alta · 60/100
+
+Naviga
+Riordino previsto a breve (frequenza media 26 gg). Passaggio molto in ritardo: ultima visita 155 gg fa (cadenza 5 settimane)
+
+5 min · 2.5 km
+4
+O.S. TABACCHI
+VIA PADOVA 281, MILANO
+09:56
+→ 10:06
+Cliente
+Alta · 78/100
+
+Naviga
+Cliente progetto LaserVideo. Ultimo ordine 68 gg fa. Passaggio in scadenza: ultima visita 68 gg fa (cadenza 8 settimane)
+
+17 min · 9.2 km
+5
+Tabaccheria Carnevali Nadia
+via Benaco 32, Milano
+10:23
+→ 10:33
+Cliente
+Urgente · 88/100
+
+Naviga
+Ultimo ordine 109 gg fa, oltre la frequenza abituale di 44 gg. Passaggio molto in ritardo: ultima visita 109 gg fa (cadenza 8 settimane)
+
+2 min · 0.9 km
+6
+BAR TABACCHI DI HU DAISY
+Via Marco d`Agrate 15, Milano
+10:35
+→ 10:45
+Cliente
+Urgente · 80/100
+
+Naviga
+Ultimo ordine 92 gg fa, vicino alla frequenza abituale di 74 gg. Passaggio molto in ritardo: ultima visita 241 gg fa (cadenza 8 settimane)
+
+16 min · 10.1 km
+7
+TABACCHERIA DI MAFFEZZONI IDA MARIA - RIV. 9
+VIA DEGLI OLEANDRI, 33, ROZZANO
+11:01
+→ 11:11
+Cliente
+Urgente · 80/100
+
+Naviga
+Ultimo ordine 47 gg fa, oltre la frequenza abituale di 12 gg. Passaggio molto in ritardo: ultima visita 47 gg fa (cadenza 5 settimane)
+
+3 min · 2.0 km
+8
+Tabaccheria di Gianluca Becchio
+Viale Lombardia, 52, Rozzano
+11:15
+→ 11:25
+Cliente
+Media · 53/100
+
+Naviga
+Cliente progetto DoctorVape. Fatturato 6 mesi 2354 EUR (fascia alta)
+
+11:43 · Rientro a Rientro al punto di partenza
+Modifica giro
+
+Visite nel giro (8): riordina, rimuovi o rendi obbligatorie, poi ricalcola.
+1
+TABACCHERIA DI CAPOLONGO RINO
+Cliente · 30/100 · MILANO
+
+
+
+
+2
+TABACCHERIA RIGOLI GIUSEPPINA
+Cliente · 80/100 · Milano
+
+
+
+
+3
+TABACCHERIA DI ROMANO CLAUDIA
+Cliente · 60/100 · MILANO
+
+
+
+
+4
+O.S. TABACCHI
+Cliente · 78/100 · MILANO
+
+
+
+
+5
+Tabaccheria Carnevali Nadia
+Cliente · 88/100 · Milano
+
+
+
+
+6
+BAR TABACCHI DI HU DAISY
+Cliente · 80/100 · Milano
+
+
+
+
+7
+TABACCHERIA DI MAFFEZZONI IDA MARIA - RIV. 9
+Cliente · 80/100 · ROZZANO
+
+
+
+
+8
+Tabaccheria di Gianluca Becchio
+Cliente · 53/100 · Rozzano
+
+
+
+
+Aggiungi visita (anche obbligatoria)
+
+Cliente
+Tabacchi di Simone Rugieri
+100/100 · Alzaia Naviglio Pavese, 24, Milano
+
+
+Cliente
+TABACCHERIA RICEVITORIA LOTTO DI VELLA ALESSANDRO
+98/100 · VIA MAGGIORA 45/C, BORGOMANERO
+
+
+Cliente
+Camping Porto Srl
+96/100 · Via Del Porto, 27, Moniga Del Garda
+
+
+Cliente
+tabaccheria IL NUOVO RESEGONE DI CELMER PATRYCJA SYLWIA
+88/100 · VIA FRATELLI CAIROLI 52, LECCO
+
+
+Cliente
+Tabaccheria Spinelli A.
+83/100 · Via XI Febbraio, 42, VAPRIO D`ADDA
+
+
+Cliente
+TABACCHERIA DI TOLASI ELISA
+83/100 · VIA ALDO MORO, 17, BORGO SAN GIACOMO
+
+
+Cliente
+Bar Tabacchi di Ibba Stefano
+83/100 · Piazza Roma, 5, Cerro Al Lambro
+
+
+Cliente
+Antonietta Pisaniello
+83/100 · Via lenin 6, Zibido San Giacomo
+
+
+Cliente
+TABACCHERIA DEL CORSO
+83/100 · VIA ROMA, 37/39, VIDIGULFO
+
+
+Cliente
+La Ferriera Cafe' di Oldrati Mauro
+83/100 · VIA DELLE FERRIERE 3, FIGINO SERENZA
+
+
+Orfano
+Tazzinelli Elisa
+83/100 · Via Nazionale Dresio 215, Vogogna
+
+
+Orfano
+TABACCHERIA DI CAPETTINI PAOLO I RIV 9
+83/100 · CORSO ROMA, 81, TRECATE
+
+
+Stella rossa = tappa obbligatoria. Entrambi i comandi applicano le stelle e le modifiche. Conferma eventuali eccezioni fuori zona; appuntamenti e orari devono restare compatibili.
+
+RICALCOLA CON AI (ordine ottimale)
+Applica questa sequenza manuale

@@ -1,0 +1,298 @@
+{
+  "id": "s45",
+  "sha256": "15d41a3a5e44234f080bb82e729b7983e4320598f9cf51353886aa752821090b",
+  "audioDuration": 28.992,
+  "duration": 30.2,
+  "words": [
+    {
+      "text": "Prima",
+      "start": 0.102625,
+      "end": 0.40525
+    },
+    {
+      "text": "dell'invio",
+      "start": 0.418416,
+      "end": 1.089457
+    },
+    {
+      "text": "passa",
+      "start": 1.260541,
+      "end": 1.615791
+    },
+    {
+      "text": "al",
+      "start": 1.628958,
+      "end": 1.721083
+    },
+    {
+      "text": "riepilogo",
+      "start": 1.734208,
+      "end": 2.497374
+    },
+    {
+      "text": "e",
+      "start": 2.510541,
+      "end": 2.536874
+    },
+    {
+      "text": "rileggi",
+      "start": 2.55,
+      "end": 3.036833
+    },
+    {
+      "text": "punto",
+      "start": 3.05,
+      "end": 3.392125
+    },
+    {
+      "text": "vendita",
+      "start": 3.40525,
+      "end": 3.984208
+    },
+    {
+      "text": "tipo",
+      "start": 4.3,
+      "end": 4.628958
+    },
+    {
+      "text": "di",
+      "start": 4.642125,
+      "end": 4.747375
+    },
+    {
+      "text": "anomalia",
+      "start": 4.760541,
+      "end": 5.273707
+    },
+    {
+      "text": "e",
+      "start": 5.286833,
+      "end": 5.326291
+    },
+    {
+      "text": "descrizione",
+      "start": 5.339458,
+      "end": 6.273666
+    },
+    {
+      "text": "Solo",
+      "start": 7.210541,
+      "end": 7.565791
+    },
+    {
+      "text": "dopo",
+      "start": 7.578958,
+      "end": 7.907916
+    },
+    {
+      "text": "questo",
+      "start": 7.921041,
+      "end": 8.236832
+    },
+    {
+      "text": "controllo",
+      "start": 8.25,
+      "end": 8.907875
+    },
+    {
+      "text": "nell'uso",
+      "start": 9.184208,
+      "end": 9.697374
+    },
+    {
+      "text": "reale",
+      "start": 9.710541,
+      "end": 10.249999
+    },
+    {
+      "text": "conferma",
+      "start": 10.473666,
+      "end": 11.013124
+    },
+    {
+      "text": "la",
+      "start": 11.026333,
+      "end": 11.118458
+    },
+    {
+      "text": "richiesta",
+      "start": 11.131583,
+      "end": 11.828958
+    },
+    {
+      "text": "Nel",
+      "start": 12.75,
+      "end": 13.013166
+    },
+    {
+      "text": "nostro",
+      "start": 13.026333,
+      "end": 13.328958
+    },
+    {
+      "text": "esempio",
+      "start": 13.342125,
+      "end": 13.7895
+    },
+    {
+      "text": "ci",
+      "start": 13.802625,
+      "end": 13.921041
+    },
+    {
+      "text": "fermiamo",
+      "start": 13.934208,
+      "end": 14.447374
+    },
+    {
+      "text": "prima",
+      "start": 14.460541,
+      "end": 14.723707
+    },
+    {
+      "text": "di",
+      "start": 14.736833,
+      "end": 14.842083
+    },
+    {
+      "text": "premere",
+      "start": 14.85525,
+      "end": 15.236833
+    },
+    {
+      "text": "Conferma",
+      "start": 15.25,
+      "end": 15.75
+    },
+    {
+      "text": "invio",
+      "start": 15.763166,
+      "end": 16.197374
+    },
+    {
+      "text": "non",
+      "start": 16.460541,
+      "end": 16.657916
+    },
+    {
+      "text": "viene",
+      "start": 16.671041,
+      "end": 16.921041
+    },
+    {
+      "text": "creata",
+      "start": 16.934208,
+      "end": 17.355249
+    },
+    {
+      "text": "alcuna",
+      "start": 17.368416,
+      "end": 17.710541
+    },
+    {
+      "text": "pratica",
+      "start": 17.723666,
+      "end": 18.368416
+    },
+    {
+      "text": "Se",
+      "start": 19.289458,
+      "end": 19.526291
+    },
+    {
+      "text": "durante",
+      "start": 19.539458,
+      "end": 19.934208
+    },
+    {
+      "text": "un",
+      "start": 19.947375,
+      "end": 20.078958
+    },
+    {
+      "text": "invio",
+      "start": 20.092125,
+      "end": 20.447375
+    },
+    {
+      "text": "reale",
+      "start": 20.460541,
+      "end": 20.828957
+    },
+    {
+      "text": "compare",
+      "start": 20.842125,
+      "end": 21.2895
+    },
+    {
+      "text": "un",
+      "start": 21.302625,
+      "end": 21.434208
+    },
+    {
+      "text": "errore",
+      "start": 21.447375,
+      "end": 21.947375
+    },
+    {
+      "text": "leggi",
+      "start": 22.157875,
+      "end": 22.592083
+    },
+    {
+      "text": "il",
+      "start": 22.60525,
+      "end": 22.644708
+    },
+    {
+      "text": "messaggio",
+      "start": 22.657875,
+      "end": 23.302625
+    },
+    {
+      "text": "e",
+      "start": 23.315791,
+      "end": 23.342124
+    },
+    {
+      "text": "riprova",
+      "start": 23.35525,
+      "end": 23.75
+    },
+    {
+      "text": "dal",
+      "start": 23.763166,
+      "end": 23.907916
+    },
+    {
+      "text": "flusso",
+      "start": 23.921041,
+      "end": 24.328916
+    },
+    {
+      "text": "previsto",
+      "start": 24.342125,
+      "end": 24.986875
+    },
+    {
+      "text": "senza",
+      "start": 25.263166,
+      "end": 25.710541
+    },
+    {
+      "text": "moltiplicare",
+      "start": 25.723666,
+      "end": 26.513124
+    },
+    {
+      "text": "segnalazioni",
+      "start": 26.526333,
+      "end": 27.302666
+    },
+    {
+      "text": "identiche",
+      "start": 27.315791,
+      "end": 28.065791
+    }
+  ]
+}

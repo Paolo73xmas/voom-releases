@@ -1,0 +1,348 @@
+{
+  "id": "s13",
+  "sha256": "2e282fdee71852e77f674004d16402ce7130fb3968f63841cbc43437c9e5d6c7",
+  "audioDuration": 30.12,
+  "duration": 31.32,
+  "words": [
+    {
+      "text": "Per",
+      "start": 0.102625,
+      "end": 0.326291
+    },
+    {
+      "text": "una",
+      "start": 0.339458,
+      "end": 0.536833
+    },
+    {
+      "text": "città",
+      "start": 0.55,
+      "end": 0.94475
+    },
+    {
+      "text": "grande",
+      "start": 0.957875,
+      "end": 1.471041
+    },
+    {
+      "text": "come",
+      "start": 1.589458,
+      "end": 1.826291
+    },
+    {
+      "text": "Milano",
+      "start": 1.839458,
+      "end": 2.365791
+    },
+    {
+      "text": "puoi",
+      "start": 2.471041,
+      "end": 2.734207
+    },
+    {
+      "text": "restringere",
+      "start": 2.747375,
+      "end": 3.44475
+    },
+    {
+      "text": "l'area",
+      "start": 3.457875,
+      "end": 3.86575
+    },
+    {
+      "text": "con",
+      "start": 3.878958,
+      "end": 4.076333
+    },
+    {
+      "text": "una",
+      "start": 4.089458,
+      "end": 4.247333
+    },
+    {
+      "text": "direzione",
+      "start": 4.260541,
+      "end": 5.036874
+    },
+    {
+      "text": "La",
+      "start": 5.973666,
+      "end": 6.223666
+    },
+    {
+      "text": "zona",
+      "start": 6.236833,
+      "end": 6.552624
+    },
+    {
+      "text": "viene",
+      "start": 6.565791,
+      "end": 6.881582
+    },
+    {
+      "text": "costruita",
+      "start": 6.89475,
+      "end": 7.447375
+    },
+    {
+      "text": "intorno",
+      "start": 7.460541,
+      "end": 7.881582
+    },
+    {
+      "text": "a",
+      "start": 7.89475,
+      "end": 7.907916
+    },
+    {
+      "text": "un",
+      "start": 7.921041,
+      "end": 8.065791
+    },
+    {
+      "text": "punto",
+      "start": 8.078958,
+      "end": 8.421083
+    },
+    {
+      "text": "di",
+      "start": 8.434208,
+      "end": 8.539458
+    },
+    {
+      "text": "riferimento",
+      "start": 8.552625,
+      "end": 9.236833
+    },
+    {
+      "text": "e",
+      "start": 9.25,
+      "end": 9.289458
+    },
+    {
+      "text": "al",
+      "start": 9.302625,
+      "end": 9.407875
+    },
+    {
+      "text": "raggio",
+      "start": 9.421041,
+      "end": 9.776291
+    },
+    {
+      "text": "impostato",
+      "start": 9.789458,
+      "end": 10.539458
+    },
+    {
+      "text": "La",
+      "start": 11.460541,
+      "end": 11.710541
+    },
+    {
+      "text": "direzione",
+      "start": 11.723666,
+      "end": 12.342082
+    },
+    {
+      "text": "serve",
+      "start": 12.35525,
+      "end": 12.75
+    },
+    {
+      "text": "a",
+      "start": 12.763166,
+      "end": 12.815791
+    },
+    {
+      "text": "selezionare",
+      "start": 12.828958,
+      "end": 13.499999
+    },
+    {
+      "text": "una",
+      "start": 13.513166,
+      "end": 13.736832
+    },
+    {
+      "text": "parte",
+      "start": 13.75,
+      "end": 14.10525
+    },
+    {
+      "text": "di",
+      "start": 14.118416,
+      "end": 14.223666
+    },
+    {
+      "text": "quell'area",
+      "start": 14.236833,
+      "end": 14.986833
+    },
+    {
+      "text": "È",
+      "start": 15.907875,
+      "end": 16.06575
+    },
+    {
+      "text": "una",
+      "start": 16.078958,
+      "end": 16.315791
+    },
+    {
+      "text": "suddivisione",
+      "start": 16.328958,
+      "end": 16.986833
+    },
+    {
+      "text": "geografica",
+      "start": 17.0,
+      "end": 17.763166
+    },
+    {
+      "text": "utile",
+      "start": 17.776333,
+      "end": 18.184208
+    },
+    {
+      "text": "al",
+      "start": 18.197375,
+      "end": 18.263166
+    },
+    {
+      "text": "lavoro",
+      "start": 18.276333,
+      "end": 18.592124
+    },
+    {
+      "text": "dell'agente",
+      "start": 18.60525,
+      "end": 19.394708
+    },
+    {
+      "text": "non",
+      "start": 19.671041,
+      "end": 19.921041
+    },
+    {
+      "text": "una",
+      "start": 19.934208,
+      "end": 20.105249
+    },
+    {
+      "text": "garanzia",
+      "start": 20.118416,
+      "end": 20.644749
+    },
+    {
+      "text": "di",
+      "start": 20.657875,
+      "end": 20.75
+    },
+    {
+      "text": "corrispondenza",
+      "start": 20.763166,
+      "end": 21.657916
+    },
+    {
+      "text": "con",
+      "start": 21.671041,
+      "end": 21.855249
+    },
+    {
+      "text": "i",
+      "start": 21.868416,
+      "end": 21.921041
+    },
+    {
+      "text": "confini",
+      "start": 21.934208,
+      "end": 22.486833
+    },
+    {
+      "text": "di",
+      "start": 22.5,
+      "end": 22.60525
+    },
+    {
+      "text": "un",
+      "start": 22.618416,
+      "end": 22.723666
+    },
+    {
+      "text": "quartiere",
+      "start": 22.736833,
+      "end": 23.289458
+    },
+    {
+      "text": "o",
+      "start": 23.302625,
+      "end": 23.407875
+    },
+    {
+      "text": "con",
+      "start": 23.421041,
+      "end": 23.631582
+    },
+    {
+      "text": "il",
+      "start": 23.64475,
+      "end": 23.75
+    },
+    {
+      "text": "perimetro",
+      "start": 23.763166,
+      "end": 24.236832
+    },
+    {
+      "text": "amministrativo",
+      "start": 24.25,
+      "end": 25.052625
+    },
+    {
+      "text": "del",
+      "start": 25.065791,
+      "end": 25.223666
+    },
+    {
+      "text": "comune",
+      "start": 25.236833,
+      "end": 25.815791
+    },
+    {
+      "text": "Per",
+      "start": 26.75,
+      "end": 26.973666
+    },
+    {
+      "text": "questo",
+      "start": 26.986833,
+      "end": 27.289458
+    },
+    {
+      "text": "la",
+      "start": 27.302625,
+      "end": 27.39475
+    },
+    {
+      "text": "mappa",
+      "start": 27.407875,
+      "end": 27.736833
+    },
+    {
+      "text": "va",
+      "start": 27.75,
+      "end": 27.881583
+    },
+    {
+      "text": "sempre",
+      "start": 27.89475,
+      "end": 28.302625
+    },
+    {
+      "text": "controllata",
+      "start": 28.315791,
+      "end": 29.197374
+    }
+  ]
+}

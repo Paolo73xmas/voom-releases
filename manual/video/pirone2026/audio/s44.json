@@ -1,0 +1,333 @@
+{
+  "id": "s44",
+  "sha256": "0a5c1a59e58ff3c65464a7d24c32680778c5ac8765e0fb7bc8e807491c4cef51",
+  "audioDuration": 31.008,
+  "duration": 32.24,
+  "words": [
+    {
+      "text": "La",
+      "start": 0.102625,
+      "end": 0.339458
+    },
+    {
+      "text": "posizione",
+      "start": 0.352625,
+      "end": 0.971041
+    },
+    {
+      "text": "GPS",
+      "start": 0.984208,
+      "end": 1.813166
+    },
+    {
+      "text": "quando",
+      "start": 1.997375,
+      "end": 2.313166
+    },
+    {
+      "text": "disponibile",
+      "start": 2.326333,
+      "end": 3.115791
+    },
+    {
+      "text": "può",
+      "start": 3.234208,
+      "end": 3.405249
+    },
+    {
+      "text": "aiutare",
+      "start": 3.418416,
+      "end": 3.997374
+    },
+    {
+      "text": "a",
+      "start": 4.010541,
+      "end": 4.049999
+    },
+    {
+      "text": "identificare",
+      "start": 4.063166,
+      "end": 4.905291
+    },
+    {
+      "text": "il",
+      "start": 4.918416,
+      "end": 4.971041
+    },
+    {
+      "text": "luogo",
+      "start": 4.984208,
+      "end": 5.392083
+    },
+    {
+      "text": "della",
+      "start": 5.40525,
+      "end": 5.694708
+    },
+    {
+      "text": "segnalazione",
+      "start": 5.707875,
+      "end": 6.65525
+    },
+    {
+      "text": "Il",
+      "start": 7.578958,
+      "end": 7.763166
+    },
+    {
+      "text": "modulo",
+      "start": 7.776333,
+      "end": 8.197374
+    },
+    {
+      "text": "permette",
+      "start": 8.210541,
+      "end": 8.671082
+    },
+    {
+      "text": "però",
+      "start": 8.684208,
+      "end": 8.986833
+    },
+    {
+      "text": "di",
+      "start": 9.0,
+      "end": 9.118416
+    },
+    {
+      "text": "proseguire",
+      "start": 9.131583,
+      "end": 9.723708
+    },
+    {
+      "text": "anche",
+      "start": 9.736833,
+      "end": 9.999999
+    },
+    {
+      "text": "senza",
+      "start": 10.013166,
+      "end": 10.368416
+    },
+    {
+      "text": "GPS",
+      "start": 10.381583,
+      "end": 11.223708
+    },
+    {
+      "text": "Non",
+      "start": 12.14475,
+      "end": 12.39475
+    },
+    {
+      "text": "confondere",
+      "start": 12.407875,
+      "end": 13.0
+    },
+    {
+      "text": "la",
+      "start": 13.013166,
+      "end": 13.131582
+    },
+    {
+      "text": "posizione",
+      "start": 13.14475,
+      "end": 13.75
+    },
+    {
+      "text": "del",
+      "start": 13.763166,
+      "end": 13.921041
+    },
+    {
+      "text": "telefono",
+      "start": 13.934208,
+      "end": 14.434208
+    },
+    {
+      "text": "con",
+      "start": 14.447375,
+      "end": 14.64475
+    },
+    {
+      "text": "la",
+      "start": 14.657875,
+      "end": 14.802625
+    },
+    {
+      "text": "certezza",
+      "start": 14.815791,
+      "end": 15.473666
+    },
+    {
+      "text": "sul",
+      "start": 15.486833,
+      "end": 15.657874
+    },
+    {
+      "text": "nuovo",
+      "start": 15.671041,
+      "end": 15.881582
+    },
+    {
+      "text": "indirizzo",
+      "start": 15.89475,
+      "end": 16.434208
+    },
+    {
+      "text": "di",
+      "start": 16.447375,
+      "end": 16.552625
+    },
+    {
+      "text": "un'attività",
+      "start": 16.565791,
+      "end": 17.171041
+    },
+    {
+      "text": "trasferita",
+      "start": 17.184208,
+      "end": 17.947374
+    },
+    {
+      "text": "sono",
+      "start": 18.25,
+      "end": 18.552625
+    },
+    {
+      "text": "informazioni",
+      "start": 18.565791,
+      "end": 19.342124
+    },
+    {
+      "text": "diverse",
+      "start": 19.35525,
+      "end": 20.078916
+    },
+    {
+      "text": "Controlla",
+      "start": 21.0,
+      "end": 21.526333
+    },
+    {
+      "text": "sempre",
+      "start": 21.539458,
+      "end": 21.907874
+    },
+    {
+      "text": "il",
+      "start": 21.921041,
+      "end": 21.999999
+    },
+    {
+      "text": "punto",
+      "start": 22.013166,
+      "end": 22.342124
+    },
+    {
+      "text": "vendita",
+      "start": 22.35525,
+      "end": 22.802625
+    },
+    {
+      "text": "a",
+      "start": 22.815791,
+      "end": 22.855249
+    },
+    {
+      "text": "cui",
+      "start": 22.868416,
+      "end": 23.144749
+    },
+    {
+      "text": "stai",
+      "start": 23.157875,
+      "end": 23.421041
+    },
+    {
+      "text": "riferendo",
+      "start": 23.434208,
+      "end": 23.973666
+    },
+    {
+      "text": "l'anomalia",
+      "start": 23.986833,
+      "end": 24.565791
+    },
+    {
+      "text": "e",
+      "start": 24.578958,
+      "end": 24.671083
+    },
+    {
+      "text": "usa",
+      "start": 24.684208,
+      "end": 25.039458
+    },
+    {
+      "text": "le",
+      "start": 25.052625,
+      "end": 25.118416
+    },
+    {
+      "text": "note",
+      "start": 25.131583,
+      "end": 25.460541
+    },
+    {
+      "text": "per",
+      "start": 25.473666,
+      "end": 25.671041
+    },
+    {
+      "text": "spiegare",
+      "start": 25.684208,
+      "end": 26.263166
+    },
+    {
+      "text": "ciò",
+      "start": 26.276333,
+      "end": 26.513166
+    },
+    {
+      "text": "che",
+      "start": 26.526333,
+      "end": 26.631583
+    },
+    {
+      "text": "la",
+      "start": 26.64475,
+      "end": 26.75
+    },
+    {
+      "text": "sola",
+      "start": 26.763166,
+      "end": 27.263166
+    },
+    {
+      "text": "posizione",
+      "start": 27.447375,
+      "end": 28.092125
+    },
+    {
+      "text": "geografica",
+      "start": 28.10525,
+      "end": 28.907875
+    },
+    {
+      "text": "non",
+      "start": 28.921041,
+      "end": 29.092082
+    },
+    {
+      "text": "può",
+      "start": 29.10525,
+      "end": 29.25
+    },
+    {
+      "text": "raccontare",
+      "start": 29.263166,
+      "end": 30.039499
+    }
+  ]
+}

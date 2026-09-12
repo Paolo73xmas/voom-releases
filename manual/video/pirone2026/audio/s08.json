@@ -1,0 +1,313 @@
+{
+  "id": "s08",
+  "sha256": "b740d3e2360663f099af0c8dafdb34a1b54fb8723576c4c8cbe5b1ccdb60c469",
+  "audioDuration": 27.648,
+  "duration": 28.88,
+  "words": [
+    {
+      "text": "Per",
+      "start": 0.102625,
+      "end": 0.3
+    },
+    {
+      "text": "un",
+      "start": 0.313166,
+      "end": 0.418416
+    },
+    {
+      "text": "comune",
+      "start": 0.431583,
+      "end": 0.826333
+    },
+    {
+      "text": "singolo",
+      "start": 0.839458,
+      "end": 1.260499
+    },
+    {
+      "text": "puoi",
+      "start": 1.273666,
+      "end": 1.484207
+    },
+    {
+      "text": "usare",
+      "start": 1.497375,
+      "end": 1.852625
+    },
+    {
+      "text": "il",
+      "start": 1.865791,
+      "end": 1.957916
+    },
+    {
+      "text": "campo",
+      "start": 1.971041,
+      "end": 2.352624
+    },
+    {
+      "text": "Comune",
+      "start": 2.365791,
+      "end": 2.918416
+    },
+    {
+      "text": "per",
+      "start": 3.076333,
+      "end": 3.260541
+    },
+    {
+      "text": "esempio",
+      "start": 3.273666,
+      "end": 3.694707
+    },
+    {
+      "text": "Milano",
+      "start": 3.707875,
+      "end": 4.3
+    },
+    {
+      "text": "Se",
+      "start": 5.236833,
+      "end": 5.513166
+    },
+    {
+      "text": "ci",
+      "start": 5.526333,
+      "end": 5.671083
+    },
+    {
+      "text": "sono",
+      "start": 5.684208,
+      "end": 5.907874
+    },
+    {
+      "text": "località",
+      "start": 5.921041,
+      "end": 6.434207
+    },
+    {
+      "text": "con",
+      "start": 6.447375,
+      "end": 6.657916
+    },
+    {
+      "text": "nomi",
+      "start": 6.671041,
+      "end": 6.934207
+    },
+    {
+      "text": "simili",
+      "start": 6.947375,
+      "end": 7.421041
+    },
+    {
+      "text": "precisa",
+      "start": 7.552625,
+      "end": 8.065791
+    },
+    {
+      "text": "la",
+      "start": 8.078958,
+      "end": 8.171083
+    },
+    {
+      "text": "provincia",
+      "start": 8.184208,
+      "end": 8.697374
+    },
+    {
+      "text": "o",
+      "start": 8.710541,
+      "end": 8.815791
+    },
+    {
+      "text": "il",
+      "start": 8.828958,
+      "end": 8.894749
+    },
+    {
+      "text": "contesto",
+      "start": 8.907875,
+      "end": 9.421041
+    },
+    {
+      "text": "geografico",
+      "start": 9.434208,
+      "end": 10.381583
+    },
+    {
+      "text": "Per",
+      "start": 11.302625,
+      "end": 11.5
+    },
+    {
+      "text": "lavorare",
+      "start": 11.513166,
+      "end": 12.026332
+    },
+    {
+      "text": "su",
+      "start": 12.039458,
+      "end": 12.210499
+    },
+    {
+      "text": "più",
+      "start": 12.223666,
+      "end": 12.394707
+    },
+    {
+      "text": "comuni",
+      "start": 12.407875,
+      "end": 12.842083
+    },
+    {
+      "text": "e",
+      "start": 12.85525,
+      "end": 12.907875
+    },
+    {
+      "text": "stabilire",
+      "start": 12.921041,
+      "end": 13.513166
+    },
+    {
+      "text": "anche",
+      "start": 13.526333,
+      "end": 13.749999
+    },
+    {
+      "text": "l'ordine",
+      "start": 13.763166,
+      "end": 14.236832
+    },
+    {
+      "text": "con",
+      "start": 14.25,
+      "end": 14.460541
+    },
+    {
+      "text": "cui",
+      "start": 14.473666,
+      "end": 14.710499
+    },
+    {
+      "text": "attraversarli",
+      "start": 14.723666,
+      "end": 15.605249
+    },
+    {
+      "text": "il",
+      "start": 15.789458,
+      "end": 15.973666
+    },
+    {
+      "text": "modo",
+      "start": 15.986833,
+      "end": 16.342083
+    },
+    {
+      "text": "più",
+      "start": 16.35525,
+      "end": 16.513125
+    },
+    {
+      "text": "chiaro",
+      "start": 16.526333,
+      "end": 16.907916
+    },
+    {
+      "text": "è",
+      "start": 16.921041,
+      "end": 16.973666
+    },
+    {
+      "text": "descriverlo",
+      "start": 16.986833,
+      "end": 17.671041
+    },
+    {
+      "text": "in",
+      "start": 17.684208,
+      "end": 17.776333
+    },
+    {
+      "text": "Dillo",
+      "start": 17.789458,
+      "end": 18.052624
+    },
+    {
+      "text": "all'intelligenza",
+      "start": 18.065791,
+      "end": 18.960541
+    },
+    {
+      "text": "artificiale",
+      "start": 18.973666,
+      "end": 19.828916
+    },
+    {
+      "text": "Tra",
+      "start": 20.75,
+      "end": 20.973666
+    },
+    {
+      "text": "poco",
+      "start": 20.986833,
+      "end": 21.276291
+    },
+    {
+      "text": "vedremo",
+      "start": 21.289458,
+      "end": 21.684208
+    },
+    {
+      "text": "Milano",
+      "start": 21.697375,
+      "end": 22.184208
+    },
+    {
+      "text": "Rozzano",
+      "start": 22.460541,
+      "end": 22.986874
+    },
+    {
+      "text": "e",
+      "start": 23.0,
+      "end": 23.065791
+    },
+    {
+      "text": "Pieve",
+      "start": 23.078958,
+      "end": 23.381583
+    },
+    {
+      "text": "Emanuele",
+      "start": 23.39475,
+      "end": 23.986875
+    },
+    {
+      "text": "collegati",
+      "start": 24.236833,
+      "end": 24.842083
+    },
+    {
+      "text": "da",
+      "start": 24.85525,
+      "end": 24.973666
+    },
+    {
+      "text": "un",
+      "start": 24.986833,
+      "end": 25.092083
+    },
+    {
+      "text": "corridoio",
+      "start": 25.10525,
+      "end": 25.763125
+    },
+    {
+      "text": "geografico",
+      "start": 25.776333,
+      "end": 26.710541
+    }
+  ]
+}

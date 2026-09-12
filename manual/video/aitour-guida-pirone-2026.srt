@@ -1,0 +1,1087 @@
+1
+00:00:00,503 --> 00:00:06,361
+Benvenuto nella guida completa ad AI Tour di Voom Useremo l'account di Salvatore
+
+2
+00:00:06,361 --> 00:00:11,412
+Pirone per vedere come preparare un giro scegliere il territorio e controllare ciò
+
+3
+00:00:11,412 --> 00:00:17,571
+che l'intelligenza artificiale ha capito Non salveremo giri e non invieremo segnalazioni
+
+4
+00:00:17,571 --> 00:00:23,426
+reali Le dimostrazioni di appuntamenti e verifiche saranno indicate chiaramente come
+
+5
+00:00:23,426 --> 00:00:28,795
+simulazioni Puoi mettere in pausa il video quando vuoi e riprendere dal capitolo
+
+6
+00:00:28,795 --> 00:00:29,777
+che ti serve
+
+7
+00:00:31,863 --> 00:00:35,836
+Il modo migliore per ottenere un risultato utile non è scrivere una frase
+
+8
+00:00:35,836 --> 00:00:42,286
+lunghissima e premere subito Genera Parti da tre domande quando posso lavorare dove
+
+9
+00:00:42,286 --> 00:00:48,651
+voglio lavorare e chi devo vedere L'intelligenza artificiale propone un'organizzazione
+
+10
+00:00:48,707 --> 00:00:54,010
+ma il risultato dipende dalla qualità dei dati dagli orari dalle distanze e
+
+11
+00:00:54,010 --> 00:01:01,260
+dai vincoli Il controllo finale dell'agente rimane indispensabile Un giro coerente e
+
+12
+00:01:01,260 --> 00:01:05,650
+verificato è più importante di un numero di visite apparentemente perfetto
+
+13
+00:01:07,743 --> 00:01:12,995
+Cominciamo dalla data Scegli il giorno in cui farai davvero il giro poi
+
+14
+00:01:12,995 --> 00:01:18,311
+controlla l'ora di partenza e l'ora entro cui vuoi terminare Se programmi per
+
+15
+00:01:18,311 --> 00:01:24,693
+oggi non impostare un orario già passato Se dici diciassette come termine stai
+
+16
+00:01:24,693 --> 00:01:29,403
+indicando un limite un giro che soddisfa le visite richieste può finire anche
+
+17
+00:01:29,403 --> 00:01:35,560
+prima Quando usi una richiesta scritta specifica la data oppure verifica che quella
+
+18
+00:01:35,560 --> 00:01:38,371
+interpretata coincida con il giorno scelto
+
+19
+00:01:40,463 --> 00:01:46,544
+Il tipo di giornata determina l'obiettivo della pianificazione Giro Clienti è adatto
+
+20
+00:01:46,544 --> 00:01:52,505
+quando vuoi lavorare sul portafoglio esistente Giro Acquisizione serve allo sviluppo
+
+21
+00:01:52,505 --> 00:01:59,544
+di nuovi contatti Giro Misto combina i due obiettivi Nel nostro esempio scegliamo
+
+22
+00:01:59,544 --> 00:02:05,426
+Giro Clienti Non cambiare tipo di giornata solo per ottenere più tappe prima
+
+23
+00:02:05,426 --> 00:02:10,461
+chiediti se le persone proposte corrispondono al lavoro commerciale che vuoi svolgere
+
+24
+00:02:12,583 --> 00:02:18,138
+Una partenza sbagliata può rendere poco utile tutto il giro Puoi scegliere Casa
+
+25
+00:02:18,138 --> 00:02:24,204
+o Sede se sono già configurate oppure inserire un indirizzo completo Qui usiamo
+
+26
+00:02:24,204 --> 00:02:31,502
+Piazza del Duomo a Milano un luogo pubblico scelto per l'esempio Controlla anche il rientro
+
+27
+00:02:31,585 --> 00:02:38,309
+tornare alla partenza e terminare altrove sono due richieste diverse Nel pannello dell'intelligenza
+
+28
+00:02:38,309 --> 00:02:44,217
+artificiale quando viene richiesta la conferma del luogo seleziona il risultato corretto
+
+29
+00:02:44,217 --> 00:02:47,028
+e non affidarti soltanto al testo digitato
+
+30
+00:02:49,103 --> 00:02:54,658
+Questi piccoli pulsanti arrotondati sono le CHIP Il colore ti aiuta a capire
+
+31
+00:02:54,658 --> 00:03:00,539
+quale scelta è attiva In alcuni gruppi come il tipo di area selezionare
+
+32
+00:03:00,539 --> 00:03:07,917
+un'opzione sostituisce quella precedente In altri punti puoi avere più condizioni contemporaneamente
+
+33
+00:03:08,658 --> 00:03:13,987
+Quindi non tutte le CHIP si comportano nello stesso modo Leggi il titolo
+
+34
+00:03:13,987 --> 00:03:19,000
+del gruppo e il riepilogo sono loro a dirti se stai scegliendo un'alternativa
+
+35
+00:03:19,000 --> 00:03:21,022
+oppure aggiungendo un vincolo
+
+36
+00:03:23,102 --> 00:03:29,000
+Scegli il perimetro che corrisponde davvero al tuo obiettivo Provincia è una selezione
+
+37
+00:03:29,000 --> 00:03:34,408
+più ampia Comune è utile quando vuoi restringere la ricerca al comune indicato
+
+38
+00:03:34,408 --> 00:03:41,618
+nelle anagrafiche Zona permette di ragionare su un'area geografica Le eventuali zone
+
+39
+00:03:41,618 --> 00:03:47,868
+territoriali assegnate dipendono dalla configurazione dell'agente Non confondere il nome
+
+40
+00:03:47,868 --> 00:03:52,224
+di un comune con una zona disegnata intorno a un centro possono descrivere
+
+41
+00:03:52,224 --> 00:03:54,351
+insiemi di clienti differenti
+
+42
+00:03:56,423 --> 00:04:01,846
+Per un comune singolo puoi usare il campo Comune per esempio Milano Se
+
+43
+00:04:01,846 --> 00:04:06,882
+ci sono località con nomi simili precisa la provincia o il contesto geografico
+
+44
+00:04:07,623 --> 00:04:12,307
+Per lavorare su più comuni e stabilire anche l'ordine con cui attraversarli il
+
+45
+00:04:12,307 --> 00:04:18,017
+modo più chiaro è descriverlo in Dillo all'intelligenza artificiale Tra poco vedremo
+
+46
+00:04:18,017 --> 00:04:23,211
+Milano Rozzano e Pieve Emanuele collegati da un corridoio geografico
+
+47
+00:04:25,303 --> 00:04:32,959
+Apriamo Dillo all'intelligenza artificiale Un buon esempio è lunedì dalle nove alle diciassette
+
+48
+00:04:33,082 --> 00:04:37,884
+vorrei otto visite ai miei clienti nella zona nord-est di Milano entro un
+
+49
+00:04:37,884 --> 00:04:44,911
+raggio di otto chilometri Parto da Piazza del Duomo e rientro alla partenza La richiesta
+
+50
+00:04:44,911 --> 00:04:52,463
+contiene tempo obiettivo area e percorso Quando vuoi nominare un cliente preciso usa
+
+51
+00:04:52,463 --> 00:04:58,345
+il suo nome riconoscibile Se vuoi soltanto quei clienti scrivi anche la parola
+
+52
+00:04:58,345 --> 00:04:59,262
+soltanto
+
+53
+00:05:01,343 --> 00:05:08,306
+Dopo aver premuto Interpreta fermati a leggere L'interpretazione non è una conferma automatica
+
+54
+00:05:08,306 --> 00:05:13,937
+di ciò che volevi dire Controlla la data l'ora iniziale quella finale e
+
+55
+00:05:13,937 --> 00:05:19,490
+il numero desiderato di visite Se una parola è stata capita male correggi
+
+56
+00:05:19,490 --> 00:05:24,674
+il campo o riformula la richiesta È molto più semplice sistemare un vincolo
+
+57
+00:05:24,674 --> 00:05:29,082
+in questo momento che cercare di correggere un giro nato da una richiesta
+
+58
+00:05:29,082 --> 00:05:29,867
+ambigua
+
+59
+00:05:31,943 --> 00:05:38,169
+Nel riepilogo trovi anche le CHIP delle condizioni interpretate Sono raggruppate per
+
+60
+00:05:38,169 --> 00:05:44,879
+argomento per esempio chi visitare dove lavorare e quali criteri utilizzare Puoi avere
+
+61
+00:05:44,879 --> 00:05:50,906
+più condizioni insieme Se una CHIP non rappresenta ciò che desideri la crocetta
+
+62
+00:05:50,906 --> 00:05:57,405
+permette di rimuoverla Attenzione togliere una condizione cambia la richiesta non è un
+
+63
+00:05:57,405 --> 00:06:03,840
+gesto puramente grafico Dopo ogni modifica rileggi il riepilogo e ricontrolla le conferme
+
+64
+00:06:03,840 --> 00:06:04,902
+necessarie
+
+65
+00:06:06,983 --> 00:06:12,459
+Quando la partenza è un indirizzo usa Cerca e conferma il luogo Se
+
+66
+00:06:12,459 --> 00:06:17,591
+vengono mostrati più risultati seleziona quello che corrisponde alla città e all'indirizzo
+
+67
+00:06:17,591 --> 00:06:24,494
+desiderati La conferma deve identificare un punto geografico non soltanto una scritta
+
+68
+00:06:25,235 --> 00:06:29,696
+Lo stesso principio vale per una destinazione finale diversa e per gli altri
+
+69
+00:06:29,696 --> 00:06:34,380
+luoghi che il pannello chiede di risolvere Nel nostro caso controlliamo che la
+
+70
+00:06:34,380 --> 00:06:37,968
+partenza sia davvero Piazza del Duomo a Milano
+
+71
+00:06:40,063 --> 00:06:46,197
+Per una città grande come Milano puoi restringere l'area con una direzione La
+
+72
+00:06:46,197 --> 00:06:50,679
+zona viene costruita intorno a un punto di riferimento e al raggio impostato
+
+73
+00:06:51,421 --> 00:06:57,736
+La direzione serve a selezionare una parte di quell'area È una suddivisione geografica
+
+74
+00:06:57,736 --> 00:07:02,578
+utile al lavoro dell'agente non una garanzia di corrispondenza con i confini di
+
+75
+00:07:02,578 --> 00:07:07,710
+un quartiere o con il perimetro amministrativo del comune Per questo la mappa
+
+76
+00:07:07,710 --> 00:07:09,337
+va sempre controllata
+
+77
+00:07:11,383 --> 00:07:19,001
+Le direzioni seguono la bussola Nord Nord-est Est Sud-est Sud Sud-ovest Ovest e
+
+78
+00:07:19,001 --> 00:07:26,201
+Nord-ovest Puoi indicarle nella frase oppure selezionarle nel pannello Se vuoi togliere
+
+79
+00:07:26,201 --> 00:07:32,999
+la restrizione direzionale scegli Intera zona Qui mostriamo prima Nord e poi Nord-est
+
+80
+00:07:33,056 --> 00:07:38,741
+così puoi vedere quale CHIP risulta selezionata Ricorda che la direzione va letta
+
+81
+00:07:38,741 --> 00:07:41,763
+insieme al centro e al raggio non da sola
+
+82
+00:07:43,823 --> 00:07:49,207
+In questo esempio lasciamo Nord-est e un raggio di otto chilometri Un raggio
+
+83
+00:07:49,207 --> 00:07:54,720
+più piccolo restringe l'area un raggio più grande la amplia Non scegliere un
+
+84
+00:07:54,720 --> 00:08:00,431
+valore molto stretto e poi aspettarti comunque un numero elevato di clienti Se
+
+85
+00:08:00,431 --> 00:08:05,075
+non ci sono abbastanza candidati idonei il piano può proporre meno visite o
+
+86
+00:08:05,075 --> 00:08:11,549
+segnalare un limite È un'informazione utile ti permette di decidere consapevolmente se
+
+87
+00:08:11,549 --> 00:08:13,018
+ampliare la ricerca
+
+88
+00:08:15,103 --> 00:08:20,762
+Ecco il primo comando importante per confermare la zona Scorri fino alla sezione
+
+89
+00:08:20,762 --> 00:08:25,863
+Zone e corridoi in quest'ordine e premi Verifica zone e mostra la mappa
+
+90
+00:08:26,618 --> 00:08:31,812
+Se una località ha più corrispondenze scegli quella giusta e ripeti la verifica
+
+91
+00:08:32,551 --> 00:08:38,079
+Scrivere Milano o selezionare Nord-est non completa ancora la conferma prima l'app deve
+
+92
+00:08:38,079 --> 00:08:42,022
+preparare e mostrare l'area geografica che verrà utilizzata
+
+93
+00:08:44,103 --> 00:08:49,289
+Ora osserva la mappa Controlla che il centro sia quello atteso che il
+
+94
+00:08:49,289 --> 00:08:53,434
+settore guardi nella direzione giusta e che il raggio copra l'area in cui
+
+95
+00:08:53,434 --> 00:08:59,750
+vuoi lavorare L'area colorata rappresenta il filtro geografico preparato non l'elenco
+
+96
+00:08:59,750 --> 00:09:05,934
+definitivo delle visite Se qualcosa non torna modifica il centro il raggio o
+
+97
+00:09:05,934 --> 00:09:11,118
+la direzione e ricrea la mappa Non confermare una forma soltanto perché il
+
+98
+00:09:11,118 --> 00:09:13,219
+nome del comune sembra corretto
+
+99
+00:09:15,303 --> 00:09:20,316
+Il secondo pulsante decisivo si trova sotto la mappa Confermo queste zone e
+
+100
+00:09:20,316 --> 00:09:26,766
+questo ordine È questo il comando che conclude la conferma Se hai soltanto
+
+101
+00:09:26,766 --> 00:09:31,174
+premuto Verifica zone e mostra la mappa non hai ancora dichiarato che l'area
+
+102
+00:09:31,174 --> 00:09:38,608
+è corretta Prima controlli poi confermi Questa distinzione evita che il giro venga
+
+103
+00:09:38,608 --> 00:09:43,867
+costruito usando una località o un orientamento che non avevi davvero approvato
+
+104
+00:09:45,943 --> 00:09:52,222
+Dopo il tocco il pannello mostra Zone e ordine confermati Cerca proprio questa
+
+105
+00:09:52,222 --> 00:09:58,340
+indicazione prima di proseguire Ora la configurazione geografica visualizzata è stata
+
+106
+00:09:58,340 --> 00:10:05,143
+approvata Puoi continuare a controllare gli altri vincoli del giro Se il pulsante
+
+107
+00:10:05,143 --> 00:10:10,076
+è ancora disattivato oppure resta un messaggio di preparazione attendi o risolvi la
+
+108
+00:10:10,076 --> 00:10:15,704
+richiesta mostrata non interpretare un semplice caricamento come una conferma già avvenuta
+
+109
+00:10:17,783 --> 00:10:24,338
+La conferma vale per la configurazione appena controllata Se cambi la direzione il
+
+110
+00:10:24,338 --> 00:10:31,127
+raggio una località o l'ordine delle zone l'app richiede una nuova verifica Nell'esempio
+
+111
+00:10:31,127 --> 00:10:37,097
+passiamo da Nord-est a Est non possiamo riutilizzare automaticamente la conferma precedente
+
+112
+00:10:37,851 --> 00:10:45,377
+Ripeti quindi la sequenza verifica guarda la mappa conferma È una protezione contro
+
+113
+00:10:45,377 --> 00:10:48,978
+modifiche involontarie non un passaggio da saltare
+
+114
+00:10:51,063 --> 00:10:56,894
+Passiamo a più comuni Una richiesta chiara è voglio lavorare a Milano poi
+
+115
+00:10:56,894 --> 00:11:02,368
+a Rozzano e infine a Pieve Emanuele in quest'ordine Puoi anche aggiungere le
+
+116
+00:11:02,368 --> 00:11:08,499
+località dal pannello e usare le frecce per cambiarne la sequenza L'ordine dichiarato
+
+117
+00:11:08,499 --> 00:11:14,921
+è importante quando vuoi avanzare in una direzione senza continui ritorni Verifica sempre
+
+118
+00:11:14,921 --> 00:11:19,443
+che la lista a video sia uguale all'ordine che intendevi indicare nella frase
+
+119
+00:11:21,503 --> 00:11:25,818
+Il corridoio è utile quando non vuoi considerare soltanto le zone intorno ai
+
+120
+00:11:25,818 --> 00:11:30,755
+comuni ma anche i clienti compresi nella fascia di collegamento tra una località
+
+121
+00:11:30,755 --> 00:11:36,242
+e la successiva Può evitare di passare vicino a un cliente interessante senza
+
+122
+00:11:36,242 --> 00:11:44,268
+prenderlo in considerazione Attenzione il corridoio è un filtro geografico Non è ancora
+
+123
+00:11:44,268 --> 00:11:49,896
+l'itinerario stradale definitivo che verrà calcolato durante la pianificazione del giro
+
+124
+00:11:51,983 --> 00:11:57,867
+Nel nostro esempio impostiamo l'ampiezza del corridoio a tre chilometri Non esiste un
+
+125
+00:11:57,867 --> 00:12:03,472
+valore perfetto valido per ogni giro Una fascia più ampia aumenta il territorio
+
+126
+00:12:03,472 --> 00:12:10,814
+esplorato e può introdurre deviazioni Una fascia più stretta riduce le possibilità Parti
+
+127
+00:12:10,814 --> 00:12:15,512
+da un'ampiezza ragionevole osserva la forma sulla mappa e valuta se il tempo
+
+128
+00:12:15,512 --> 00:12:21,985
+a disposizione giustifica quel territorio Non allargare il corridoio soltanto per inseguire
+
+129
+00:12:21,985 --> 00:12:23,336
+un numero di visite
+
+130
+00:12:25,423 --> 00:12:29,936
+Dopo aver aggiunto i comuni e impostato il corridoio premi di nuovo Verifica
+
+131
+00:12:29,936 --> 00:12:34,911
+zone e mostra la mappa Osserva tutte le aree e i collegamenti tra
+
+132
+00:12:34,911 --> 00:12:40,702
+loro Controlla che non ci sia una località omonima lontana un punto invertito
+
+133
+00:12:40,702 --> 00:12:46,504
+o una fascia troppo ampia Quando tutto corrisponde alla tua intenzione premi ancora
+
+134
+00:12:46,504 --> 00:12:51,741
+Confermo queste zone e questo ordine Con più comuni il controllo visivo è
+
+135
+00:12:51,741 --> 00:12:53,276
+ancora più importante
+
+136
+00:12:55,343 --> 00:13:00,760
+Inserire tre comuni non significa ottenere automaticamente almeno una visita in ciascuno
+
+137
+00:13:01,503 --> 00:13:08,516
+Le zone definiscono dove cercare poi intervengono disponibilità storico priorità tempi
+
+138
+00:13:08,516 --> 00:13:14,503
+e altri vincoli Se devi assolutamente incontrare una persona indica il cliente e
+
+139
+00:13:14,503 --> 00:13:20,174
+rendi esplicito l'appuntamento o il carattere obbligatorio della tappa Il nome di una
+
+140
+00:13:20,174 --> 00:13:25,407
+località da solo non sostituisce la richiesta di vedere un cliente preciso
+
+141
+00:13:27,463 --> 00:13:34,564
+Prima di generare fai un ultimo controllo dei campi operativi data orari partenza
+
+142
+00:13:34,713 --> 00:13:41,290
+rientro numero desiderato di visite e zone confermate Se ci sono nomi ambigui
+
+143
+00:13:41,373 --> 00:13:47,807
+eccezioni fuori zona o altri avvisi risolvili prima di proseguire Poi premi Genera
+
+144
+00:13:47,807 --> 00:13:53,478
+con queste indicazioni Generare un'anteprima non equivale a salvare o avviare un Tour
+
+145
+00:13:53,478 --> 00:13:59,145
+Live sono azioni distinte da compiere solo quando hai controllato il risultato
+
+146
+00:14:01,223 --> 00:14:07,949
+Una regola importante riguarda i quindici giorni Nella selezione ordinaria l'app esclude
+
+147
+00:14:07,949 --> 00:14:12,212
+i soggetti che risultano già visitati o con un ordine recente entro questa
+
+148
+00:14:12,212 --> 00:14:18,054
+finestra Quindi non si tratta soltanto degli ordini anche una visita recente può
+
+149
+00:14:18,054 --> 00:14:24,778
+incidere Nell'anteprima trovi il messaggio con il numero di esclusioni Questo aiuta a
+
+150
+00:14:24,778 --> 00:14:29,791
+evitare passaggi troppo ravvicinati e a concentrare il tempo sui clienti che richiedono
+
+151
+00:14:29,791 --> 00:14:30,747
+attenzione
+
+152
+00:14:32,863 --> 00:14:36,876
+Il filtro dei quindici giorni non è un divieto assoluto di incontrare un
+
+153
+00:14:36,876 --> 00:14:44,576
+cliente Appuntamenti follow-up e richieste esplicite possono costituire eccezioni Un
+
+154
+00:14:44,576 --> 00:14:50,721
+impegno già concordato non va confuso con una visita scelta automaticamente Controlla
+
+155
+00:14:50,721 --> 00:14:56,418
+quindi perché quel cliente è stato incluso Un'eccezione alla recenza non rende però
+
+156
+00:14:56,418 --> 00:15:01,431
+possibile un appuntamento irraggiungibile e non annulla le altre conferme per esempio
+
+157
+00:15:01,431 --> 00:15:04,032
+quella richiesta per una tappa fuori zona
+
+158
+00:15:06,103 --> 00:15:12,079
+Nell'anteprima non guardare soltanto il numero delle visite Controlla chilometri tempo
+
+159
+00:15:12,079 --> 00:15:18,143
+di guida durata dei passaggi e orario di rientro Scorri l'elenco e confrontalo
+
+160
+00:15:18,143 --> 00:15:24,224
+con la mappa Gli importi potenziali e le valutazioni commerciali sono stime non
+
+161
+00:15:24,224 --> 00:15:29,697
+vendite garantite Se il giro termina prima del limite che avevi indicato non
+
+162
+00:15:29,697 --> 00:15:34,987
+è necessariamente un errore può aver già soddisfatto le visite richieste lasciando margine
+
+163
+00:15:34,987 --> 00:15:36,154
+per imprevisti
+
+164
+00:15:38,223 --> 00:15:43,512
+Con Modifica puoi rivedere le tappe aggiungere una visita e indicare quelle obbligatorie
+
+165
+00:15:43,512 --> 00:15:49,344
+con la stella Puoi chiedere un nuovo ordine ottimizzato oppure applicare una sequenza
+
+166
+00:15:49,344 --> 00:15:57,133
+manuale Le modifiche devono restare compatibili con appuntamenti orari e territorio Se
+
+167
+00:15:57,133 --> 00:16:02,747
+aggiungi una visita fuori zona controlla l'eventuale richiesta di confermare l'eccezione
+
+168
+00:16:03,502 --> 00:16:09,002
+Dopo il ricalcolo rileggi il nuovo risultato non considerare ancora valido il riepilogo
+
+169
+00:16:09,002 --> 00:16:10,432
+del giro precedente
+
+170
+00:16:12,503 --> 00:16:19,979
+Tieni separati tre momenti Nell'anteprima valuti la proposta Con Salva conservi il giro
+
+171
+00:16:19,979 --> 00:16:25,703
+che hai scelto Con Avvia Tour passi alla modalità operativa quando sei pronto
+
+172
+00:16:25,703 --> 00:16:31,413
+a lavorare In questo tutorial ci fermiamo all'anteprima non salviamo né avviamo un
+
+173
+00:16:31,413 --> 00:16:37,856
+giro dell'account di Salvatore Questa distinzione è importante anche nell'uso quotidiano
+
+174
+00:16:37,953 --> 00:16:42,808
+perché provare una pianificazione non deve essere confuso con iniziare una giornata di
+
+175
+00:16:42,808 --> 00:16:43,567
+visite
+
+176
+00:16:45,663 --> 00:16:51,455
+Vediamo ora il calendario Puoi usare Nuovo oppure toccare un orario per preparare
+
+177
+00:16:51,455 --> 00:16:57,363
+un appuntamento Ci sono due casi distinti un impegno libero e un appuntamento
+
+178
+00:16:57,363 --> 00:17:03,968
+collegato a un cliente Da questo punto useremo esempi dimostrativi non salvati indicati
+
+179
+00:17:03,968 --> 00:17:10,139
+nel video Il funzionamento dei pannelli è quello dell'app ma non creeremo appuntamenti
+
+180
+00:17:10,139 --> 00:17:14,122
+reali per l'agente e non invieremo comunicazioni ai clienti
+
+181
+00:17:16,223 --> 00:17:20,999
+Per una riunione organizzativa una pausa operativa o un altro impegno non legato
+
+182
+00:17:20,999 --> 00:17:26,567
+a un cliente scegli Impegno libero Inserisci un titolo che ti permetta di
+
+183
+00:17:26,567 --> 00:17:33,357
+riconoscerlo Il luogo è facoltativo un impegno senza indirizzo può comunque essere mostrato
+
+184
+00:17:33,357 --> 00:17:39,423
+come promemoria Se invece vuoi trasformarlo in una tappa geografica del giro serve
+
+185
+00:17:39,423 --> 00:17:45,462
+un luogo da cercare e confermare Evita titoli generici come appuntamento che tra
+
+186
+00:17:45,462 --> 00:17:48,195
+qualche giorno potrebbero non dirti più nulla
+
+187
+00:17:50,263 --> 00:17:55,871
+Compila la data l'ora locale e una durata realistica La durata non è
+
+188
+00:17:55,871 --> 00:18:00,239
+un dettaglio un incontro di mezz'ora e uno di due ore occupano spazi
+
+189
+00:18:00,239 --> 00:18:06,134
+diversi nella giornata Nelle note scrivi soltanto ciò che ti serve per ricordare
+
+190
+00:18:06,134 --> 00:18:13,384
+l'impegno Prima di salvare rileggi soprattutto giorno e ora Qui mostriamo il modulo
+
+191
+00:18:13,384 --> 00:18:19,472
+compilato ma lo chiudiamo senza premere Salva i dati dell'account rimangono invariati
+
+192
+00:18:21,543 --> 00:18:27,622
+Quando l'impegno riguarda un cliente scegli Cliente Follow-up cerca la scheda corretta
+
+193
+00:18:27,622 --> 00:18:32,860
+e selezionala Scrivere il nome soltanto nelle note di un impegno libero non
+
+194
+00:18:32,860 --> 00:18:39,045
+crea il collegamento al cliente Dopo la selezione imposta data ora durata e
+
+195
+00:18:39,045 --> 00:18:45,743
+motivo dell'incontro Nell'uso reale il salvataggio rende disponibile quell'appuntamento
+
+196
+00:18:45,743 --> 00:18:50,795
+alla pianificazione come follow-up del cliente per il giorno indicato Nel video non
+
+197
+00:18:50,795 --> 00:18:52,988
+premiamo il comando di salvataggio
+
+198
+00:18:55,063 --> 00:19:01,026
+Torniamo ad AI Tour e scegliamo il giorno dell'appuntamento Il pannello dei follow-up
+
+199
+00:19:01,026 --> 00:19:07,381
+richiama l'attenzione dell'agente durante la preparazione del giro Qui mostriamo un appuntamento
+
+200
+00:19:07,381 --> 00:19:14,653
+dimostrativo alle undici senza averlo scritto nel database Nell'uso reale controlla cliente
+
+201
+00:19:14,749 --> 00:19:19,855
+ora e motivo Il reminder serve proprio a non dimenticare un impegno già
+
+202
+00:19:19,855 --> 00:19:25,206
+concordato mentre scegli altri clienti o modifichi il territorio della giornata
+
+203
+00:19:27,303 --> 00:19:31,842
+Toccando la riga puoi cambiare la spunta del follow-up e scegliere se considerarlo
+
+204
+00:19:31,842 --> 00:19:38,042
+nella pianificazione corrente Quando è selezionato l'impegno viene tenuto presente come
+
+205
+00:19:38,042 --> 00:19:44,380
+tappa da rispettare Deselezionarlo significa scegliere di non inserirlo nella proposta
+
+206
+00:19:44,489 --> 00:19:50,358
+non è una cancellazione dal calendario Non usare questa scelta per aggirare senza
+
+207
+00:19:50,358 --> 00:19:57,121
+pensarci un appuntamento già concordato Se la situazione è cambiata verifica anche l'agenda
+
+208
+00:19:57,121 --> 00:20:01,818
+e gli accordi con il cliente invece di affidarti soltanto a una selezione
+
+209
+00:20:01,818 --> 00:20:02,814
+temporanea
+
+210
+00:20:04,903 --> 00:20:10,787
+C'è una distinzione da ricordare Un impegno libero senza luogo viene mostrato come
+
+211
+00:20:10,787 --> 00:20:15,958
+promemoria ma non diventa una tappa geografica e non blocca automaticamente gli orari
+
+212
+00:20:15,958 --> 00:20:23,629
+del percorso Leggi l'avvertenza e controlla personalmente eventuali sovrapposizioni Non
+
+213
+00:20:23,629 --> 00:20:28,168
+pensare che la sola presenza della riga in agenda renda impossibile pianificare una
+
+214
+00:20:28,168 --> 00:20:33,405
+visita nello stesso intervallo Questa verifica è particolarmente importante per riunioni
+
+215
+00:20:33,405 --> 00:20:37,098
+telefoniche o attività che non hanno una destinazione fisica
+
+216
+00:20:38,463 --> 00:20:43,055
+Se l'impegno libero ha un luogo puoi cercarlo e confermarlo dal pannello degli
+
+217
+00:20:43,055 --> 00:20:49,584
+impegni La destinazione confermata permette di considerarlo come tappa obbligatoria nella
+
+218
+00:20:49,584 --> 00:20:55,965
+generazione del giro Anche qui non basta un indirizzo scritto seleziona il risultato
+
+219
+00:20:55,965 --> 00:21:02,492
+corretto e controlla il piano finale L'esempio che vedi è dimostrativo Per i
+
+220
+00:21:02,492 --> 00:21:08,202
+follow-up completati invece la pianificazione non deve continuare a proporre un impegno
+
+221
+00:21:08,202 --> 00:21:13,422
+già concluso torna sul giorno corretto e verifica l'aggiornamento del pannello
+
+222
+00:21:15,503 --> 00:21:21,926
+Passiamo alla segnalazione delle anomalie Per non coinvolgere un'attività reale mostriamo
+
+223
+00:21:21,926 --> 00:21:27,374
+una simulazione di Tour Live con un punto vendita dimostrativo Il comando da
+
+224
+00:21:27,374 --> 00:21:32,966
+cercare è Manda in verifica Serve a segnalare un problema da controllare non
+
+225
+00:21:32,966 --> 00:21:39,018
+a correggere immediatamente l'anagrafica È disponibile anche per un punto vendita senza
+
+226
+00:21:39,018 --> 00:21:44,966
+una scheda cliente già collegata Nel tutorial nessun tour viene avviato e nessuna
+
+227
+00:21:44,966 --> 00:21:46,830
+segnalazione viene inviata
+
+228
+00:21:48,903 --> 00:21:52,613
+Nel modulo scegli il tipo di anomalia che descrive meglio ciò che hai
+
+229
+00:21:52,613 --> 00:21:59,497
+osservato Può riguardare una posizione errata un'attività chiusa un trasferimento oppure
+
+230
+00:21:59,497 --> 00:22:06,467
+un'altra situazione da verificare La segnalazione deve distinguere i fatti dalle supposizioni
+
+231
+00:22:07,221 --> 00:22:13,616
+Se non sei sicuro del motivo scrivilo nelle note Un'informazione prudente ma precisa
+
+232
+00:22:13,616 --> 00:22:17,454
+è molto più utile di un'affermazione definitiva non verificata
+
+233
+00:22:19,543 --> 00:22:24,591
+Se trovi un cliente sempre chiuso descrivi i passaggi che hai effettuato e
+
+234
+00:22:24,622 --> 00:22:30,164
+se possibile i giorni e gli orari Una porta chiusa durante più visite
+
+235
+00:22:30,164 --> 00:22:36,554
+non dimostra automaticamente una cessazione definitiva dell'attività Se non hai conferme
+
+236
+00:22:36,637 --> 00:22:43,098
+usa una descrizione prudente per esempio trovata chiusa durante più passaggi verificare
+
+237
+00:22:43,098 --> 00:22:49,177
+gli orari chiusura definitiva non accertata In questo modo chi esamina la richiesta
+
+238
+00:22:49,177 --> 00:22:52,699
+sa che cosa controllare e non scambia un dubbio per un fatto
+
+239
+00:22:54,783 --> 00:22:59,809
+Se l'attività risulta cessata o non esiste più nella sede indicata segnala quello
+
+240
+00:22:59,809 --> 00:23:06,154
+che hai effettivamente riscontrato Se invece si è trasferita scegli Trasferita e indica
+
+241
+00:23:06,154 --> 00:23:11,544
+il nuovo indirizzo soltanto se lo conosci e lo hai verificato Puoi annotare
+
+242
+00:23:11,575 --> 00:23:17,325
+per esempio un cartello esposto o un'informazione ricevuta sul posto precisandone la
+
+243
+00:23:17,325 --> 00:23:23,930
+fonte Evita descrizioni generiche come cliente sparito non aiutano chi deve ricostruire
+
+244
+00:23:23,930 --> 00:23:25,110
+la situazione
+
+245
+00:23:27,183 --> 00:23:33,915
+La posizione GPS quando disponibile può aiutare a identificare il luogo della segnalazione
+
+246
+00:23:34,659 --> 00:23:40,843
+Il modulo permette però di proseguire anche senza GPS Non confondere la posizione
+
+247
+00:23:40,843 --> 00:23:46,435
+del telefono con la certezza sul nuovo indirizzo di un'attività trasferita sono informazioni
+
+248
+00:23:46,435 --> 00:23:52,133
+diverse Controlla sempre il punto vendita a cui stai riferendo l'anomalia e usa
+
+249
+00:23:52,133 --> 00:23:57,299
+le note per spiegare ciò che la sola posizione geografica non può raccontare
+
+250
+00:23:59,423 --> 00:24:04,659
+Prima dell'invio passa al riepilogo e rileggi punto vendita tipo di anomalia e
+
+251
+00:24:04,659 --> 00:24:12,662
+descrizione Solo dopo questo controllo nell'uso reale conferma la richiesta Nel nostro
+
+252
+00:24:12,662 --> 00:24:17,868
+esempio ci fermiamo prima di premere Conferma invio non viene creata alcuna pratica
+
+253
+00:24:18,609 --> 00:24:23,083
+Se durante un invio reale compare un errore leggi il messaggio e riprova
+
+254
+00:24:23,083 --> 00:24:27,566
+dal flusso previsto senza moltiplicare segnalazioni identiche
+
+255
+00:24:29,623 --> 00:24:34,796
+Un ultimo punto importante Manda in verifica non chiude automaticamente la tappa e
+
+256
+00:24:34,796 --> 00:24:40,888
+non riscrive l'anagrafica del cliente La segnalazione dell'anomalia e l'esito operativo
+
+257
+00:24:40,888 --> 00:24:47,546
+della visita sono due azioni diverse Dopo aver gestito una situazione reale controlla
+
+258
+00:24:47,546 --> 00:24:51,783
+quindi anche lo stato della tappa e registra l'esito appropriato con i comandi
+
+259
+00:24:51,783 --> 00:24:57,073
+del Tour Live Nel nostro esempio usciamo dal modulo e la tappa dimostrativa
+
+260
+00:24:57,073 --> 00:24:58,345
+rimane invariata
+
+261
+00:25:00,423 --> 00:25:08,254
+Ricapitoliamo la sequenza ideale Prima definisci giorno tempi partenza rientro e obiettivo
+
+262
+00:25:08,254 --> 00:25:14,250
+commerciale Poi scrivi una richiesta chiara e controlla ciò che è stato interpretato
+
+263
+00:25:14,991 --> 00:25:20,526
+Per zone settori e corridoi verifica la mappa e premi la conferma esplicita
+
+264
+00:25:21,267 --> 00:25:26,329
+Leggi i follow-up prima di programmare e controlla le esclusioni dei quindici giorni
+
+265
+00:25:27,083 --> 00:25:34,083
+Infine esamina elenco distanze e orari dell'anteprima Solo quando tutto è coerente passi
+
+266
+00:25:34,083 --> 00:25:36,342
+a salvataggio e avvio operativo
+
+267
+00:25:38,423 --> 00:25:45,105
+Per ottenere risultati migliori non cercare una frase magica Mantieni precisi i dati
+
+268
+00:25:45,123 --> 00:25:51,373
+formula richieste comprensibili e usa le conferme come un controllo consapevole Segnala
+
+269
+00:25:51,373 --> 00:25:57,596
+con attenzione le anomalie che incontri così potranno essere verificate Questo tutorial
+
+270
+00:25:57,596 --> 00:26:03,017
+è stato realizzato con l'accesso autorizzato di Salvatore Pirone senza modificare dati
+
+271
+00:26:03,017 --> 00:26:09,754
+operativi Puoi tornare ai capitoli su zone corridoi calendario o verifiche ogni volta
+
+272
+00:26:09,754 --> 00:26:14,750
+che hai bisogno di ripetere un passaggio Buon lavoro con AI Tour

@@ -1,0 +1,338 @@
+{
+  "id": "s09",
+  "sha256": "7a3f106394e94b877e0120cb0990287ac5219b9a5e5c7f442a707faee43b3339",
+  "audioDuration": 34.824,
+  "duration": 36.04,
+  "words": [
+    {
+      "text": "Apriamo",
+      "start": 0.102625,
+      "end": 0.65525
+    },
+    {
+      "text": "Dillo",
+      "start": 0.668416,
+      "end": 0.944749
+    },
+    {
+      "text": "all'intelligenza",
+      "start": 0.957875,
+      "end": 1.852625
+    },
+    {
+      "text": "artificiale",
+      "start": 1.865791,
+      "end": 2.707916
+    },
+    {
+      "text": "Un",
+      "start": 3.631583,
+      "end": 3.842124
+    },
+    {
+      "text": "buon",
+      "start": 3.85525,
+      "end": 4.039458
+    },
+    {
+      "text": "esempio",
+      "start": 4.052625,
+      "end": 4.618416
+    },
+    {
+      "text": "è",
+      "start": 4.631583,
+      "end": 4.749999
+    },
+    {
+      "text": "lunedì",
+      "start": 5.013166,
+      "end": 5.565791
+    },
+    {
+      "text": "dalle",
+      "start": 5.802625,
+      "end": 6.171041
+    },
+    {
+      "text": "nove",
+      "start": 6.184208,
+      "end": 6.460541
+    },
+    {
+      "text": "alle",
+      "start": 6.473666,
+      "end": 6.644707
+    },
+    {
+      "text": "diciassette",
+      "start": 6.657875,
+      "end": 7.578916
+    },
+    {
+      "text": "vorrei",
+      "start": 7.881583,
+      "end": 8.394749
+    },
+    {
+      "text": "otto",
+      "start": 8.407875,
+      "end": 8.697333
+    },
+    {
+      "text": "visite",
+      "start": 8.710541,
+      "end": 9.144749
+    },
+    {
+      "text": "ai",
+      "start": 9.157875,
+      "end": 9.276291
+    },
+    {
+      "text": "miei",
+      "start": 9.289458,
+      "end": 9.552624
+    },
+    {
+      "text": "clienti",
+      "start": 9.565791,
+      "end": 10.118416
+    },
+    {
+      "text": "nella",
+      "start": 10.131583,
+      "end": 10.394749
+    },
+    {
+      "text": "zona",
+      "start": 10.407875,
+      "end": 10.736833
+    },
+    {
+      "text": "nord-est",
+      "start": 10.75,
+      "end": 11.368416
+    },
+    {
+      "text": "di",
+      "start": 11.381583,
+      "end": 11.499999
+    },
+    {
+      "text": "Milano",
+      "start": 11.513166,
+      "end": 12.026332
+    },
+    {
+      "text": "entro",
+      "start": 12.210541,
+      "end": 12.539499
+    },
+    {
+      "text": "un",
+      "start": 12.552625,
+      "end": 12.671041
+    },
+    {
+      "text": "raggio",
+      "start": 12.684208,
+      "end": 13.026333
+    },
+    {
+      "text": "di",
+      "start": 13.039458,
+      "end": 13.184208
+    },
+    {
+      "text": "otto",
+      "start": 13.197375,
+      "end": 13.460541
+    },
+    {
+      "text": "chilometri",
+      "start": 13.473666,
+      "end": 14.210499
+    },
+    {
+      "text": "Parto",
+      "start": 15.14475,
+      "end": 15.513166
+    },
+    {
+      "text": "da",
+      "start": 15.526333,
+      "end": 15.671083
+    },
+    {
+      "text": "Piazza del Duomo",
+      "start": 15.684208,
+      "end": 16.671041
+    },
+    {
+      "text": "e",
+      "start": 16.684208,
+      "end": 16.710541
+    },
+    {
+      "text": "rientro",
+      "start": 16.723666,
+      "end": 17.118416
+    },
+    {
+      "text": "alla",
+      "start": 17.131583,
+      "end": 17.302624
+    },
+    {
+      "text": "partenza",
+      "start": 17.315791,
+      "end": 18.078957
+    },
+    {
+      "text": "La",
+      "start": 19.0,
+      "end": 19.210541
+    },
+    {
+      "text": "richiesta",
+      "start": 19.223666,
+      "end": 19.697332
+    },
+    {
+      "text": "contiene",
+      "start": 19.710541,
+      "end": 20.249999
+    },
+    {
+      "text": "tempo",
+      "start": 20.263166,
+      "end": 20.815791
+    },
+    {
+      "text": "obiettivo",
+      "start": 21.065791,
+      "end": 21.855249
+    },
+    {
+      "text": "area",
+      "start": 22.10525,
+      "end": 22.486833
+    },
+    {
+      "text": "e",
+      "start": 22.5,
+      "end": 22.552625
+    },
+    {
+      "text": "percorso",
+      "start": 22.565791,
+      "end": 23.368416
+    },
+    {
+      "text": "Quando",
+      "start": 24.289458,
+      "end": 24.631583
+    },
+    {
+      "text": "vuoi",
+      "start": 24.64475,
+      "end": 24.89475
+    },
+    {
+      "text": "nominare",
+      "start": 24.907875,
+      "end": 25.368416
+    },
+    {
+      "text": "un",
+      "start": 25.381583,
+      "end": 25.499999
+    },
+    {
+      "text": "cliente",
+      "start": 25.513166,
+      "end": 26.039499
+    },
+    {
+      "text": "preciso",
+      "start": 26.052625,
+      "end": 26.723666
+    },
+    {
+      "text": "usa",
+      "start": 26.947375,
+      "end": 27.25
+    },
+    {
+      "text": "il",
+      "start": 27.263166,
+      "end": 27.302624
+    },
+    {
+      "text": "suo",
+      "start": 27.315791,
+      "end": 27.526332
+    },
+    {
+      "text": "nome",
+      "start": 27.539458,
+      "end": 27.776291
+    },
+    {
+      "text": "riconoscibile",
+      "start": 27.789458,
+      "end": 28.697333
+    },
+    {
+      "text": "Se",
+      "start": 29.631583,
+      "end": 29.868416
+    },
+    {
+      "text": "vuoi",
+      "start": 29.881583,
+      "end": 30.118416
+    },
+    {
+      "text": "soltanto",
+      "start": 30.131583,
+      "end": 30.710541
+    },
+    {
+      "text": "quei",
+      "start": 30.723666,
+      "end": 30.907874
+    },
+    {
+      "text": "clienti",
+      "start": 30.921041,
+      "end": 31.618416
+    },
+    {
+      "text": "scrivi",
+      "start": 31.868416,
+      "end": 32.368416
+    },
+    {
+      "text": "anche",
+      "start": 32.381583,
+      "end": 32.631583
+    },
+    {
+      "text": "la",
+      "start": 32.64475,
+      "end": 32.75
+    },
+    {
+      "text": "parola",
+      "start": 32.763166,
+      "end": 33.131582
+    },
+    {
+      "text": "soltanto",
+      "start": 33.14475,
+      "end": 33.881583
+    }
+  ]
+}

@@ -1,0 +1,353 @@
+{
+  "id": "s12",
+  "sha256": "b16b1284b6a7638c0b0cccaea53400429c52c774a07c0b30ed4bc24f6fef6815",
+  "audioDuration": 31.848,
+  "duration": 33.08,
+  "words": [
+    {
+      "text": "Quando",
+      "start": 0.102625,
+      "end": 0.418416
+    },
+    {
+      "text": "la",
+      "start": 0.431583,
+      "end": 0.523708
+    },
+    {
+      "text": "partenza",
+      "start": 0.536833,
+      "end": 1.142083
+    },
+    {
+      "text": "è",
+      "start": 1.15525,
+      "end": 1.221041
+    },
+    {
+      "text": "un",
+      "start": 1.234208,
+      "end": 1.378958
+    },
+    {
+      "text": "indirizzo",
+      "start": 1.392125,
+      "end": 2.0895
+    },
+    {
+      "text": "usa",
+      "start": 2.339458,
+      "end": 2.668416
+    },
+    {
+      "text": "Cerca",
+      "start": 2.681583,
+      "end": 3.102624
+    },
+    {
+      "text": "e",
+      "start": 3.115791,
+      "end": 3.168416
+    },
+    {
+      "text": "conferma",
+      "start": 3.181583,
+      "end": 3.734208
+    },
+    {
+      "text": "il",
+      "start": 3.747375,
+      "end": 3.8
+    },
+    {
+      "text": "luogo",
+      "start": 3.813166,
+      "end": 4.418416
+    },
+    {
+      "text": "Se",
+      "start": 5.342125,
+      "end": 5.565791
+    },
+    {
+      "text": "vengono",
+      "start": 5.578958,
+      "end": 5.947374
+    },
+    {
+      "text": "mostrati",
+      "start": 5.960541,
+      "end": 6.526332
+    },
+    {
+      "text": "più",
+      "start": 6.539458,
+      "end": 6.684208
+    },
+    {
+      "text": "risultati",
+      "start": 6.697375,
+      "end": 7.460541
+    },
+    {
+      "text": "seleziona",
+      "start": 7.565791,
+      "end": 8.157916
+    },
+    {
+      "text": "quello",
+      "start": 8.171041,
+      "end": 8.460499
+    },
+    {
+      "text": "che",
+      "start": 8.473666,
+      "end": 8.605249
+    },
+    {
+      "text": "corrisponde",
+      "start": 8.618416,
+      "end": 9.302624
+    },
+    {
+      "text": "alla",
+      "start": 9.315791,
+      "end": 9.486832
+    },
+    {
+      "text": "città",
+      "start": 9.5,
+      "end": 9.947375
+    },
+    {
+      "text": "e",
+      "start": 9.960541,
+      "end": 10.026332
+    },
+    {
+      "text": "all'indirizzo",
+      "start": 10.039458,
+      "end": 10.697333
+    },
+    {
+      "text": "desiderati",
+      "start": 10.710541,
+      "end": 11.565791
+    },
+    {
+      "text": "La",
+      "start": 12.5,
+      "end": 12.723666
+    },
+    {
+      "text": "conferma",
+      "start": 12.736833,
+      "end": 13.315791
+    },
+    {
+      "text": "deve",
+      "start": 13.328958,
+      "end": 13.513166
+    },
+    {
+      "text": "identificare",
+      "start": 13.526333,
+      "end": 14.276333
+    },
+    {
+      "text": "un",
+      "start": 14.289458,
+      "end": 14.421041
+    },
+    {
+      "text": "punto",
+      "start": 14.434208,
+      "end": 14.763166
+    },
+    {
+      "text": "geografico",
+      "start": 14.776333,
+      "end": 15.592124
+    },
+    {
+      "text": "non",
+      "start": 15.921041,
+      "end": 16.144707
+    },
+    {
+      "text": "soltanto",
+      "start": 16.157875,
+      "end": 16.631541
+    },
+    {
+      "text": "una",
+      "start": 16.64475,
+      "end": 16.802625
+    },
+    {
+      "text": "scritta",
+      "start": 16.815791,
+      "end": 17.434207
+    },
+    {
+      "text": "Lo",
+      "start": 18.35525,
+      "end": 18.60525
+    },
+    {
+      "text": "stesso",
+      "start": 18.618416,
+      "end": 19.013166
+    },
+    {
+      "text": "principio",
+      "start": 19.026333,
+      "end": 19.526333
+    },
+    {
+      "text": "vale",
+      "start": 19.539458,
+      "end": 19.868416
+    },
+    {
+      "text": "per",
+      "start": 19.881583,
+      "end": 20.052624
+    },
+    {
+      "text": "una",
+      "start": 20.065791,
+      "end": 20.249999
+    },
+    {
+      "text": "destinazione",
+      "start": 20.263166,
+      "end": 21.026332
+    },
+    {
+      "text": "finale",
+      "start": 21.039458,
+      "end": 21.473666
+    },
+    {
+      "text": "diversa",
+      "start": 21.486833,
+      "end": 22.039458
+    },
+    {
+      "text": "e",
+      "start": 22.052625,
+      "end": 22.10525
+    },
+    {
+      "text": "per",
+      "start": 22.118416,
+      "end": 22.315791
+    },
+    {
+      "text": "gli",
+      "start": 22.328958,
+      "end": 22.460541
+    },
+    {
+      "text": "altri",
+      "start": 22.473666,
+      "end": 22.802624
+    },
+    {
+      "text": "luoghi",
+      "start": 22.815791,
+      "end": 23.263166
+    },
+    {
+      "text": "che",
+      "start": 23.276333,
+      "end": 23.421083
+    },
+    {
+      "text": "il",
+      "start": 23.434208,
+      "end": 23.499999
+    },
+    {
+      "text": "pannello",
+      "start": 23.513166,
+      "end": 23.986832
+    },
+    {
+      "text": "chiede",
+      "start": 24.0,
+      "end": 24.39475
+    },
+    {
+      "text": "di",
+      "start": 24.407875,
+      "end": 24.513125
+    },
+    {
+      "text": "risolvere",
+      "start": 24.526333,
+      "end": 25.197374
+    },
+    {
+      "text": "Nel",
+      "start": 25.39475,
+      "end": 25.657916
+    },
+    {
+      "text": "nostro",
+      "start": 25.671041,
+      "end": 26.026291
+    },
+    {
+      "text": "caso",
+      "start": 26.039458,
+      "end": 26.407874
+    },
+    {
+      "text": "controlliamo",
+      "start": 26.421041,
+      "end": 27.223666
+    },
+    {
+      "text": "che",
+      "start": 27.236833,
+      "end": 27.368416
+    },
+    {
+      "text": "la",
+      "start": 27.381583,
+      "end": 27.486833
+    },
+    {
+      "text": "partenza",
+      "start": 27.5,
+      "end": 28.118416
+    },
+    {
+      "text": "sia",
+      "start": 28.131583,
+      "end": 28.355249
+    },
+    {
+      "text": "davvero",
+      "start": 28.368416,
+      "end": 28.828957
+    },
+    {
+      "text": "Piazza del Duomo",
+      "start": 28.842125,
+      "end": 29.934208
+    },
+    {
+      "text": "a",
+      "start": 30.184208,
+      "end": 30.315791
+    },
+    {
+      "text": "Milano",
+      "start": 30.328958,
+      "end": 30.907916
+    }
+  ]
+}

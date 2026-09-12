@@ -1,0 +1,255 @@
+{
+  "title": "AI Tour — dal territorio al giro giusto",
+  "voice": "it-IT-DiegoNeural",
+  "rate": "-5%",
+  "account": "Salvatore Pirone",
+  "scenes": [
+    {
+      "id": "s01", "chapter": "01 · Il metodo", "title": "AI Tour, passo dopo passo", "screen": "01_ai_home",
+      "bullets": ["Account: Salvatore Pirone", "Schermate reali, nessun dato operativo modificato", "Esempi non salvati sempre segnalati"],
+      "narration": "Benvenuto nella guida completa ad AI Tour di Voom. Useremo l'account di Salvatore Pirone per vedere come preparare un giro, scegliere il territorio e controllare ciò che l'intelligenza artificiale ha capito. Non salveremo giri e non invieremo segnalazioni reali. Le dimostrazioni di appuntamenti e verifiche saranno indicate chiaramente come simulazioni. Puoi mettere in pausa il video quando vuoi e riprendere dal capitolo che ti serve."
+    },
+    {
+      "id": "s02", "chapter": "01 · Il metodo", "title": "Prima i vincoli, poi il giro", "screen": "01_ai_home",
+      "bullets": ["Quando: giorno, orari e durata delle visite", "Dove: partenza, territorio e rientro", "Chi: clienti, appuntamenti e priorità"],
+      "narration": "Il modo migliore per ottenere un risultato utile non è scrivere una frase lunghissima e premere subito Genera. Parti da tre domande: quando posso lavorare, dove voglio lavorare e chi devo vedere. L'intelligenza artificiale propone un'organizzazione, ma il risultato dipende dalla qualità dei dati, dagli orari, dalle distanze e dai vincoli. Il controllo finale dell'agente rimane indispensabile. Un giro coerente e verificato è più importante di un numero di visite apparentemente perfetto."
+    },
+    {
+      "id": "s03", "chapter": "01 · Il metodo", "title": "Scegli il giorno corretto", "screen": "02_date",
+      "bullets": ["Controlla la data prima di interpretare", "Per oggi, usa un orario ancora disponibile", "Il limite finale non obbliga a riempire tutta la giornata"],
+      "narration": "Cominciamo dalla data. Scegli il giorno in cui farai davvero il giro, poi controlla l'ora di partenza e l'ora entro cui vuoi terminare. Se programmi per oggi, non impostare un orario già passato. Se dici diciassette come termine, stai indicando un limite: un giro che soddisfa le visite richieste può finire anche prima. Quando usi una richiesta scritta, specifica la data oppure verifica che quella interpretata coincida con il giorno scelto."
+    },
+    {
+      "id": "s04", "chapter": "01 · Il metodo", "title": "Scegli il tipo di giornata", "screen": "03_day_type",
+      "bullets": ["Giro Clienti: portafoglio esistente", "Giro Acquisizione: sviluppo", "Giro Misto: entrambi gli obiettivi"],
+      "narration": "Il tipo di giornata determina l'obiettivo della pianificazione. Giro Clienti è adatto quando vuoi lavorare sul portafoglio esistente. Giro Acquisizione serve allo sviluppo di nuovi contatti. Giro Misto combina i due obiettivi. Nel nostro esempio scegliamo Giro Clienti. Non cambiare tipo di giornata solo per ottenere più tappe: prima chiediti se le persone proposte corrispondono al lavoro commerciale che vuoi svolgere."
+    },
+    {
+      "id": "s05", "chapter": "01 · Il metodo", "title": "Partenza e rientro non sono dettagli", "screen": "04_start_return",
+      "bullets": ["Casa o Sede, solo se configurate", "Indirizzo completo per un punto preciso", "Rientro alla partenza oppure destinazione diversa"],
+      "narration": "Una partenza sbagliata può rendere poco utile tutto il giro. Puoi scegliere Casa o Sede se sono già configurate, oppure inserire un indirizzo completo. Qui usiamo Piazza del Duomo, a Milano, un luogo pubblico scelto per l'esempio. Controlla anche il rientro: tornare alla partenza e terminare altrove sono due richieste diverse. Nel pannello dell'intelligenza artificiale, quando viene richiesta la conferma del luogo, seleziona il risultato corretto e non affidarti soltanto al testo digitato."
+    },
+    {
+      "id": "s06", "chapter": "02 · CHIP e territorio", "title": "Come leggere le CHIP", "screen": "06_chip_one",
+      "bullets": ["Sono pulsanti compatti, non semplici decorazioni", "Il colore evidenzia la scelta attiva", "Il comportamento dipende dal gruppo"],
+      "narration": "Questi piccoli pulsanti arrotondati sono le CHIP. Il colore ti aiuta a capire quale scelta è attiva. In alcuni gruppi, come il tipo di area, selezionare un'opzione sostituisce quella precedente. In altri punti puoi avere più condizioni contemporaneamente. Quindi non tutte le CHIP si comportano nello stesso modo. Leggi il titolo del gruppo e il riepilogo: sono loro a dirti se stai scegliendo un'alternativa oppure aggiungendo un vincolo."
+    },
+    {
+      "id": "s07", "chapter": "02 · CHIP e territorio", "title": "Provincia, Comune oppure Zona", "screen": "05_area_modes",
+      "bullets": ["Provincia: perimetro più ampio", "Comune: denominazione nell'anagrafica", "Zona: area geografica da verificare sulla mappa"],
+      "narration": "Scegli il perimetro che corrisponde davvero al tuo obiettivo. Provincia è una selezione più ampia. Comune è utile quando vuoi restringere la ricerca al comune indicato nelle anagrafiche. Zona permette di ragionare su un'area geografica. Le eventuali zone territoriali assegnate dipendono dalla configurazione dell'agente. Non confondere il nome di un comune con una zona disegnata intorno a un centro: possono descrivere insiemi di clienti differenti."
+    },
+    {
+      "id": "s08", "chapter": "02 · CHIP e territorio", "title": "Indicare un comune", "screen": "08_comune",
+      "bullets": ["Scrivi il nome in modo riconoscibile", "Aggiungi provincia o indirizzo se c'è ambiguità", "Per più comuni usa una richiesta esplicita"],
+      "narration": "Per un comune singolo puoi usare il campo Comune, per esempio Milano. Se ci sono località con nomi simili, precisa la provincia o il contesto geografico. Per lavorare su più comuni e stabilire anche l'ordine con cui attraversarli, il modo più chiaro è descriverlo in Dillo all'intelligenza artificiale. Tra poco vedremo Milano, Rozzano e Pieve Emanuele, collegati da un corridoio geografico."
+    },
+    {
+      "id": "s09", "chapter": "02 · CHIP e territorio", "title": "Una richiesta chiara è una lista di vincoli", "screen": "09_prompt",
+      "bullets": ["Data e fascia oraria", "Clienti, numero desiderato e territorio", "Partenza e rientro espliciti"],
+      "narration": "Apriamo Dillo all'intelligenza artificiale. Un buon esempio è: lunedì, dalle nove alle diciassette, vorrei otto visite ai miei clienti nella zona nord-est di Milano, entro un raggio di otto chilometri. Parto da Piazza del Duomo e rientro alla partenza. La richiesta contiene tempo, obiettivo, area e percorso. Quando vuoi nominare un cliente preciso, usa il suo nome riconoscibile. Se vuoi soltanto quei clienti, scrivi anche la parola soltanto."
+    },
+    {
+      "id": "s10", "chapter": "02 · CHIP e territorio", "title": "Interpreta non significa conferma", "screen": "10_review",
+      "bullets": ["Leggi il riepilogo ottenuto", "Controlla data, orari e quantità", "Correggi prima di generare"],
+      "narration": "Dopo aver premuto Interpreta, fermati a leggere. L'interpretazione non è una conferma automatica di ciò che volevi dire. Controlla la data, l'ora iniziale, quella finale e il numero desiderato di visite. Se una parola è stata capita male, correggi il campo o riformula la richiesta. È molto più semplice sistemare un vincolo in questo momento che cercare di correggere un giro nato da una richiesta ambigua."
+    },
+    {
+      "id": "s11", "chapter": "02 · CHIP e territorio", "title": "Le CHIP riassumono ciò che verrà applicato", "screen": "07_chip_multiple",
+      "bullets": ["Chi, dove, quando e condizioni", "Più CHIP possono essere attive insieme", "La X elimina quella condizione"],
+      "narration": "Nel riepilogo trovi anche le CHIP delle condizioni interpretate. Sono raggruppate per argomento, per esempio chi visitare, dove lavorare e quali criteri utilizzare. Puoi avere più condizioni insieme. Se una CHIP non rappresenta ciò che desideri, la crocetta permette di rimuoverla. Attenzione: togliere una condizione cambia la richiesta, non è un gesto puramente grafico. Dopo ogni modifica rileggi il riepilogo e ricontrolla le conferme necessarie."
+    },
+    {
+      "id": "s12", "chapter": "03 · Confermare una zona", "title": "Prima conferma i luoghi", "screen": "12_start_confirmed",
+      "bullets": ["Cerca e conferma il luogo", "Scegli il risultato corretto", "Testo digitato e punto confermato non sono equivalenti"],
+      "narration": "Quando la partenza è un indirizzo, usa Cerca e conferma il luogo. Se vengono mostrati più risultati, seleziona quello che corrisponde alla città e all'indirizzo desiderati. La conferma deve identificare un punto geografico, non soltanto una scritta. Lo stesso principio vale per una destinazione finale diversa e per gli altri luoghi che il pannello chiede di risolvere. Nel nostro caso controlliamo che la partenza sia davvero Piazza del Duomo, a Milano."
+    },
+    {
+      "id": "s13", "chapter": "03 · Confermare una zona", "title": "Per i comuni grandi, scegli il settore", "screen": "13_compass",
+      "bullets": ["Centro geografico + raggio + direzione", "Utile per suddividere una città grande", "Non equivale a un quartiere amministrativo"],
+      "narration": "Per una città grande, come Milano, puoi restringere l'area con una direzione. La zona viene costruita intorno a un punto di riferimento e al raggio impostato. La direzione serve a selezionare una parte di quell'area. È una suddivisione geografica utile al lavoro dell'agente, non una garanzia di corrispondenza con i confini di un quartiere o con il perimetro amministrativo del comune. Per questo la mappa va sempre controllata."
+    },
+    {
+      "id": "s14", "chapter": "03 · Confermare una zona", "title": "Tutte le direzioni disponibili", "screen": "14_direction_north",
+      "bullets": ["N · NE · E · SE", "S · SO · O · NO", "Intera zona: nessuna restrizione direzionale"],
+      "narration": "Le direzioni seguono la bussola: Nord, Nord-est, Est, Sud-est, Sud, Sud-ovest, Ovest e Nord-ovest. Puoi indicarle nella frase oppure selezionarle nel pannello. Se vuoi togliere la restrizione direzionale, scegli Intera zona. Qui mostriamo prima Nord e poi Nord-est, così puoi vedere quale CHIP risulta selezionata. Ricorda che la direzione va letta insieme al centro e al raggio, non da sola."
+    },
+    {
+      "id": "s15", "chapter": "03 · Confermare una zona", "title": "Raggio e direzione lavorano insieme", "screen": "15_direction_northeast",
+      "bullets": ["Nord-est è la direzione scelta", "8 km è il raggio di questo esempio", "Aree troppo strette possono ridurre i candidati"],
+      "narration": "In questo esempio lasciamo Nord-est e un raggio di otto chilometri. Un raggio più piccolo restringe l'area; un raggio più grande la amplia. Non scegliere un valore molto stretto e poi aspettarti comunque un numero elevato di clienti. Se non ci sono abbastanza candidati idonei, il piano può proporre meno visite o segnalare un limite. È un'informazione utile: ti permette di decidere consapevolmente se ampliare la ricerca."
+    },
+    {
+      "id": "s16", "chapter": "03 · Confermare una zona", "title": "Passaggio 1: verifica e mostra la mappa", "screen": "16_before_verify",
+      "bullets": ["Scorri fino a Zone e corridoi", "Premi Verifica zone e mostra la mappa", "Risolvi eventuali località ambigue"],
+      "narration": "Ecco il primo comando importante per confermare la zona. Scorri fino alla sezione Zone e corridoi, in quest'ordine, e premi Verifica zone e mostra la mappa. Se una località ha più corrispondenze, scegli quella giusta e ripeti la verifica. Scrivere Milano o selezionare Nord-est non completa ancora la conferma: prima l'app deve preparare e mostrare l'area geografica che verrà utilizzata."
+    },
+    {
+      "id": "s17", "chapter": "03 · Confermare una zona", "title": "Passaggio 2: controlla l'area colorata", "screen": "17_zone_map", "zoom": "map",
+      "bullets": ["Controlla centro e orientamento", "Osserva il raggio effettivo", "Non confermare una zona che non riconosci"],
+      "narration": "Ora osserva la mappa. Controlla che il centro sia quello atteso, che il settore guardi nella direzione giusta e che il raggio copra l'area in cui vuoi lavorare. L'area colorata rappresenta il filtro geografico preparato, non l'elenco definitivo delle visite. Se qualcosa non torna, modifica il centro, il raggio o la direzione e ricrea la mappa. Non confermare una forma soltanto perché il nome del comune sembra corretto."
+    },
+    {
+      "id": "s18", "chapter": "03 · Confermare una zona", "title": "Passaggio 3: conferma esplicitamente", "screen": "18_zone_confirm_button",
+      "bullets": ["Il comando è sotto la mappa", "Confermo queste zone e questo ordine", "La sola visualizzazione non basta"],
+      "narration": "Il secondo pulsante decisivo si trova sotto la mappa: Confermo queste zone e questo ordine. È questo il comando che conclude la conferma. Se hai soltanto premuto Verifica zone e mostra la mappa, non hai ancora dichiarato che l'area è corretta. Prima controlli, poi confermi. Questa distinzione evita che il giro venga costruito usando una località o un orientamento che non avevi davvero approvato."
+    },
+    {
+      "id": "s19", "chapter": "03 · Confermare una zona", "title": "Cerca il messaggio di conferma", "screen": "19_zone_confirmed",
+      "bullets": ["Zone e ordine confermati", "Controllo concluso per questa configurazione", "Poi passa agli altri vincoli"],
+      "narration": "Dopo il tocco, il pannello mostra Zone e ordine confermati. Cerca proprio questa indicazione prima di proseguire. Ora la configurazione geografica visualizzata è stata approvata. Puoi continuare a controllare gli altri vincoli del giro. Se il pulsante è ancora disattivato oppure resta un messaggio di preparazione, attendi o risolvi la richiesta mostrata: non interpretare un semplice caricamento come una conferma già avvenuta."
+    },
+    {
+      "id": "s20", "chapter": "03 · Confermare una zona", "title": "Se cambi la zona, riconfermala", "screen": "20_changed_requires_confirm",
+      "bullets": ["Modifica di centro, raggio, settore o ordine", "Nuova verifica della mappa", "Nuova conferma esplicita"],
+      "narration": "La conferma vale per la configurazione appena controllata. Se cambi la direzione, il raggio, una località o l'ordine delle zone, l'app richiede una nuova verifica. Nell'esempio passiamo da Nord-est a Est: non possiamo riutilizzare automaticamente la conferma precedente. Ripeti quindi la sequenza: verifica, guarda la mappa, conferma. È una protezione contro modifiche involontarie, non un passaggio da saltare."
+    },
+    {
+      "id": "s21", "chapter": "04 · Più comuni e corridoi", "title": "Nomina più comuni in ordine", "screen": "21_multiple_towns",
+      "bullets": ["Milano → Rozzano → Pieve Emanuele", "Scrivi esplicitamente in quest'ordine", "Puoi aggiungere o riordinare le zone"],
+      "narration": "Passiamo a più comuni. Una richiesta chiara è: voglio lavorare a Milano, poi a Rozzano e infine a Pieve Emanuele, in quest'ordine. Puoi anche aggiungere le località dal pannello e usare le frecce per cambiarne la sequenza. L'ordine dichiarato è importante quando vuoi avanzare in una direzione senza continui ritorni. Verifica sempre che la lista a video sia uguale all'ordine che intendevi indicare nella frase."
+    },
+    {
+      "id": "s22", "chapter": "04 · Più comuni e corridoi", "title": "A cosa serve il corridoio", "screen": "22_corridor_width",
+      "bullets": ["Include un'area utile tra le località", "Può intercettare clienti lungo il collegamento", "Non è ancora il percorso stradale definitivo"],
+      "narration": "Il corridoio è utile quando non vuoi considerare soltanto le zone intorno ai comuni, ma anche i clienti compresi nella fascia di collegamento tra una località e la successiva. Può evitare di passare vicino a un cliente interessante senza prenderlo in considerazione. Attenzione: il corridoio è un filtro geografico. Non è ancora l'itinerario stradale definitivo, che verrà calcolato durante la pianificazione del giro."
+    },
+    {
+      "id": "s23", "chapter": "04 · Più comuni e corridoi", "title": "Regola l'ampiezza con criterio", "screen": "22_corridor_width",
+      "bullets": ["Nell'esempio: ampiezza impostata a 3 km", "Più ampia: più territorio e possibili deviazioni", "Più stretta: meno candidati"],
+      "narration": "Nel nostro esempio impostiamo l'ampiezza del corridoio a tre chilometri. Non esiste un valore perfetto valido per ogni giro. Una fascia più ampia aumenta il territorio esplorato e può introdurre deviazioni. Una fascia più stretta riduce le possibilità. Parti da un'ampiezza ragionevole, osserva la forma sulla mappa e valuta se il tempo a disposizione giustifica quel territorio. Non allargare il corridoio soltanto per inseguire un numero di visite."
+    },
+    {
+      "id": "s24", "chapter": "04 · Più comuni e corridoi", "title": "Controlla l'intero collegamento", "screen": "23_corridor_map", "zoom": "map",
+      "bullets": ["Verifica tutte le zone, non solo la prima", "Controlla i collegamenti e la sequenza", "Poi conferma zone e ordine"],
+      "narration": "Dopo aver aggiunto i comuni e impostato il corridoio, premi di nuovo Verifica zone e mostra la mappa. Osserva tutte le aree e i collegamenti tra loro. Controlla che non ci sia una località omonima lontana, un punto invertito o una fascia troppo ampia. Quando tutto corrisponde alla tua intenzione, premi ancora Confermo queste zone e questo ordine. Con più comuni il controllo visivo è ancora più importante."
+    },
+    {
+      "id": "s25", "chapter": "04 · Più comuni e corridoi", "title": "Un comune non garantisce una tappa", "screen": "24_corridor_confirmed",
+      "bullets": ["Le zone definiscono dove cercare", "La selezione dipende dai candidati idonei", "Per una visita indispensabile indica il cliente"],
+      "narration": "Inserire tre comuni non significa ottenere automaticamente almeno una visita in ciascuno. Le zone definiscono dove cercare; poi intervengono disponibilità, storico, priorità, tempi e altri vincoli. Se devi assolutamente incontrare una persona, indica il cliente e rendi esplicito l'appuntamento o il carattere obbligatorio della tappa. Il nome di una località, da solo, non sostituisce la richiesta di vedere un cliente preciso."
+    },
+    {
+      "id": "s26", "chapter": "05 · Filtri e anteprima", "title": "Genera soltanto dopo il controllo", "screen": "25_generate_review",
+      "bullets": ["Data, orari, partenza e rientro", "Zone confermate e condizioni coerenti", "Genera con queste indicazioni"],
+      "narration": "Prima di generare, fai un ultimo controllo dei campi operativi: data, orari, partenza, rientro, numero desiderato di visite e zone confermate. Se ci sono nomi ambigui, eccezioni fuori zona o altri avvisi, risolvili prima di proseguire. Poi premi Genera con queste indicazioni. Generare un'anteprima non equivale a salvare o avviare un Tour Live: sono azioni distinte, da compiere solo quando hai controllato il risultato."
+    },
+    {
+      "id": "s27", "chapter": "05 · Filtri e anteprima", "title": "La regola dei 15 giorni", "screen": "27_plan_warnings",
+      "bullets": ["Ordini recenti: esclusione automatica dalla selezione ordinaria", "La regola considera anche le visite recenti", "Il riepilogo mostra le esclusioni"],
+      "narration": "Una regola importante riguarda i quindici giorni. Nella selezione ordinaria, l'app esclude i soggetti che risultano già visitati o con un ordine recente entro questa finestra. Quindi non si tratta soltanto degli ordini: anche una visita recente può incidere. Nell'anteprima trovi il messaggio con il numero di esclusioni. Questo aiuta a evitare passaggi troppo ravvicinati e a concentrare il tempo sui clienti che richiedono attenzione."
+    },
+    {
+      "id": "s28", "chapter": "05 · Filtri e anteprima", "title": "Le eccezioni vanno comprese", "screen": "27_plan_warnings",
+      "bullets": ["Appuntamenti e follow-up", "Clienti o tappe richiesti esplicitamente", "Resta necessario rispettare orari e territorio"],
+      "narration": "Il filtro dei quindici giorni non è un divieto assoluto di incontrare un cliente. Appuntamenti, follow-up e richieste esplicite possono costituire eccezioni. Un impegno già concordato non va confuso con una visita scelta automaticamente. Controlla quindi perché quel cliente è stato incluso. Un'eccezione alla recenza non rende però possibile un appuntamento irraggiungibile e non annulla le altre conferme, per esempio quella richiesta per una tappa fuori zona."
+    },
+    {
+      "id": "s29", "chapter": "05 · Filtri e anteprima", "title": "Leggi numeri, elenco e mappa", "screen": "26_plan_overview",
+      "focus_rect": {"x": 12, "y": 237, "width": 366, "height": 162},
+      "bullets": ["Visite, chilometri e tempo di guida", "Arrivi, permanenza e rientro", "Stime operative, non risultati commerciali garantiti"],
+      "narration": "Nell'anteprima non guardare soltanto il numero delle visite. Controlla chilometri, tempo di guida, durata dei passaggi e orario di rientro. Scorri l'elenco e confrontalo con la mappa. Gli importi potenziali e le valutazioni commerciali sono stime, non vendite garantite. Se il giro termina prima del limite che avevi indicato, non è necessariamente un errore: può aver già soddisfatto le visite richieste lasciando margine per imprevisti."
+    },
+    {
+      "id": "s30", "chapter": "05 · Filtri e anteprima", "title": "Modifica senza perdere i vincoli", "screen": "29_edit_preview",
+      "focus_rect": {"x": 174, "y": 155, "width": 190, "height": 36},
+      "visual_change": {"screen": "29_edit_preview", "word": "ottimizzato", "focus_rect": {"x": 14, "y": 740, "width": 362, "height": 40}},
+      "bullets": ["Riordina, rimuovi o aggiungi visite", "Stella rossa: tappa obbligatoria", "Ricalcolo AI oppure sequenza manuale"],
+      "narration": "Con Modifica puoi rivedere le tappe, aggiungere una visita e indicare quelle obbligatorie con la stella. Puoi chiedere un nuovo ordine ottimizzato oppure applicare una sequenza manuale. Le modifiche devono restare compatibili con appuntamenti, orari e territorio. Se aggiungi una visita fuori zona, controlla l'eventuale richiesta di confermare l'eccezione. Dopo il ricalcolo rileggi il nuovo risultato: non considerare ancora valido il riepilogo del giro precedente."
+    },
+    {
+      "id": "s31", "chapter": "05 · Filtri e anteprima", "title": "Anteprima, salvataggio e avvio", "screen": "28_edit_entry",
+      "focus_rect": {"x": 301, "y": 126, "width": 77, "height": 34},
+      "visual_change": {"screen": "28_edit_entry", "word": "Avvia", "focus_rect": {"x": 267, "y": 10, "width": 112, "height": 40}},
+      "bullets": ["Anteprima: valuta la proposta", "Salva: conserva il giro scelto", "Avvia Tour: passa al lavoro operativo"],
+      "narration": "Tieni separati tre momenti. Nell'anteprima valuti la proposta. Con Salva conservi il giro che hai scelto. Con Avvia Tour passi alla modalità operativa, quando sei pronto a lavorare. In questo tutorial ci fermiamo all'anteprima: non salviamo né avviamo un giro dell'account di Salvatore. Questa distinzione è importante anche nell'uso quotidiano, perché provare una pianificazione non deve essere confuso con iniziare una giornata di visite."
+    },
+    {
+      "id": "s32", "chapter": "06 · Calendario e follow-up", "title": "Il calendario alimenta la pianificazione", "screen": "30_calendar_entry",
+      "bullets": ["Nuovo appuntamento oppure tocco su un orario", "Impegno libero o cliente collegato", "Da qui iniziano gli esempi non salvati"],
+      "narration": "Vediamo ora il calendario. Puoi usare Nuovo oppure toccare un orario per preparare un appuntamento. Ci sono due casi distinti: un impegno libero e un appuntamento collegato a un cliente. Da questo punto useremo esempi dimostrativi non salvati, indicati nel video. Il funzionamento dei pannelli è quello dell'app, ma non creeremo appuntamenti reali per l'agente e non invieremo comunicazioni ai clienti."
+    },
+    {
+      "id": "s33", "chapter": "06 · Calendario e follow-up", "title": "Creare un impegno libero", "screen": "31_calendar_free", "simulation": true,
+      "bullets": ["Scegli Impegno libero", "Inserisci un titolo riconoscibile", "Il luogo è facoltativo"],
+      "narration": "Per una riunione organizzativa, una pausa operativa o un altro impegno non legato a un cliente, scegli Impegno libero. Inserisci un titolo che ti permetta di riconoscerlo. Il luogo è facoltativo: un impegno senza indirizzo può comunque essere mostrato come promemoria. Se invece vuoi trasformarlo in una tappa geografica del giro, serve un luogo da cercare e confermare. Evita titoli generici come appuntamento, che tra qualche giorno potrebbero non dirti più nulla."
+    },
+    {
+      "id": "s34", "chapter": "06 · Calendario e follow-up", "title": "Data, ora, durata e note", "screen": "32_calendar_fields", "simulation": true,
+      "bullets": ["Data e ora locale corrette", "Durata realistica in minuti", "Note brevi ma utili"],
+      "narration": "Compila la data, l'ora locale e una durata realistica. La durata non è un dettaglio: un incontro di mezz'ora e uno di due ore occupano spazi diversi nella giornata. Nelle note scrivi soltanto ciò che ti serve per ricordare l'impegno. Prima di salvare, rileggi soprattutto giorno e ora. Qui mostriamo il modulo compilato, ma lo chiudiamo senza premere Salva: i dati dell'account rimangono invariati."
+    },
+    {
+      "id": "s35", "chapter": "06 · Calendario e follow-up", "title": "Collegare un appuntamento a un cliente", "screen": "33_calendar_customer", "simulation": true,
+      "bullets": ["Scegli Cliente / Follow-up", "Cerca e seleziona la scheda corretta", "Non limitarti a scrivere il nome nelle note"],
+      "narration": "Quando l'impegno riguarda un cliente, scegli Cliente, Follow-up, cerca la scheda corretta e selezionala. Scrivere il nome soltanto nelle note di un impegno libero non crea il collegamento al cliente. Dopo la selezione imposta data, ora, durata e motivo dell'incontro. Nell'uso reale, il salvataggio rende disponibile quell'appuntamento alla pianificazione come follow-up del cliente per il giorno indicato. Nel video non premiamo il comando di salvataggio."
+    },
+    {
+      "id": "s36", "chapter": "06 · Calendario e follow-up", "title": "Il reminder compare mentre programmi", "screen": "35_followup_reminder", "simulation": true,
+      "bullets": ["Seleziona in AI Tour il giorno dell'appuntamento", "Controlla cliente, ora e motivo", "Gli esempi mostrati qui non sono salvati"],
+      "narration": "Torniamo ad AI Tour e scegliamo il giorno dell'appuntamento. Il pannello dei follow-up richiama l'attenzione dell'agente durante la preparazione del giro. Qui mostriamo un appuntamento dimostrativo alle undici, senza averlo scritto nel database. Nell'uso reale controlla cliente, ora e motivo. Il reminder serve proprio a non dimenticare un impegno già concordato mentre scegli altri clienti o modifichi il territorio della giornata."
+    },
+    {
+      "id": "s37", "chapter": "06 · Calendario e follow-up", "title": "Considera oppure Ignora", "screen": "37_followup_considered", "simulation": true,
+      "visual_change": {"screen": "36_followup_ignored", "word": "Deselezionarlo"},
+      "bullets": ["Tocca la riga per cambiare la spunta", "Selezionato: impegno considerato nel giro", "Deselezionare non cancella l'appuntamento"],
+      "narration": "Toccando la riga puoi cambiare la spunta del follow-up e scegliere se considerarlo nella pianificazione corrente. Quando è selezionato, l'impegno viene tenuto presente come tappa da rispettare. Deselezionarlo significa scegliere di non inserirlo nella proposta: non è una cancellazione dal calendario. Non usare questa scelta per aggirare senza pensarci un appuntamento già concordato. Se la situazione è cambiata, verifica anche l'agenda e gli accordi con il cliente, invece di affidarti soltanto a una selezione temporanea."
+    },
+    {
+      "id": "s38", "chapter": "06 · Calendario e follow-up", "title": "Non confondere promemoria e tappa", "screen": "38_free_reminder", "simulation": true,
+      "bullets": ["Senza luogo: promemoria, non tappa", "Non è un blocco orario automatico del percorso", "Controlla possibili sovrapposizioni"],
+      "narration": "C'è una distinzione da ricordare. Un impegno libero senza luogo viene mostrato come promemoria, ma non diventa una tappa geografica e non blocca automaticamente gli orari del percorso. Leggi l'avvertenza e controlla personalmente eventuali sovrapposizioni. Non pensare che la sola presenza della riga in agenda renda impossibile pianificare una visita nello stesso intervallo. Questa verifica è particolarmente importante per riunioni telefoniche o attività che non hanno una destinazione fisica."
+    },
+    {
+      "id": "s39", "chapter": "06 · Calendario e follow-up", "title": "Un impegno con luogo può diventare tappa", "screen": "39_free_place_confirmed", "simulation": true,
+      "bullets": ["Cerca e conferma il luogo", "Controlla il risultato geografico", "La tappa va comunque verificata nel giro"],
+      "narration": "Se l'impegno libero ha un luogo, puoi cercarlo e confermarlo dal pannello degli impegni. La destinazione confermata permette di considerarlo come tappa obbligatoria nella generazione del giro. Anche qui non basta un indirizzo scritto: seleziona il risultato corretto e controlla il piano finale. L'esempio che vedi è dimostrativo. Per i follow-up completati, invece, la pianificazione non deve continuare a proporre un impegno già concluso: torna sul giorno corretto e verifica l'aggiornamento del pannello."
+    },
+    {
+      "id": "s40", "chapter": "07 · Manda in verifica", "title": "Segnalare un'anomalia dal Tour Live", "screen": "40_live_demo", "simulation": true,
+      "bullets": ["Punto vendita dimostrativo", "Nessun tour reale avviato", "Manda in verifica non modifica l'anagrafica"],
+      "narration": "Passiamo alla segnalazione delle anomalie. Per non coinvolgere un'attività reale, mostriamo una simulazione di Tour Live con un punto vendita dimostrativo. Il comando da cercare è Manda in verifica. Serve a segnalare un problema da controllare, non a correggere immediatamente l'anagrafica. È disponibile anche per un punto vendita senza una scheda cliente già collegata. Nel tutorial nessun tour viene avviato e nessuna segnalazione viene inviata."
+    },
+    {
+      "id": "s41", "chapter": "07 · Manda in verifica", "title": "Scegli il tipo di problema", "screen": "41_verification_types", "simulation": true,
+      "bullets": ["Posizione errata", "Attività chiusa o trasferita", "Altra anomalia da verificare"],
+      "narration": "Nel modulo scegli il tipo di anomalia che descrive meglio ciò che hai osservato. Può riguardare una posizione errata, un'attività chiusa, un trasferimento oppure un'altra situazione da verificare. La segnalazione deve distinguere i fatti dalle supposizioni. Se non sei sicuro del motivo, scrivilo nelle note. Un'informazione prudente ma precisa è molto più utile di un'affermazione definitiva non verificata."
+    },
+    {
+      "id": "s42", "chapter": "07 · Manda in verifica", "title": "Sempre chiuso non significa chiuso per sempre", "screen": "42_often_closed", "simulation": true,
+      "bullets": ["Indica più passaggi e orari osservati", "Non dare per certa una chiusura definitiva", "Chiedi la verifica degli orari o della situazione"],
+      "narration": "Se trovi un cliente sempre chiuso, descrivi i passaggi che hai effettuato e, se possibile, i giorni e gli orari. Una porta chiusa durante più visite non dimostra automaticamente una cessazione definitiva dell'attività. Se non hai conferme, usa una descrizione prudente, per esempio: trovata chiusa durante più passaggi, verificare gli orari; chiusura definitiva non accertata. In questo modo chi esamina la richiesta sa che cosa controllare e non scambia un dubbio per un fatto."
+    },
+    {
+      "id": "s43", "chapter": "07 · Manda in verifica", "title": "Chiusura, trasferimento o attività assente", "screen": "44_moved", "simulation": true,
+      "bullets": ["Scegli la categoria coerente con l'osservazione", "Nuovo indirizzo solo se noto e verificato", "Aggiungi dettagli concreti nelle note"],
+      "narration": "Se l'attività risulta cessata o non esiste più nella sede indicata, segnala quello che hai effettivamente riscontrato. Se invece si è trasferita, scegli Trasferita e indica il nuovo indirizzo soltanto se lo conosci e lo hai verificato. Puoi annotare, per esempio, un cartello esposto o un'informazione ricevuta sul posto, precisandone la fonte. Evita descrizioni generiche come cliente sparito: non aiutano chi deve ricostruire la situazione."
+    },
+    {
+      "id": "s44", "chapter": "07 · Manda in verifica", "title": "La posizione GPS è facoltativa", "screen": "45_gps_optional", "simulation": true,
+      "bullets": ["Può aiutare a identificare il luogo", "Puoi proseguire anche senza GPS", "Non confondere posizione rilevata e indirizzo verificato"],
+      "narration": "La posizione GPS, quando disponibile, può aiutare a identificare il luogo della segnalazione. Il modulo permette però di proseguire anche senza GPS. Non confondere la posizione del telefono con la certezza sul nuovo indirizzo di un'attività trasferita: sono informazioni diverse. Controlla sempre il punto vendita a cui stai riferendo l'anomalia e usa le note per spiegare ciò che la sola posizione geografica non può raccontare."
+    },
+    {
+      "id": "s45", "chapter": "07 · Manda in verifica", "title": "Rileggi prima dell'invio", "screen": "46_verification_confirm_not_pressed", "simulation": true,
+      "visual_change": {"screen": "47_verification_send_button", "word": "Conferma"},
+      "bullets": ["Punto vendita, tipo e descrizione", "Conferma solo una segnalazione reale", "Nel video non premiamo Conferma invio"],
+      "narration": "Prima dell'invio, passa al riepilogo e rileggi punto vendita, tipo di anomalia e descrizione. Solo dopo questo controllo, nell'uso reale, conferma la richiesta. Nel nostro esempio ci fermiamo prima di premere Conferma invio: non viene creata alcuna pratica. Se durante un invio reale compare un errore, leggi il messaggio e riprova dal flusso previsto, senza moltiplicare segnalazioni identiche."
+    },
+    {
+      "id": "s46", "chapter": "07 · Manda in verifica", "title": "Segnalazione ed esito della visita sono distinti", "screen": "48_stop_unchanged", "simulation": true,
+      "bullets": ["La segnalazione non chiude automaticamente la tappa", "Non riscrive l'anagrafica del cliente", "Gestisci separatamente l'esito operativo"],
+      "narration": "Un ultimo punto importante: Manda in verifica non chiude automaticamente la tappa e non riscrive l'anagrafica del cliente. La segnalazione dell'anomalia e l'esito operativo della visita sono due azioni diverse. Dopo aver gestito una situazione reale, controlla quindi anche lo stato della tappa e registra l'esito appropriato con i comandi del Tour Live. Nel nostro esempio usciamo dal modulo e la tappa dimostrativa rimane invariata."
+    },
+    {
+      "id": "s47", "chapter": "08 · Riepilogo", "title": "La sequenza da ricordare", "screen": "24_corridor_confirmed",
+      "bullets": ["1. Definisci giorno, tempi, partenza e obiettivo", "2. Interpreta, controlla, verifica la mappa e conferma", "3. Leggi follow-up, esclusioni e anteprima"],
+      "narration": "Ricapitoliamo la sequenza ideale. Prima definisci giorno, tempi, partenza, rientro e obiettivo commerciale. Poi scrivi una richiesta chiara e controlla ciò che è stato interpretato. Per zone, settori e corridoi, verifica la mappa e premi la conferma esplicita. Leggi i follow-up prima di programmare e controlla le esclusioni dei quindici giorni. Infine esamina elenco, distanze e orari dell'anteprima. Solo quando tutto è coerente passi a salvataggio e avvio operativo."
+    },
+    {
+      "id": "s48", "chapter": "08 · Riepilogo", "title": "Un giro migliore nasce da dati migliori", "screen": "01_ai_home",
+      "bullets": ["Richieste precise, non più complicate", "Conferme consapevoli", "Dati e anomalie aggiornati con attenzione"],
+      "narration": "Per ottenere risultati migliori, non cercare una frase magica. Mantieni precisi i dati, formula richieste comprensibili e usa le conferme come un controllo consapevole. Segnala con attenzione le anomalie che incontri, così potranno essere verificate. Questo tutorial è stato realizzato con l'accesso autorizzato di Salvatore Pirone, senza modificare dati operativi. Puoi tornare ai capitoli su zone, corridoi, calendario o verifiche ogni volta che hai bisogno di ripetere un passaggio. Buon lavoro con AI Tour."
+    }
+  ]
+}

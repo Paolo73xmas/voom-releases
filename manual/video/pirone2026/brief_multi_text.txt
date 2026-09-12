@@ -1,0 +1,183 @@
+
+
+AI Tour
+Pianificazione AI dei giri visita
+Genera
+Settimana
+Mese
+Portafoglio
+I miei Tour
+
+Dillo all'AI
+Descrivi il giro a voce o per iscritto e lascia che l'AI lo costruisca
+
+oppure imposta manualmente
+Data
+Oggi
+12/09
+Domani
+13/09
+Lun
+14/09
+Mar
+15/09
+Mer
+16/09
+Gio
+17/09
+Ven
+18/09
+
+1 follow-up SCADUTO mai gestito (ultimi 60 giorni)
+Spunta quelli da recuperare: verranno inseriti in questo giro come tappe obbligatorie.
+
+Cliente · era per il 21/08
+[AI Tour] Follow-up: trattativa — Da tornare
+Ora inizio
+
+08:00
+
+Ora fine
+
+18:00
+
+Tipo giornata
+
+Giro Clienti
+Clienti già acquisiti da rivisitare
+
+Sviluppo Territorio
+Prospect, orfani, mai visitate e recuperi
+
+Giornata Mista
+Mix ragionato di clienti e sviluppo
+
+Decidi tu AI
+L'AI analizza il portafoglio e sceglie
+Partenza
+Posizione corrente
+Indirizzo
+Casa
+Sede
+Rientro
+Nessuno
+Partenza
+Indirizzo
+Casa
+Sede
+Area
+Automatica (AI)
+Provincia
+Comune
+Raggio km
+Visite obbligatorie (facoltativo)
+
+
+GENERA CON AI
+Selezione commerciale → clustering → pianificazione temporale
+
+Dillo all'AI
+
+Descrivi il giro come lo diresti a un collega. Es: "Fammi un giro sui miei clienti di Voghera che non ordinano da 30 giorni".
+
+
+Interpreta la richiesta
+Per lunedì 14 settembre vuoi fare esattamente 8 visite ai tuoi clienti nella zona nord-est di Milano, entro un raggio di 8 km. Partirai da Piazza del Duomo alle 9:00, lavorerai fino alle 17:00 e rientrerai alla partenza.
+Partenza
+Casa
+Sede
+Indirizzo
+Cliente
+Usa il form
+Cerca e conferma il luogo
+Confermato: Piazza del Duomo, Milano, Lombardia, Italia
+Zone e corridoi, in quest’ordine
+Controlla località, direzioni e ampiezza. Nessun nome dettato viene corretto senza la tua conferma.
+1. Milano
+Intera zona
+Nord
+Nord-est
+Est
+Sud-est
+Sud
+Sud-ovest
+Ovest
+Nord-ovest
+Raggio zona (1–40 km)
+Milano, Lombardia, Italia
+Sposta prima
+Rimuovi zona
+2. Rozzano
+Intera zona
+Nord
+Nord-est
+Est
+Sud-est
+Sud
+Sud-ovest
+Ovest
+Nord-ovest
+Raggio zona (1–40 km)
+Rozzano, Milano, Lombardia, Italia
+Sposta prima
+Rimuovi zona
+3. Pieve Emanuele
+Intera zona
+Nord
+Nord-est
+Est
+Sud-est
+Sud
+Sud-ovest
+Ovest
+Nord-ovest
+Raggio zona (1–40 km)
+Pieve Emanuele, Milano, Lombardia, Italia
+Sposta prima
+Rimuovi zona
+Aggiungi zona
+Ampiezza laterale del corridoio (0,5–15 km)
+Verifica zone e mostra la mappa
+
+Schermo intero
+
+Milano → Rozzano → Pieve Emanuele · 18 km tra zone. Le aree colorate indicano dove cercare visite, non il giro finale.
+Zone e ordine confermati
+Arrivo finale
+Casa
+Sede
+Indirizzo
+Cliente
+Usa il form
+Nessun luogo richiesto: si usa il punto del form.
+Autorizzo altri clienti oltre a quelli nominati
+Data del giro (AAAA-MM-GG)
+Partenza HH:MM
+Fine visite HH:MM
+Arrivo tassativo HH:MM (facoltativo)
+Chi
+Tutti i clienti
+
+Giorno e zone
+
+14/09/2026
+
+09:00 → 17:00
+Tipo giornata
+Clienti
+Sviluppo
+Mista
+Visite: 8 visite
+
+8
+
+Auto
+Percorso compatto
+No
+Se possibile
+Vincolante
+Rientro a casa
+Torno al punto di partenza
+Più giornate se serve
+
+Genera il giro

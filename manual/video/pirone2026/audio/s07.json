@@ -1,0 +1,333 @@
+{
+  "id": "s07",
+  "sha256": "2ca780f0e72f9f3a9789d3632e88ca6493ac63340f0f4ae00232b4ee68b17867",
+  "audioDuration": 32.112,
+  "duration": 33.32,
+  "words": [
+    {
+      "text": "Scegli",
+      "start": 0.101958,
+      "end": 0.536166
+    },
+    {
+      "text": "il",
+      "start": 0.549333,
+      "end": 0.615124
+    },
+    {
+      "text": "perimetro",
+      "start": 0.628291,
+      "end": 1.141457
+    },
+    {
+      "text": "che",
+      "start": 1.154625,
+      "end": 1.3125
+    },
+    {
+      "text": "corrisponde",
+      "start": 1.325666,
+      "end": 2.009874
+    },
+    {
+      "text": "davvero",
+      "start": 2.023041,
+      "end": 2.457249
+    },
+    {
+      "text": "al",
+      "start": 2.470375,
+      "end": 2.5625
+    },
+    {
+      "text": "tuo",
+      "start": 2.575666,
+      "end": 2.746707
+    },
+    {
+      "text": "obiettivo",
+      "start": 2.759875,
+      "end": 3.549333
+    },
+    {
+      "text": "Provincia",
+      "start": 4.473666,
+      "end": 5.092082
+    },
+    {
+      "text": "è",
+      "start": 5.10525,
+      "end": 5.157875
+    },
+    {
+      "text": "una",
+      "start": 5.171041,
+      "end": 5.407874
+    },
+    {
+      "text": "selezione",
+      "start": 5.421041,
+      "end": 5.986832
+    },
+    {
+      "text": "più",
+      "start": 6.0,
+      "end": 6.25
+    },
+    {
+      "text": "ampia",
+      "start": 6.263166,
+      "end": 6.763166
+    },
+    {
+      "text": "Comune",
+      "start": 7.684208,
+      "end": 8.078958
+    },
+    {
+      "text": "è",
+      "start": 8.092125,
+      "end": 8.131583
+    },
+    {
+      "text": "utile",
+      "start": 8.14475,
+      "end": 8.5395
+    },
+    {
+      "text": "quando",
+      "start": 8.552625,
+      "end": 8.868416
+    },
+    {
+      "text": "vuoi",
+      "start": 8.881583,
+      "end": 9.171041
+    },
+    {
+      "text": "restringere",
+      "start": 9.184208,
+      "end": 9.828958
+    },
+    {
+      "text": "la",
+      "start": 9.842125,
+      "end": 9.947375
+    },
+    {
+      "text": "ricerca",
+      "start": 9.960541,
+      "end": 10.447374
+    },
+    {
+      "text": "al",
+      "start": 10.460541,
+      "end": 10.539499
+    },
+    {
+      "text": "comune",
+      "start": 10.552625,
+      "end": 10.881583
+    },
+    {
+      "text": "indicato",
+      "start": 10.89475,
+      "end": 11.39475
+    },
+    {
+      "text": "nelle",
+      "start": 11.407875,
+      "end": 11.644708
+    },
+    {
+      "text": "anagrafiche",
+      "start": 11.657875,
+      "end": 12.473666
+    },
+    {
+      "text": "Zona",
+      "start": 13.407875,
+      "end": 13.802625
+    },
+    {
+      "text": "permette",
+      "start": 13.815791,
+      "end": 14.289457
+    },
+    {
+      "text": "di",
+      "start": 14.302625,
+      "end": 14.447375
+    },
+    {
+      "text": "ragionare",
+      "start": 14.460541,
+      "end": 14.999999
+    },
+    {
+      "text": "su",
+      "start": 15.013166,
+      "end": 15.171041
+    },
+    {
+      "text": "un'area",
+      "start": 15.184208,
+      "end": 15.618416
+    },
+    {
+      "text": "geografica",
+      "start": 15.631583,
+      "end": 16.539458
+    },
+    {
+      "text": "Le",
+      "start": 17.460541,
+      "end": 17.684207
+    },
+    {
+      "text": "eventuali",
+      "start": 17.697375,
+      "end": 18.25
+    },
+    {
+      "text": "zone",
+      "start": 18.263166,
+      "end": 18.605291
+    },
+    {
+      "text": "territoriali",
+      "start": 18.618416,
+      "end": 19.434207
+    },
+    {
+      "text": "assegnate",
+      "start": 19.447375,
+      "end": 20.065791
+    },
+    {
+      "text": "dipendono",
+      "start": 20.078958,
+      "end": 20.657916
+    },
+    {
+      "text": "dalla",
+      "start": 20.671041,
+      "end": 20.934207
+    },
+    {
+      "text": "configurazione",
+      "start": 20.947375,
+      "end": 21.881583
+    },
+    {
+      "text": "dell'agente",
+      "start": 21.89475,
+      "end": 22.723708
+    },
+    {
+      "text": "Non",
+      "start": 23.64475,
+      "end": 23.89475
+    },
+    {
+      "text": "confondere",
+      "start": 23.907875,
+      "end": 24.526291
+    },
+    {
+      "text": "il",
+      "start": 24.539458,
+      "end": 24.605249
+    },
+    {
+      "text": "nome",
+      "start": 24.618416,
+      "end": 24.855249
+    },
+    {
+      "text": "di",
+      "start": 24.868416,
+      "end": 24.973666
+    },
+    {
+      "text": "un",
+      "start": 24.986833,
+      "end": 25.092083
+    },
+    {
+      "text": "comune",
+      "start": 25.10525,
+      "end": 25.5
+    },
+    {
+      "text": "con",
+      "start": 25.513166,
+      "end": 25.710541
+    },
+    {
+      "text": "una",
+      "start": 25.723666,
+      "end": 25.881541
+    },
+    {
+      "text": "zona",
+      "start": 25.89475,
+      "end": 26.223708
+    },
+    {
+      "text": "disegnata",
+      "start": 26.236833,
+      "end": 26.815791
+    },
+    {
+      "text": "intorno",
+      "start": 26.828958,
+      "end": 27.236833
+    },
+    {
+      "text": "a",
+      "start": 27.25,
+      "end": 27.263166
+    },
+    {
+      "text": "un",
+      "start": 27.276333,
+      "end": 27.434208
+    },
+    {
+      "text": "centro",
+      "start": 27.447375,
+      "end": 27.960541
+    },
+    {
+      "text": "possono",
+      "start": 28.210541,
+      "end": 28.618416
+    },
+    {
+      "text": "descrivere",
+      "start": 28.631583,
+      "end": 29.210541
+    },
+    {
+      "text": "insiemi",
+      "start": 29.223666,
+      "end": 29.697332
+    },
+    {
+      "text": "di",
+      "start": 29.710541,
+      "end": 29.815791
+    },
+    {
+      "text": "clienti",
+      "start": 29.828958,
+      "end": 30.355291
+    },
+    {
+      "text": "differenti",
+      "start": 30.368416,
+      "end": 31.171041
+    }
+  ]
+}

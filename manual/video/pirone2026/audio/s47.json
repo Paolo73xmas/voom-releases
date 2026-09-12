@@ -1,0 +1,353 @@
+{
+  "id": "s47",
+  "sha256": "88b2509ae8998570a8fcb990b4381081a0a89b92d24411e19645c3306aec44c1",
+  "audioDuration": 36.768,
+  "duration": 38.0,
+  "words": [
+    {
+      "text": "Ricapitoliamo",
+      "start": 0.102625,
+      "end": 1.102625
+    },
+    {
+      "text": "la",
+      "start": 1.115791,
+      "end": 1.247374
+    },
+    {
+      "text": "sequenza",
+      "start": 1.260541,
+      "end": 1.786874
+    },
+    {
+      "text": "ideale",
+      "start": 1.8,
+      "end": 2.392125
+    },
+    {
+      "text": "Prima",
+      "start": 3.315791,
+      "end": 3.618416
+    },
+    {
+      "text": "definisci",
+      "start": 3.631583,
+      "end": 4.223708
+    },
+    {
+      "text": "giorno",
+      "start": 4.236833,
+      "end": 4.763166
+    },
+    {
+      "text": "tempi",
+      "start": 5.092125,
+      "end": 5.592125
+    },
+    {
+      "text": "partenza",
+      "start": 5.802625,
+      "end": 6.473666
+    },
+    {
+      "text": "rientro",
+      "start": 6.789458,
+      "end": 7.236833
+    },
+    {
+      "text": "e",
+      "start": 7.25,
+      "end": 7.302625
+    },
+    {
+      "text": "obiettivo",
+      "start": 7.315791,
+      "end": 7.921041
+    },
+    {
+      "text": "commerciale",
+      "start": 7.934208,
+      "end": 8.815791
+    },
+    {
+      "text": "Poi",
+      "start": 9.75,
+      "end": 10.065791
+    },
+    {
+      "text": "scrivi",
+      "start": 10.078958,
+      "end": 10.434208
+    },
+    {
+      "text": "una",
+      "start": 10.447375,
+      "end": 10.618416
+    },
+    {
+      "text": "richiesta",
+      "start": 10.631583,
+      "end": 11.092124
+    },
+    {
+      "text": "chiara",
+      "start": 11.10525,
+      "end": 11.447375
+    },
+    {
+      "text": "e",
+      "start": 11.460541,
+      "end": 11.526332
+    },
+    {
+      "text": "controlla",
+      "start": 11.539458,
+      "end": 12.118416
+    },
+    {
+      "text": "ciò",
+      "start": 12.131583,
+      "end": 12.394749
+    },
+    {
+      "text": "che",
+      "start": 12.407875,
+      "end": 12.526291
+    },
+    {
+      "text": "è",
+      "start": 12.539458,
+      "end": 12.592083
+    },
+    {
+      "text": "stato",
+      "start": 12.60525,
+      "end": 12.842083
+    },
+    {
+      "text": "interpretato",
+      "start": 12.85525,
+      "end": 13.75
+    },
+    {
+      "text": "Per",
+      "start": 14.671041,
+      "end": 14.894707
+    },
+    {
+      "text": "zone",
+      "start": 14.907875,
+      "end": 15.35525
+    },
+    {
+      "text": "settori",
+      "start": 15.539458,
+      "end": 16.118416
+    },
+    {
+      "text": "e",
+      "start": 16.131583,
+      "end": 16.197374
+    },
+    {
+      "text": "corridoi",
+      "start": 16.210541,
+      "end": 16.855291
+    },
+    {
+      "text": "verifica",
+      "start": 17.157875,
+      "end": 17.684208
+    },
+    {
+      "text": "la",
+      "start": 17.697375,
+      "end": 17.776333
+    },
+    {
+      "text": "mappa",
+      "start": 17.789458,
+      "end": 18.171041
+    },
+    {
+      "text": "e",
+      "start": 18.184208,
+      "end": 18.236833
+    },
+    {
+      "text": "premi",
+      "start": 18.25,
+      "end": 18.565791
+    },
+    {
+      "text": "la",
+      "start": 18.578958,
+      "end": 18.697374
+    },
+    {
+      "text": "conferma",
+      "start": 18.710541,
+      "end": 19.236874
+    },
+    {
+      "text": "esplicita",
+      "start": 19.25,
+      "end": 20.026333
+    },
+    {
+      "text": "Leggi",
+      "start": 20.947375,
+      "end": 21.434208
+    },
+    {
+      "text": "i",
+      "start": 21.447375,
+      "end": 21.5
+    },
+    {
+      "text": "follow-up",
+      "start": 21.513166,
+      "end": 22.065791
+    },
+    {
+      "text": "prima",
+      "start": 22.078958,
+      "end": 22.355291
+    },
+    {
+      "text": "di",
+      "start": 22.368416,
+      "end": 22.473666
+    },
+    {
+      "text": "programmare",
+      "start": 22.486833,
+      "end": 23.157874
+    },
+    {
+      "text": "e",
+      "start": 23.171041,
+      "end": 23.236832
+    },
+    {
+      "text": "controlla",
+      "start": 23.25,
+      "end": 23.868416
+    },
+    {
+      "text": "le",
+      "start": 23.881583,
+      "end": 23.947374
+    },
+    {
+      "text": "esclusioni",
+      "start": 23.960541,
+      "end": 24.592124
+    },
+    {
+      "text": "dei",
+      "start": 24.60525,
+      "end": 24.789458
+    },
+    {
+      "text": "quindici",
+      "start": 24.802625,
+      "end": 25.25
+    },
+    {
+      "text": "giorni",
+      "start": 25.263166,
+      "end": 25.828957
+    },
+    {
+      "text": "Infine",
+      "start": 26.763166,
+      "end": 27.289499
+    },
+    {
+      "text": "esamina",
+      "start": 27.302625,
+      "end": 27.75
+    },
+    {
+      "text": "elenco",
+      "start": 27.763166,
+      "end": 28.315791
+    },
+    {
+      "text": "distanze",
+      "start": 28.60525,
+      "end": 29.289458
+    },
+    {
+      "text": "e",
+      "start": 29.302625,
+      "end": 29.35525
+    },
+    {
+      "text": "orari",
+      "start": 29.368416,
+      "end": 29.736832
+    },
+    {
+      "text": "dell'anteprima",
+      "start": 29.75,
+      "end": 30.671041
+    },
+    {
+      "text": "Solo",
+      "start": 31.60525,
+      "end": 32.0
+    },
+    {
+      "text": "quando",
+      "start": 32.013166,
+      "end": 32.342124
+    },
+    {
+      "text": "tutto",
+      "start": 32.35525,
+      "end": 32.763125
+    },
+    {
+      "text": "è",
+      "start": 32.776333,
+      "end": 32.828958
+    },
+    {
+      "text": "coerente",
+      "start": 32.842125,
+      "end": 33.368458
+    },
+    {
+      "text": "passi",
+      "start": 33.381583,
+      "end": 33.749999
+    },
+    {
+      "text": "a",
+      "start": 33.763166,
+      "end": 33.855291
+    },
+    {
+      "text": "salvataggio",
+      "start": 33.868416,
+      "end": 34.605249
+    },
+    {
+      "text": "e",
+      "start": 34.618416,
+      "end": 34.671041
+    },
+    {
+      "text": "avvio",
+      "start": 34.684208,
+      "end": 35.013166
+    },
+    {
+      "text": "operativo",
+      "start": 35.026333,
+      "end": 35.842124
+    }
+  ]
+}

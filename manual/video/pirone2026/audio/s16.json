@@ -1,0 +1,308 @@
+{
+  "id": "s16",
+  "sha256": "3b7b524cff0ac5102be1cd3400383f40da67e39ee2e08a6fa826ebf891714e8b",
+  "audioDuration": 27.768,
+  "duration": 29.0,
+  "words": [
+    {
+      "text": "Ecco",
+      "start": 0.102625,
+      "end": 0.44475
+    },
+    {
+      "text": "il",
+      "start": 0.457875,
+      "end": 0.523666
+    },
+    {
+      "text": "primo",
+      "start": 0.536833,
+      "end": 0.813166
+    },
+    {
+      "text": "comando",
+      "start": 0.826333,
+      "end": 1.207916
+    },
+    {
+      "text": "importante",
+      "start": 1.221041,
+      "end": 1.918416
+    },
+    {
+      "text": "per",
+      "start": 1.931583,
+      "end": 2.142124
+    },
+    {
+      "text": "confermare",
+      "start": 2.15525,
+      "end": 2.7605
+    },
+    {
+      "text": "la",
+      "start": 2.773666,
+      "end": 2.905249
+    },
+    {
+      "text": "zona",
+      "start": 2.918416,
+      "end": 3.444749
+    },
+    {
+      "text": "Scorri",
+      "start": 4.367125,
+      "end": 4.827666
+    },
+    {
+      "text": "fino",
+      "start": 4.840791,
+      "end": 5.064457
+    },
+    {
+      "text": "alla",
+      "start": 5.077625,
+      "end": 5.2355
+    },
+    {
+      "text": "sezione",
+      "start": 5.248666,
+      "end": 5.748666
+    },
+    {
+      "text": "Zone",
+      "start": 5.761833,
+      "end": 6.117083
+    },
+    {
+      "text": "e",
+      "start": 6.13025,
+      "end": 6.182875
+    },
+    {
+      "text": "corridoi",
+      "start": 6.196041,
+      "end": 6.853916
+    },
+    {
+      "text": "in",
+      "start": 6.998666,
+      "end": 7.156541
+    },
+    {
+      "text": "quest'ordine",
+      "start": 7.16975,
+      "end": 7.932916
+    },
+    {
+      "text": "e",
+      "start": 8.156583,
+      "end": 8.314458
+    },
+    {
+      "text": "premi",
+      "start": 8.327625,
+      "end": 8.656583
+    },
+    {
+      "text": "Verifica",
+      "start": 8.66975,
+      "end": 9.182916
+    },
+    {
+      "text": "zone",
+      "start": 9.196041,
+      "end": 9.577624
+    },
+    {
+      "text": "e",
+      "start": 9.590791,
+      "end": 9.630249
+    },
+    {
+      "text": "mostra",
+      "start": 9.643416,
+      "end": 10.051291
+    },
+    {
+      "text": "la",
+      "start": 10.064458,
+      "end": 10.156583
+    },
+    {
+      "text": "mappa",
+      "start": 10.16975,
+      "end": 10.682916
+    },
+    {
+      "text": "Se",
+      "start": 11.618416,
+      "end": 11.842082
+    },
+    {
+      "text": "una",
+      "start": 11.85525,
+      "end": 12.065791
+    },
+    {
+      "text": "località",
+      "start": 12.078958,
+      "end": 12.592124
+    },
+    {
+      "text": "ha",
+      "start": 12.60525,
+      "end": 12.671041
+    },
+    {
+      "text": "più",
+      "start": 12.684208,
+      "end": 12.855249
+    },
+    {
+      "text": "corrispondenze",
+      "start": 12.868416,
+      "end": 13.907874
+    },
+    {
+      "text": "scegli",
+      "start": 14.157875,
+      "end": 14.618416
+    },
+    {
+      "text": "quella",
+      "start": 14.631583,
+      "end": 14.921041
+    },
+    {
+      "text": "giusta",
+      "start": 14.934208,
+      "end": 15.342083
+    },
+    {
+      "text": "e",
+      "start": 15.35525,
+      "end": 15.407875
+    },
+    {
+      "text": "ripeti",
+      "start": 15.421041,
+      "end": 15.815791
+    },
+    {
+      "text": "la",
+      "start": 15.828958,
+      "end": 15.921083
+    },
+    {
+      "text": "verifica",
+      "start": 15.934208,
+      "end": 16.631583
+    },
+    {
+      "text": "Scrivere",
+      "start": 17.551333,
+      "end": 18.117124
+    },
+    {
+      "text": "Milano",
+      "start": 18.13025,
+      "end": 18.551291
+    },
+    {
+      "text": "o",
+      "start": 18.564458,
+      "end": 18.630249
+    },
+    {
+      "text": "selezionare",
+      "start": 18.643416,
+      "end": 19.380249
+    },
+    {
+      "text": "Nord-est",
+      "start": 19.393416,
+      "end": 20.038166
+    },
+    {
+      "text": "non",
+      "start": 20.051333,
+      "end": 20.261874
+    },
+    {
+      "text": "completa",
+      "start": 20.275,
+      "end": 20.775
+    },
+    {
+      "text": "ancora",
+      "start": 20.788166,
+      "end": 21.130291
+    },
+    {
+      "text": "la",
+      "start": 21.143416,
+      "end": 21.248666
+    },
+    {
+      "text": "conferma",
+      "start": 21.261833,
+      "end": 21.946041
+    },
+    {
+      "text": "prima",
+      "start": 22.197375,
+      "end": 22.486833
+    },
+    {
+      "text": "l'app",
+      "start": 22.5,
+      "end": 22.776333
+    },
+    {
+      "text": "deve",
+      "start": 22.789458,
+      "end": 23.065791
+    },
+    {
+      "text": "preparare",
+      "start": 23.078958,
+      "end": 23.618416
+    },
+    {
+      "text": "e",
+      "start": 23.631583,
+      "end": 23.671041
+    },
+    {
+      "text": "mostrare",
+      "start": 23.684208,
+      "end": 24.263166
+    },
+    {
+      "text": "l'area",
+      "start": 24.276333,
+      "end": 24.657916
+    },
+    {
+      "text": "geografica",
+      "start": 24.671041,
+      "end": 25.407874
+    },
+    {
+      "text": "che",
+      "start": 25.421041,
+      "end": 25.578916
+    },
+    {
+      "text": "verrà",
+      "start": 25.592125,
+      "end": 25.921083
+    },
+    {
+      "text": "utilizzata",
+      "start": 25.934208,
+      "end": 26.842083
+    }
+  ]
+}

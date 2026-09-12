@@ -1,0 +1,378 @@
+{
+  "id": "s42",
+  "sha256": "15b2bfd480ac8a3865a7a4a5c361461b13812ba8f2769a901d3c8d04b1f0d7ee",
+  "audioDuration": 34.008,
+  "duration": 35.24,
+  "words": [
+    {
+      "text": "Se",
+      "start": 0.102625,
+      "end": 0.339458
+    },
+    {
+      "text": "trovi",
+      "start": 0.352625,
+      "end": 0.615791
+    },
+    {
+      "text": "un",
+      "start": 0.628958,
+      "end": 0.734208
+    },
+    {
+      "text": "cliente",
+      "start": 0.747375,
+      "end": 1.234208
+    },
+    {
+      "text": "sempre",
+      "start": 1.247375,
+      "end": 1.642125
+    },
+    {
+      "text": "chiuso",
+      "start": 1.65525,
+      "end": 2.207875
+    },
+    {
+      "text": "descrivi",
+      "start": 2.44475,
+      "end": 3.010541
+    },
+    {
+      "text": "i",
+      "start": 3.023666,
+      "end": 3.089457
+    },
+    {
+      "text": "passaggi",
+      "start": 3.102625,
+      "end": 3.681583
+    },
+    {
+      "text": "che",
+      "start": 3.69475,
+      "end": 3.852625
+    },
+    {
+      "text": "hai",
+      "start": 3.865791,
+      "end": 4.010541
+    },
+    {
+      "text": "effettuato",
+      "start": 4.023666,
+      "end": 4.799999
+    },
+    {
+      "text": "e",
+      "start": 4.813166,
+      "end": 4.971041
+    },
+    {
+      "text": "se",
+      "start": 5.181583,
+      "end": 5.378958
+    },
+    {
+      "text": "possibile",
+      "start": 5.392125,
+      "end": 6.0895
+    },
+    {
+      "text": "i",
+      "start": 6.326333,
+      "end": 6.457916
+    },
+    {
+      "text": "giorni",
+      "start": 6.471041,
+      "end": 6.918416
+    },
+    {
+      "text": "e",
+      "start": 6.931583,
+      "end": 6.971041
+    },
+    {
+      "text": "gli",
+      "start": 6.984208,
+      "end": 7.115791
+    },
+    {
+      "text": "orari",
+      "start": 7.128958,
+      "end": 7.655291
+    },
+    {
+      "text": "Una",
+      "start": 8.592125,
+      "end": 8.842125
+    },
+    {
+      "text": "porta",
+      "start": 8.85525,
+      "end": 9.144708
+    },
+    {
+      "text": "chiusa",
+      "start": 9.157875,
+      "end": 9.592083
+    },
+    {
+      "text": "durante",
+      "start": 9.60525,
+      "end": 10.052625
+    },
+    {
+      "text": "più",
+      "start": 10.065791,
+      "end": 10.236832
+    },
+    {
+      "text": "visite",
+      "start": 10.25,
+      "end": 10.710541
+    },
+    {
+      "text": "non",
+      "start": 10.723666,
+      "end": 10.881541
+    },
+    {
+      "text": "dimostra",
+      "start": 10.89475,
+      "end": 11.39475
+    },
+    {
+      "text": "automaticamente",
+      "start": 11.407875,
+      "end": 12.342083
+    },
+    {
+      "text": "una",
+      "start": 12.35525,
+      "end": 12.578916
+    },
+    {
+      "text": "cessazione",
+      "start": 12.592125,
+      "end": 13.263166
+    },
+    {
+      "text": "definitiva",
+      "start": 13.276333,
+      "end": 13.934208
+    },
+    {
+      "text": "dell'attività",
+      "start": 13.947375,
+      "end": 14.736833
+    },
+    {
+      "text": "Se",
+      "start": 15.657875,
+      "end": 15.881541
+    },
+    {
+      "text": "non",
+      "start": 15.89475,
+      "end": 16.026333
+    },
+    {
+      "text": "hai",
+      "start": 16.039458,
+      "end": 16.171041
+    },
+    {
+      "text": "conferme",
+      "start": 16.184208,
+      "end": 16.934208
+    },
+    {
+      "text": "usa",
+      "start": 17.197375,
+      "end": 17.486833
+    },
+    {
+      "text": "una",
+      "start": 17.5,
+      "end": 17.684208
+    },
+    {
+      "text": "descrizione",
+      "start": 17.697375,
+      "end": 18.407916
+    },
+    {
+      "text": "prudente",
+      "start": 18.421041,
+      "end": 19.131582
+    },
+    {
+      "text": "per",
+      "start": 19.342125,
+      "end": 19.552666
+    },
+    {
+      "text": "esempio",
+      "start": 19.565791,
+      "end": 20.118416
+    },
+    {
+      "text": "trovata",
+      "start": 20.381583,
+      "end": 20.802624
+    },
+    {
+      "text": "chiusa",
+      "start": 20.815791,
+      "end": 21.236832
+    },
+    {
+      "text": "durante",
+      "start": 21.25,
+      "end": 21.684208
+    },
+    {
+      "text": "più",
+      "start": 21.697375,
+      "end": 21.868416
+    },
+    {
+      "text": "passaggi",
+      "start": 21.881583,
+      "end": 22.605249
+    },
+    {
+      "text": "verificare",
+      "start": 22.881583,
+      "end": 23.644749
+    },
+    {
+      "text": "gli",
+      "start": 23.657875,
+      "end": 23.789458
+    },
+    {
+      "text": "orari",
+      "start": 23.802625,
+      "end": 24.236833
+    },
+    {
+      "text": "chiusura",
+      "start": 24.473666,
+      "end": 24.973666
+    },
+    {
+      "text": "definitiva",
+      "start": 24.986833,
+      "end": 25.644708
+    },
+    {
+      "text": "non",
+      "start": 25.657875,
+      "end": 25.828916
+    },
+    {
+      "text": "accertata",
+      "start": 25.842125,
+      "end": 26.671083
+    },
+    {
+      "text": "In",
+      "start": 27.592125,
+      "end": 27.7895
+    },
+    {
+      "text": "questo",
+      "start": 27.802625,
+      "end": 28.118416
+    },
+    {
+      "text": "modo",
+      "start": 28.131583,
+      "end": 28.421041
+    },
+    {
+      "text": "chi",
+      "start": 28.434208,
+      "end": 28.592083
+    },
+    {
+      "text": "esamina",
+      "start": 28.60525,
+      "end": 29.065791
+    },
+    {
+      "text": "la",
+      "start": 29.078958,
+      "end": 29.171083
+    },
+    {
+      "text": "richiesta",
+      "start": 29.184208,
+      "end": 29.723666
+    },
+    {
+      "text": "sa",
+      "start": 29.736833,
+      "end": 29.881583
+    },
+    {
+      "text": "che",
+      "start": 29.89475,
+      "end": 30.052625
+    },
+    {
+      "text": "cosa",
+      "start": 30.065791,
+      "end": 30.368416
+    },
+    {
+      "text": "controllare",
+      "start": 30.381583,
+      "end": 31.131583
+    },
+    {
+      "text": "e",
+      "start": 31.14475,
+      "end": 31.184208
+    },
+    {
+      "text": "non",
+      "start": 31.197375,
+      "end": 31.39475
+    },
+    {
+      "text": "scambia",
+      "start": 31.407875,
+      "end": 31.776291
+    },
+    {
+      "text": "un",
+      "start": 31.789458,
+      "end": 31.907874
+    },
+    {
+      "text": "dubbio",
+      "start": 31.921041,
+      "end": 32.249999
+    },
+    {
+      "text": "per",
+      "start": 32.263166,
+      "end": 32.394749
+    },
+    {
+      "text": "un",
+      "start": 32.407875,
+      "end": 32.5
+    },
+    {
+      "text": "fatto",
+      "start": 32.513166,
+      "end": 33.078957
+    }
+  ]
+}

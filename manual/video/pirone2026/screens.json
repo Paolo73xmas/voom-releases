@@ -1,0 +1,701 @@
+{
+  "01_ai_home": {
+    "file": "screens/01_ai_home.png",
+    "focus": {
+      "x": 12,
+      "y": 119,
+      "width": 366,
+      "height": 83
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "planning_debug_error": {
+    "file": "screens/planning_debug_error.png",
+    "focus": null,
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "02_date": {
+    "file": "screens/02_date.png",
+    "focus": {
+      "x": 188.390625,
+      "y": 289,
+      "width": 20.546875,
+      "height": 15
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "03_day_type": {
+    "file": "screens/03_day_type.png",
+    "focus": {
+      "x": 44,
+      "y": 591,
+      "width": 64.375,
+      "height": 15
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "04_start_return": {
+    "file": "screens/04_start_return.png",
+    "focus": {
+      "x": 97.265625,
+      "y": 475,
+      "width": 77.78125,
+      "height": 31
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "05_area_modes": {
+    "file": "screens/05_area_modes.png",
+    "focus": {
+      "x": 222.640625,
+      "y": 579,
+      "width": 77.328125,
+      "height": 31
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "06_chip_one": {
+    "file": "screens/06_chip_one.png",
+    "focus": {
+      "x": 134.78125,
+      "y": 579,
+      "width": 80.859375,
+      "height": 31
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "08_comune": {
+    "file": "screens/08_comune.png",
+    "focus": {
+      "x": 222.640625,
+      "y": 579,
+      "width": 77.328125,
+      "height": 31
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "09_prompt": {
+    "file": "screens/09_prompt.png",
+    "focus": {
+      "x": 18,
+      "y": 690,
+      "width": 292,
+      "height": 80
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "10_review": {
+    "file": "screens/10_review.png",
+    "focus": {
+      "x": 18,
+      "y": 393.40625,
+      "width": 354,
+      "height": 124
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "07_chip_multiple": {
+    "file": "screens/07_chip_multiple.png",
+    "focus": {
+      "x": 18,
+      "y": 484.40625,
+      "width": 354,
+      "height": 16
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "11_start_confirm": {
+    "file": "screens/11_start_confirm.png",
+    "focus": {
+      "x": 18,
+      "y": 360.40625,
+      "width": 354,
+      "height": 263
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "12_start_confirmed": {
+    "file": "screens/12_start_confirmed.png",
+    "focus": {
+      "x": 31,
+      "y": 620.40625,
+      "width": 328,
+      "height": 18
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "13_compass": {
+    "file": "screens/13_compass.png",
+    "focus": {
+      "x": 211.03125,
+      "y": 470.40625,
+      "width": 84.046875,
+      "height": 44
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "14_direction_north": {
+    "file": "screens/14_direction_north.png",
+    "focus": {
+      "x": 145.6875,
+      "y": 470.40625,
+      "width": 57.34375,
+      "height": 44
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "15_direction_northeast": {
+    "file": "screens/15_direction_northeast.png",
+    "focus": {
+      "x": 44,
+      "y": 656.40625,
+      "width": 302,
+      "height": 46
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "16_before_verify": {
+    "file": "screens/16_before_verify.png",
+    "focus": {
+      "x": 31,
+      "y": 470.40625,
+      "width": 328,
+      "height": 44
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "17_zone_map": {
+    "file": "screens/17_zone_map.png",
+    "focus": {
+      "x": 31,
+      "y": 474.40625,
+      "width": 328,
+      "height": 36
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "18_zone_confirm_button": {
+    "file": "screens/18_zone_confirm_button.png",
+    "focus": {
+      "x": 31,
+      "y": 510.40625,
+      "width": 328,
+      "height": 44
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "19_zone_confirmed": {
+    "file": "screens/19_zone_confirmed.png",
+    "focus": {
+      "x": 31,
+      "y": 510.40625,
+      "width": 328,
+      "height": 44
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "20_changed_requires_confirm": {
+    "file": "screens/20_changed_requires_confirm.png",
+    "focus": {
+      "x": 31,
+      "y": 470.40625,
+      "width": 328,
+      "height": 44
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "21_multiple_towns": {
+    "file": "screens/21_multiple_towns.png",
+    "focus": {
+      "x": 44,
+      "y": 482.40625,
+      "width": 302,
+      "height": 20
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "22_corridor_width": {
+    "file": "screens/22_corridor_width.png",
+    "focus": {
+      "x": 31,
+      "y": 469.40625,
+      "width": 328,
+      "height": 46
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "23_corridor_map": {
+    "file": "screens/23_corridor_map.png",
+    "focus": {
+      "x": 31,
+      "y": 465.40625,
+      "width": 328,
+      "height": 54
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "24_corridor_confirmed": {
+    "file": "screens/24_corridor_confirmed.png",
+    "focus": {
+      "x": 31,
+      "y": 519.40625,
+      "width": 328,
+      "height": 44
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "25_generate_review": {
+    "file": "screens/25_generate_review.png",
+    "focus": {
+      "x": 18,
+      "y": 781.40625,
+      "width": 354,
+      "height": 51
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "26_plan_overview": {
+    "file": "screens/26_plan_overview.png",
+    "focus": {
+      "x": 301.171875,
+      "y": 126,
+      "width": 76.828125,
+      "height": 34
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "27_plan_warnings": {
+    "file": "screens/27_plan_warnings.png",
+    "focus": {
+      "x": 45,
+      "y": 800,
+      "width": 322,
+      "height": 34
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "28_edit_entry": {
+    "file": "screens/28_edit_entry.png",
+    "focus": {
+      "x": 12,
+      "y": 168,
+      "width": 96.78125,
+      "height": 34
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "29_edit_preview": {
+    "file": "screens/29_edit_preview.png",
+    "focus": null,
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "30_calendar_entry": {
+    "file": "screens/30_calendar_entry.png",
+    "focus": {
+      "x": 276.4375,
+      "y": 76,
+      "width": 101.5625,
+      "height": 44
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "31_calendar_free": {
+    "file": "screens/31_calendar_free.png",
+    "focus": {
+      "x": 20,
+      "y": 221,
+      "width": 350,
+      "height": 48
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "32_calendar_fields": {
+    "file": "screens/32_calendar_fields.png",
+    "focus": {
+      "x": 20,
+      "y": 696,
+      "width": 350,
+      "height": 48
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "33_calendar_customer": {
+    "file": "screens/33_calendar_customer.png",
+    "focus": {
+      "x": 36,
+      "y": 200,
+      "width": 318,
+      "height": 17
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "34_calendar_save_not_pressed": {
+    "file": "screens/34_calendar_save_not_pressed.png",
+    "focus": {
+      "x": 16,
+      "y": 776,
+      "width": 358,
+      "height": 52
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "35_followup_reminder": {
+    "file": "screens/35_followup_reminder.png",
+    "focus": {
+      "x": 23,
+      "y": 776,
+      "width": 344,
+      "height": 68
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "calendar_debug_error": {
+    "file": "screens/calendar_debug_error.png",
+    "focus": null,
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "36_followup_ignored": {
+    "file": "screens/36_followup_ignored.png",
+    "focus": {
+      "x": 23,
+      "y": 776,
+      "width": 344,
+      "height": 68
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "37_followup_considered": {
+    "file": "screens/37_followup_considered.png",
+    "focus": {
+      "x": 23,
+      "y": 776,
+      "width": 344,
+      "height": 68
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "38_free_reminder": {
+    "file": "screens/38_free_reminder.png",
+    "focus": {
+      "x": 29,
+      "y": 474,
+      "width": 332,
+      "height": 19
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "39_free_place_confirmed": {
+    "file": "screens/39_free_place_confirmed.png",
+    "focus": {
+      "x": 29,
+      "y": 608,
+      "width": 332,
+      "height": 38
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "40_live_demo": {
+    "file": "screens/40_live_demo.png",
+    "focus": {
+      "x": 152.875,
+      "y": 497.5,
+      "width": 112.234375,
+      "height": 18
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "41_verification_types": {
+    "file": "screens/41_verification_types.png",
+    "focus": {
+      "x": 20,
+      "y": 403.640625,
+      "width": 350,
+      "height": 90
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "42_often_closed": {
+    "file": "screens/42_often_closed.png",
+    "focus": {
+      "x": 20,
+      "y": 670.640625,
+      "width": 350,
+      "height": 95
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "43_definitively_closed": {
+    "file": "screens/43_definitively_closed.png",
+    "focus": {
+      "x": 20,
+      "y": 344.640625,
+      "width": 350,
+      "height": 90
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "44_moved": {
+    "file": "screens/44_moved.png",
+    "focus": {
+      "x": 20,
+      "y": 448.640625,
+      "width": 350,
+      "height": 71
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "45_gps_optional": {
+    "file": "screens/45_gps_optional.png",
+    "focus": {
+      "x": 48,
+      "y": 687.640625,
+      "width": 322,
+      "height": 57
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "46_verification_confirm_not_pressed": {
+    "file": "screens/46_verification_confirm_not_pressed.png",
+    "focus": {
+      "x": 20,
+      "y": 470,
+      "width": 350,
+      "height": 201
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "47_verification_send_button": {
+    "file": "screens/47_verification_send_button.png",
+    "focus": {
+      "x": 116.5625,
+      "y": 780,
+      "width": 253.4375,
+      "height": 48
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "48_stop_unchanged": {
+    "file": "screens/48_stop_unchanged.png",
+    "focus": {
+      "x": 152.875,
+      "y": 497.5,
+      "width": 112.234375,
+      "height": 18
+    },
+    "simulation": true,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "25a_multi_prompt": {
+    "file": "screens/25a_multi_prompt.png",
+    "focus": {
+      "x": 18,
+      "y": 690,
+      "width": 292,
+      "height": 80
+    },
+    "simulation": false,
+    "viewport": [
+      390,
+      844
+    ]
+  }
+}

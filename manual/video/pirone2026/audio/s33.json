@@ -1,0 +1,368 @@
+{
+  "id": "s33",
+  "sha256": "50bc0578daca08a4f2840d6147c2e04fa22c8fada161830912d3b522cd0d6fad",
+  "audioDuration": 32.832,
+  "duration": 34.04,
+  "words": [
+    {
+      "text": "Per",
+      "start": 0.102625,
+      "end": 0.286833
+    },
+    {
+      "text": "una",
+      "start": 0.3,
+      "end": 0.497375
+    },
+    {
+      "text": "riunione",
+      "start": 0.510541,
+      "end": 0.971082
+    },
+    {
+      "text": "organizzativa",
+      "start": 0.984208,
+      "end": 1.865791
+    },
+    {
+      "text": "una",
+      "start": 2.115791,
+      "end": 2.339457
+    },
+    {
+      "text": "pausa",
+      "start": 2.352625,
+      "end": 2.707875
+    },
+    {
+      "text": "operativa",
+      "start": 2.721041,
+      "end": 3.339457
+    },
+    {
+      "text": "o",
+      "start": 3.352625,
+      "end": 3.392083
+    },
+    {
+      "text": "un",
+      "start": 3.40525,
+      "end": 3.563125
+    },
+    {
+      "text": "altro",
+      "start": 3.576333,
+      "end": 3.826333
+    },
+    {
+      "text": "impegno",
+      "start": 3.839458,
+      "end": 4.313124
+    },
+    {
+      "text": "non",
+      "start": 4.326333,
+      "end": 4.471083
+    },
+    {
+      "text": "legato",
+      "start": 4.484208,
+      "end": 4.865791
+    },
+    {
+      "text": "a",
+      "start": 4.878958,
+      "end": 4.892124
+    },
+    {
+      "text": "un",
+      "start": 4.90525,
+      "end": 5.0105
+    },
+    {
+      "text": "cliente",
+      "start": 5.023666,
+      "end": 5.655249
+    },
+    {
+      "text": "scegli",
+      "start": 5.933541,
+      "end": 6.380916
+    },
+    {
+      "text": "Impegno",
+      "start": 6.394083,
+      "end": 6.828291
+    },
+    {
+      "text": "libero",
+      "start": 6.841458,
+      "end": 7.341458
+    },
+    {
+      "text": "Inserisci",
+      "start": 8.263166,
+      "end": 8.934207
+    },
+    {
+      "text": "un",
+      "start": 8.947375,
+      "end": 9.052625
+    },
+    {
+      "text": "titolo",
+      "start": 9.065791,
+      "end": 9.473666
+    },
+    {
+      "text": "che",
+      "start": 9.486833,
+      "end": 9.644708
+    },
+    {
+      "text": "ti",
+      "start": 9.657875,
+      "end": 9.789458
+    },
+    {
+      "text": "permetta",
+      "start": 9.802625,
+      "end": 10.302625
+    },
+    {
+      "text": "di",
+      "start": 10.315791,
+      "end": 10.434207
+    },
+    {
+      "text": "riconoscerlo",
+      "start": 10.447375,
+      "end": 11.368416
+    },
+    {
+      "text": "Il",
+      "start": 12.289458,
+      "end": 12.486833
+    },
+    {
+      "text": "luogo",
+      "start": 12.5,
+      "end": 12.842125
+    },
+    {
+      "text": "è",
+      "start": 12.85525,
+      "end": 12.894708
+    },
+    {
+      "text": "facoltativo",
+      "start": 12.907875,
+      "end": 13.789458
+    },
+    {
+      "text": "un",
+      "start": 14.013166,
+      "end": 14.144749
+    },
+    {
+      "text": "impegno",
+      "start": 14.157875,
+      "end": 14.657875
+    },
+    {
+      "text": "senza",
+      "start": 14.671041,
+      "end": 15.026291
+    },
+    {
+      "text": "indirizzo",
+      "start": 15.039458,
+      "end": 15.605249
+    },
+    {
+      "text": "può",
+      "start": 15.618416,
+      "end": 15.789457
+    },
+    {
+      "text": "comunque",
+      "start": 15.802625,
+      "end": 16.263166
+    },
+    {
+      "text": "essere",
+      "start": 16.276333,
+      "end": 16.618458
+    },
+    {
+      "text": "mostrato",
+      "start": 16.631583,
+      "end": 17.223708
+    },
+    {
+      "text": "come",
+      "start": 17.236833,
+      "end": 17.473666
+    },
+    {
+      "text": "promemoria",
+      "start": 17.486833,
+      "end": 18.263166
+    },
+    {
+      "text": "Se",
+      "start": 19.184208,
+      "end": 19.394749
+    },
+    {
+      "text": "invece",
+      "start": 19.407875,
+      "end": 19.81575
+    },
+    {
+      "text": "vuoi",
+      "start": 19.828958,
+      "end": 20.065791
+    },
+    {
+      "text": "trasformarlo",
+      "start": 20.078958,
+      "end": 20.802624
+    },
+    {
+      "text": "in",
+      "start": 20.815791,
+      "end": 20.921041
+    },
+    {
+      "text": "una",
+      "start": 20.934208,
+      "end": 21.092083
+    },
+    {
+      "text": "tappa",
+      "start": 21.10525,
+      "end": 21.434208
+    },
+    {
+      "text": "geografica",
+      "start": 21.447375,
+      "end": 22.184208
+    },
+    {
+      "text": "del",
+      "start": 22.197375,
+      "end": 22.368416
+    },
+    {
+      "text": "giro",
+      "start": 22.381583,
+      "end": 22.815791
+    },
+    {
+      "text": "serve",
+      "start": 22.934208,
+      "end": 23.289458
+    },
+    {
+      "text": "un",
+      "start": 23.302625,
+      "end": 23.407875
+    },
+    {
+      "text": "luogo",
+      "start": 23.421041,
+      "end": 23.789457
+    },
+    {
+      "text": "da",
+      "start": 23.802625,
+      "end": 23.947375
+    },
+    {
+      "text": "cercare",
+      "start": 23.960541,
+      "end": 24.460541
+    },
+    {
+      "text": "e",
+      "start": 24.473666,
+      "end": 24.526291
+    },
+    {
+      "text": "confermare",
+      "start": 24.539458,
+      "end": 25.368416
+    },
+    {
+      "text": "Evita",
+      "start": 26.302625,
+      "end": 26.7105
+    },
+    {
+      "text": "titoli",
+      "start": 26.723666,
+      "end": 27.092082
+    },
+    {
+      "text": "generici",
+      "start": 27.10525,
+      "end": 27.7105
+    },
+    {
+      "text": "come",
+      "start": 27.723666,
+      "end": 27.934207
+    },
+    {
+      "text": "appuntamento",
+      "start": 27.947375,
+      "end": 28.815791
+    },
+    {
+      "text": "che",
+      "start": 28.973666,
+      "end": 29.131541
+    },
+    {
+      "text": "tra",
+      "start": 29.14475,
+      "end": 29.328958
+    },
+    {
+      "text": "qualche",
+      "start": 29.342125,
+      "end": 29.697375
+    },
+    {
+      "text": "giorno",
+      "start": 29.710541,
+      "end": 30.092124
+    },
+    {
+      "text": "potrebbero",
+      "start": 30.10525,
+      "end": 30.644708
+    },
+    {
+      "text": "non",
+      "start": 30.657875,
+      "end": 30.868416
+    },
+    {
+      "text": "dirti",
+      "start": 30.881583,
+      "end": 31.223708
+    },
+    {
+      "text": "più",
+      "start": 31.236833,
+      "end": 31.381583
+    },
+    {
+      "text": "nulla",
+      "start": 31.39475,
+      "end": 31.89475
+    }
+  ]
+}

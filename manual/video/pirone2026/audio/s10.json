@@ -1,0 +1,338 @@
+{
+  "id": "s10",
+  "sha256": "0a4a018e397ce51f4e70d5bd55dd467ae22b38d070ad0f2f1bac4a73c4309fc6",
+  "audioDuration": 29.376,
+  "duration": 30.6,
+  "words": [
+    {
+      "text": "Dopo",
+      "start": 0.102625,
+      "end": 0.457875
+    },
+    {
+      "text": "aver",
+      "start": 0.471041,
+      "end": 0.694707
+    },
+    {
+      "text": "premuto",
+      "start": 0.707875,
+      "end": 1.102625
+    },
+    {
+      "text": "Interpreta",
+      "start": 1.115791,
+      "end": 1.878957
+    },
+    {
+      "text": "fermati",
+      "start": 2.19475,
+      "end": 2.69475
+    },
+    {
+      "text": "a",
+      "start": 2.707875,
+      "end": 2.747333
+    },
+    {
+      "text": "leggere",
+      "start": 2.760541,
+      "end": 3.326332
+    },
+    {
+      "text": "L'interpretazione",
+      "start": 4.263166,
+      "end": 5.328957
+    },
+    {
+      "text": "non",
+      "start": 5.342125,
+      "end": 5.513166
+    },
+    {
+      "text": "è",
+      "start": 5.526333,
+      "end": 5.578958
+    },
+    {
+      "text": "una",
+      "start": 5.592125,
+      "end": 5.802666
+    },
+    {
+      "text": "conferma",
+      "start": 5.815791,
+      "end": 6.355249
+    },
+    {
+      "text": "automatica",
+      "start": 6.368416,
+      "end": 7.052624
+    },
+    {
+      "text": "di",
+      "start": 7.065791,
+      "end": 7.184207
+    },
+    {
+      "text": "ciò",
+      "start": 7.197375,
+      "end": 7.460541
+    },
+    {
+      "text": "che",
+      "start": 7.473666,
+      "end": 7.605249
+    },
+    {
+      "text": "volevi",
+      "start": 7.618416,
+      "end": 7.947374
+    },
+    {
+      "text": "dire",
+      "start": 7.960541,
+      "end": 8.368416
+    },
+    {
+      "text": "Controlla",
+      "start": 9.302625,
+      "end": 9.842083
+    },
+    {
+      "text": "la",
+      "start": 9.85525,
+      "end": 9.9605
+    },
+    {
+      "text": "data",
+      "start": 9.973666,
+      "end": 10.368416
+    },
+    {
+      "text": "l'ora",
+      "start": 10.684208,
+      "end": 10.973666
+    },
+    {
+      "text": "iniziale",
+      "start": 10.986833,
+      "end": 11.736833
+    },
+    {
+      "text": "quella",
+      "start": 11.85525,
+      "end": 12.157875
+    },
+    {
+      "text": "finale",
+      "start": 12.171041,
+      "end": 12.644707
+    },
+    {
+      "text": "e",
+      "start": 12.657875,
+      "end": 12.684208
+    },
+    {
+      "text": "il",
+      "start": 12.697375,
+      "end": 12.802625
+    },
+    {
+      "text": "numero",
+      "start": 12.815791,
+      "end": 13.131582
+    },
+    {
+      "text": "desiderato",
+      "start": 13.14475,
+      "end": 13.828958
+    },
+    {
+      "text": "di",
+      "start": 13.842125,
+      "end": 13.947375
+    },
+    {
+      "text": "visite",
+      "start": 13.960541,
+      "end": 14.552666
+    },
+    {
+      "text": "Se",
+      "start": 15.473666,
+      "end": 15.697332
+    },
+    {
+      "text": "una",
+      "start": 15.710541,
+      "end": 15.907916
+    },
+    {
+      "text": "parola",
+      "start": 15.921041,
+      "end": 16.276291
+    },
+    {
+      "text": "è",
+      "start": 16.289458,
+      "end": 16.342083
+    },
+    {
+      "text": "stata",
+      "start": 16.35525,
+      "end": 16.631583
+    },
+    {
+      "text": "capita",
+      "start": 16.64475,
+      "end": 17.092125
+    },
+    {
+      "text": "male",
+      "start": 17.10525,
+      "end": 17.513125
+    },
+    {
+      "text": "correggi",
+      "start": 17.657875,
+      "end": 18.236833
+    },
+    {
+      "text": "il",
+      "start": 18.25,
+      "end": 18.315791
+    },
+    {
+      "text": "campo",
+      "start": 18.328958,
+      "end": 18.697374
+    },
+    {
+      "text": "o",
+      "start": 18.710541,
+      "end": 18.749999
+    },
+    {
+      "text": "riformula",
+      "start": 18.763166,
+      "end": 19.342124
+    },
+    {
+      "text": "la",
+      "start": 19.35525,
+      "end": 19.447375
+    },
+    {
+      "text": "richiesta",
+      "start": 19.460541,
+      "end": 20.144749
+    },
+    {
+      "text": "È",
+      "start": 21.065791,
+      "end": 21.223666
+    },
+    {
+      "text": "molto",
+      "start": 21.236833,
+      "end": 21.592083
+    },
+    {
+      "text": "più",
+      "start": 21.60525,
+      "end": 21.75
+    },
+    {
+      "text": "semplice",
+      "start": 21.763166,
+      "end": 22.342124
+    },
+    {
+      "text": "sistemare",
+      "start": 22.35525,
+      "end": 22.881583
+    },
+    {
+      "text": "un",
+      "start": 22.89475,
+      "end": 23.026333
+    },
+    {
+      "text": "vincolo",
+      "start": 23.039458,
+      "end": 23.421041
+    },
+    {
+      "text": "in",
+      "start": 23.434208,
+      "end": 23.526333
+    },
+    {
+      "text": "questo",
+      "start": 23.539458,
+      "end": 23.828916
+    },
+    {
+      "text": "momento",
+      "start": 23.842125,
+      "end": 24.276333
+    },
+    {
+      "text": "che",
+      "start": 24.289458,
+      "end": 24.447333
+    },
+    {
+      "text": "cercare",
+      "start": 24.460541,
+      "end": 24.934207
+    },
+    {
+      "text": "di",
+      "start": 24.947375,
+      "end": 25.052625
+    },
+    {
+      "text": "correggere",
+      "start": 25.065791,
+      "end": 25.684207
+    },
+    {
+      "text": "un",
+      "start": 25.697375,
+      "end": 25.85525
+    },
+    {
+      "text": "giro",
+      "start": 25.868416,
+      "end": 26.144749
+    },
+    {
+      "text": "nato",
+      "start": 26.157875,
+      "end": 26.447333
+    },
+    {
+      "text": "da",
+      "start": 26.460541,
+      "end": 26.578957
+    },
+    {
+      "text": "una",
+      "start": 26.592125,
+      "end": 27.013166
+    },
+    {
+      "text": "richiesta",
+      "start": 27.197375,
+      "end": 27.828958
+    },
+    {
+      "text": "ambigua",
+      "start": 27.842125,
+      "end": 28.447375
+    }
+  ]
+}

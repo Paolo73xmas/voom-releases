@@ -1,0 +1,368 @@
+{
+  "id": "s02",
+  "sha256": "85cde334a0c3df30b5362f1622d1f23216c20bbb8946ad192e7fbff8e8b38e67",
+  "audioDuration": 34.656,
+  "duration": 35.88,
+  "words": [
+    {
+      "text": "Il",
+      "start": 0.102625,
+      "end": 0.286833
+    },
+    {
+      "text": "modo",
+      "start": 0.3,
+      "end": 0.589458
+    },
+    {
+      "text": "migliore",
+      "start": 0.602625,
+      "end": 1.063166
+    },
+    {
+      "text": "per",
+      "start": 1.076333,
+      "end": 1.221083
+    },
+    {
+      "text": "ottenere",
+      "start": 1.234208,
+      "end": 1.668416
+    },
+    {
+      "text": "un",
+      "start": 1.681583,
+      "end": 1.813166
+    },
+    {
+      "text": "risultato",
+      "start": 1.826333,
+      "end": 2.378958
+    },
+    {
+      "text": "utile",
+      "start": 2.392125,
+      "end": 2.747375
+    },
+    {
+      "text": "non",
+      "start": 2.760541,
+      "end": 2.931582
+    },
+    {
+      "text": "è",
+      "start": 2.94475,
+      "end": 3.010541
+    },
+    {
+      "text": "scrivere",
+      "start": 3.023666,
+      "end": 3.497332
+    },
+    {
+      "text": "una",
+      "start": 3.510541,
+      "end": 3.694749
+    },
+    {
+      "text": "frase",
+      "start": 3.707875,
+      "end": 4.063125
+    },
+    {
+      "text": "lunghissima",
+      "start": 4.076333,
+      "end": 4.721083
+    },
+    {
+      "text": "e",
+      "start": 4.734208,
+      "end": 4.786833
+    },
+    {
+      "text": "premere",
+      "start": 4.8,
+      "end": 5.221041
+    },
+    {
+      "text": "subito",
+      "start": 5.234208,
+      "end": 5.642083
+    },
+    {
+      "text": "Genera",
+      "start": 5.65525,
+      "end": 6.207875
+    },
+    {
+      "text": "Parti",
+      "start": 7.131583,
+      "end": 7.513166
+    },
+    {
+      "text": "da",
+      "start": 7.526333,
+      "end": 7.657916
+    },
+    {
+      "text": "tre",
+      "start": 7.671041,
+      "end": 7.855249
+    },
+    {
+      "text": "domande",
+      "start": 7.868416,
+      "end": 8.447374
+    },
+    {
+      "text": "quando",
+      "start": 8.697375,
+      "end": 9.052625
+    },
+    {
+      "text": "posso",
+      "start": 9.065791,
+      "end": 9.368416
+    },
+    {
+      "text": "lavorare",
+      "start": 9.381583,
+      "end": 9.986833
+    },
+    {
+      "text": "dove",
+      "start": 10.236833,
+      "end": 10.513166
+    },
+    {
+      "text": "voglio",
+      "start": 10.526333,
+      "end": 10.894749
+    },
+    {
+      "text": "lavorare",
+      "start": 10.907875,
+      "end": 11.447333
+    },
+    {
+      "text": "e",
+      "start": 11.460541,
+      "end": 11.565791
+    },
+    {
+      "text": "chi",
+      "start": 11.578958,
+      "end": 11.749999
+    },
+    {
+      "text": "devo",
+      "start": 11.763166,
+      "end": 12.013166
+    },
+    {
+      "text": "vedere",
+      "start": 12.026333,
+      "end": 12.565791
+    },
+    {
+      "text": "L'intelligenza",
+      "start": 13.5,
+      "end": 14.473666
+    },
+    {
+      "text": "artificiale",
+      "start": 14.486833,
+      "end": 15.184208
+    },
+    {
+      "text": "propone",
+      "start": 15.197375,
+      "end": 15.60525
+    },
+    {
+      "text": "un'organizzazione",
+      "start": 15.618416,
+      "end": 16.710541
+    },
+    {
+      "text": "ma",
+      "start": 16.947375,
+      "end": 17.157916
+    },
+    {
+      "text": "il",
+      "start": 17.171041,
+      "end": 17.289457
+    },
+    {
+      "text": "risultato",
+      "start": 17.302625,
+      "end": 18.0
+    },
+    {
+      "text": "dipende",
+      "start": 18.013166,
+      "end": 18.499999
+    },
+    {
+      "text": "dalla",
+      "start": 18.513166,
+      "end": 18.802624
+    },
+    {
+      "text": "qualità",
+      "start": 18.815791,
+      "end": 19.263166
+    },
+    {
+      "text": "dei",
+      "start": 19.276333,
+      "end": 19.447374
+    },
+    {
+      "text": "dati",
+      "start": 19.460541,
+      "end": 19.921082
+    },
+    {
+      "text": "dagli",
+      "start": 20.039458,
+      "end": 20.447333
+    },
+    {
+      "text": "orari",
+      "start": 20.460541,
+      "end": 20.934207
+    },
+    {
+      "text": "dalle",
+      "start": 21.118416,
+      "end": 21.526291
+    },
+    {
+      "text": "distanze",
+      "start": 21.539458,
+      "end": 22.171041
+    },
+    {
+      "text": "e",
+      "start": 22.184208,
+      "end": 22.236833
+    },
+    {
+      "text": "dai",
+      "start": 22.25,
+      "end": 22.513166
+    },
+    {
+      "text": "vincoli",
+      "start": 22.526333,
+      "end": 23.210541
+    },
+    {
+      "text": "Il",
+      "start": 24.131583,
+      "end": 24.368416
+    },
+    {
+      "text": "controllo",
+      "start": 24.381583,
+      "end": 24.921041
+    },
+    {
+      "text": "finale",
+      "start": 24.934208,
+      "end": 25.394749
+    },
+    {
+      "text": "dell'agente",
+      "start": 25.407875,
+      "end": 26.06575
+    },
+    {
+      "text": "rimane",
+      "start": 26.078958,
+      "end": 26.407916
+    },
+    {
+      "text": "indispensabile",
+      "start": 26.421041,
+      "end": 27.486832
+    },
+    {
+      "text": "Un",
+      "start": 28.407875,
+      "end": 28.618416
+    },
+    {
+      "text": "giro",
+      "start": 28.631583,
+      "end": 28.894749
+    },
+    {
+      "text": "coerente",
+      "start": 28.907875,
+      "end": 29.434208
+    },
+    {
+      "text": "e",
+      "start": 29.447375,
+      "end": 29.486833
+    },
+    {
+      "text": "verificato",
+      "start": 29.5,
+      "end": 30.14475
+    },
+    {
+      "text": "è",
+      "start": 30.157875,
+      "end": 30.2105
+    },
+    {
+      "text": "più",
+      "start": 30.223666,
+      "end": 30.421041
+    },
+    {
+      "text": "importante",
+      "start": 30.434208,
+      "end": 31.092083
+    },
+    {
+      "text": "di",
+      "start": 31.10525,
+      "end": 31.2105
+    },
+    {
+      "text": "un",
+      "start": 31.223666,
+      "end": 31.342082
+    },
+    {
+      "text": "numero",
+      "start": 31.35525,
+      "end": 31.657875
+    },
+    {
+      "text": "di",
+      "start": 31.671041,
+      "end": 31.776291
+    },
+    {
+      "text": "visite",
+      "start": 31.789458,
+      "end": 32.223666
+    },
+    {
+      "text": "apparentemente",
+      "start": 32.236833,
+      "end": 32.960499
+    },
+    {
+      "text": "perfetto",
+      "start": 32.973666,
+      "end": 33.710499
+    }
+  ]
+}

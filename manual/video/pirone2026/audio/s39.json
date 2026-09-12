@@ -1,0 +1,373 @@
+{
+  "id": "s39",
+  "sha256": "9e927e3a48d96f8fdbfdb7203765b27d414acb68b0565a54b9008f83c3d5f2e8",
+  "audioDuration": 35.832,
+  "duration": 37.04,
+  "words": [
+    {
+      "text": "Se",
+      "start": 0.102625,
+      "end": 0.326291
+    },
+    {
+      "text": "l'impegno",
+      "start": 0.339458,
+      "end": 0.813124
+    },
+    {
+      "text": "libero",
+      "start": 0.826333,
+      "end": 1.168458
+    },
+    {
+      "text": "ha",
+      "start": 1.181583,
+      "end": 1.194749
+    },
+    {
+      "text": "un",
+      "start": 1.207875,
+      "end": 1.339458
+    },
+    {
+      "text": "luogo",
+      "start": 1.352625,
+      "end": 1.878958
+    },
+    {
+      "text": "puoi",
+      "start": 1.997375,
+      "end": 2.260541
+    },
+    {
+      "text": "cercarlo",
+      "start": 2.273666,
+      "end": 2.852624
+    },
+    {
+      "text": "e",
+      "start": 2.865791,
+      "end": 2.918416
+    },
+    {
+      "text": "confermarlo",
+      "start": 2.931583,
+      "end": 3.668416
+    },
+    {
+      "text": "dal",
+      "start": 3.681583,
+      "end": 3.865791
+    },
+    {
+      "text": "pannello",
+      "start": 3.878958,
+      "end": 4.378958
+    },
+    {
+      "text": "degli",
+      "start": 4.392125,
+      "end": 4.681583
+    },
+    {
+      "text": "impegni",
+      "start": 4.69475,
+      "end": 5.326333
+    },
+    {
+      "text": "La",
+      "start": 6.25,
+      "end": 6.5
+    },
+    {
+      "text": "destinazione",
+      "start": 6.513166,
+      "end": 7.263166
+    },
+    {
+      "text": "confermata",
+      "start": 7.276333,
+      "end": 7.947374
+    },
+    {
+      "text": "permette",
+      "start": 7.960541,
+      "end": 8.434207
+    },
+    {
+      "text": "di",
+      "start": 8.447375,
+      "end": 8.552625
+    },
+    {
+      "text": "considerarlo",
+      "start": 8.565791,
+      "end": 9.421041
+    },
+    {
+      "text": "come",
+      "start": 9.434208,
+      "end": 9.723666
+    },
+    {
+      "text": "tappa",
+      "start": 9.736833,
+      "end": 10.092083
+    },
+    {
+      "text": "obbligatoria",
+      "start": 10.10525,
+      "end": 10.907875
+    },
+    {
+      "text": "nella",
+      "start": 10.921041,
+      "end": 11.210499
+    },
+    {
+      "text": "generazione",
+      "start": 11.223666,
+      "end": 11.960499
+    },
+    {
+      "text": "del",
+      "start": 11.973666,
+      "end": 12.131541
+    },
+    {
+      "text": "giro",
+      "start": 12.14475,
+      "end": 12.605291
+    },
+    {
+      "text": "Anche",
+      "start": 13.526333,
+      "end": 13.894749
+    },
+    {
+      "text": "qui",
+      "start": 13.907875,
+      "end": 14.118416
+    },
+    {
+      "text": "non",
+      "start": 14.131583,
+      "end": 14.302624
+    },
+    {
+      "text": "basta",
+      "start": 14.315791,
+      "end": 14.605249
+    },
+    {
+      "text": "un",
+      "start": 14.618416,
+      "end": 14.749999
+    },
+    {
+      "text": "indirizzo",
+      "start": 14.763166,
+      "end": 15.289499
+    },
+    {
+      "text": "scritto",
+      "start": 15.302625,
+      "end": 15.934208
+    },
+    {
+      "text": "seleziona",
+      "start": 16.197375,
+      "end": 16.815791
+    },
+    {
+      "text": "il",
+      "start": 16.828958,
+      "end": 16.894749
+    },
+    {
+      "text": "risultato",
+      "start": 16.907875,
+      "end": 17.592083
+    },
+    {
+      "text": "corretto",
+      "start": 17.60525,
+      "end": 18.184208
+    },
+    {
+      "text": "e",
+      "start": 18.197375,
+      "end": 18.25
+    },
+    {
+      "text": "controlla",
+      "start": 18.263166,
+      "end": 18.828957
+    },
+    {
+      "text": "il",
+      "start": 18.842125,
+      "end": 18.907916
+    },
+    {
+      "text": "piano",
+      "start": 18.921041,
+      "end": 19.223666
+    },
+    {
+      "text": "finale",
+      "start": 19.236833,
+      "end": 19.815791
+    },
+    {
+      "text": "L'esempio",
+      "start": 20.75,
+      "end": 21.39475
+    },
+    {
+      "text": "che",
+      "start": 21.407875,
+      "end": 21.539458
+    },
+    {
+      "text": "vedi",
+      "start": 21.552625,
+      "end": 21.881583
+    },
+    {
+      "text": "è",
+      "start": 21.89475,
+      "end": 21.947375
+    },
+    {
+      "text": "dimostrativo",
+      "start": 21.960541,
+      "end": 22.934207
+    },
+    {
+      "text": "Per",
+      "start": 23.85525,
+      "end": 24.052625
+    },
+    {
+      "text": "i",
+      "start": 24.065791,
+      "end": 24.118416
+    },
+    {
+      "text": "follow-up",
+      "start": 24.131583,
+      "end": 24.605249
+    },
+    {
+      "text": "completati",
+      "start": 24.618416,
+      "end": 25.421041
+    },
+    {
+      "text": "invece",
+      "start": 25.552625,
+      "end": 26.171041
+    },
+    {
+      "text": "la",
+      "start": 26.381583,
+      "end": 26.605249
+    },
+    {
+      "text": "pianificazione",
+      "start": 26.618416,
+      "end": 27.486832
+    },
+    {
+      "text": "non",
+      "start": 27.5,
+      "end": 27.671041
+    },
+    {
+      "text": "deve",
+      "start": 27.684208,
+      "end": 27.947374
+    },
+    {
+      "text": "continuare",
+      "start": 27.960541,
+      "end": 28.605291
+    },
+    {
+      "text": "a",
+      "start": 28.618416,
+      "end": 28.671041
+    },
+    {
+      "text": "proporre",
+      "start": 28.684208,
+      "end": 29.171041
+    },
+    {
+      "text": "un",
+      "start": 29.184208,
+      "end": 29.315791
+    },
+    {
+      "text": "impegno",
+      "start": 29.328958,
+      "end": 29.828958
+    },
+    {
+      "text": "già",
+      "start": 29.842125,
+      "end": 30.026333
+    },
+    {
+      "text": "concluso",
+      "start": 30.039458,
+      "end": 30.855249
+    },
+    {
+      "text": "torna",
+      "start": 31.131583,
+      "end": 31.499999
+    },
+    {
+      "text": "sul",
+      "start": 31.513166,
+      "end": 31.697374
+    },
+    {
+      "text": "giorno",
+      "start": 31.710541,
+      "end": 32.065791
+    },
+    {
+      "text": "corretto",
+      "start": 32.078958,
+      "end": 32.657916
+    },
+    {
+      "text": "e",
+      "start": 32.671041,
+      "end": 32.710499
+    },
+    {
+      "text": "verifica",
+      "start": 32.723666,
+      "end": 33.249999
+    },
+    {
+      "text": "l'aggiornamento",
+      "start": 33.263166,
+      "end": 33.999999
+    },
+    {
+      "text": "del",
+      "start": 34.013166,
+      "end": 34.171041
+    },
+    {
+      "text": "pannello",
+      "start": 34.184208,
+      "end": 34.881583
+    }
+  ]
+}

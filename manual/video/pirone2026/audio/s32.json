@@ -1,0 +1,313 @@
+{
+  "id": "s32",
+  "sha256": "fa8cf627b485bdb1d1f414ff5154ac4637b67b223a5e68376c60cc38decf71fc",
+  "audioDuration": 29.328,
+  "duration": 30.56,
+  "words": [
+    {
+      "text": "Vediamo",
+      "start": 0.102625,
+      "end": 0.681583
+    },
+    {
+      "text": "ora",
+      "start": 0.69475,
+      "end": 0.878958
+    },
+    {
+      "text": "il",
+      "start": 0.892125,
+      "end": 0.957916
+    },
+    {
+      "text": "calendario",
+      "start": 0.971041,
+      "end": 1.826291
+    },
+    {
+      "text": "Puoi",
+      "start": 2.75,
+      "end": 3.0
+    },
+    {
+      "text": "usare",
+      "start": 3.013166,
+      "end": 3.381582
+    },
+    {
+      "text": "Nuovo",
+      "start": 3.39475,
+      "end": 3.697375
+    },
+    {
+      "text": "oppure",
+      "start": 3.710541,
+      "end": 4.131582
+    },
+    {
+      "text": "toccare",
+      "start": 4.14475,
+      "end": 4.578958
+    },
+    {
+      "text": "un",
+      "start": 4.592125,
+      "end": 4.723708
+    },
+    {
+      "text": "orario",
+      "start": 4.736833,
+      "end": 5.197374
+    },
+    {
+      "text": "per",
+      "start": 5.210541,
+      "end": 5.381582
+    },
+    {
+      "text": "preparare",
+      "start": 5.39475,
+      "end": 5.881583
+    },
+    {
+      "text": "un",
+      "start": 5.89475,
+      "end": 6.0395
+    },
+    {
+      "text": "appuntamento",
+      "start": 6.052625,
+      "end": 6.9605
+    },
+    {
+      "text": "Ci",
+      "start": 7.881583,
+      "end": 8.118416
+    },
+    {
+      "text": "sono",
+      "start": 8.131583,
+      "end": 8.368416
+    },
+    {
+      "text": "due",
+      "start": 8.381583,
+      "end": 8.578958
+    },
+    {
+      "text": "casi",
+      "start": 8.592125,
+      "end": 8.93425
+    },
+    {
+      "text": "distinti",
+      "start": 8.947375,
+      "end": 9.64475
+    },
+    {
+      "text": "un",
+      "start": 9.881583,
+      "end": 10.013166
+    },
+    {
+      "text": "impegno",
+      "start": 10.026333,
+      "end": 10.486874
+    },
+    {
+      "text": "libero",
+      "start": 10.5,
+      "end": 10.85525
+    },
+    {
+      "text": "e",
+      "start": 10.868416,
+      "end": 10.907874
+    },
+    {
+      "text": "un",
+      "start": 10.921041,
+      "end": 11.078916
+    },
+    {
+      "text": "appuntamento",
+      "start": 11.092125,
+      "end": 11.7895
+    },
+    {
+      "text": "collegato",
+      "start": 11.802625,
+      "end": 12.39475
+    },
+    {
+      "text": "a",
+      "start": 12.407875,
+      "end": 12.421041
+    },
+    {
+      "text": "un",
+      "start": 12.434208,
+      "end": 12.565791
+    },
+    {
+      "text": "cliente",
+      "start": 12.578958,
+      "end": 13.236833
+    },
+    {
+      "text": "Da",
+      "start": 14.157875,
+      "end": 14.394708
+    },
+    {
+      "text": "questo",
+      "start": 14.407875,
+      "end": 14.763125
+    },
+    {
+      "text": "punto",
+      "start": 14.776333,
+      "end": 15.105291
+    },
+    {
+      "text": "useremo",
+      "start": 15.118416,
+      "end": 15.565791
+    },
+    {
+      "text": "esempi",
+      "start": 15.578958,
+      "end": 15.986833
+    },
+    {
+      "text": "dimostrativi",
+      "start": 16.0,
+      "end": 16.802625
+    },
+    {
+      "text": "non",
+      "start": 16.815791,
+      "end": 17.026332
+    },
+    {
+      "text": "salvati",
+      "start": 17.039458,
+      "end": 17.684208
+    },
+    {
+      "text": "indicati",
+      "start": 17.815791,
+      "end": 18.394749
+    },
+    {
+      "text": "nel",
+      "start": 18.407875,
+      "end": 18.56575
+    },
+    {
+      "text": "video",
+      "start": 18.578958,
+      "end": 19.078958
+    },
+    {
+      "text": "Il",
+      "start": 20.0,
+      "end": 20.197375
+    },
+    {
+      "text": "funzionamento",
+      "start": 20.210541,
+      "end": 20.973707
+    },
+    {
+      "text": "dei",
+      "start": 20.986833,
+      "end": 21.157874
+    },
+    {
+      "text": "pannelli",
+      "start": 21.171041,
+      "end": 21.789457
+    },
+    {
+      "text": "è",
+      "start": 21.802625,
+      "end": 21.89475
+    },
+    {
+      "text": "quello",
+      "start": 21.907875,
+      "end": 22.2105
+    },
+    {
+      "text": "dell'app",
+      "start": 22.223666,
+      "end": 22.736832
+    },
+    {
+      "text": "ma",
+      "start": 23.039458,
+      "end": 23.249999
+    },
+    {
+      "text": "non",
+      "start": 23.263166,
+      "end": 23.407916
+    },
+    {
+      "text": "creeremo",
+      "start": 23.421041,
+      "end": 23.855249
+    },
+    {
+      "text": "appuntamenti",
+      "start": 23.868416,
+      "end": 24.565791
+    },
+    {
+      "text": "reali",
+      "start": 24.578958,
+      "end": 25.013166
+    },
+    {
+      "text": "per",
+      "start": 25.026333,
+      "end": 25.210541
+    },
+    {
+      "text": "l'agente",
+      "start": 25.223666,
+      "end": 25.763124
+    },
+    {
+      "text": "e",
+      "start": 25.776333,
+      "end": 25.815791
+    },
+    {
+      "text": "non",
+      "start": 25.828958,
+      "end": 25.999999
+    },
+    {
+      "text": "invieremo",
+      "start": 26.013166,
+      "end": 26.552624
+    },
+    {
+      "text": "comunicazioni",
+      "start": 26.565791,
+      "end": 27.460541
+    },
+    {
+      "text": "ai",
+      "start": 27.473666,
+      "end": 27.592082
+    },
+    {
+      "text": "clienti",
+      "start": 27.60525,
+      "end": 28.381583
+    }
+  ]
+}

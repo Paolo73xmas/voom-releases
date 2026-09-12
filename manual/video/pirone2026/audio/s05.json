@@ -1,0 +1,363 @@
+{
+  "id": "s05",
+  "sha256": "83df21d0856915e1083aa124e6ec4f8ddc1ab0d25b2324a6465edc1d1eedd28c",
+  "audioDuration": 35.304,
+  "duration": 36.52,
+  "words": [
+    {
+      "text": "Una",
+      "start": 0.102625,
+      "end": 0.352625
+    },
+    {
+      "text": "partenza",
+      "start": 0.365791,
+      "end": 0.905249
+    },
+    {
+      "text": "sbagliata",
+      "start": 0.918416,
+      "end": 1.510541
+    },
+    {
+      "text": "può",
+      "start": 1.523666,
+      "end": 1.668416
+    },
+    {
+      "text": "rendere",
+      "start": 1.681583,
+      "end": 2.023708
+    },
+    {
+      "text": "poco",
+      "start": 2.036833,
+      "end": 2.352624
+    },
+    {
+      "text": "utile",
+      "start": 2.365791,
+      "end": 2.707916
+    },
+    {
+      "text": "tutto",
+      "start": 2.721041,
+      "end": 3.049999
+    },
+    {
+      "text": "il",
+      "start": 3.063166,
+      "end": 3.128957
+    },
+    {
+      "text": "giro",
+      "start": 3.142125,
+      "end": 3.615791
+    },
+    {
+      "text": "Puoi",
+      "start": 4.539458,
+      "end": 4.763124
+    },
+    {
+      "text": "scegliere",
+      "start": 4.776333,
+      "end": 5.276333
+    },
+    {
+      "text": "Casa",
+      "start": 5.289458,
+      "end": 5.644708
+    },
+    {
+      "text": "o",
+      "start": 5.657875,
+      "end": 5.789458
+    },
+    {
+      "text": "Sede",
+      "start": 5.802625,
+      "end": 6.157875
+    },
+    {
+      "text": "se",
+      "start": 6.171041,
+      "end": 6.342082
+    },
+    {
+      "text": "sono",
+      "start": 6.35525,
+      "end": 6.592083
+    },
+    {
+      "text": "già",
+      "start": 6.60525,
+      "end": 6.776291
+    },
+    {
+      "text": "configurate",
+      "start": 6.789458,
+      "end": 7.671041
+    },
+    {
+      "text": "oppure",
+      "start": 7.907875,
+      "end": 8.31575
+    },
+    {
+      "text": "inserire",
+      "start": 8.328958,
+      "end": 8.828958
+    },
+    {
+      "text": "un",
+      "start": 8.842125,
+      "end": 8.947375
+    },
+    {
+      "text": "indirizzo",
+      "start": 8.960541,
+      "end": 9.473707
+    },
+    {
+      "text": "completo",
+      "start": 9.486833,
+      "end": 10.131583
+    },
+    {
+      "text": "Qui",
+      "start": 11.052625,
+      "end": 11.263166
+    },
+    {
+      "text": "usiamo",
+      "start": 11.276333,
+      "end": 11.710541
+    },
+    {
+      "text": "Piazza del Duomo",
+      "start": 11.723666,
+      "end": 12.815791
+    },
+    {
+      "text": "a",
+      "start": 13.065791,
+      "end": 13.210541
+    },
+    {
+      "text": "Milano",
+      "start": 13.223666,
+      "end": 13.749999
+    },
+    {
+      "text": "un",
+      "start": 14.013166,
+      "end": 14.157916
+    },
+    {
+      "text": "luogo",
+      "start": 14.171041,
+      "end": 14.552624
+    },
+    {
+      "text": "pubblico",
+      "start": 14.565791,
+      "end": 15.026332
+    },
+    {
+      "text": "scelto",
+      "start": 15.039458,
+      "end": 15.513124
+    },
+    {
+      "text": "per",
+      "start": 15.526333,
+      "end": 15.684208
+    },
+    {
+      "text": "l'esempio",
+      "start": 15.697375,
+      "end": 16.447375
+    },
+    {
+      "text": "Controlla",
+      "start": 17.368416,
+      "end": 17.921041
+    },
+    {
+      "text": "anche",
+      "start": 17.934208,
+      "end": 18.144749
+    },
+    {
+      "text": "il",
+      "start": 18.157875,
+      "end": 18.223666
+    },
+    {
+      "text": "rientro",
+      "start": 18.236833,
+      "end": 18.842083
+    },
+    {
+      "text": "tornare",
+      "start": 19.10525,
+      "end": 19.565791
+    },
+    {
+      "text": "alla",
+      "start": 19.578958,
+      "end": 19.749999
+    },
+    {
+      "text": "partenza",
+      "start": 19.763166,
+      "end": 20.328957
+    },
+    {
+      "text": "e",
+      "start": 20.342125,
+      "end": 20.381583
+    },
+    {
+      "text": "terminare",
+      "start": 20.39475,
+      "end": 20.973708
+    },
+    {
+      "text": "altrove",
+      "start": 20.986833,
+      "end": 21.421041
+    },
+    {
+      "text": "sono",
+      "start": 21.434208,
+      "end": 21.684208
+    },
+    {
+      "text": "due",
+      "start": 21.697375,
+      "end": 21.921041
+    },
+    {
+      "text": "richieste",
+      "start": 21.934208,
+      "end": 22.434208
+    },
+    {
+      "text": "diverse",
+      "start": 22.447375,
+      "end": 23.14475
+    },
+    {
+      "text": "Nel",
+      "start": 24.078958,
+      "end": 24.328958
+    },
+    {
+      "text": "pannello",
+      "start": 24.342125,
+      "end": 24.815791
+    },
+    {
+      "text": "dell'intelligenza",
+      "start": 24.828958,
+      "end": 25.815791
+    },
+    {
+      "text": "artificiale",
+      "start": 25.828958,
+      "end": 26.631583
+    },
+    {
+      "text": "quando",
+      "start": 26.763166,
+      "end": 27.092124
+    },
+    {
+      "text": "viene",
+      "start": 27.10525,
+      "end": 27.473666
+    },
+    {
+      "text": "richiesta",
+      "start": 27.486833,
+      "end": 27.999999
+    },
+    {
+      "text": "la",
+      "start": 28.013166,
+      "end": 28.118416
+    },
+    {
+      "text": "conferma",
+      "start": 28.131583,
+      "end": 28.710541
+    },
+    {
+      "text": "del",
+      "start": 28.723666,
+      "end": 28.855249
+    },
+    {
+      "text": "luogo",
+      "start": 28.868416,
+      "end": 29.421041
+    },
+    {
+      "text": "seleziona",
+      "start": 29.671041,
+      "end": 30.328916
+    },
+    {
+      "text": "il",
+      "start": 30.342125,
+      "end": 30.421083
+    },
+    {
+      "text": "risultato",
+      "start": 30.434208,
+      "end": 31.105249
+    },
+    {
+      "text": "corretto",
+      "start": 31.118416,
+      "end": 31.723666
+    },
+    {
+      "text": "e",
+      "start": 31.736833,
+      "end": 31.776291
+    },
+    {
+      "text": "non",
+      "start": 31.789458,
+      "end": 31.934208
+    },
+    {
+      "text": "affidarti",
+      "start": 31.947375,
+      "end": 32.592125
+    },
+    {
+      "text": "soltanto",
+      "start": 32.60525,
+      "end": 33.184208
+    },
+    {
+      "text": "al",
+      "start": 33.197375,
+      "end": 33.2895
+    },
+    {
+      "text": "testo",
+      "start": 33.302625,
+      "end": 33.631583
+    },
+    {
+      "text": "digitato",
+      "start": 33.64475,
+      "end": 34.368416
+    }
+  ]
+}

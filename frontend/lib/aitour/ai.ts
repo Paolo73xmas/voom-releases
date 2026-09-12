@@ -1,11 +1,12 @@
 // Chiamate all'edge function ai-tour (spiegazioni AI) con fallback deterministici.
 import { supabase } from '../supabase';
+import Constants from 'expo-constants';
 import { timeoutSignal } from './osrm';
 import type { TourPlan, DayType } from './types';
 import { fmtDur, minToTime, ENTITY_LABELS } from './types';
 import type { PortfolioStats } from './scoring';
 
-const FN_URL = 'https://gorwxfzzyzxmxnizmebw.supabase.co/functions/v1/ai-tour';
+const FN_URL = `${Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/ai-tour`;
 
 async function callFn(action: 'strategy' | 'recommend', payload: unknown): Promise<Record<string, string> | null> {
   try {

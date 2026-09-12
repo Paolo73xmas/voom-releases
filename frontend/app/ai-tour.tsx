@@ -26,7 +26,7 @@ import { supabase } from '../lib/supabase';
 import { listAllZones, pointInZones, zoneLabel, intersectDrawnWithZones, type TerritoryZone } from '../lib/aitour/territories';
 import { loadCandidates, loadFreeTabaccherie, type CandidatePool } from '../lib/aitour/data';
 import { scoreCandidates, computePortfolioStats, splitRecentlyServed, isRecentlyServed } from '../lib/aitour/scoring';
-import { planTour, planFixedOrder, filterByArea, pickBestCluster, candidatesForDayType, sweepPartition, type AreaFilter } from '../lib/aitour/planner';
+import { planTour, filterByArea, pickBestCluster, candidatesForDayType, sweepPartition, type AreaFilter } from '../lib/aitour/planner';
 import { getStrategySummary, recommendDayType } from '../lib/aitour/ai';
 import { getSettings, saveTour, saveToursBatch, listTours, loadTourStops, deleteTour, replaceTourPlan, type SavedTour } from '../lib/aitour/tours';
 import { getActiveTour, loadLiveState, startLiveTour, type LiveState } from '../lib/aitour/live';
@@ -47,7 +47,8 @@ import { inBriefArea, matchesArea } from '../lib/aitour/brief-area';
 import { assignJourneyStages, balanceJourneyCandidates, bindJourneyEnd, journeyLabel } from '../lib/aitour/brief-journey';
 import { loadBriefDevelopment } from '../lib/aitour/brief-development';
 import { assertMandatoryFeasible, mandatoryProblems } from '../lib/aitour/brief-feasibility';
-import { restoreBriefCandidate, assertCompleteReplan } from '../lib/aitour/brief-live';
+import { restoreBriefCandidate } from '../lib/aitour/brief-live';
+import { recalculateEditedPlan, editedTourSummary, type EditAreaConsents } from '../lib/aitour/edit-plan';
 import { WeekTab, type WeekPreset } from '../components/aitour/WeekTab';
 import { MonthTab } from '../components/aitour/MonthTab';
 import { CandidateEntityBadge } from '../components/aitour/OrphanHistoryBadge';
@@ -273,6 +274,8 @@ export default function AITourScreen() {
   const [editOpen, setEditOpen] = useState(false);
   const [loadingPool, setLoadingPool] = useState(false);
   const [recalcing, setRecalcing] = useState(false);
+  const [editError, setEditError] = useState('');
+  const editRecalcBusy = React.useRef(false);
   const [viewedTourStatus, setViewedTourStatus] = useState<string | null>(null);
   const allCandidates = useMemo(() => (pool ? [...pool.clients, ...pool.prospects, ...pool.orphans] : []), [pool]);
   const briefProjects = useMemo(
@@ -1293,6 +1296,8 @@ export default function AITourScreen() {
   // caricato, quindi lo carica al volo (serve per cercare/aggiungere tappe).
   const openEdit = async () => {
     if (!agentId) return;
+    setEditError('');
+    setErrMsg('');
     hap.light();
     if (!pool) {
       setLoadingPool(true);
@@ -1313,51 +1318,17 @@ export default function AITourScreen() {
 
   // Ricalcolo dal pannello Modifica giro: ordine AI o sequenza manuale.
   // Per un tour salvato richiamato (status planned) persiste subito le modifiche.
-  const recalc = async (keys: string[], mandatoryKeys: Set<string>, fixedOrder: boolean) => {
-    if (!plan) return;
+  const recalc = async (keys: string[], mandatoryKeys: Set<string>, fixedOrder: boolean, consents: EditAreaConsents = {}) => {
+    if (!plan || editRecalcBusy.current) return;
+    editRecalcBusy.current = true;
     setRecalcing(true);
+    setEditError('');
     setErrMsg('');
     setInfoMsg('');
     try {
-      const byKey = new Map(allCandidates.map((c) => [c.key, c]));
-      // Le tappe di un tour salvato possono non esistere nel pool (chiavi diverse): fallback ai candidati del piano
-      for (const s of plan.stops) byKey.set(s.candidate.key, s.candidate);
-      const chosen = assignJourneyStages(keys.map((k) => byKey.get(k)).filter((c): c is TourCandidate => !!c), plan.areaFilter?.briefJourney);
-      const existing = new Set(plan.stops.map((s) => s.candidate.key));
-      if (chosen.some((c) => !existing.has(c.key) && !inBriefArea(c, plan.areaFilter?.briefAreas || [], plan.areaFilter?.briefJourney))) throw new Error('La nuova tappa è fuori dalla zona confermata: modifica prima la richiesta');
-      let next: TourPlan;
-      if (fixedOrder) {
-        next = await planFixedOrder(chosen, plan);
-      } else {
-        next = await planTour({
-          candidates: chosen,
-          mandatoryKeys: new Set(chosen.map((c) => c.key)),
-          start: plan.start,
-          end: plan.end,
-          tourDate: plan.tourDate,
-          startMin: plan.startMin,
-          endMin: plan.endMin,
-          dayType: plan.dayType,
-          resolvedDayType: plan.resolvedDayType,
-          bufferPct: 0,
-          enforceJourneyOrder: !!plan.areaFilter?.briefJourney,
-          returnFlexible: plan.returnFlexible,
-          area: { mode: 'auto' },
-        });
-        // Le obbligatorie "vere" scelte dall'utente restano marcate
-        next.stops = next.stops.map((s) => ({ ...s, mandatory: mandatoryKeys.has(s.candidate.key) }));
-      }
-      next.areaLabel = plan.areaLabel;
-      next.aiRecommendation = plan.aiRecommendation;
-      next.areaFilter = plan.areaFilter;
-      next.requiredStops = plan.requiredStops;
-      next.returnFlexible = plan.returnFlexible;
-      assertCompleteReplan(next, chosen);
-      assertMandatoryFeasible(next);
-      next.aiSummary = await getStrategySummary(next);
-      setPlan(next);
-      setEditOpen(false);
-      hap.success();
+      const next = await recalculateEditedPlan(plan, allCandidates, keys, mandatoryKeys, fixedOrder, consents);
+      // L'ordine/timeline sono già pronti: la spiegazione AI non può bloccare l'editor.
+      next.aiSummary = await withTimeout(getStrategySummary(next), 5000) || editedTourSummary(next);
       if (readOnly && savedTourId && viewedTourStatus === 'planned') {
         await replaceTourPlan(savedTourId, next);
         if (tab === 'tours') loadSavedTours();
@@ -1365,11 +1336,15 @@ export default function AITourScreen() {
       } else {
         setInfoMsg('Giro ricalcolato');
       }
+      setPlan(next);
+      setEditOpen(false);
+      hap.success();
     } catch (err) {
       console.error('[AITour] recalc:', err);
-      setErrMsg(err instanceof Error ? err.message : 'Errore nel ricalcolo');
+      setEditError(err instanceof Error ? err.message : 'Ricalcolo non riuscito. Le modifiche sono conservate: riprova.');
     } finally {
       setRecalcing(false);
+      editRecalcBusy.current = false;
     }
   };
 
@@ -2089,7 +2064,9 @@ export default function AITourScreen() {
         {/* Pannello Modifica giro */}
         <TourEditModal
           visible={editOpen}
-          onClose={() => setEditOpen(false)}
+          onClose={() => { if (!editRecalcBusy.current) { setEditOpen(false); setEditError(''); } }}
+          errorMsg={editError}
+          onDraftChange={() => setEditError('')}
           plan={plan}
           allCandidates={allCandidates}
           onRecalc={recalc}

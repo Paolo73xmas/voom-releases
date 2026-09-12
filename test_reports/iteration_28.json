@@ -1,0 +1,71 @@
+{
+  "summary": "Frontend-only testing completed with new targeted edit-plan unit suite plus mobile preview checks. All automated suites passed (AI Tour 6/6 including new edit_plan.unit.ts, verification 2/2). In real mobile web preview, AI Tour login/load/generate/edit modal flows work; recalc failures now surface visibly in modal footer instead of silent close.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "TourEditModal action controls",
+        "issue": "Intermittent mobile-web tap issue during automation: some visible action icons (`aitour-edit-mandatory-1` / add mandatory rows) report 'Element is outside of the viewport' before scroll adjustments.",
+        "testID": "aitour-edit-mandatory-1",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "Requested testID contract",
+        "issue": "Spec requested `mandatory-i/up-i/down-i/remove-i`; implementation exposes `aitour-edit-mandatory-i`, `aitour-edit-up-i`, `aitour-edit-down-i`, `aitour-edit-remove-i`.",
+        "testID": "aitour-edit-mandatory-1",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Outside-area consent UI proof (footer confirm then retry)",
+        "issue": "Could not fully reproduce in live preview from manual form flow because generated plan lacks `briefAreas` constraints; covered with real-module unit tests instead.",
+        "affected_testIDs": [
+          "aitour-edit-consent-<key>",
+          "aitour-edit-error"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/aitour/edit_plan.unit.ts",
+    "/app/tests/aitour/run_suite.sh",
+    "/app/tests/verification/run_verification_suite.sh",
+    "/app/test_reports/artifacts_iter28/aitour_suite_iter28.log",
+    "/app/test_reports/artifacts_iter28/verification_suite_iter28.log",
+    "/app/test_reports/artifacts_iter28/preview_load_mobile_iter28.jpeg",
+    "/app/test_reports/artifacts_iter28/ai_tour_after_login_iter28.jpeg",
+    "/app/test_reports/artifacts_iter28/ai_tour_generate_30s_iter28.jpeg",
+    "/app/test_reports/artifacts_iter28/edit_modal_flow_pass_probe_iter28.jpeg"
+  ],
+  "action_items": [
+    "If exact selector contract is required by QA harness, align action testIDs to agreed names or update harness mappings.",
+    "Add isolated browser harness/fixture for brief-area constrained preview to deterministically validate outside-area consent UI (`aitour-edit-consent-*`) end-to-end.",
+    "Investigate mobile-web viewport/tap clipping for modal row action icons to prevent edge tap misses.",
+    "Optional code-review follow-up: `frontend/lib/aitour/ai.ts` uses hardcoded edge-function URL (`FN_URL`) instead of env-derived config."
+  ],
+  "critical_code_review_comments": [
+    "`recalculateEditedPlan` guardrails are now test-covered: duplicate aliases, invalid coordinates, timeout behavior, partial planner output rejection, mandatory feasibility enforcement.",
+    "`ai-tour.tsx` recalc branch correctly uses ref guard (`editRecalcBusy`) and persists with `replaceTourPlan` only in saved readOnly planned branch.",
+    "No DB client usage detected in new helper path (`frontend/lib/aitour/edit-plan.ts`)."
+  ],
+  "updated_files": [
+    "/app/tests/aitour/edit_plan.unit.ts",
+    "/app/tests/aitour/run_suite.sh",
+    "/app/test_reports/iteration_28.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (frontend-only request)",
+    "frontend": "Automated suites: 100% pass (8/8 files). Live mobile preview smoke/login/generate/edit: partially validated with one unresolved reproducibility gap (outside-area consent scenario)."
+  },
+  "seed_data_creation": "None. No real Supabase mutating writes executed by tests.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run `bash /app/tests/aitour/run_suite.sh` and `bash /app/tests/verification/run_verification_suite.sh`. New edit-plan suite is included in run_suite. For UI consent case, prefer isolated fixture/harness with brief-area constraints; manual form generation path in preview may not expose outside-area consent flow.",
+  "rca_of_issue": "Original user symptom ('only close works') is not reproduced as silent failure in this run: recalc errors are now visible in modal footer (`aitour-edit-error`) and editor stays open. Remaining instability appears related to mobile-web viewport/tap targeting on some modal row controls rather than recalc callback wiring."
+}

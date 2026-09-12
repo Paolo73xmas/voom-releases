@@ -9,6 +9,7 @@ TESTS=(
   "core_journey_planner"
   "brief_customer_area_dev_saved"
   "normalize_recent15_feasibility"
+  "edit_plan"
   "live_save_guards"
   "liveops_protected"
 )

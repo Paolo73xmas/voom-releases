@@ -17,11 +17,18 @@ import { Order } from '../../types';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { COLORS } from '../../lib/theme';
+import { OrderTotals } from '../../components/OrderTotals';
+import { orderLineBreakdown } from '../../lib/order-totals';
+import { ConfirmActionModal } from '../../components/ConfirmActionModal';
+import { RequireSession } from '../../components/RequireSession';
 
-export default function OrderDetailScreen() {
+export default function OrderDetailRoute() { return <RequireSession><OrderDetailScreen /></RequireSession>; }
+
+function OrderDetailScreen() {
   const { id } = useLocalSearchParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
 
   useEffect(() => {
     loadOrder();
@@ -46,23 +53,7 @@ export default function OrderDetailScreen() {
    * su articoli con quantità > disponibilità).
    */
   const handleDuplicate = () => {
-    if (!order) return;
-    Alert.alert(
-      'Duplica Ordine',
-      `Vuoi creare un nuovo ordine copiando i prodotti e il cliente da #${order.order_number}?\n\nLo stock verrà rivalidato: eventuali articoli non più disponibili saranno evidenziati e dovrai correggere le quantità prima di procedere.`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Duplica',
-          onPress: () => {
-            router.push({
-              pathname: '/order-collection-v2',
-              params: { duplicateOrderId: order.id },
-            });
-          },
-        },
-      ]
-    );
+    setDuplicateOpen(true);
   };
 
   const formatDate = (dateString: string | null | undefined) => {
@@ -103,8 +94,8 @@ export default function OrderDetailScreen() {
       {/* Order Header */}
       <View style={styles.headerCard}>
         <View style={styles.orderHeader}>
-          <View>
-            <Text style={styles.orderNumber}>Ordine #{order.order_number}</Text>
+          <View style={{ flex: 1 }}>
+            <Text testID="order-detail-number" style={styles.orderNumber}>Ordine #{order.order_number}</Text>
             <Text style={styles.orderDate}>{formatDate(order.order_date)}</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: getOrderStatusColor(order.status) + '20' }]}>
@@ -124,12 +115,16 @@ export default function OrderDetailScreen() {
       </View>
 
       {/* ✅ Duplica Ordine — crea un nuovo ordine partendo da questo */}
-      <TouchableOpacity style={styles.duplicateBtn} onPress={handleDuplicate} activeOpacity={0.85}>
+      <TouchableOpacity testID="order-duplicate" style={styles.duplicateBtn} onPress={handleDuplicate} activeOpacity={0.85}>
         <Ionicons name="copy-outline" size={18} color="#FFFFFF" />
         <Text style={styles.duplicateBtnText}>Duplica Ordine</Text>
       </TouchableOpacity>
 
       {/* Customer Info */}
+      <ConfirmActionModal testID="order-duplicate-dialog" visible={duplicateOpen} title="Duplica Ordine" message="Copia cliente e prodotti in un nuovo ordine. Lo stock verrà rivalidato prima di procedere." confirmLabel="Duplica" onCancel={() => setDuplicateOpen(false)} onConfirm={() => {
+        setDuplicateOpen(false);
+        router.push({ pathname: '/order-collection-v2', params: { duplicateOrderId: order.id } });
+      }} />
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Cliente</Text>
         <View style={styles.card}>
@@ -141,7 +136,7 @@ export default function OrderDetailScreen() {
             </View>
             <View style={styles.customerInfo}>
               <Text style={styles.customerName}>{order.customer?.business_name || 'Cliente'}</Text>
-              {order.customer?.city && (
+              {!!order.customer?.city && (
                 <Text style={styles.customerAddress}>
                   {order.customer.city}, {order.customer.province}
                 </Text>
@@ -156,12 +151,9 @@ export default function OrderDetailScreen() {
         <Text style={styles.sectionTitle}>Prodotti ({order.order_items?.length || 0})</Text>
         <View style={styles.card}>
           {order.order_items && order.order_items.length > 0 ? (
-            order.order_items.map((item: any, index: number) => {
+            order.order_items.map((item, index: number) => {
               const product = item.product;
-              const accisaUnit = product?.accisa || 0;
-              const accisaTotal = accisaUnit * (item.quantity || 0);
-              const ivaRate = product?.iva_percentage || 22;
-              const ivaAmount = (item.line_total || 0) * (ivaRate / 100);
+              const { exciseUnit: accisaUnit, excise: accisaTotal, vatRate: ivaRate, vat: ivaAmount, net } = orderLineBreakdown(item, order.is_foreign);
 
               return (
                 <View key={item.id}>
@@ -208,7 +200,7 @@ export default function OrderDetailScreen() {
                       {/* IVA */}
                       <View style={styles.itemAccisaRow}>
                         <Ionicons name="document-text-outline" size={12} color="#6B7280" />
-                        <Text style={styles.itemIvaText}>
+                        <Text testID={`order-item-${item.id}-vat`} style={styles.itemIvaText}>
                           IVA {ivaRate}%: {formatCurrency(ivaAmount)}
                         </Text>
                       </View>
@@ -234,7 +226,7 @@ export default function OrderDetailScreen() {
                     </View>
 
                     {/* Line total */}
-                    <Text style={styles.itemTotal}>{formatCurrency(item.line_total)}</Text>
+                    <Text testID={`order-item-${item.id}-net`} style={styles.itemTotal}>{formatCurrency(net)}</Text>
                   </View>
                 </View>
               );
@@ -248,101 +240,11 @@ export default function OrderDetailScreen() {
       {/* Order Summary - Detailed */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Riepilogo</Text>
-        <View style={styles.card}>
-          {/* Subtotale (products) */}
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotale prodotti</Text>
-            <Text style={styles.summaryValue}>
-              {formatCurrency(
-                (order.order_items || []).reduce((sum: number, i: any) => sum + (i.line_total || 0), 0)
-              )}
-            </Text>
-          </View>
-          <View style={styles.divider} />
-
-          {/* Accisa totale */}
-          {(() => {
-            const totalAccisa = (order.order_items || []).reduce((sum: number, i: any) => {
-              const accisa = i.product?.accisa || 0;
-              return sum + (accisa * (i.quantity || 0));
-            }, 0);
-            if (totalAccisa > 0) {
-              return (
-                <>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryLabelRow}>
-                      <Ionicons name="receipt-outline" size={14} color="#D97706" />
-                      <Text style={[styles.summaryLabel, { marginLeft: 6, color: '#D97706' }]}>Accisa totale</Text>
-                    </View>
-                    <Text style={[styles.summaryValue, { color: '#D97706' }]}>{formatCurrency(totalAccisa)}</Text>
-                  </View>
-                  <View style={styles.divider} />
-                </>
-              );
-            }
-            return null;
-          })()}
-
-          {/* IVA totale */}
-          {(() => {
-            const totalIva = (order.order_items || []).reduce((sum: number, i: any) => {
-              const ivaRate = i.product?.iva_percentage || 22;
-              return sum + ((i.line_total || 0) * (ivaRate / 100));
-            }, 0);
-            return (
-              <>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>IVA</Text>
-                  <Text style={styles.summaryValue}>{formatCurrency(totalIva)}</Text>
-                </View>
-                <View style={styles.divider} />
-              </>
-            );
-          })()}
-
-          {/* Rottamazione */}
-          {order.rottamazione_amount > 0 && (
-            <>
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: '#059669' }]}>Rottamazione</Text>
-                <Text style={[styles.summaryValue, { color: '#059669' }]}>
-                  -{formatCurrency(order.rottamazione_amount)}
-                </Text>
-              </View>
-              <View style={styles.divider} />
-            </>
-          )}
-
-          {/* Cashback */}
-          {order.cashback_used > 0 && (
-            <>
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryLabel, { color: '#7C3AED' }]}>Cashback usato</Text>
-                <Text style={[styles.summaryValue, { color: '#7C3AED' }]}>
-                  -{formatCurrency(order.cashback_used)}
-                </Text>
-              </View>
-              <View style={styles.divider} />
-            </>
-          )}
-
-          {/* Spedizione */}
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Spedizione</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(order.shipping_cost)}</Text>
-          </View>
-          <View style={styles.divider} />
-
-          {/* Totale */}
-          <View style={styles.summaryRow}>
-            <Text style={styles.totalLabel}>Totale Ordine</Text>
-            <Text style={styles.totalValue}>{formatCurrency(order.total_amount)}</Text>
-          </View>
-        </View>
+        <OrderTotals order={order} />
       </View>
 
       {/* Shipping Info */}
-      {order.shipping_address && (
+      {!!order.shipping_address && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Spedizione</Text>
           <View style={styles.card}>
@@ -350,7 +252,7 @@ export default function OrderDetailScreen() {
               <Ionicons name="location-outline" size={18} color="#6B7280" />
               <Text style={styles.shippingText}>{order.shipping_address}</Text>
             </View>
-            {order.expected_delivery_date && (
+            {!!order.expected_delivery_date && (
               <>
                 <View style={styles.divider} />
                 <View style={styles.shippingRow}>
@@ -366,7 +268,7 @@ export default function OrderDetailScreen() {
       )}
 
       {/* Notes */}
-      {order.notes && (
+      {!!order.notes && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Note</Text>
           <View style={styles.card}>

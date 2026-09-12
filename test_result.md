@@ -102,7 +102,29 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Convert existing VOOM CRM web app for tobacco shop sales reps into an Expo mobile app with OrderCollection wizard featuring icons, cashback, rottamazione, accisa, IVA"
+user_problem_statement: "Controllo funzionale completo VOOM CRM e correzione errori, preservando funzioni e dati reali. Dati test riconoscibili autorizzati con cleanup ID-based."
+
+audit_completo_corrente:
+  implemented: true
+  working: "NA"
+  needs_retesting: true
+  priority: high
+  status_history:
+    - agent: main
+      comment: "FINALE SELF-TEST reale in34 supera falsi blocchi33: login await dashboard, quick order cliente ->Step2, indietro/avanti e genericoStep1 PASS; disco select/deselect/multiPASS attendendo chips caricati; calendariocreateHTTP201/PATCHabort errore visibile/retrydone/undo/AI stesso09:30/done esclusoPASS. 17unit+6suiteAI+2suiteverification+TSC/lintPASS. Cleanup esatto customerb07/visite0f/appt2556/990 tutti0restanti; nessun live reale/stock toccato. Vedere iteration34_main_verification e PRD12settembre. Full audit secondarie ancora PARZIALE per pivotutente; nessun difetto confermato rimasto sulle ultime richieste."
+    - agent: main
+      comment: "P0 nuovo utente: Ordine da AI Tour e Mappa deve aprire Step2 cliente pre-selezionato; generico restaStep1. Implementato shared customerOrderRoute con startStep=products (Mappa/Live/acquisizione Live), loader id diretto come fallback a cache+init cashback,pacchetti,primo ordine, messaggio/retry se cliente non accessibile, nessuna modifica EXTERNAL_KEY tappa. Iter32 residui: free title-only e luogo passati REAL; wheel disc onPress usa coordinate assenti RNW ora catturate onPressIn per onPress; TZ report confrontava runtimeUTC con Rome(!), codice locale non alterato ma verificare con timezone_id Europe/Rome; fault PATCH test aveva sleep1500ms e force sempre, ora errori salvataggio separati errori refresh. Testare33 con attese corrette/scoping."
+    - agent: main
+      comment: "PIVOT UTENTE: bug ruota orari Anagrafica + creare appuntamenti calendario liberi/clienti e vederli AI Tour. Confermato: liberi promemoria (luogo opzionale per tappa), clienti follow-up. Implementati responder RN ruota+chip accessibili; AppointmentForm+API insert UUID retry sicuro, calendario Nuovo/onPressCell/event IDs; AI agenda refresh on focus con impegni liberi+geocode conferma per tappa, clienti strict time/duration; completed_at esclusi+orario locale. TypeScript/lint e9 unit+6suite PASS, nuove funzioni da testare iter32. Iter31 blocchi calendar/customer erano test selectors hidden siblings, risolti main con customers-screen/card-ID e calendar-screen, UI mark/undo PASS. Iter31 draft E2E+9unit passati; fix fallback save bozza direct route e avviso duplicate missing customer ora applicati da self-retest. Audit completo secondarie rimane PARZIALE per pivot user."
+    - agent: main
+      comment: "Post iteration29: aggiunti testID tab/menu/ordine/bozze/calendario; nuove conferme RN per logout/duplica/elimina bozza. Auth store invariato, playbook consultato. Dati DB letti: line_total è NETTO, non lordo; rischio doppia IVA del report29 non confermato, invece confermati IVA estero erronea, zero rate sostituito da22, accisa esclusa base IVA. Nuovo breakdown display-only con EST/esenzione, spedizione IVA e importo registrato separato, nessun ordine riscritto. Bozze ora preservano Benvenuto/canale, ricalcolano totale scontato, autosave600ms dopo modifiche, serialize writes+errori visibili; impedita ri-creazione dopo submit. Calendario mostra errori API, verifica update effettivo e blocca doppio tap; navigazione mese con addMonths per evitare salto su giorno31. Typecheck globale e lint error-level modifiche PASS. Necessario test sostanziale CRUD, non fermarsi a navigazione."
+    - agent: main
+      comment: "Eliminati 11 errori TypeScript (tipi Product/Customer/Order e AnimatedNumber). Formatter numerico eseguito su JS, non worklet. Corretto runner AI Tour che usava vecchi bundle dopo errori build. Avviare controllo funzionale completo UI + API e CRUD solo su dati TEST nuovi. Esaminare in particolare riepilogo fiscale dettaglio ordine (IVA estero/EST/zero, accisa) e ripristino bozze, calendario, errori rete. Non modificare auth senza diagnosi/playbook; credenziali esclusivamente memory/test_credentials.md."
+  test_plan:
+    test_all: true
+    test_priority: high_first
+    current_focus: [login, dashboard, clienti, visite, calendario, ordini, prodotti_magazzino, ispezioni, ai_tour, rimborsi, scadenziario, sostituzioni, orfani, anagrafiche, bozze]
+    protected_data: "Nessuna scrittura su clienti/tour reali. Non usare Live di tadini/roberto/Valentina. Preferire gdeintinis per seed; admin per cleanup solo ID creati; stock ripristinato esclusivamente a delta. Non eliminare GPS storici."
 
 frontend:
   - task: "Login Screen"

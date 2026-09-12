@@ -1,0 +1,96 @@
+{
+  "summary": "Iterazione 33 eseguita su scope P0 (ordine quick-entry, mappa, ruota, calendario fault/tz). Verificato caricamento preview e test unit timezone Europe/Rome PASS. Blocco critico su ingressi diretti protetti (Order/Calendar) con session gate intermittente che ha impedito verifica end-to-end completa dei flussi richiesti.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api (suite locale pytest iter32)",
+        "issue": "Suite backend riusata ma 2 test SKIPPED (contesto/env non disponibile per esecuzione significativa)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "OrderCollection quick preselect error banner",
+        "issue": "Mismatch testID rispetto requisito: presente `order-customer-retry`, assente `order-customer-load-retry`.",
+        "testID": "order-customer-retry",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Anagrafica Step1 -> Step2",
+        "issue": "Impossibile raggiungere Step2 (wheel) in prova mobile: gate foto obbligatorie rimane attivo anche tentando visita telefonica/switch; test ruota non eseguibile nel flusso reale corrente.",
+        "testID": "visit-slot-wheel-disc",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Deep link /order-collection-v2 (generic + customerId/startStep)",
+        "issue": "Route rimane su `session-required` dopo login da gate in più tentativi; non possibile validare in modo affidabile autoskip Step2 da ingressi rapidi.",
+        "affected_testIDs": [
+          "session-login",
+          "order-current-step",
+          "order-initial-loading"
+        ]
+      },
+      {
+        "flow": "Calendar create/patch-abort exact event",
+        "issue": "Session gate su /calendar intermittente: autenticazione non sempre persistita per route protetta; test PATCH abort exact-ID non stabilmente riproducibile in questa run.",
+        "affected_testIDs": [
+          "session-login",
+          "calendar-screen",
+          "calendar-save-error",
+          "calendar-mark-done"
+        ]
+      },
+      {
+        "flow": "Map popup -> Ordine rapido",
+        "issue": "Click marker/popup non validato end-to-end con certezza a causa blocco route ordine (session-required).",
+        "affected_testIDs": [
+          "map-customer-order",
+          "order-current-step"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/appointments_tz_iter33.test.ts",
+    "/app/tests/e2e/iter33_order_route_probe.py",
+    "/app/tests/e2e/iter33_visit_slot_wheel.py",
+    "/app/tests/e2e/iter33_calendar_patch_abort.py",
+    "/app/tests/e2e/iter33_cleanup_ids.py",
+    "/app/test_reports/pytest/pytest_results_iteration_33.xml",
+    "/app/test_reports/artifacts_iter33"
+  ],
+  "action_items": [
+    "Fix auth hydration for direct protected routes (`/order-collection-v2`, `/calendar`) so RequireSession does not remain stuck on session-required after successful login redirect.",
+    "Allineare testID retry ordine al requisito (`order-customer-load-retry`) o aggiornare specifica interna in modo consistente.",
+    "Fornire percorso testabile per raggiungere VisitSlotWheel Step2 senza dipendere dal gate foto Step1 (fixture route o stato visita telefonica realmente abilitante).",
+    "Rieseguire dopo fix i casi P0: order quick-entry da Mappa/AI, fault PATCH exact-ID e verifiche AI panel mark-done/undo."
+  ],
+  "critical_code_review_comments": [
+    "RequireSession dipende da user?.id; su deep-link protetti la sessione non risulta sempre idratata prima del render, causando blocchi su `session-required`.",
+    "In order-collection-v2 è presente `order-customer-retry` mentre la richiesta di test copre `order-customer-load-retry`.",
+    "La logica `localAppointmentDate(...).toISOString()` risulta coerente con timezone locale: test unit Europe/Rome PASS su estate/inverno (nessuna patch speculativa applicata)."
+  ],
+  "updated_files": [
+    "/app/frontend/tests/appointments_tz_iter33.test.ts",
+    "/app/tests/e2e/iter33_order_route_probe.py",
+    "/app/tests/e2e/iter33_visit_slot_wheel.py",
+    "/app/tests/e2e/iter33_calendar_patch_abort.py",
+    "/app/tests/e2e/iter33_cleanup_ids.py",
+    "/app/test_reports/iteration_33.json"
+  ],
+  "success_rate": {
+    "backend": "0% validated (2 skipped)",
+    "frontend": "35%"
+  },
+  "seed_data_creation": "Creati appuntamenti ITER33 durante i tentativi calendario; cleanup eseguito con script ID-based. Eliminati: appointment target 990546b0-5b61-4ffe-8fa9-6085945cffca + appointment iter33 766e695a-ca1e-4edd-bd12-3a66eb260578. Visit target 0f21dfe-a232-4616-a7fe-067f75901536 non eliminato (HTTP 400).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Per /calendar usare sequenza stabile: attendi `session-login` -> Accedi -> login form -> ritorno /calendar. In questa run la persistenza sessione è intermittente. Evitare ulteriori loop sui selector ordine finché non è corretto il gate auth per deep link.",
+  "rca_of_issue": "RCA principale: blocco auth route-level. Riproduzione: aprire direttamente `/order-collection-v2` o `/calendar`, premere Accedi, fare login valido, ritornare alla route; in più run resta `session-required` e non monta schermata protetta. Mitigazione: garantire initialize/hydration completata prima del gate (o redirect callback robusto verso route originale)."
+}

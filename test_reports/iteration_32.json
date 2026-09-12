@@ -1,0 +1,84 @@
+{
+  "summary": "Iterazione 32 completata su scope pivot (VisitSlotWheel + Calendario + AI Tour). Backend/API smoke e suite esistente passano; verificato fix create free title-only (quick fields vuoti) con prova reale su Supabase. Trovate regressioni critiche su touch disco fasce orarie e conversione data/ora customer follow-up.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "VisitSlotWheel in Anagrafica",
+        "issue": "Tap sul disco (più coordinate) non seleziona alcuna fascia; anche tap su etichetta nel disco non produce selezione. Chip invece funzionano.",
+        "testID": "visit-slot-wheel-disc",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Calendario -> Nuovo Cliente/Follow-up -> Salva -> DB",
+        "issue": "Mismatch timezone: orario locale inserito 18:07 salvato come appointment_date 18:07+00:00 (dovrebbe essere 16:07+00 in Europe/Rome). In AI/Calendar risulta slittamento di +2h.",
+        "affected_testIDs": [
+          "appointment-date",
+          "appointment-time",
+          "appointment-save",
+          "calendar-event-follow_up-bcef6887-cc5b-448d-8250-81906770b062"
+        ]
+      },
+      {
+        "flow": "Calendario PATCH fault (mark done con rete abortita)",
+        "issue": "Con abort PATCH su /rest/v1/appointments non compare calendar-save-error (atteso da requisito fault test).",
+        "affected_testIDs": [
+          "calendar-mark-done",
+          "calendar-save-error"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_api_basics_iter32.py",
+    "/app/frontend/tests/appointments_aitour_iter32.test.ts",
+    "/app/tests/e2e/iter32_visit_slot_wheel.py",
+    "/app/tests/e2e/iter32_calendar_minimal.py",
+    "/app/tests/e2e/iter32_free_location_probe.py",
+    "/app/tests/e2e/iter32_title_only_probe.py",
+    "/app/tests/e2e/iter32_customer_row_probe.py",
+    "/app/tests/e2e/iter32_fault_abort.py",
+    "/app/tests/e2e/iter32_cleanup.py",
+    "/app/test_reports/pytest/pytest_results_iteration_32.xml",
+    "/app/test_reports/artifacts_iter32"
+  ],
+  "action_items": [
+    "Fix VisitSlotWheel hit-testing sul disco (coordinate/angolo/raggio) e supporto tap etichetta dentro SVG mantenendo pointerEvents none/Pressable unico.",
+    "Correggere serializzazione orario in createAppointment per timezone locale (Europe/Rome) -> UTC coerente; aggiungere test regressione su DST/localAppointmentDate+payload.",
+    "Implementare gestione fault PATCH con messaggio calendar-save-error coerente e senza falsa conferma.",
+    "Ritestare completo il flusso mark done -> AI refresh on focus -> undo dopo fix timezone (ora i follow-up cliente possono risultare in slot temporali inattesi)."
+  ],
+  "critical_code_review_comments": [
+    "appointments.ts usa localAppointmentDate(date,time) con Date locale, ma inserisce start.toISOString() senza salvare/esplicitare timezone utente: con Supabase timestamptz si osserva shift +2h rispetto all'input locale in Europe/Rome.",
+    "VisitSlotWheel usa calcolo angolare custom sul Pressable unico; in prova web mobile il mapping non aggancia slot validi su tap disco, segno di discrepanza tra coordinate input e settori renderizzati.",
+    "Fault path PATCH nel calendario non espone in modo affidabile lo stato errore richiesto (calendar-save-error) durante abort rete simulato."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_api_basics_iter32.py",
+    "/app/frontend/tests/appointments_aitour_iter32.test.ts",
+    "/app/tests/e2e/iter32_visit_slot_wheel.py",
+    "/app/tests/e2e/iter32_calendar_minimal.py",
+    "/app/tests/e2e/iter32_free_location_probe.py",
+    "/app/tests/e2e/iter32_title_only_probe.py",
+    "/app/tests/e2e/iter32_customer_row_probe.py",
+    "/app/tests/e2e/iter32_fault_abort.py",
+    "/app/tests/e2e/iter32_cleanup.py",
+    "/app/test_reports/iteration_32.json"
+  ],
+  "success_rate": {
+    "backend": "95% (18 pass, 1 skip)",
+    "frontend": "72%"
+  },
+  "seed_data_creation": "Creati appuntamenti TEST_*ITER32 durante E2E e rimossi a fine run (deleted IDs: cb1687ba-88b6-4da9-9c43-18b4fc743d45, 19ee49d0-c3ea-4d4e-90d3-826454ba7071, eb2fbc68-0907-49f0-aac5-e30886bc5582, 9234e5e5-229f-4525-961e-4bdbdeac425f, bcef6887-cc5b-448d-8250-81906770b062).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Fix title-only quick fields verificato reale: row Supabase mostra customer_id null + quick_customer_name valorizzato + quick_customer_address/city/phone stringhe vuote. Free con location verificato e conferma luogo in AI panel funzionante. Rimangono da chiudere: touch disco VisitSlotWheel e allineamento timezone customer follow-up + fault PATCH banner.",
+  "rca_of_issue": "RCA 1 (VisitSlotWheel): riproduzione su 390x844 in Anagrafica step 2; tap multipli nel disco non cambiano visit-slot-wheel-selection, mentre chip sì. Probabile mismatch tra coordinate nativeEvent/location e conversione angolare per slot (range boundary/gap). Mitigazione: test unitario su mapping coordinate->minute per punti noti + E2E click posizionale validato su settore centrale. RCA 2 (Timezone): creando customer appointment con ora locale HH:MM, DB salva appointment_date con stesso HH:MM in UTC (+00), generando shift locale +2h in Europe/Rome. Mitigazione: normalizzare input come local time zone esplicita prima di serializzare UTC e aggiungere test su conversione locale/UTC (incluso DST)."
+}

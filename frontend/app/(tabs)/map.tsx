@@ -13,6 +13,7 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { customerOrderRoute } from '../../lib/customer-order-route';
 
 // Conditionally import WebView for native platforms
 let WebView: any = null;
@@ -294,9 +295,9 @@ export default function MapScreen() {
         zoomToBoundsOnClick: true,
         disableClusteringAtZoom: 16,
         iconCreateFunction: function(cluster: any) {
-          var count = cluster.getChildCount();
-          var size = count < 20 ? 'small' : count < 100 ? 'medium' : 'large';
-          var px = count < 20 ? 36 : count < 100 ? 42 : 48;
+          const count = cluster.getChildCount();
+          const size = count < 20 ? 'small' : count < 100 ? 'medium' : 'large';
+          const px = count < 20 ? 36 : count < 100 ? 42 : 48;
           return L.divIcon({
             html: '<div>' + count + '</div>',
             className: 'marker-cluster-custom marker-cluster-' + size,
@@ -360,9 +361,9 @@ export default function MapScreen() {
         zoomToBoundsOnClick: true,
         disableClusteringAtZoom: 16,
         iconCreateFunction: function(cluster: any) {
-          var count = cluster.getChildCount();
-          var size = count < 20 ? 'small' : count < 100 ? 'medium' : 'large';
-          var px = count < 20 ? 36 : count < 100 ? 42 : 48;
+          const count = cluster.getChildCount();
+          const size = count < 20 ? 'small' : count < 100 ? 'medium' : 'large';
+          const px = count < 20 ? 36 : count < 100 ? 42 : 48;
           return L.divIcon({
             html: '<div>' + count + '</div>',
             className: 'marker-cluster-custom marker-cluster-' + size,
@@ -615,10 +616,7 @@ export default function MapScreen() {
       Alert.alert('Errore', 'Nessun cliente associato a questo punto vendita');
       return;
     }
-    router.push({
-      pathname: '/order-collection-v2',
-      params: { customerId, customerName },
-    });
+    router.push(customerOrderRoute(customerId, customerName));
   };
 
   const handleShowOrderData = async (tab: Tabaccheria) => {
@@ -948,6 +946,7 @@ export default function MapScreen() {
               {(selectedColor === 'orange' || selectedColor === 'green' || isOrphanColor) && (
                 <>
                   <TouchableOpacity
+                    testID="map-customer-order"
                     style={[styles.actionBtn, styles.actionBtnPrimary]}
                     onPress={() => handleOrderClick(selectedTab)}
                   >

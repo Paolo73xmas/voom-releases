@@ -1,0 +1,81 @@
+{
+  "summary": "Iteration 31 completed: reusable unit tests added for order-totals/drafts, draft E2E flow validated with TEST fixture, OrderTotals+duplicate+fault scenarios partially validated.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "N/A",
+        "issue": "Backend suite not rerun in this iteration (main context already reported backend passing)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "OrderCollectionV2 save draft action",
+        "issue": "After saving draft from direct route, UI logs navigation warning: 'GO_BACK was not handled by any navigator'.",
+        "testID": "order-save-draft",
+        "priority": "medium"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Order detail -> duplicate order",
+        "issue": "Duplicate flow opens wizard but logs warning when source order customer is not in current user customer list; customer is skipped in restore.",
+        "affected_testIDs": [
+          "order-duplicate",
+          "order-duplicate-dialog-confirm"
+        ]
+      },
+      {
+        "flow": "Calendar PATCH fault test",
+        "issue": "Could not reliably target an appointment card with mark/undo action in mobile week grid after 3 attempts; only visit modal was consistently opened (no completion action by design).",
+        "affected_testIDs": [
+          "calendar-screen",
+          "calendar-mark-done",
+          "calendar-undo-done"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/order-totals.test.ts",
+    "/app/frontend/tests/drafts.test.ts",
+    "/app/tests/e2e/iter31_draft_flow_playwright.py",
+    "/app/tests/e2e/iter31_faults_and_totals_playwright.py",
+    "/app/test_reports/artifacts_iter31"
+  ],
+  "action_items": [
+    "Add stable testID to step-1 customer rows, step-2 add buttons (+1/+10), payment/shipping options, and calendar event cells to make mobile E2E deterministic.",
+    "Handle draft-save post action safely when no back stack exists (fallback route instead of unconditional router.back()).",
+    "Review duplicate flow UX when source customer is not visible to current user (explicit message + safe fallback).",
+    "Re-run calendar PATCH fault scenario after adding event-level testIDs for appointment/visit differentiation.",
+    "Priority-5 section matrix was not fully executed in this iteration; schedule targeted follow-up runs per module."
+  ],
+  "critical_code_review_comments": [
+    "order-collection-v2.tsx is ~2700 lines (>700 rule), making regressions and E2E maintenance harder; should be split into step modules/hooks.",
+    "Interactive controls in order wizard and calendar still lack comprehensive testID coverage despite new scoped testIDs elsewhere.",
+    "Observed OrderTotals mismatch sample (stored 117,50€ vs calculated 166,90€) confirms component is display-only and does not mutate stored amount; business should verify expected delta semantics."
+  ],
+  "updated_files": [
+    "/app/frontend/package.json",
+    "/app/frontend/yarn.lock",
+    "/app/frontend/vitest.config.ts",
+    "/app/frontend/tests/order-totals.test.ts",
+    "/app/frontend/tests/drafts.test.ts",
+    "/app/tests/e2e/iter31_draft_flow_playwright.py",
+    "/app/tests/e2e/iter31_faults_and_totals_playwright.py",
+    "/app/test_reports/iteration_31.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (not rerun in iter31)",
+    "frontend": "78%"
+  },
+  "seed_data_creation": "No new persistent business entities created intentionally. Draft created and deleted in-flow.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Reusable Vitest suite now exists for order totals and drafts. Draft E2E with fixture customer succeeded including resume and delete, and verified no POST /orders during draft save. Orders error retry and calendar GET fault banner succeeded. Calendar PATCH fault remains pending due missing deterministic appointment selector/testID in mobile grid.",
+  "rca_of_issue": "Calendar PATCH fault reproducibility gap is primarily a testability issue: in mobile week grid, event hit-targets are tiny and text wrapping makes appointment vs visit hard to disambiguate without event-level testIDs. As a result, automation repeatedly opened visit modal (no mark/undo) instead of appointment modal. Mitigation: add explicit event testIDs (type+id) and action testIDs in rendered event cell, then rerun forced PATCH-abort validation."
+}

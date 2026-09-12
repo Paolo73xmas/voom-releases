@@ -1,26 +1,27 @@
 /**
  * AnimatedNumber — count-up effect using Reanimated.
  */
-import React, { useEffect } from 'react';
-import { TextStyle } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { StyleProp, TextStyle } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedProps, withTiming, Easing, runOnJS,
+  useSharedValue, useAnimatedReaction, withTiming, Easing, runOnJS, cancelAnimation,
 } from 'react-native-reanimated';
 
 interface Props {
   value: number;
   duration?: number;
   format?: (n: number) => string;
-  style?: TextStyle | TextStyle[];
+  style?: StyleProp<TextStyle>;
+  testID?: string;
 }
 
-const AnimatedText = Animated.createAnimatedComponent(
-  (require('react-native').Text)
-);
-
-export function AnimatedNumber({ value, duration = 800, format, style }: Props) {
+export function AnimatedNumber({ value, duration = 800, format, style, testID }: Props) {
   const animated = useSharedValue(0);
   const [display, setDisplay] = React.useState('0');
+  // Il formatter ricevuto dal chiamante vive sul thread JS, non è un worklet.
+  const updateDisplay = useCallback((current: number) => {
+    setDisplay(format ? format(current) : String(current));
+  }, [format]);
 
   useEffect(() => {
     animated.value = 0;
@@ -28,13 +29,18 @@ export function AnimatedNumber({ value, duration = 800, format, style }: Props) 
       duration,
       easing: Easing.out(Easing.exp),
     });
-  }, [value, duration]);
+    return () => cancelAnimation(animated);
+  }, [value, duration, animated]);
 
-  useAnimatedProps(() => {
-    const current = Math.round(animated.value);
-    runOnJS(setDisplay)(format ? format(current) : String(current));
-    return {};
-  });
+  useAnimatedReaction(
+    () => Math.round(animated.value),
+    (current, previous) => {
+      if (current !== previous) runOnJS(updateDisplay)(current);
+    },
+    [updateDisplay],
+  );
 
-  return <AnimatedText style={style}>{display}</AnimatedText>;
+  useEffect(() => { updateDisplay(Math.round(animated.value)); }, [animated, updateDisplay]);
+
+  return <Animated.Text testID={testID} style={style}>{display}</Animated.Text>;
 }

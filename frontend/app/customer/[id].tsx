@@ -27,6 +27,7 @@ import { VisitSlotWheel } from '../../components/customers/VisitSlotWheel';
 import { getVisitSlots, slotsFromIds, WEEKDAY_NAMES, type VisitSlot } from '../../lib/visit-slots';
 import { ExcludedDaysPicker } from '../../components/customers/ExcludedDaysPicker';
 import { isPlaceholderVat, parseVatGuardError } from '../../lib/api/vat-guard';
+import { RequireSession } from '../../components/RequireSession';
 
 interface CustomerOrder {
   id: string;
@@ -93,7 +94,9 @@ const EDIT_SECTIONS: Record<EditSection, { title: string; fields: EditFieldDef[]
   },
 };
 
-export default function CustomerDetailScreen() {
+export default function CustomerDetailRoute() { return <RequireSession><CustomerDetailScreen /></RequireSession>; }
+
+function CustomerDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [customer, setCustomer] = useState<Customer | null>(null);

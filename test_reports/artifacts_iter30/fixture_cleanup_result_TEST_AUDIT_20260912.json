@@ -1,0 +1,14 @@
+{
+  "cleaned_at": "2026-09-12T13:12:22.140Z",
+  "manifest_path": "/app/test_reports/artifacts_iter30/fixture_manifest_TEST_AUDIT_20260912.json",
+  "report": {
+    "deleted": {
+      "appointment": "2cda543e-77be-42e4-a5ea-5550bb3361a9",
+      "visit": "7817a7b0-2025-4181-b3bc-def3c6b3d53d",
+      "customer": "af5816d1-bc16-4b60-84d3-52bbf77a8f1b",
+      "extra_customer_40bdbb14-843c-48d8-b05e-680923de7fea": "40bdbb14-843c-48d8-b05e-680923de7fea",
+      "extra_customer_6b342660-e543-4e62-8279-decfbf58b75e": "6b342660-e543-4e62-8279-decfbf58b75e"
+    },
+    "errors": []
+  }
+}

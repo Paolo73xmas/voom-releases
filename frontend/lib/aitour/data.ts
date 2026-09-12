@@ -106,6 +106,7 @@ async function fetchUpcomingAppointments(agentId: string): Promise<Map<string, s
   const { data, error } = await supabase
     .from('appointments')
     .select('customer_id, appointment_date, appointment_type, status')
+    .is('completed_at', null)
     .eq('agent_id', agentId)
     .eq('status', 'scheduled')
     .gte('appointment_date', new Date().toISOString());

@@ -2,6 +2,7 @@
 set -uo pipefail
 
 ROOT="/app"
+cd "$ROOT" || exit 1
 OUTDIR="/tmp/aitour-mobile-tests"
 mkdir -p "$OUTDIR"
 
@@ -18,14 +19,18 @@ FAIL=0
 FAILED=()
 
 for test in "${TESTS[@]}"; do
-  esbuild "$ROOT/tests/aitour/${test}.unit.ts" \
+  if ! esbuild "$ROOT/tests/aitour/${test}.unit.ts" \
     --bundle --platform=node --format=cjs \
     --alias:react-native=./tests/stubs/rn.js \
     --alias:@react-native-async-storage/async-storage=./tests/stubs/storage.js \
     --alias:expo-location=./tests/stubs/expo-location.js \
     --define:process.env.EXPO_PUBLIC_SUPABASE_URL='"https://example.invalid"' \
     --define:process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY='"test-only"' \
-    --outfile="$OUTDIR/${test}.cjs"
+    --outfile="$OUTDIR/${test}.cjs"; then
+    FAIL=$((FAIL + 1))
+    FAILED+=("$test (build)")
+    continue
+  fi
 
   if ! node --import "$ROOT/tests/aitour/ws-preload.mjs" "$OUTDIR/${test}.cjs"; then
     FAIL=$((FAIL + 1))

@@ -14,7 +14,7 @@ import {
   RefreshControl,
   Modal,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,7 +30,9 @@ import { planTour, filterByArea, pickBestCluster, candidatesForDayType, sweepPar
 import { getStrategySummary, recommendDayType } from '../lib/aitour/ai';
 import { getSettings, saveTour, saveToursBatch, listTours, loadTourStops, deleteTour, replaceTourPlan, type SavedTour } from '../lib/aitour/tours';
 import { getActiveTour, loadLiveState, startLiveTour, type LiveState } from '../lib/aitour/live';
-import { fetchFollowUpsForDate, fetchOverdueFollowUps, type PendingFollowUp, type OverdueFollowUp } from '../lib/aitour/followups';
+import { fetchFollowUpsForDate, fetchOverdueFollowUps, fetchFreeAppointmentsForDate, type FreeAppointment, type PendingFollowUp, type OverdueFollowUp } from '../lib/aitour/followups';
+import { FreeAgendaPanel } from '../components/aitour/FreeAgendaPanel';
+import { freeAppointmentCandidate } from '../lib/aitour/agenda-candidate';
 import { geocodeAddress } from '../lib/aitour/osrm';
 import { LiveTourView } from '../components/aitour/LiveTourView';
 import { TourMapView, type TourMapStop } from '../components/aitour/TourMapView';
@@ -228,6 +230,11 @@ export default function AITourScreen() {
   const [generating, setGenerating] = useState(false);
   // Follow-up/appuntamenti in agenda per la data scelta (considera/ignora) + scaduti mai gestiti
   const [followUps, setFollowUps] = useState<PendingFollowUp[]>([]);
+  const [freeAppointments, setFreeAppointments] = useState<FreeAppointment[]>([]);
+  const [freePlaces, setFreePlaces] = useState<Record<string, GeoPoint>>({});
+  const [agendaError, setAgendaError] = useState('');
+  const [agendaRefresh, setAgendaRefresh] = useState(0);
+  const [agendaLoading, setAgendaLoading] = useState(true);
   const [fuIgnored, setFuIgnored] = useState<Set<string>>(new Set());
   const [overdue, setOverdue] = useState<OverdueFollowUp[]>([]);
   const [overdueSel, setOverdueSel] = useState<Set<string>>(new Set());
@@ -380,19 +387,24 @@ export default function AITourScreen() {
   const set = <K extends keyof FormValues>(k: K, val: FormValues[K]) => setForm((old) => ({ ...old, [k]: val }));
 
   // Follow-up/appuntamenti in agenda per la data scelta: avviso consapevole (considera o ignora)
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let alive = true;
     setFollowUps([]);
+    setFreeAppointments([]);
+    setFreePlaces({});
+    setAgendaError('');
+    setAgendaLoading(true);
     setFuIgnored(new Set());
     if (!agentId) return;
-    fetchFollowUpsForDate(agentId, form.date)
-      .then((list) => { if (alive) setFollowUps(list); })
-      .catch((e) => console.warn('[AITour] follow-up agenda:', e));
+    Promise.all([fetchFollowUpsForDate(agentId, form.date), fetchFreeAppointmentsForDate(agentId, form.date)])
+      .then(([list, free]) => { if (alive) { setFollowUps(list); setFreeAppointments(free); } })
+      .catch(() => { if (alive) setAgendaError('Agenda non aggiornata. Riprova prima di pianificare.'); })
+      .finally(() => { if (alive) setAgendaLoading(false); });
     return () => { alive = false; };
-  }, [agentId, form.date]);
+  }, [agentId, form.date, agendaRefresh]));
 
   // Follow-up dei giorni passati mai gestiti: segnalati con recupero opzionale
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let alive = true;
     setOverdue([]);
     setOverdueSel(new Set());
@@ -401,7 +413,7 @@ export default function AITourScreen() {
       .then((list) => { if (alive) setOverdue(list); })
       .catch((e) => console.warn('[AITour] follow-up scaduti:', e));
     return () => { alive = false; };
-  }, [agentId]);
+  }, [agentId, agendaRefresh]));
 
   const toggleFollowUp = (customerId: string) => {
     hap.light();
@@ -672,12 +684,20 @@ export default function AITourScreen() {
         }
       }
       // Follow-up/appuntamenti del giorno confermati dall'agente + scaduti da recuperare: tappe obbligatorie riconoscibili
+      if (agendaLoading) throw new Error('Attendi il caricamento degli appuntamenti, poi riprova.');
+      if (agendaError) throw new Error(agendaError);
+      for (const appointment of freeAppointments) {
+        const place = freePlaces[appointment.id];
+        if (!place) continue;
+        const candidate = freeAppointmentCandidate(appointment, place);
+        candidates.push(candidate); mandatoryKeys.add(candidate.key);
+      }
       const fuIncluded = followUps
         .filter((f) => !fuIgnored.has(f.customerId) && !v.mandatoryCustomerIds.includes(f.customerId))
-        .map((f) => ({ id: f.customerId, time: f.time as string | undefined, od: undefined as string | undefined }));
+        .map((f) => ({ id: f.customerId, time: f.time as string | undefined, duration: f.duration, od: undefined as string | undefined }));
       const odIncluded = overdueVisible
         .filter((o) => overdueSel.has(o.customerId) && !v.mandatoryCustomerIds.includes(o.customerId) && !fuIncluded.some((f) => f.id === o.customerId))
-        .map((o) => ({ id: o.customerId, time: undefined as string | undefined, od: o.date as string | undefined }));
+        .map((o) => ({ id: o.customerId, time: undefined as string | undefined, duration: o.duration, od: o.date as string | undefined }));
       for (const fu of [...fuIncluded, ...odIncluded]) {
         const all = [...loaded.clients, ...loaded.prospects, ...loaded.orphans];
         const found = all.find((c) => c.customerId === fu.id);
@@ -685,11 +705,12 @@ export default function AITourScreen() {
         const cand: TourCandidate = {
           ...found,
           isFollowUp: true,
+          visitMinutes: fu.duration ?? found.visitMinutes,
           reason: fu.od
             ? `Follow-up SCADUTO del ${new Date(`${fu.od}T12:00:00`).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })} mai gestito. ${found.reason}`
             : `Follow-up in agenda${fu.time ? ` alle ${fu.time}` : ''}. ${found.reason}`,
           ...(fu.time && !fu.od
-            ? { preferredSlots: [{ id: `fu_${fu.id}`, label: `follow-up ore ${fu.time}`, start: timeToMin(fu.time), end: timeToMin(fu.time) }] }
+            ? { preferredSlots: [{ id: `fu_${fu.id}`, label: `follow-up ore ${fu.time}`, start: timeToMin(fu.time), end: timeToMin(fu.time), strict: true }] }
             : {}),
         };
         mandatoryKeys.add(cand.key);
@@ -842,6 +863,8 @@ export default function AITourScreen() {
           dayType: v.dayType, resolvedDayType: resolved, bufferPct, area, areaLabel,
         });
       }
+      const reminders = freeAppointments.filter(a => !freePlaces[a.id]);
+      if (reminders.length) finalPlan.warnings.push(`Impegni solo promemoria, non inseriti nel giro: ${reminders.map(a => `${a.time} ${a.title} (${a.duration} min)`).join('; ')}. Verifica gli orari.`);
       setPlan(finalPlan);
       setReadOnly(false);
       setPhase('result');
@@ -1647,6 +1670,10 @@ export default function AITourScreen() {
       </ScrollView>
 
       {/* Follow-up in agenda per la data scelta: considera (obbligatoria) o ignora */}
+      {!!agendaError && <TouchableOpacity testID="aitour-agenda-retry" style={styles.fuPanel} onPress={() => setAgendaRefresh(v => v + 1)}><Text testID="aitour-agenda-error" style={styles.fuPanelTitle}>{agendaError} Tocca per riprovare.</Text></TouchableOpacity>}
+      <FreeAgendaPanel appointments={freeAppointments} places={freePlaces} onPlace={(id, place) => setFreePlaces(old => {
+        const next = { ...old }; if (place) next[id] = place; else delete next[id]; return next;
+      })} />
       {followUps.length > 0 && (
         <View style={styles.fuPanel} testID="aitour-followup-panel">
           <View style={styles.fuPanelHeader}>

@@ -4,7 +4,7 @@ set -uo pipefail
 ROOT="/app"
 OUTDIR="/tmp/verification-mobile-tests"
 mkdir -p "$OUTDIR"
-cd "$ROOT"
+cd "$ROOT" || exit 1
 
 TESTS=(
   "customer_verification_service"
@@ -21,14 +21,18 @@ for test in "${TESTS[@]}"; do
   fi
 
   # shellcheck disable=SC2086
-  esbuild "$ROOT/tests/verification/${test}.unit.ts" \
+  if ! esbuild "$ROOT/tests/verification/${test}.unit.ts" \
     --bundle --platform=node --format=cjs \
     --alias:react-native=./tests/stubs/rn.js \
     --alias:@react-native-async-storage/async-storage=./tests/stubs/storage.js \
     $EXTRA_ALIAS \
     --define:process.env.EXPO_PUBLIC_SUPABASE_URL='"https://example.invalid"' \
     --define:process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY='"test-only"' \
-    --outfile="$OUTDIR/${test}.cjs"
+    --outfile="$OUTDIR/${test}.cjs"; then
+    FAIL=$((FAIL + 1))
+    FAILED+=("$test (build)")
+    continue
+  fi
 
   if ! node --import "$ROOT/tests/aitour/ws-preload.mjs" "$OUTDIR/${test}.cjs"; then
     FAIL=$((FAIL + 1))

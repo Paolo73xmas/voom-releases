@@ -26,6 +26,8 @@ export interface OrderDraft {
   rottamazioneAmount: number;
   rottamazioneDescription: string;
   cashBackToUse: number;
+  scontoBenvenuto?: boolean;
+  orderChannel?: 'visita' | 'remoto';
   totalAmount: number;
   productCount: number;
   savedAt: string;
@@ -37,6 +39,7 @@ export async function getDrafts(): Promise<OrderDraft[]> {
     const raw = await AsyncStorage.getItem(DRAFTS_KEY);
     if (!raw) return [];
     const drafts: OrderDraft[] = JSON.parse(raw);
+    if (!Array.isArray(drafts)) throw new Error('Formato bozze non valido');
     return drafts.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
   } catch (e) {
     console.error('[drafts] Error loading drafts:', e);
@@ -46,8 +49,8 @@ export async function getDrafts(): Promise<OrderDraft[]> {
 
 /** Save or update a draft. If a draft with the same ID exists, it's replaced. */
 export async function saveDraft(draft: OrderDraft): Promise<void> {
-  try {
-    const drafts = await getDrafts();
+  return mutateDrafts(async () => {
+    const drafts = await readForWrite();
     const idx = drafts.findIndex(d => d.id === draft.id);
     if (idx >= 0) {
       drafts[idx] = { ...draft, savedAt: new Date().toISOString() };
@@ -56,21 +59,31 @@ export async function saveDraft(draft: OrderDraft): Promise<void> {
     }
     await AsyncStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
     console.log(`[drafts] Saved draft ${draft.id} (${draft.customerName})`);
-  } catch (e) {
-    console.error('[drafts] Error saving draft:', e);
-  }
+  });
 }
 
 /** Delete a draft by ID */
 export async function deleteDraft(draftId: string): Promise<void> {
-  try {
-    const drafts = await getDrafts();
+  return mutateDrafts(async () => {
+    const drafts = await readForWrite();
     const filtered = drafts.filter(d => d.id !== draftId);
     await AsyncStorage.setItem(DRAFTS_KEY, JSON.stringify(filtered));
     console.log(`[drafts] Deleted draft ${draftId}`);
-  } catch (e) {
-    console.error('[drafts] Error deleting draft:', e);
-  }
+  });
+}
+
+// Serializza read-modify-write: due salvataggi ravvicinati non perdono altre bozze.
+let mutationQueue: Promise<void> = Promise.resolve();
+function mutateDrafts(operation: () => Promise<void>): Promise<void> {
+  const pending = mutationQueue.then(operation);
+  mutationQueue = pending.catch(() => {});
+  return pending;
+}
+async function readForWrite(): Promise<OrderDraft[]> {
+  const raw = await AsyncStorage.getItem(DRAFTS_KEY);
+  const drafts = raw ? JSON.parse(raw) : [];
+  if (!Array.isArray(drafts)) throw new Error('Bozze non leggibili: salvataggio interrotto per non perdere dati');
+  return drafts;
 }
 
 /** Get draft count */

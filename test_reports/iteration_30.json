@@ -1,0 +1,104 @@
+{
+  "summary": "Iteration 30 completed with real public-preview testing: backend regression passed; auth/logout modal regressions passed on dashboard/profile with relogin; TEST_AUDIT_20260912 fixture (customer+visit+appointment) was created and fully cleaned via ID-based manifest. Critical requested flows for calendar event completion and orders/drafts E2E remain blocked in web automation due calendar perpetual loading state and unstable deep-link/session behavior on customer detail.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/ai-tour/transcribe",
+        "issue": "Synthetic transcribe sample still skipped in reusable backend suite (no discoverable sample file)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Calendar screen",
+        "issue": "Calendar repeatedly stayed on 'Caricamento calendario...' in web preview during fixture validation attempts; fixture event never became interactable, blocking mark-done/undo verification from UI.",
+        "testID": "calendar-refresh, calendar-event-detail, calendar-mark-done, calendar-undo-done",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Customer detail deep-link session handling",
+        "issue": "Direct navigation to /customer/<id> intermittently renders 'Cliente non trovato' with Supabase 406/PGRST116 when session is not fully hydrated; blocked deterministic edit-save automation for fixture customer.",
+        "testID": "customer-edit-contact, customer-edit-address, customer-edit-fiscal, customer-edit-save",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Calendar fixture follow-up: open event -> mark done -> undo",
+        "issue": "Fixture created in DB and visible by direct DB query, but calendar UI did not expose event to automation due persistent loading state; DB completed_at stayed null.",
+        "affected_testIDs": [
+          "calendar-mode-picker",
+          "calendar-refresh",
+          "calendar-event-detail",
+          "calendar-mark-done",
+          "calendar-undo-done"
+        ]
+      },
+      {
+        "flow": "Orders/drafts mandatory 5-step E2E",
+        "issue": "Not completed in this run after high-priority blockers above; requires dedicated rerun once calendar/deep-link reliability is fixed to avoid false negatives.",
+        "affected_testIDs": [
+          "order-save-draft",
+          "order-next-step",
+          "order-submit",
+          "draft-resume-*",
+          "draft-delete-dialog-confirm"
+        ]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Global web preview",
+        "issues": [
+          "Repeated console deprecation warnings (`shadow*`, `pointerEvents`) remain noisy during mobile-web regression runs."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend_audit_iter29.py",
+    "/app/test_reports/pytest/pytest_results_iteration_30.xml",
+    "/app/test_reports/artifacts_iter30/preview_load_iter30.jpeg",
+    "/app/test_reports/artifacts_iter30/logout_menu_iter30_pass.jpeg",
+    "/app/test_reports/artifacts_iter30/customer_edit_iter30_fail2.jpeg",
+    "/app/test_reports/artifacts_iter30/calendar_markdone_iter30_fail.jpeg",
+    "/app/test_reports/artifacts_iter30/calendar_probe3_iter30.jpeg",
+    "/app/test_reports/artifacts_iter30/fixture_manifest_TEST_AUDIT_20260912.json",
+    "/app/test_reports/artifacts_iter30/fixture_cleanup_result_TEST_AUDIT_20260912.json",
+    "/app/test_reports/artifacts_iter30/fixture_entities_TEST_AUDIT_20260912.json",
+    "/app/frontend/scripts/seed_test_audit_20260912.mjs",
+    "/app/frontend/scripts/cleanup_test_audit_20260912.mjs"
+  ],
+  "action_items": [
+    "Investigate calendar loading deadlock in web preview (spinner persists, event cells not becoming actionable) and verify Supabase queries in /app/frontend/app/(tabs)/calendar.tsx under agent account.",
+    "Harden auth/session guard for deep-linked protected routes (e.g., /customer/:id) to avoid transient PGRST116 false 'Cliente non trovato' before session hydration.",
+    "After above fixes, rerun mandatory flows not completed here: customer edit save persistence, calendar mark-done/undo DB verification, full order draft 5-step persistence and final order submission assertions.",
+    "Add stable testIDs in order product/payment/shipping option rows to make mandatory order/draft E2E deterministic on mobile web automation."
+  ],
+  "critical_code_review_comments": [
+    "`app/order-collection-v2.tsx` remains a very large module (~2600+ lines), increasing regression/debug cost and selector fragility during mandatory E2E flows.",
+    "`app/customer/[id].tsx` relies on immediate data fetch; deep-link without fully hydrated session surfaces 406/PGRST116 path as user-facing 'Cliente non trovato', masking auth-hydration timing issue.",
+    "`app/(tabs)/calendar.tsx` has no explicit request timeout/fallback path for long-running Supabase fetches; in this run UI stayed in loading state and blocked functional actions."
+  ],
+  "updated_files": [
+    "/app/frontend/scripts/seed_test_audit_20260912.mjs",
+    "/app/frontend/scripts/cleanup_test_audit_20260912.mjs",
+    "/app/frontend/scripts/list_test_audit_20260912_entities.mjs",
+    "/app/frontend/scripts/check_appointment_completed_state.mjs",
+    "/app/frontend/scripts/check_fixture_customer_state_20260912.mjs",
+    "/app/test_reports/artifacts_iter30/fixture_manifest_TEST_AUDIT_20260912.json",
+    "/app/test_reports/iteration_30.json"
+  ],
+  "success_rate": {
+    "backend": "91% passed (10/11, 1 skipped)",
+    "frontend": "Partial: logout modal + tab/menu navigation passed; requested calendar/customer/order-draft deep validations blocked"
+  },
+  "seed_data_creation": "Created TEST_AUDIT_20260912 fixture via Supabase API (customer af5816d1-bc16-4b60-84d3-52bbf77a8f1b, visit 7817a7b0-2025-4181-b3bc-def3c6b3d53d, appointment 2cda543e-77be-42e4-a5ea-5550bb3361a9). Also cleaned two failed-seed residual customer IDs from manifest. ID-based cleanup completed with zero residuals confirmed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Test matrix: PASS -> backend regression suite, dashboard/profile logout modal cancel+confirm with relogin, tab navigation, Altro menu routes (orders/products/calendar/profile + drafts/ai-tour/substitutions/scadenziario/orphan-claims/rivendite-no-mappa/anagrafica/inspection-new). FAIL/BLOCKED -> calendar fixture event interaction (loading spinner/event not interactable), customer edit save persistence under deep-link/session timing, orders-drafts mandatory 5-step persistence and submit validations (not executed to completion). Reuse iteration30 fixture scripts and artifacts; fixture already cleaned.",
+  "rca_of_issue": "RCA: 1) Calendar UI blocker likely from unresolved/slow Supabase event fetch path in web mode (spinner persisted across mode switches and refreshes; no event rows became clickable). 2) Deep-link customer detail race: route can render before auth hydration, causing fetchCustomerById `.single()` to produce PGRST116 and user-facing invalid-state screen. 3) Automation reliability improved where testIDs exist (logout/tabs/menu), confirming testability gap in deeper order/customer/calendar interactions remains primary risk."
+}

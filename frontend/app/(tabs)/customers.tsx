@@ -31,6 +31,7 @@ const CustomerCard = memo(function CustomerCard({
 }) {
   return (
     <TouchableOpacity
+      testID={`customer-card-${item.id}`}
       style={styles.customerCard}
       onPress={() => onPress(item.id)}
     >
@@ -162,12 +163,13 @@ export default function CustomersScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View testID="customers-screen" style={styles.container}>
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={20} color="#6B7280" />
           <TextInput
+            testID="customers-search"
             style={styles.searchInput}
             placeholder="Cerca cliente..."
             placeholderTextColor={COLORS.textLight}

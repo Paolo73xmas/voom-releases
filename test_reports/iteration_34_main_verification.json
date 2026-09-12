@@ -1,0 +1,33 @@
+{
+  "type": "main_self_verification",
+  "supersedes_automation_blockers_in": [29, 30, 31, 32, 33],
+  "results": {
+    "order_customer_quick_entry_step2": "PASS real authenticated browser, selected TEST customer name matches",
+    "order_back_next_keeps_customer": "PASS",
+    "order_generic_step1": "PASS",
+    "map_and_live_callers": "Shared route helper applied to Map and both Live order paths; actual real Live not mounted",
+    "wheel_disc_select_deselect": "PASS, right sector 14.30-16",
+    "wheel_multiselect": "PASS top sector + chip",
+    "calendar_create_linked_customer": "PASS HTTP201 real database",
+    "calendar_patch_failure": "PASS error visible, modal stays open",
+    "calendar_retry_completion": "PASS",
+    "calendar_restore_completion": "PASS",
+    "calendar_to_ai_followup_local_time": "PASS 09:30 identical",
+    "completed_followup_excluded_after_focus": "PASS",
+    "free_title_only_and_place_confirmation": "PASS in iteration32",
+    "typescript": "PASS",
+    "modified_file_lint_errors": 0,
+    "vitest": {"passed": 17},
+    "ai_tour_suite_groups": {"passed": 6},
+    "verification_suite_groups": {"passed": 2}
+  },
+  "evidence_logs": ["20260912_143253", "20260912_143344", "20260912_143448", "20260912_143619"],
+  "cleanup": {
+    "method": "admin delete exact created IDs then GET verifies []",
+    "appointments": ["2556cb07-1561-482a-a3a6-6ee85276b1bc", "990546b0-5b61-4ffe-8fa9-6085945cffca"],
+    "visits": ["e0f21dfe-a232-4616-a7fe-067f75901536"],
+    "customers": ["b07dfae8-2dab-47a6-a410-9cba3554fcf5"],
+    "remaining": 0
+  },
+  "limits": ["No native-device/GPS/camera validation", "No actual protected Live tours modified", "Full app audit remains partial after user priorities changed", "Free appointments without a place are reminders, not automatic blocked planner time"]
+}

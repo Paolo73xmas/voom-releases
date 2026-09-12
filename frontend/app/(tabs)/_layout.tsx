@@ -73,6 +73,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Dashboard',
+          tabBarButtonTestID: 'tab-dashboard',
           headerShown: false,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={focused ? 26 : 23} color={color} />
@@ -83,6 +84,7 @@ export default function TabLayout() {
         name="map"
         options={{
           title: 'Mappa',
+          tabBarButtonTestID: 'tab-map',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'map' : 'map-outline'} size={focused ? 26 : 23} color={color} />
           ),
@@ -92,6 +94,7 @@ export default function TabLayout() {
         name="customers"
         options={{
           title: 'Clienti',
+          tabBarButtonTestID: 'tab-customers',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'people' : 'people-outline'} size={focused ? 26 : 23} color={color} />
           ),
@@ -101,6 +104,7 @@ export default function TabLayout() {
         name="altro"
         options={{
           title: 'Altro',
+          tabBarButtonTestID: 'tab-more',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'grid' : 'grid-outline'} size={focused ? 25 : 22} color={color} />
           ),

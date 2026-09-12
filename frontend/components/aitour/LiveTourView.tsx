@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert, TextInput, Vibration } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { customerOrderRoute } from '../../lib/customer-order-route';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
@@ -507,7 +508,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     if (kind === 'inspection') {
       router.push({ pathname: '/inspection/new', params: { customerId: next.candidate.customerId } });
     } else {
-      router.push({ pathname: '/order-collection-v2', params: { customerId: next.candidate.customerId, customerName: next.candidate.name } });
+      router.push(customerOrderRoute(next.candidate.customerId, next.candidate.name));
     }
   };
 
@@ -603,7 +604,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               setMessage(`Prospect creato: "${stop.candidate.name}" collegato alla tappa`);
               const ctx: ExternalCtx = { tourId: tour.id, stopId: stop.id, customerId: custId, kind: nk, startedAt: new Date().toISOString() };
               await AsyncStorage.setItem(EXTERNAL_KEY, JSON.stringify(ctx));
-              router.push({ pathname: '/order-collection-v2', params: { customerId: custId, customerName: stop.candidate.name } });
+              router.push(customerOrderRoute(custId, stop.candidate.name));
             }
             return;
           }
@@ -1448,7 +1449,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
                 <Text style={[styles.actionBtnText, { color: DS.ink2 }]}>Scheda</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]} onPress={() => goExternal('order')} disabled={busy} activeOpacity={0.75}>
+            <TouchableOpacity testID="aitour-live-order" style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]} onPress={() => goExternal('order')} disabled={busy} activeOpacity={0.75}>
               <Ionicons name="cart" size={15} color="#FFF" />
               <Text style={styles.actionBtnText}>Raccolta Ordine</Text>
             </TouchableOpacity>

@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, FlatList, TouchableOpacity, TextInput,
   Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform,
-  Keyboard, Dimensions,
+  Keyboard,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { fetchCustomers } from '../lib/api/customers';
+import { fetchCustomerById } from '../lib/api/customers';
 import { fetchProducts, fetchPaymentMethods, fetchShippingMethods } from '../lib/api/order-collection';
+import type { Product } from '../lib/api/order-collection';
 import { createReservation, getAvailableStock, getBranchAvailableStock } from '../lib/api/stock-reservation';
 import { subtractStockForOrder, verifyAndSetStockSubtracted, subtractBranchStockForOrder, isBranchVirtual } from '../lib/api/stock-management';
 import { fetchOrderById } from '../lib/api/orders';
@@ -25,6 +27,7 @@ import { generateAndShareQuotePdf } from '../lib/pdf/order-quote';
 import { useVirtualBranch } from '../hooks/useVirtualBranch';
 import type { AvailableStockMap } from '../types/reservation';
 import { COLORS, currentThemeMode } from '../lib/theme';
+import { RequireSession } from '../components/RequireSession';
 
 // ═══════════════════════════════════════════════════════
 // TYPES
@@ -33,6 +36,7 @@ interface Customer {
   id: string;
   business_name: string;
   contact_name?: string;
+  contact_surname?: string;
   contact_phone?: string;
   contact_email?: string;
   address?: string;
@@ -44,29 +48,7 @@ interface Customer {
   pec?: string;
   sdi?: string;
   customer_type?: string;
-  tabaccheria_id?: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  short_description?: string;
-  sku: string;
-  unit_price: number;
-  supplier_id: string;
-  unit_of_measure?: string;
-  accisa?: number;
-  iva_percentage?: number;
-  image_url?: string | null;
-  is_active: boolean;
-  cashback_eligible?: boolean;
-  estero?: boolean;
-  rottamazione_no?: boolean;
-  stock_quantity?: number;
-  /** ✅ Sconto Cartone (parità web): pezzi per cartone */
-  pezzi_cartone?: number | null;
-  /** ✅ Sconto Cartone (parità web): % sconto quando qty >= pezzi_cartone */
-  sconto_cartone?: number | null;
+  tabaccheria_id?: string | null;
 }
 
 interface CartItem {
@@ -221,9 +203,11 @@ const NEXT_LABELS = ['Continua ai Prodotti', 'Continua al Pagamento', 'Continua 
 // ═══════════════════════════════════════════════════════
 // COMPONENT
 // ═══════════════════════════════════════════════════════
-export default function OrderCollectionV2() {
+export default function OrderCollectionRoute() { return <RequireSession><OrderCollectionV2 /></RequireSession>; }
+
+function OrderCollectionV2() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ draftId?: string; duplicateOrderId?: string; customerId?: string; customerName?: string }>();
+  const params = useLocalSearchParams<{ draftId?: string; duplicateOrderId?: string; customerId?: string; customerName?: string; startStep?: string }>();
   const { user, profile } = useAuthStore();
   const insets = useSafeAreaInsets();
   // ✅ Web parity: Virtual branches use central warehouse stock (no branch overlay)
@@ -261,6 +245,10 @@ export default function OrderCollectionV2() {
 
   // ── Step 1: Customer ──
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [preselecting, setPreselecting] = useState(!!params.customerId && !params.draftId && !params.duplicateOrderId);
+  const [preselectError, setPreselectError] = useState('');
+  const [preselectRetry, setPreselectRetry] = useState(0);
+  const preselectedRoute = React.useRef<string | null>(null);
   const [customerSearch, setCustomerSearch] = useState('');
 
   // ── Step 2: Products ──
@@ -308,33 +296,15 @@ export default function OrderCollectionV2() {
   // ── Draft system ──
   const [draftId, setDraftId] = useState<string>(generateDraftId());
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const [draftError, setDraftError] = useState('');
+  const [orderCreated, setOrderCreated] = useState('');
+  const orderCompletedRef = React.useRef(false);
+  const [duplicateMessage, setDuplicateMessage] = useState('');
+  const leaveOrder = () => { if (router.canGoBack()) router.back(); else router.replace('/drafts'); };
 
   // ── PDF Preventivo ──
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
-  // Auto-save draft when step changes or cart changes (only from step 1 onward with a customer)
-  const autoSaveDraft = useCallback(async () => {
-    if (!selectedCustomer || cart.length === 0) return;
-    const draft: OrderDraft = {
-      id: draftId,
-      customerId: selectedCustomer.id,
-      customerName: selectedCustomer.business_name,
-      cart: cart.map(c => ({ product: c.product, quantity: c.quantity, unit_price: c.unit_price, manual_price: c.manual_price })),
-      currentStep,
-      isForeignOrder,
-      selectedPaymentId: selectedPayment || null,
-      selectedShippingId: selectedShipping || null,
-      customShippingAddress: shippingAddress,
-      notes,
-      rottamazioneAmount,
-      rottamazioneDescription,
-      cashBackToUse,
-      totalAmount: cartTotals.grandTotal,
-      productCount: cartTotals.totalProducts,
-      savedAt: new Date().toISOString(),
-    };
-    await saveDraft(draft);
-  }, [draftId, selectedCustomer, cart, currentStep, isForeignOrder, selectedPayment, selectedShipping, shippingAddress, notes, rottamazioneAmount, rottamazioneDescription, cashBackToUse]);
 
   // ═══════════════════════════════════════════════════
   // HELPERS: Stock
@@ -378,29 +348,33 @@ export default function OrderCollectionV2() {
     }
   }, [isLoading, customers, products, params.duplicateOrderId, draftLoaded]);
 
-  // ✅ Pre-selezione cliente da navigazione (Mappa "Ordine" / Scheda cliente "Ordine")
-  // Il chiamante passa customerId: selezioniamo il cliente allo Step 1 così l'agente
-  // deve solo premere "Avanti" (che carica cashback/pacchetti come la selezione manuale).
+  // Mappa e AI Tour aprono direttamente Prodotti dopo aver preparato il cliente.
+  // Il deep-link non dipende dalla cache dell'elenco clienti (es. prospect appena creato).
   useEffect(() => {
     const targetCustomerId = Array.isArray(params.customerId) ? params.customerId[0] : params.customerId;
-    if (
-      !isLoading &&
-      !draftLoaded &&
-      targetCustomerId &&
-      !params.draftId &&
-      !params.duplicateOrderId &&
-      customers.length > 0 &&
-      !selectedCustomer
-    ) {
-      const customer = customers.find(c => c.id === targetCustomerId);
-      if (customer) {
+    if (isLoading || !targetCustomerId || params.draftId || params.duplicateOrderId || preselectedRoute.current === targetCustomerId) return;
+    let cancelled = false;
+    setPreselecting(true); setPreselectError('');
+    (async () => {
+      try {
+        const customer = customers.find(c => c.id === targetCustomerId) ?? await fetchCustomerById(targetCustomerId);
+        if (cancelled) return;
+        if (!customer) throw new Error('Cliente non disponibile o non accessibile. Riprova oppure seleziona un cliente.');
         setSelectedCustomer(customer);
-        console.log('[order-v2] Cliente pre-selezionato da navigazione:', customer.business_name);
-      } else {
-        console.warn('[order-v2] customerId da navigazione non trovato tra i clienti:', targetCustomerId);
+        if (params.startStep === 'products') {
+          await Promise.all([loadCashBackBalance(customer.id), loadPackages(), checkFirstOrder(customer.id)]);
+          if (cancelled) return;
+          setCurrentStep(1);
+        }
+        preselectedRoute.current = targetCustomerId;
+      } catch {
+        if (!cancelled) setPreselectError('Impossibile caricare il cliente dell’ordine. Riprova oppure selezionalo dall’elenco.');
+      } finally {
+        if (!cancelled) setPreselecting(false);
       }
-    }
-  }, [isLoading, customers, params.customerId, draftLoaded]);
+    })();
+    return () => { cancelled = true; };
+  }, [isLoading, customers, params.customerId, params.startStep, params.draftId, params.duplicateOrderId, preselectRetry]);
 
   /**
    * ✅ Duplicazione ordine: carica un ordine passato, ripristina cliente + prodotti in Step 2.
@@ -419,7 +393,7 @@ export default function OrderCollectionV2() {
       if (customer) {
         setSelectedCustomer(customer);
       } else {
-        console.warn('[duplicate] Customer not in current list, skipping customer set');
+        setDuplicateMessage('Il cliente dell’ordine originale non è disponibile. Seleziona un cliente autorizzato prima di proseguire.');
       }
 
       // Ricostruisci il carrello dai order_items — match per product.id contro products caricati
@@ -443,7 +417,7 @@ export default function OrderCollectionV2() {
       setCart(rebuiltCart);
       setIsForeignOrder(src.is_foreign === true);
       // Vai direttamente allo Step 2 (Prodotti) così l'utente vede subito eventuali conflitti stock
-      setCurrentStep(1);
+      setCurrentStep(customer ? 1 : 0);
       setDraftLoaded(true);
 
       // Carica saldo cashback per il cliente
@@ -492,6 +466,9 @@ export default function OrderCollectionV2() {
       if (draft.rottamazioneAmount) setRottamazioneAmount(draft.rottamazioneAmount);
       if (draft.rottamazioneDescription) setRottamazioneDescription(draft.rottamazioneDescription);
       if (draft.cashBackToUse) setCashBackToUse(draft.cashBackToUse);
+      setScontoBenvenuto(draft.scontoBenvenuto ?? false);
+      if (draft.orderChannel) setOrderChannel(draft.orderChannel);
+      if (customer) await checkFirstOrder(customer.id);
 
       // Use the same draft ID for updates
       setDraftId(incomingDraftId);
@@ -1175,6 +1152,27 @@ export default function OrderCollectionV2() {
     return { finalItems, isRottamazione, isUsingCashBack, itemsTotal, shippingMethod, shippingBase, shippingWithVAT, finalTotalAmount };
   };
 
+  const draftTotal = computeFinalItemsAndTotal().finalTotalAmount;
+  const autoSaveDraft = useCallback(async () => {
+    if (!selectedCustomer || cart.length === 0 || orderCompletedRef.current) return;
+    const draft: OrderDraft = {
+      id: draftId, customerId: selectedCustomer.id, customerName: selectedCustomer.business_name,
+      cart: cart.map(c => ({ product: c.product, quantity: c.quantity, unit_price: c.unit_price, manual_price: c.manual_price })),
+      currentStep, isForeignOrder, selectedPaymentId: selectedPayment || null,
+      selectedShippingId: selectedShipping || null, customShippingAddress: shippingAddress,
+      notes, rottamazioneAmount, rottamazioneDescription, cashBackToUse, scontoBenvenuto, orderChannel,
+      totalAmount: draftTotal, productCount: cartTotals.totalProducts, savedAt: new Date().toISOString(),
+    };
+    try { await saveDraft(draft); setDraftError(''); }
+    catch (error) { setDraftError('Bozza NON salvata. Riprova prima di uscire.'); throw error; }
+  }, [draftId, selectedCustomer, cart, currentStep, isForeignOrder, selectedPayment, selectedShipping, shippingAddress, notes, rottamazioneAmount, rottamazioneDescription, cashBackToUse, scontoBenvenuto, orderChannel, draftTotal, cartTotals.totalProducts]);
+
+  useEffect(() => {
+    if (isSubmitting || orderCreated || (params.draftId && !draftLoaded)) return;
+    const timer = setTimeout(() => { autoSaveDraft().catch(() => {}); }, 600);
+    return () => clearTimeout(timer);
+  }, [autoSaveDraft, isSubmitting, orderCreated, params.draftId, draftLoaded]);
+
   /**
    * ✅ PDF Preventivo: genera un PDF con il riepilogo (prezzi finali post-sconti)
    * e apre lo share sheet. La bozza resta salvata (auto-save), quindi l'agente può
@@ -1261,6 +1259,7 @@ export default function OrderCollectionV2() {
       Alert.alert('Errore CashBack', `L'importo minimo di utilizzo CashBack è ${formatCurrency(cashBackMinThreshold)}`); return;
     }
 
+    if (isSubmitting || orderCompletedRef.current) return;
     setIsSubmitting(true);
     try {
       const { finalItems, isRottamazione, isUsingCashBack, shippingBase, finalTotalAmount } = computeFinalItemsAndTotal();
@@ -1435,12 +1434,15 @@ export default function OrderCollectionV2() {
 
       // ── SUCCESS ──
       // Delete the draft since order was submitted
-      await deleteDraft(draftId);
+      orderCompletedRef.current = true;
+      setOrderCreated(order.order_number);
+      try { await deleteDraft(draftId); }
+      catch { setDraftError('Ordine creato. La vecchia bozza non è stata eliminata: non inviarla nuovamente.'); }
       const warnText = reservationWarnings.length ? `\n\nAttenzione disponibilità:\n${reservationWarnings.join('\n')}` : '';
       // Haptic success feedback
       try { const { hap } = await import('../lib/haptics'); hap.success(); } catch {}
       Alert.alert('Ordine Creato!', `Ordine ${order.order_number} creato con successo\nTotale: ${formatCurrency(finalTotalAmount)}${warnText}`, [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'OK', onPress: leaveOrder },
       ]);
     } catch (error: any) {
       console.error('Error creating order:', error);
@@ -1473,8 +1475,7 @@ export default function OrderCollectionV2() {
         checkFirstOrder(selectedCustomer.id);
       }
       setCurrentStep(currentStep + 1);
-      // Auto-save draft on every step advance
-      setTimeout(() => autoSaveDraft(), 100);
+      // La bozza viene salvata dall'effect dopo il cambio passo, non con lo stato precedente.
     }
   };
 
@@ -1496,7 +1497,7 @@ export default function OrderCollectionV2() {
 
   const handleBack = () => {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
-    else router.back();
+    else leaveOrder();
   };
 
   // ═══════════════════════════════════════════════════
@@ -1893,6 +1894,8 @@ export default function OrderCollectionV2() {
           <Text style={s.summaryLabel}>{"Come stai raccogliendo l'ordine?"}</Text>
           <View style={s.channelRow}>
             <TouchableOpacity
+              testID="order-channel-visita"
+              accessibilityState={{ selected: orderChannel === 'visita' }}
               style={[s.channelBtn, orderChannel === 'visita' && s.channelBtnVisita]}
               onPress={() => setOrderChannel('visita')}
               activeOpacity={0.7}
@@ -1901,6 +1904,8 @@ export default function OrderCollectionV2() {
               <Text style={[s.channelBtnText, orderChannel === 'visita' && { color: '#15803D' }]}>Di persona dal cliente</Text>
             </TouchableOpacity>
             <TouchableOpacity
+              testID="order-channel-remoto"
+              accessibilityState={{ selected: orderChannel === 'remoto' }}
               style={[s.channelBtn, orderChannel === 'remoto' && s.channelBtnRemoto]}
               onPress={() => setOrderChannel('remoto')}
               activeOpacity={0.7}
@@ -2114,7 +2119,7 @@ export default function OrderCollectionV2() {
                   <View style={{ backgroundColor: COLORS.primarySoft, borderRadius: 8, padding: 10, marginTop: 10 }}>
                     <Text style={{ fontSize: 11, color: '#5B21B6', marginBottom: 2 }}>• Imponibile attuale: {formatCurrency(cartTotals.imponibile)}</Text>
                     {rottamazioneEligibleSubtotal < cartTotals.imponibile && (
-                      <Text style={{ fontSize: 11, color: '#5B21B6', fontWeight: '700', marginBottom: 2 }}>• Imponibile eligible (esclusi "Rott. No"): {formatCurrency(rottamazioneEligibleSubtotal)}</Text>
+                      <Text style={{ fontSize: 11, color: '#5B21B6', fontWeight: '700', marginBottom: 2 }}>• Imponibile eligible (esclusi &quot;Rott. No&quot;): {formatCurrency(rottamazioneEligibleSubtotal)}</Text>
                     )}
                     <Text style={{ fontSize: 11, color: '#5B21B6', marginBottom: 2 }}>• Formula: imponibile minimo = rottamazione × {rottamazioneMultiplier}</Text>
                     {rottamazioneAmount > 0 && (
@@ -2181,7 +2186,7 @@ export default function OrderCollectionV2() {
               {rottamazioneEligibleItems.length > 0 ? (
                 <>
                   <Text style={{ fontSize: 12, color: '#92400E', marginBottom: 8 }}>
-                    Sconto del 25% sull'imponibile dei prodotti eligible alla rottamazione
+                    Sconto del 25% sull&apos;imponibile dei prodotti eligible alla rottamazione
                   </Text>
                   <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 4 }}>
                     Prodotti eligible: {rottamazioneEligibleItems.length}/{cart.length} · Imponibile: {formatCurrency(rottamazioneEligibleSubtotal)}
@@ -2191,6 +2196,7 @@ export default function OrderCollectionV2() {
                   </Text>
 
                   <TouchableOpacity
+                    testID="order-welcome-discount"
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: scontoBenvenuto ? '#FEF3C7' : '#F9FAFB', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: scontoBenvenuto ? '#F59E0B' : '#E5E7EB' }}
                     onPress={() => setScontoBenvenuto(!scontoBenvenuto)}
                   >
@@ -2461,11 +2467,11 @@ export default function OrderCollectionV2() {
   // RENDER: MAIN
   // ═══════════════════════════════════════════════════
 
-  if (isLoading) {
+  if (isLoading || preselecting) {
     return (
       <View style={[s.container, { paddingTop: insets.top }]}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#7C3AED" />
+          <ActivityIndicator testID="order-initial-loading" size="large" color="#7C3AED" />
           <Text style={{ marginTop: 12, color: COLORS.textMuted }}>Caricamento...</Text>
         </View>
       </View>
@@ -2483,15 +2489,14 @@ export default function OrderCollectionV2() {
           <Text style={s.headerTitle}>Raccolta Ordine</Text>
           {/* Save draft & exit button */}
           <TouchableOpacity
+            testID="order-save-draft"
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
             onPress={async () => {
               if (selectedCustomer && cart.length > 0) {
-                await autoSaveDraft();
-                Alert.alert('Bozza Salvata', `Ordine per "${selectedCustomer.business_name}" salvato come bozza.\n\nPuoi riprenderlo da "Bozze Ordine".`, [
-                  { text: 'OK', onPress: () => router.back() },
-                ]);
+                try { await autoSaveDraft(); } catch { return; }
+                leaveOrder();
               } else {
-                router.back();
+                leaveOrder();
               }
             }}
           >
@@ -2501,6 +2506,17 @@ export default function OrderCollectionV2() {
         </View>
 
         {renderStepper()}
+        <Text testID="order-current-step" style={s.auditStep}>Step {currentStep + 1} di {STEPS.length}{selectedCustomer ? ` · ${selectedCustomer.business_name}` : ''}</Text>
+        {!!preselectError && <View testID="order-customer-load-error" style={s.auditNotice}>
+          <Text style={s.auditError}>{preselectError}</Text>
+          <TouchableOpacity testID="order-customer-retry" style={s.auditNoticeButton} onPress={() => setPreselectRetry(v => v + 1)}><Text style={s.auditNoticeText}>Riprova</Text></TouchableOpacity>
+        </View>}
+        {!!draftError && <Text testID="order-draft-error" accessibilityRole="alert" style={s.auditError}>{draftError}</Text>}
+        {!!duplicateMessage && <Text testID="order-duplicate-warning" accessibilityRole="alert" style={s.auditError}>{duplicateMessage}</Text>}
+        {!!orderCreated && <View testID="order-created" style={s.auditNotice}>
+          <Text testID="order-created-number" style={s.auditNoticeText}>Ordine {orderCreated} creato. Non inviarlo nuovamente.</Text>
+          <TouchableOpacity testID="order-created-close" style={s.auditNoticeButton} onPress={leaveOrder}><Text style={s.auditNoticeText}>Chiudi</Text></TouchableOpacity>
+        </View>}
 
         {/* Step Content */}
         <View style={{ flex: 1, paddingHorizontal: 12 }}>
@@ -2514,19 +2530,19 @@ export default function OrderCollectionV2() {
         {/* Bottom Navigation — with safe area inset */}
         <View style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {currentStep > 0 && (
-            <TouchableOpacity style={s.backBtn} onPress={handleBack}>
+            <TouchableOpacity testID="order-previous-step" style={s.backBtn} onPress={handleBack}>
               <Ionicons name="arrow-back" size={18} color="#374151" />
               <Text style={s.backBtnText}>Indietro</Text>
             </TouchableOpacity>
           )}
           <View style={{ flex: 1 }} />
           {currentStep < STEPS.length - 1 ? (
-            <TouchableOpacity style={[s.nextBtn, !canAdvance() && s.nextBtnDisabled]} onPress={handleNext} disabled={!canAdvance()}>
+            <TouchableOpacity testID="order-next-step" style={[s.nextBtn, !canAdvance() && s.nextBtnDisabled]} onPress={handleNext} disabled={!canAdvance()}>
               <Text style={s.nextBtnText}>{NEXT_LABELS[currentStep] || 'Avanti'}</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={[s.submitBtn, isSubmitting && s.nextBtnDisabled]} onPress={handleSubmitOrder} disabled={isSubmitting}>
+            <TouchableOpacity testID="order-submit" style={[s.submitBtn, (isSubmitting || !!orderCreated) && s.nextBtnDisabled]} onPress={handleSubmitOrder} disabled={isSubmitting || !!orderCreated}>
               {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : (
                 <>
                   <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
@@ -2549,6 +2565,11 @@ export default function OrderCollectionV2() {
 // STYLES
 // ═══════════════════════════════════════════════════════
 const s = StyleSheet.create({
+  auditStep: { color: COLORS.textMuted, fontSize: 12, paddingHorizontal: 16, paddingVertical: 8 },
+  auditError: { padding: 12, color: COLORS.danger, fontSize: 14, lineHeight: 20 },
+  auditNotice: { padding: 12, backgroundColor: COLORS.primarySoft },
+  auditNoticeText: { color: COLORS.text, fontSize: 14, lineHeight: 20 },
+  auditNoticeButton: { minHeight: 44, justifyContent: 'center' },
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#7C3AED', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },

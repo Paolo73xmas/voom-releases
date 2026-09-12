@@ -1,0 +1,79 @@
+{
+  "summary": "Full-stack audit run executed on public preview: backend public APIs/video-range/AI parse checks passed via pytest; frontend mobile-web login+privacy+tab navigation and key route openings passed partially, with significant coverage blockers from missing testIDs on many interactive controls and web Alert limitations.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/ai-tour/transcribe",
+        "issue": "Synthetic audio transcribe test skipped because no discoverable voice sample file was available from tested candidate names in this environment."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Bottom tab and Altro menu controls",
+        "issue": "Multiple strict-selector collisions and role lookup timeouts in mobile web due absent/insufficient testID coverage on tab/menu touchables; automation required fragile text-last fallback.",
+        "testID": "MISSING",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Orders -> detail navigation",
+        "issue": "Could not deterministically open first order detail in automation run; selector for order rows is not stable (no testID) and list opening behavior was ambiguous under mobile web automation.",
+        "testID": "MISSING",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Logout -> relogin -> persistence validation",
+        "issue": "Could not reliably complete in web preview because logout path depends on React Native Alert.confirmation (known web no-op behavior) and no dedicated logout testID-driven fallback action was available.",
+        "affected_testIDs": [
+          "MISSING"
+        ]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Global mobile web preview",
+        "issues": [
+          "Console repeatedly reports deprecated web styling warnings (`shadow*`, `pointerEvents`) that are non-blocking but noisy during regression runs."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend_audit_iter29.py",
+    "/app/test_reports/pytest/pytest_results_iteration_29.xml",
+    "/app/test_reports/artifacts_iter29/preview_load_iter29.jpeg",
+    "/app/test_reports/artifacts_iter29/after_login_iter29.jpeg",
+    "/app/test_reports/artifacts_iter29/tabs_success_iter29.jpeg",
+    "/app/test_reports/artifacts_iter29/routes_probe_iter29.jpeg",
+    "/app/test_reports/artifacts_iter29/order_detail_probe_failure_iter29.jpeg"
+  ],
+  "action_items": [
+    "Add testID attributes to all tab-bar buttons, Altro list rows, Orders list cards, and order-detail entry points to enable deterministic mobile automation.",
+    "Add non-Alert web-compatible logout confirmation/test path (or testID hook) to validate logout/relogin persistence in preview.",
+    "Run focused financial regression on order detail totals: code review indicates IVA display/sum may be double-counted from `line_total` in `app/order/[id].tsx`.",
+    "Provide deterministic synthetic audio sample name (or fixture endpoint) for `/api/ai-tour/transcribe` regression coverage."
+  ],
+  "critical_code_review_comments": [
+    "`frontend/app/order/[id].tsx` computes IVA as `(item.line_total * ivaRate/100)` and totals IVA similarly from line_total; if line_total already includes IVA, this overstates IVA in both row and summary.",
+    "`frontend/app/order/[id].tsx` summary labels `Subtotale prodotti` from sum(line_total), which appears gross/taxed rather than net subtotal naming used elsewhere; high risk of fiscal UI mismatch.",
+    "Large screen modules remain very long (`order-collection-v2.tsx` > 2400 lines), increasing regression risk despite current runtime pass."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_backend_audit_iter29.py",
+    "/app/test_reports/iteration_29.json"
+  ],
+  "success_rate": {
+    "backend": "91% passed (10/11, 1 skipped)",
+    "frontend": "Core auth/privacy/tab+route smoke passed; deeper E2E coverage partial due selector/testability blockers"
+  },
+  "seed_data_creation": "None. No intentional new production TEST entities were created in this iteration.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use existing credentials file; reuse `test_backend_audit_iter29.py`. For UI, prioritize adding testIDs before extending E2E to customer/order/calendar CRUD and logout persistence checks.",
+  "rca_of_issue": "Primary blocker RCA: many interactive RN components (tabs, list cards, menu rows) lack stable testIDs, causing strict-selector collisions/timeouts in Playwright mobile-web. Secondary RCA: RN Alert-based confirmation flows (logout) are intentionally weak on web preview, preventing reliable auth lifecycle assertions there without alternate UI hooks."
+}

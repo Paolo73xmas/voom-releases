@@ -18,10 +18,11 @@ import {
   type ThemeMode,
 } from '../../lib/theme';
 import { setThemeAndReload } from '../../lib/themeToggle';
+import { LogoutButton } from '../../components/LogoutButton';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, profile, logout } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const [themeMode, setThemeMode] = React.useState<ThemeMode>(currentThemeMode);
 
   const handleThemeChange = async (mode: ThemeMode) => {
@@ -30,23 +31,6 @@ export default function ProfileScreen() {
     await setThemeAndReload(mode);
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Sei sicuro di voler uscire?',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Esci',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace('/login');
-          },
-        },
-      ]
-    );
-  };
 
   const getRoleName = (role: string) => {
     const roles: Record<string, string> = {
@@ -170,10 +154,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-        <Text style={styles.logoutText}>Esci</Text>
-      </TouchableOpacity>
+      <LogoutButton testID="profile-logout" style={styles.logoutButton} textStyle={styles.logoutText} color={COLORS.danger} label="Esci" />
 
       {/* Version */}
       <Text style={styles.version}>VOOM Crm v1.0.0</Text>

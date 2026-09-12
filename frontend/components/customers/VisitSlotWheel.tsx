@@ -1,6 +1,7 @@
 // Selettore grafico "a ruota" delle fasce orarie visite (multi-selezione).
 // Spicchi proporzionali alla durata, fascia pranzo 11.30-14.30 in alto (parità web).
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path, Circle, G, Text as SvgText } from 'react-native-svg';
 import { getVisitSlots, type VisitSlot } from '../../lib/visit-slots';
 import { DS } from '../../lib/theme';
@@ -11,6 +12,7 @@ interface Props {
   readOnly?: boolean;
   size?: number;
   slots?: VisitSlot[];
+  testID?: string;
 }
 
 const DAY_START = 360;
@@ -31,8 +33,9 @@ function slicePath(cx: number, cy: number, rInner: number, rOuter: number, a0: n
   return `M ${p1.x} ${p1.y} A ${rOuter} ${rOuter} 0 ${large} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${rInner} ${rInner} 0 ${large} 0 ${p4.x} ${p4.y} Z`;
 }
 
-export function VisitSlotWheel({ value, onChange, readOnly, size = 230, slots: slotsProp }: Props) {
+export function VisitSlotWheel({ value, onChange, readOnly, size = 230, slots: slotsProp, testID = 'visit-slot-wheel' }: Props) {
   const [loaded, setLoaded] = useState<VisitSlot[]>(slotsProp || []);
+  const pressPoint = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (slotsProp && slotsProp.length > 0) {
@@ -54,7 +57,24 @@ export function VisitSlotWheel({ value, onChange, readOnly, size = 230, slots: s
   };
 
   return (
-    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <View testID={testID} style={styles.container}>
+    <Pressable testID={`${testID}-disc`} disabled={readOnly || !onChange} style={{ width: size, height: size }} onPressIn={({ nativeEvent }) => {
+      pressPoint.current = { x: nativeEvent.locationX, y: nativeEvent.locationY };
+    }} onPress={() => {
+      // Un responder React Native unico: i tocchi su testo/spicchi non vengono persi da SVG.G.
+      // onPress web è un click senza locationX/Y: usa le coordinate del responder onPressIn.
+      const point = pressPoint.current; pressPoint.current = null;
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+      const dx = point.x - cx;
+      const dy = point.y - cy;
+      const radius = Math.hypot(dx, dy);
+      if (radius < rInner || radius > rOuter) return;
+      const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 90 - ROTATION + 720) % 360;
+      const minute = DAY_START + angle / 360 * (DAY_END - DAY_START);
+      const slot = loaded.find(s => minute >= s.start && minute < s.end);
+      if (slot) toggle(slot.id);
+    }}>
+    <Svg pointerEvents="none" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       {loaded.map((s) => {
         const a0 = angleOf(s.start) + 1;
         const a1 = angleOf(s.end) - 1;
@@ -62,7 +82,7 @@ export function VisitSlotWheel({ value, onChange, readOnly, size = 230, slots: s
         const mid = (a0 + a1) / 2;
         const lp = polar(cx, cy, (rInner + rOuter) / 2 + size * 0.035, mid);
         return (
-          <G key={s.id} onPress={() => toggle(s.id)}>
+          <G key={s.id}>
             <Path
               d={slicePath(cx, cy, rInner, rOuter, a0, a1)}
               fill={sel ? '#7C3AED' : DS.surface2}
@@ -98,5 +118,23 @@ export function VisitSlotWheel({ value, onChange, readOnly, size = 230, slots: s
         {value.length > 0 ? `${value.length} scelte` : 'nessuna'}
       </SvgText>
     </Svg>
+    </Pressable>
+    {!readOnly && !!onChange && <View style={styles.options}>
+      {loaded.map(slot => <Pressable key={slot.id} testID={`${testID}-option-${slot.id}`} accessibilityRole="checkbox" accessibilityState={{ checked: value.includes(slot.id) }} onPress={() => toggle(slot.id)} style={[styles.option, value.includes(slot.id) && styles.selected]}>
+        <Text style={[styles.optionText, value.includes(slot.id) && styles.selectedText]}>{slot.label}</Text>
+      </Pressable>)}
+    </View>}
+    <Text testID={`${testID}-selection`} style={styles.summary}>{value.length ? `Selezionate: ${loaded.filter(s => value.includes(s.id)).map(s => s.label).join(', ')}` : 'Nessuna fascia selezionata'}</Text>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { alignItems: 'center', width: '100%' },
+  options: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 12 },
+  option: { minHeight: 44, minWidth: 88, paddingHorizontal: 12, justifyContent: 'center', alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: DS.border, backgroundColor: DS.surface2 },
+  selected: { backgroundColor: '#7C3AED', borderColor: '#6D28D9' },
+  optionText: { fontSize: 14, color: DS.ink2 },
+  selectedText: { color: '#FFFFFF', fontWeight: '700' },
+  summary: { color: DS.inkMuted, fontSize: 12, textAlign: 'center', marginTop: 10, lineHeight: 18 },
+});

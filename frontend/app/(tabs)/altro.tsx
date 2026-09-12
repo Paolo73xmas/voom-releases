@@ -56,6 +56,9 @@ export default function AltroScreen() {
             {section.items.map((item, idx) => (
               <TouchableOpacity
                 key={item.label}
+                testID={`menu-${item.route.split('/').filter(Boolean).join('-').replace(/[()]/g, '')}`}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
                 style={[styles.row, idx < section.items.length - 1 && styles.rowBorder]}
                 onPress={() => { hap.light(); router.push(item.route as any); }}
                 activeOpacity={0.6}

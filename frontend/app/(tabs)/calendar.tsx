@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,10 +15,13 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-big-calendar';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
 import { COLORS } from '../../lib/theme';
+import { addMonths, format } from 'date-fns';
+import { RequireSession } from '../../components/RequireSession';
+import { AppointmentForm } from '../../components/calendar/AppointmentForm';
 
 type CalendarMode = 'month' | 'week' | '3days' | 'day';
 
@@ -57,7 +60,9 @@ const EVENT_TYPE_CONFIG = {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export default function CalendarScreen() {
+export default function CalendarRoute() { return <RequireSession><CalendarScreen /></RequireSession>; }
+
+function CalendarScreen() {
   const router = useRouter();
   const { user, profile } = useAuthStore();
   const isAdmin = profile?.role === 'admin' || profile?.role === 'admincustom';
@@ -69,10 +74,19 @@ export default function CalendarScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showModePicker, setShowModePicker] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const requestRef = useRef(0);
+  const [newAppointmentDate, setNewAppointmentDate] = useState<Date | null>(null);
+  const [saveMessage, setSaveMessage] = useState('');
 
   const loadEvents = useCallback(async () => {
     if (!user?.id) return;
+    const request = ++requestRef.current;
     try {
+      setErrorMessage('');
       setLoading(true);
 
       // Dynamic date range based on view mode (less data fetched for narrower views)
@@ -112,7 +126,8 @@ export default function CalendarScreen() {
         aptQuery = aptQuery.eq('agent_id', user.id);
       }
 
-      const { data: appointments } = await aptQuery;
+      const { data: appointments, error: aptError } = await aptQuery;
+      if (aptError) throw aptError;
 
       if (appointments && appointments.length > 0) {
         // Fetch customers
@@ -149,14 +164,13 @@ export default function CalendarScreen() {
           const isFollowUp = apt.appointment_type === 'follow_up';
 
           let color = '#F59E0B'; // Orange default
-          let eventType: CalendarEvent['eventType'] = 'appointment';
+          const eventType: CalendarEvent['eventType'] = isFollowUp ? 'follow_up' : 'appointment';
           if (isCompleted) {
             color = '#9CA3AF'; // Gray
           } else if (isAdminAppointment) {
             color = '#EAB308'; // Yellow
           } else if (isFollowUp) {
             color = '#10B981'; // Green
-            eventType = 'follow_up';
           }
 
           const start = new Date(apt.appointment_date);
@@ -196,7 +210,8 @@ export default function CalendarScreen() {
         visitQuery = visitQuery.eq('agent_id', user.id);
       }
 
-      const { data: visits } = await visitQuery;
+      const { data: visits, error: visitError } = await visitQuery;
+      if (visitError) throw visitError;
 
       if (visits && visits.length > 0) {
         const customerIds = [...new Set(visits.map((v: any) => v.customer_id).filter(Boolean))];
@@ -233,11 +248,12 @@ export default function CalendarScreen() {
       }
 
       allEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
-      setEvents(allEvents);
+      if (request === requestRef.current) setEvents(allEvents);
     } catch (err) {
       console.error('Error loading calendar events:', err);
+      if (request === requestRef.current) setErrorMessage('Calendario non aggiornato. Controlla la connessione e riprova.');
     } finally {
-      setLoading(false);
+      if (request === requestRef.current) setLoading(false);
     }
   }, [user?.id, isAdmin, currentDate, mode]);
 
@@ -247,39 +263,28 @@ export default function CalendarScreen() {
     setRefreshing(false);
   }, [loadEvents]);
 
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
+  useFocusEffect(useCallback(() => { void loadEvents(); }, [loadEvents]));
 
-  const handleMarkDone = async () => {
-    if (!selectedEvent) return;
+  const updateCompletion = async (completed: boolean) => {
+    if (!selectedEvent || savingRef.current) return;
+    savingRef.current = true; setSaving(true); setSaveError('');
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('appointments')
-        .update({ completed_at: new Date().toISOString() })
-        .eq('id', selectedEvent.id);
+        .update({ completed_at: completed ? new Date().toISOString() : null })
+        .eq('id', selectedEvent.id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Nessun appuntamento aggiornato');
       setSelectedEvent(null);
-      loadEvents();
+      await loadEvents();
     } catch (err) {
-      Alert.alert('Errore', 'Impossibile completare l\'appuntamento');
+      setSaveError('Modifica NON salvata. Controlla la connessione e riprova.');
+    } finally {
+      savingRef.current = false; setSaving(false);
     }
   };
-
-  const handleUndoDone = async () => {
-    if (!selectedEvent) return;
-    try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({ completed_at: null })
-        .eq('id', selectedEvent.id);
-      if (error) throw error;
-      setSelectedEvent(null);
-      loadEvents();
-    } catch (err) {
-      Alert.alert('Errore', 'Impossibile ripristinare l\'appuntamento');
-    }
-  };
+  const handleMarkDone = () => updateCompletion(true);
+  const handleUndoDone = () => updateCompletion(false);
 
   const formatDate = (d: Date) =>
     d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -303,10 +308,21 @@ export default function CalendarScreen() {
   }), []);
 
   return (
-    <View style={styles.container}>
+    <View testID="calendar-screen" style={styles.container}>
       {/* Toolbar */}
+      <View style={styles.createRow}>
+        <Text testID="calendar-create-help" style={styles.createHelp}>Tocca un orario oppure crea un appuntamento.</Text>
+        <TouchableOpacity testID="calendar-create" style={styles.createButton} onPress={() => {
+          const date = new Date(currentDate); date.setHours(9, 0, 0, 0); setNewAppointmentDate(date); setSaveMessage('');
+        }}><Ionicons name="add" size={20} color="#FFFFFF" /><Text style={styles.createButtonText}>Nuovo</Text></TouchableOpacity>
+      </View>
+      {!!saveMessage && <Text testID="calendar-save-success" style={styles.successBanner}>{saveMessage}</Text>}
+      {!!newAppointmentDate && <AppointmentForm initialDate={newAppointmentDate} onClose={() => setNewAppointmentDate(null)} onSaved={(_id, date) => {
+        setNewAppointmentDate(null); setCurrentDate(date); setSaveMessage('Appuntamento salvato e disponibile in AI Tour.'); void loadEvents();
+      }} />}
       <View style={styles.toolbar}>
         <TouchableOpacity
+          testID="calendar-mode-picker"
           style={styles.modeSelector}
           onPress={() => setShowModePicker(true)}
         >
@@ -316,10 +332,11 @@ export default function CalendarScreen() {
 
         <View style={styles.navRow}>
           <TouchableOpacity
+            testID="calendar-previous"
             style={styles.navBtn}
             onPress={() => {
               const d = new Date(currentDate);
-              if (mode === 'month') d.setMonth(d.getMonth() - 1);
+              if (mode === 'month') { setCurrentDate(addMonths(d, -1)); return; }
               else if (mode === 'week') d.setDate(d.getDate() - 7);
               else if (mode === '3days') d.setDate(d.getDate() - 3);
               else d.setDate(d.getDate() - 1);
@@ -329,11 +346,12 @@ export default function CalendarScreen() {
             <Ionicons name="chevron-back" size={20} color="#4B5563" />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setCurrentDate(new Date())}>
+          <TouchableOpacity testID="calendar-today" onPress={() => setCurrentDate(new Date())}>
             <Text style={styles.todayBtn}>Oggi</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
+            testID="calendar-refresh"
             onPress={onRefresh}
             disabled={refreshing}
             style={{ marginLeft: 8, padding: 4 }}
@@ -346,10 +364,11 @@ export default function CalendarScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
+            testID="calendar-next"
             style={styles.navBtn}
             onPress={() => {
               const d = new Date(currentDate);
-              if (mode === 'month') d.setMonth(d.getMonth() + 1);
+              if (mode === 'month') { setCurrentDate(addMonths(d, 1)); return; }
               else if (mode === 'week') d.setDate(d.getDate() + 7);
               else if (mode === '3days') d.setDate(d.getDate() + 3);
               else d.setDate(d.getDate() + 1);
@@ -386,6 +405,7 @@ export default function CalendarScreen() {
       </View>
 
       {/* Calendar */}
+      {!!errorMessage && !selectedEvent && <Text testID="calendar-error" accessibilityRole="alert" style={styles.errorBanner}>{errorMessage}</Text>}
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#7C3AED" />
@@ -397,7 +417,12 @@ export default function CalendarScreen() {
           height={Dimensions.get('window').height - 220}
           mode={mode}
           date={currentDate}
-          onPressEvent={(event) => setSelectedEvent(event as CalendarEvent)}
+          onPressEvent={(event) => { setSaveError(''); setSelectedEvent(event as CalendarEvent); }}
+          onPressCell={date => { setNewAppointmentDate(date); setSaveMessage(''); }}
+          renderEvent={(event, props) => <TouchableOpacity {...props} testID={`calendar-event-${event.eventType}-${event.id}`}>
+            <Text testID={`calendar-event-title-${event.id}`} style={styles.eventLabel} numberOfLines={2}>{event.title}</Text>
+            <Text style={styles.eventTimeLabel}>{format(event.start, 'HH:mm')}</Text>
+          </TouchableOpacity>}
           onSwipeEnd={(date) => setCurrentDate(date)}
           eventCellStyle={eventCellStyle as any}
           locale="it"
@@ -410,12 +435,13 @@ export default function CalendarScreen() {
       )}
 
       {/* Mode Picker */}
-      <Modal visible={showModePicker} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowModePicker(false)}>
+      <Modal visible={showModePicker} transparent animationType="fade" onRequestClose={() => setShowModePicker(false)}>
+        <Pressable testID="calendar-mode-dismiss" style={styles.modalOverlay} onPress={() => setShowModePicker(false)}>
           <View style={styles.modePickerModal}>
             {(Object.keys(MODE_LABELS) as CalendarMode[]).map((m) => (
               <TouchableOpacity
                 key={m}
+                testID={`calendar-mode-${m}`}
                 style={[styles.modeOption, mode === m && styles.modeOptionActive]}
                 onPress={() => { setMode(m); setShowModePicker(false); }}
               >
@@ -430,9 +456,10 @@ export default function CalendarScreen() {
       </Modal>
 
       {/* Event Detail Modal */}
-      <Modal visible={!!selectedEvent} transparent animationType="slide">
-        <Pressable style={styles.modalOverlay} onPress={() => setSelectedEvent(null)}>
-          <Pressable style={styles.eventModal} onPress={() => {}}>
+      <Modal visible={!!selectedEvent} transparent animationType="slide" onRequestClose={() => { if (!saving) setSelectedEvent(null); }}>
+        <Pressable testID="calendar-event-dismiss" style={styles.modalOverlay} onPress={() => { if (!saving) setSelectedEvent(null); }}>
+          <Pressable testID="calendar-event-detail" style={styles.eventModal} onPress={() => {}}>
+            {!!saveError && <Text testID="calendar-save-error" accessibilityRole="alert" style={styles.errorBanner}>{saveError}</Text>}
             {selectedEvent && (() => {
               const typeConf = EVENT_TYPE_CONFIG[selectedEvent.eventType];
               const isCompleted = !!selectedEvent.completedAt;
@@ -475,7 +502,7 @@ export default function CalendarScreen() {
                   </View>
 
                   {/* Address */}
-                  {(selectedEvent.customerAddress || selectedEvent.customerCity) && (
+                  {!!(selectedEvent.customerAddress || selectedEvent.customerCity) && (
                     <TouchableOpacity
                       style={styles.eventInfoRow}
                       onPress={() => {
@@ -491,7 +518,7 @@ export default function CalendarScreen() {
                   )}
 
                   {/* Phone */}
-                  {selectedEvent.contactPhone && (
+                  {!!selectedEvent.contactPhone && (
                     <TouchableOpacity
                       style={styles.eventInfoRow}
                       onPress={() => Linking.openURL(`tel:${selectedEvent.contactPhone}`)}
@@ -504,7 +531,7 @@ export default function CalendarScreen() {
                   )}
 
                   {/* Notes */}
-                  {selectedEvent.notes && (
+                  {!!selectedEvent.notes && (
                     <View style={styles.eventInfoRow}>
                       <Ionicons name="document-text-outline" size={18} color="#6B7280" />
                       <Text style={styles.eventInfoText}>{selectedEvent.notes}</Text>
@@ -512,15 +539,16 @@ export default function CalendarScreen() {
                   )}
 
                   {/* Actions */}
+                  {saving && <ActivityIndicator testID="calendar-saving" color={COLORS.primary} />}
                   {selectedEvent.eventType !== 'visit' && (
                     <View style={styles.eventActions}>
                       {!isCompleted ? (
-                        <TouchableOpacity style={styles.doneBtn} onPress={handleMarkDone}>
+                        <TouchableOpacity testID="calendar-mark-done" style={styles.doneBtn} onPress={handleMarkDone} disabled={saving}>
                           <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
                           <Text style={styles.doneBtnText}>Segna completato</Text>
                         </TouchableOpacity>
                       ) : (
-                        <TouchableOpacity style={styles.undoBtn} onPress={handleUndoDone}>
+                        <TouchableOpacity testID="calendar-undo-done" style={styles.undoBtn} onPress={handleUndoDone} disabled={saving}>
                           <Ionicons name="arrow-undo" size={20} color="#4B5563" />
                           <Text style={styles.undoBtnText}>Ripristina</Text>
                         </TouchableOpacity>
@@ -538,6 +566,14 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
+  createRow: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12, backgroundColor: COLORS.surface },
+  createHelp: { flex: 1, fontSize: 12, color: COLORS.textMuted, lineHeight: 18 },
+  createButton: { minHeight: 44, paddingHorizontal: 16, borderRadius: 12, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  createButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  successBanner: { padding: 12, color: COLORS.success, fontSize: 14 },
+  eventLabel: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
+  eventTimeLabel: { color: '#FFFFFF', fontSize: 10 },
+  errorBanner: { padding: 16, color: COLORS.danger, fontSize: 14, lineHeight: 20 },
   container: { flex: 1, backgroundColor: COLORS.surface },
   toolbar: {
     flexDirection: 'row',

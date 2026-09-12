@@ -1,5 +1,32 @@
 # VOOM Sales Mobile App - PRD
 
+## Aggiornamento 12/09/2026 — ordini rapidi, appuntamenti e audit
+
+### Richieste attuali e implementazione
+- Utente: audit funzionale completo con dati TEST riconoscibili autorizzati; durante il controllo ha dato priorità a disco orari, appuntamenti Calendario/AI Tour e infine Ordine da AI Tour/Mappa direttamente allo Step 2.
+- **Ordine da AI Tour/Mappa:** `lib/customer-order-route.ts` passa `customerId` e `startStep=products`; wizard carica cliente (fallback lettura ID se assente cache), cashback, pacchetti e verifica primo ordine prima di aprire Prodotti. Generico resta Step 1; Indietro/Avanti preservano cliente. Context `aitour_external` invariato. Errori cliente visibili con retry; nessuna scelta di un cliente diverso in caso d'errore.
+- **Disco orari:** `VisitSlotWheel` usa responder React Native; coordinate `onPressIn` conservate per `onPress` (RN-web click non espone locationX/Y). Selezione multipla anche tramite chip accessibili e riepilogo testuale. Funziona anche toccando spicchi/etichette.
+- **Calendario:** Nuovo oppure tocco cella apre `AppointmentForm` (data, ora locale, durata, note); cliente collegato oppure impegno libero con titolo e luogo facoltativo. API `lib/api/appointments.ts` usa UUID stabile per retry; vincolo DB `appointment_customer_data_check` richiede stringhe vuote nei quick address/city/phone quando mancanti (non dati geografici inventati). Nessuna migrazione o modifica RLS.
+- **AI agenda:** follow-up cliente aggiornati al focus e giorno, ora locale corretta, durata e vincolo orario nella generazione classica. Completati esclusi (completed_at). Impegni liberi mostrati in Genera: luogo confermato esplicitamente -> tappa libera obbligatoria; senza luogo -> solo promemoria e avvertenza, NON blocco orario automatico. Nessuna anagrafica finta.
+- **Calendario robustezza:** errori GET e salvataggio separati, PATCH verifica righe restituite, guard doppio tap, completamento/ripristino, event type stabile anche da completato, navigazione mese con addMonths.
+- **Audit già corretto:** eliminati 11 errori TS; formatter AnimatedNumber eseguito sul thread JS; dettaglio ordine IVA zero/estero/EST e base accisa corretti (calcolo informativo distinto da importo registrato). Conferme RN per logout/duplica/elimina bozza. Bozze preservano Benvenuto/canale, autosave e scritture serializzate/errori; fallback uscita deep link; warning cliente duplicato non disponibile.
+
+### Architettura invariata
+Expo SDK54/React Native/Expo Router, Supabase Auth/Postgres/RLS/storage come dati CRM; FastAPI/Mongo per servizi ausiliari. Nessuna modifica a credenziali, auth store/migrazione sessione, .env, metro o regole DB. Nuovi componenti RN `RequireSession`, `ConfirmActionModal`, `LogoutButton`, `OrderTotals`, `calendar/AppointmentForm`, `aitour/FreeAgendaPanel`; nuovi moduli `order-totals`, `api/appointments`, `aitour/agenda-candidate`, `customer-order-route`.
+
+### Evidenze finali (prevalgono sui blocchi di automazione iterazioni 29–33)
+- Main browser REAL, login atteso fino dashboard: entrata rapida con cliente TEST -> **Step 2 corretto**, indietro/avanti PASS, ingresso generico -> **Step 1**. Screenshot `/tmp/voom-order-step2-verified.jpg`, log `20260912_143253`. I precedenti blocchi auth dei tester erano sleep troppo brevi/sessioni nuove, NON malfunzionamento confermato. Non toccare auth per quelle segnalazioni.
+- Main disco: tap destro ->14.30–16, deselezione, tap superiore+chip multiselezione PASS. Screenshot `/tmp/voom-wheel-verified.jpg`, log `20260912_143344`. Attendere opzioni caricate e usare locator.click(position), non boundingBox fuori viewport.
+- Main calendario: creazione cliente TEST HTTP201; PATCH interrotto -> errore visibile e modale aperta; retry completato; ripristino -> follow-up AI **09:30** invariato; nuova chiusura -> escluso dal pannello. Screenshot `/tmp/voom-calendar-fault-verified.jpg`, `/tmp/voom-calendar-ai-followup-verified.jpg`, log `20260912_143448`, `20260912_143619`.
+- Iter32: creazione libera solo titolo e libera con luogo/conferma geocoding PASS con API reali, cleanup eseguito. Iter31: bozze persistenza e riepilogo testati. Fuso: 3 unit estivo/invernale Europe/Rome PASS; non hardcodare il fuso dell'app, è locale al dispositivo. `vitest.config.ts` imposta Rome SOLO per test.
+- Finale: TypeScript globale PASS, lint error-level file modificati PASS, **17 unit Vitest + 6 suite AI Tour + 2 suite verifica clienti PASS**. Runner shell ora impedisce di usare bundle precedenti in caso di build fallita.
+- Cleanup main verificato via DELETE+GET per ID: appuntamento2556cb07-1561-482a-a3a6-6ee85276b1bc, vecchio appuntamento990546b0-5b61-4ffe-8fa9-6085945cffca (già assente), visitae0f21dfe-a232-4616-a7fe-067f75901536, clienteb07dfae8-2dab-47a6-a410-9cba3554fcf5. Zero residui per questi ID; nessun ordine, stock, tour reale/GPS modificato nel ciclo finale.
+
+### Backlog onesto
+- P0: nessun difetto confermato rimasto per ultime richieste; attendere prova utente del proprio giro AI/Mappa su dispositivo. Pulsanti sorgente aggiornati e ingresso condiviso verificato; tour Live reale NON avviato per proteggere dati/GPS.
+- P1: **audit complessivo ancora parziale**, interrotto da nuove priorità utente: approfondire CRUD reali rimborsi/sostituzioni/ispezioni low-end e scenari stock/ordini completi dopo ultime modifiche; non presentare l'intera app come certificata al100%.
+- P2: GPS/microfono/foto reali e compatibilità device; impegni liberi senza luogo come blocchi orari automatici e pianificazione settimanale degli impegni liberi; modifica/cancellazione appuntamenti oltre a completamento/ripristino.
+
 ## Overview
 Mobile CRM application for field sales agents managing tobacco shops (tabaccherie) in Italy. Converted from existing web application at https://github.com/Paolo73xmas/voom
 

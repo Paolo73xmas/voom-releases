@@ -91,6 +91,8 @@ export interface Order {
   status: OrderStatus;
   total_amount: number;
   shipping_cost: number;
+  rottamazione_amount?: number | null;
+  cashback_used?: number | null;
   is_foreign: boolean;
   notes?: string;
   internal_notes?: string;

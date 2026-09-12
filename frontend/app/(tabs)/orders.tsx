@@ -47,6 +47,8 @@ const OrderCard = memo(function OrderCard({
 }) {
   return (
     <TouchableOpacity
+      testID={`order-card-${item.id}`}
+      accessibilityRole="button"
       style={styles.orderCard}
       onPress={() => onPress(item.id)}
     >
@@ -70,7 +72,7 @@ const OrderCard = memo(function OrderCard({
         </Text>
       </View>
 
-      {item.customer?.city && (
+      {!!item.customer?.city && (
         <View style={styles.locationRow}>
           <Ionicons name="location-outline" size={14} color="#9CA3AF" />
           <Text style={styles.locationText}>
@@ -81,7 +83,7 @@ const OrderCard = memo(function OrderCard({
 
       <View style={styles.orderFooter}>
         <Text style={styles.totalLabel}>Totale</Text>
-        <Text style={styles.totalAmount}>{formatCurrency(item.total_amount)}</Text>
+        <Text testID={`order-card-${item.id}-total`} style={styles.totalAmount}>{formatCurrency(item.total_amount)}</Text>
       </View>
 
       <Ionicons
@@ -100,16 +102,19 @@ export default function OrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [searchText, setSearchText] = useState('');
   const debouncedSearch = useDebounce(searchText, 300);
 
   const loadOrders = useCallback(async (force: boolean = false) => {
     if (!user) return;
     try {
+      setErrorMessage('');
       const data = await fetchOrders(user.id, user.role, user.branchId, { force });
       setOrders(data);
     } catch (error) {
       console.error('Error loading orders:', error);
+      setErrorMessage('Impossibile aggiornare gli ordini. Controlla la connessione e riprova.');
     } finally {
       setLoading(false);
     }
@@ -132,12 +137,11 @@ export default function OrdersScreen() {
 
     return orders.filter(order => {
       const c = order.customer;
-      if (!c) return false;
 
       const fields = [
-        c.business_name, c.address, c.city, c.province, c.postal_code,
-        c.contact_name, c.contact_surname, c.contact_phone, c.contact_email,
-        c.vat_number, c.fiscal_code, c.pec, c.sdi, order.order_number,
+        c?.business_name, c?.address, c?.city, c?.province, c?.postal_code,
+        c?.contact_name, c?.contact_surname, c?.contact_phone, c?.contact_email,
+        c?.vat_number, c?.fiscal_code, c?.pec, c?.sdi, order.order_number,
       ];
 
       return fields.some(f => f && f.toLowerCase().includes(q));
@@ -182,6 +186,7 @@ export default function OrdersScreen() {
         <View style={styles.searchBar}>
           <Ionicons name="search" size={18} color="#9CA3AF" />
           <TextInput
+            testID="orders-search"
             style={styles.searchInput}
             placeholder="Cerca per cliente (min. 3 caratteri)..."
             placeholderTextColor={COLORS.textLight}
@@ -191,7 +196,7 @@ export default function OrdersScreen() {
             autoCapitalize="none"
           />
           {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchText('')}>
+            <TouchableOpacity testID="orders-search-clear" onPress={() => setSearchText('')}>
               <Ionicons name="close-circle" size={18} color="#9CA3AF" />
             </TouchableOpacity>
           )}
@@ -201,7 +206,7 @@ export default function OrdersScreen() {
         )}
         {debouncedSearch.length >= 3 && (
           <Text style={styles.searchResult}>
-            {filteredOrders.length} {filteredOrders.length === 1 ? 'ordine trovato' : 'ordini trovati'} per "{debouncedSearch}"
+            {filteredOrders.length} {filteredOrders.length === 1 ? 'ordine trovato' : 'ordini trovati'} per &quot;{debouncedSearch}&quot;
           </Text>
         )}
       </View>
@@ -225,6 +230,10 @@ export default function OrdersScreen() {
       </View>
 
       {/* Orders List - FlashList */}
+      {!!errorMessage && <View testID="orders-error" style={{ padding: 16 }}>
+        <Text accessibilityRole="alert" style={{ color: COLORS.danger }}>{errorMessage}</Text>
+        <TouchableOpacity testID="orders-retry" onPress={onRefresh} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: COLORS.primary }}>Riprova</Text></TouchableOpacity>
+      </View>}
       <FlatList
         data={filteredOrders}
         renderItem={renderOrder}

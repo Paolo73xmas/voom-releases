@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Alert,
   Pressable,
   Platform,
 } from 'react-native';
@@ -27,6 +26,7 @@ import { fetchOverdueFollowUps, type OverdueFollowUp } from '../../lib/aitour/fo
 import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
 import { Avatar } from '../../components/Avatar';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
+import { LogoutButton } from '../../components/LogoutButton';
 import { Skeleton } from '../../components/Skeleton';
 import { DS, JAKARTA, getTimeGreeting, COLORS, currentThemeMode } from '../../lib/theme';
 import { setThemeAndReload } from '../../lib/themeToggle';
@@ -34,7 +34,7 @@ import { hap } from '../../lib/haptics';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, profile, logout } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     customers: 0,
@@ -304,18 +304,7 @@ export default function Dashboard() {
         >
           <Ionicons name={currentThemeMode === 'dark' ? 'sunny-outline' : 'moon-outline'} size={20} color={DS.inkMuted} />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          onPress={() => {
-            hap.light();
-            Alert.alert('Logout', 'Sei sicuro di voler uscire?', [
-              { text: 'Annulla', style: 'cancel' },
-              { text: 'Esci', style: 'destructive', onPress: async () => { await logout(); router.replace('/login'); } },
-            ]);
-          }}
-        >
-          <Ionicons name="log-out-outline" size={20} color={DS.inkMuted} />
-        </TouchableOpacity>
+        <LogoutButton testID="dashboard-logout" style={styles.logoutBtn} color={DS.inkMuted} />
       </Animated.View>
 
       {/* Prossimi Appuntamenti — scroll orizzontale in cima */}
@@ -470,7 +459,7 @@ export default function Dashboard() {
               <View style={styles.statIconChip}>
                 <Ionicons name={s.icon as any} size={17} color={DS.brand} />
               </View>
-              <AnimatedNumber value={s.value} duration={700 + i * 100} style={styles.statNumber} />
+              <AnimatedNumber testID={`dashboard-stat-${i}-value`} value={s.value} duration={700 + i * 100} style={styles.statNumber} />
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>
           ))}

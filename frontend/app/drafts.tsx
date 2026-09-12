@@ -3,13 +3,14 @@
  */
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Platform,
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getDrafts, deleteDraft, OrderDraft } from '../lib/drafts';
 import { COLORS } from '../lib/theme';
+import { ConfirmActionModal } from '../components/ConfirmActionModal';
 
 const STEP_LABELS = ['Cliente', 'Prodotti', 'Pagamento', 'Spedizione', 'Riepilogo'];
 
@@ -17,6 +18,7 @@ export default function DraftsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [drafts, setDrafts] = useState<OrderDraft[]>([]);
+  const [deletingDraft, setDeletingDraft] = useState<OrderDraft | null>(null);
 
   const loadDrafts = useCallback(async () => {
     const data = await getDrafts();
@@ -38,21 +40,7 @@ export default function DraftsScreen() {
   };
 
   const handleDelete = (draft: OrderDraft) => {
-    Alert.alert(
-      'Elimina Bozza',
-      `Vuoi eliminare la bozza per "${draft.customerName}"?`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Elimina',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteDraft(draft.id);
-            await loadDrafts();
-          },
-        },
-      ]
-    );
+    setDeletingDraft(draft);
   };
 
   const handleResume = (draft: OrderDraft) => {
@@ -64,13 +52,13 @@ export default function DraftsScreen() {
   };
 
   const renderDraft = ({ item }: { item: OrderDraft }) => (
-    <TouchableOpacity style={styles.card} onPress={() => handleResume(item)} activeOpacity={0.7}>
+    <TouchableOpacity testID={`draft-resume-${item.id}`} style={styles.card} onPress={() => handleResume(item)} activeOpacity={0.7}>
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
           <Text style={styles.customerName} numberOfLines={1}>{item.customerName}</Text>
           <Text style={styles.dateText}>{formatDate(item.savedAt)}</Text>
         </View>
-        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
+        <TouchableOpacity testID={`draft-delete-${item.id}`} style={styles.deleteBtn} onPress={(event) => { event.stopPropagation(); handleDelete(item); }}>
           <Ionicons name="trash-outline" size={18} color="#DC2626" />
         </TouchableOpacity>
       </View>
@@ -82,7 +70,7 @@ export default function DraftsScreen() {
         </View>
         <View style={styles.infoPill}>
           <Ionicons name="cash-outline" size={14} color="#059669" />
-          <Text style={[styles.infoPillText, { color: '#059669' }]}>{formatCurrency(item.totalAmount)}</Text>
+          <Text testID={`draft-total-${item.id}`} style={[styles.infoPillText, { color: '#059669' }]}>{formatCurrency(item.totalAmount)}</Text>
         </View>
         <View style={[styles.infoPill, { backgroundColor: '#FEF3C7' }]}>
           <Ionicons name="navigate-outline" size={14} color="#92400E" />
@@ -106,8 +94,12 @@ export default function DraftsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ConfirmActionModal testID="draft-delete-dialog" visible={!!deletingDraft} title="Elimina Bozza" message={`Vuoi eliminare la bozza per ${deletingDraft?.customerName ?? ''}?`} confirmLabel="Elimina" onCancel={() => setDeletingDraft(null)} onConfirm={async () => {
+        if (!deletingDraft) return;
+        await deleteDraft(deletingDraft.id); await loadDrafts(); setDeletingDraft(null);
+      }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
+        <TouchableOpacity testID="drafts-back" onPress={() => router.back()} style={{ padding: 4 }}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bozze Ordine</Text>

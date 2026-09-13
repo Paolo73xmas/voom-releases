@@ -102,7 +102,22 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Ultima priorità: completare verifiche e consegnare video AI Tour completo con Salvatore Pirone, voce maschile italiana, capitoli e sottotitoli sincronizzati; sola lettura e anteprime, nessuna modifica ai dati operativi."
+user_problem_statement: "Ultima priorità: riverificare errore build iOS EAS Vitest5/Node20.19.4, stesso buildID53fce907 del12settembre17:12UTC. Utente autorizza controllo deployment e test compatibilità, solo correzioni confermate senza Docker/DB/env/credenziali."
+
+eas_same_build_recheck:
+  implemented: true
+  working: true
+  needs_retesting: false
+  remote_ipa_build_verified: false
+  priority: high
+  status_history:
+    - agent: main
+      comment: "Iteration36 letta: nuova copia isolata Node20.19.4/Yarn1.22.22 installfrozen(devDeps+engines)PASS,17unitPASS,TSCpass,JSiosExportPASS;hashmanifest/lock invariati. Main ripete export senza cacheMetro(--clear,cache dedicata envdiProcesso,CI1)PASS41s,2866moduli66asset,bundle6.62MB identico. Nessuna modifica applicativa necessaria o applicata; tester ha aggiunto solo report/log letti. Il log53fce90717:12precede fix55d260d317:39. Deploymentcheckgenericfail2configprotette/noncausali invariato; NO claimglobalPASS,NO IPAremota verificata. Nuova buildID da codice corrente necessaria per confermaEAS."
+    - agent: main
+      comment: "Stesso log storico build53fce90717:12UTC, non nuova build. Commit55d260d3 fix17:39UTC:Vitest4.1.11exact presente,lockhash8fee10c56ecad526cfae1cd7c2df35894d8d3518ee88e718128dceaf44da226e invariato,Vite8.3Node^20.19compatibile. RCA indipendente conferma no regressione; tool deployment solo fail generico gitignore.env/supervisor--tunnel fuori scope protetta. NON modificare questi file. Richiesta verifica pulita Node20.19.4 install frozen includendo devDeps,17unit,TSC,exportJSios no-bytecode(sandboxARM compilerHermesx86), nessuna build remota. BinarioNode20: /root/.npm/_npx/1e1a98b8a3049f1f/node_modules/node/bin/node."
+  test_plan:
+    current_focus: [clean_frozen_install_node20, unit_tests_node20, typescript_node20, ios_js_export_node20]
+    protected_data: "Nessun login o scrittura DB. Nessuna modifica dipendenze/sorgenti/env/supervisor/Docker. Copia isolata /tmp, test soltanto."
 
 tutorial_pirone_final_delivery:
   implemented: true

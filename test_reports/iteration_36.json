@@ -1,0 +1,48 @@
+{
+  "summary": "Reproduced the EAS Node20 dependency scenario in a fresh isolated frontend copy and validated install/unit/typecheck/iOS JS export under Node v20.19.4 + Yarn 1.22.22. All requested checks passed with engine checks active and no package/lockfile drift.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts_iter36/iter36_yarn_install.log",
+    "/app/test_reports/artifacts_iter36/iter36_vitest.log",
+    "/app/test_reports/artifacts_iter36/iter36_tsc.log",
+    "/app/test_reports/artifacts_iter36/iter36_expo_export.log",
+    "/app/test_reports/artifacts_iter36/iter36_metadata.json",
+    "/app/frontend/package.json",
+    "/app/frontend/yarn.lock"
+  ],
+  "action_items": [
+    "No code change required for the reported vitest@5/Node20 install blocker: current state is vitest 4.1.11 and yarn.lock SHA256 8fee10c56ecad526cfae1cd7c2df35894d8d3518ee88e718128dceaf44da226e.",
+    "If a remote IPA confirmation is needed, trigger a new EAS build externally (not executed in this sandbox)."
+  ],
+  "critical_code_review_comments": [
+    "No regressions found against the historical INSTALL_DEPENDENCIES failure root cause; lockfile pins vitest@4.1.11 and installs cleanly on Node 20.19.4.",
+    "Non-blocking warning observed: 'expo export' prints '--non-interactive is not supported, use CI=1'.",
+    "Non-blocking warning observed in unit test run: future Vite native config-loader compatibility warning for vitest.config.ts ESM syntax."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_36.json",
+    "/app/test_reports/artifacts_iter36/iter36_yarn_install.log",
+    "/app/test_reports/artifacts_iter36/iter36_vitest.log",
+    "/app/test_reports/artifacts_iter36/iter36_tsc.log",
+    "/app/test_reports/artifacts_iter36/iter36_expo_export.log",
+    "/app/test_reports/artifacts_iter36/iter36_metadata.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (not requested)",
+    "frontend": "100% (4/4 requested build-tool checks passed)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Verified with isolated copy /tmp/frontend_node20_iter36_20260913_082253 using Node binary /root/.npm/_npx/1e1a98b8a3049f1f/node_modules/node/bin/node. Commands passed: frozen install with devDeps, 17 Vitest tests, tsc noEmit, expo export ios --no-bytecode. Original and copy package.json/yarn.lock hashes remained identical before/after. No new IPA was built/tested.",
+  "rca_of_issue": "Historical deployment error was caused by vitest@5 engine requirement mismatch on Node 20.19.4. Current repo state fixes this by pinning vitest 4.1.11 (confirmed in package.json and yarn.lock), so yarn install --frozen-lockfile --production false succeeds under Node 20.19.4 with engine checks enabled."
+}

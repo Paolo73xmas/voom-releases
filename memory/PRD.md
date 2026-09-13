@@ -1,5 +1,13 @@
 # VOOM Sales Mobile App - PRD
 
+## 13/09/2026 — riverifica stesso log EAS Node20/Vitest
+- Ultima richiesta: controllo deployment e correzioni solo se confermate; vietate modifiche Docker, database, env e credenziali. Log ancora della build `53fce907-b255-4ec1-9b85-e4d4fb5db0f0`, avviata il12settembre17:12UTC con Vitest5. Fix `55d260d3` alle17:39UTC: log antecedente di27minuti, non evidenza di regressione successiva.
+- Stato corrente verificato: `frontend/package.json` pin esatto `vitest:4.1.11`, `yarn.lock` SHA256 `8fee10c56ecad526cfae1cd7c2df35894d8d3518ee88e718128dceaf44da226e`, invariati. Vite8.3.0 compatibile Node20.19.4. Non sono state necessarie nuove modifiche applicative/dipendenze.
+- Iteration36: nuova copia isolata `/tmp/frontend_node20_iter36_20260913_082253`, Node20.19.4/Yarn1.22.22, installazione frozen con devDependencies ed enginechecks PASS,17testPASS,TypeScriptPASS,exportJSios2866moduli/66assetPASS. Main ripete export con `--clear`, cacheMetro nuova e `CI=1`: PASS41s, stesso hash bundle. `--no-bytecode` soltanto nel test per incompatibilità binarioHermesLinuxx86/sandboxARM, appHermes invariata.
+- Deployment-agent richiesto eseguito: generico `fail` per root.gitignore.env e Supervisor senza--tunnel; NON corretto perché fuori perimetro/protetto e non causale per INSTALL_DEPENDENCIES. RCA indipendente conferma fixpresente/logstorico. Non dichiarare controllo deployment globalePASS.
+- Evidenze: `test_reports/iteration_36.json`, `test_reports/artifacts_iter36/`, `test_reports/eas_node20_dependency_fix.md`. Nessun test live/DB né nuova build remota effettuati, codice/config app e tutorial preservati.
+- P0: blocco Vitest/Node documentato rimosso e riverificato; nessun ulteriore difetto confermato in questo perimetro. P1: nuova esecuzione EAS dal codice attuale con nuovo buildID, esitoIPA da confermare. P2: warning futuri toolchain solo se diventano problemi concreti, senza aggiornamenti runtime indiscriminati.
+
 ## Tutorial video AI Tour — richiesta corrente
 - Utente richiede video esplicativo completo sull'account **Salvatore Pirone**, senza limite di durata, comprensibile e strettamente sincronizzato voce/schermo.
 - Scelta confermata: voce maschile italiana, capitoli, dimostrazioni lente, tocchi evidenziati; **sola consultazione e anteprime**, nessuna scrittura di dati operativi. Salvataggi/segnalazioni solo esempi chiaramente dimostrativi non inviati.

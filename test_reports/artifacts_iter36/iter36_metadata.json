@@ -1,0 +1,14 @@
+{
+  "timestamp_utc": "2026-09-13T08:23:56.626361Z",
+  "node_bin": "/root/.npm/_npx/1e1a98b8a3049f1f/node_modules/node/bin/node",
+  "copy_dir": "/tmp/frontend_node20_iter36_20260913_082253",
+  "export_dir": "/tmp/frontend_export_iter36_20260913_082253",
+  "original_hashes": {
+    "original_package_json": "39727544b9b45fcfca2734aad1b8ef8226e52bf96d06cebea841d886ebd5d0d8",
+    "original_yarn_lock": "8fee10c56ecad526cfae1cd7c2df35894d8d3518ee88e718128dceaf44da226e"
+  },
+  "copy_hashes": {
+    "copy_package_json": "39727544b9b45fcfca2734aad1b8ef8226e52bf96d06cebea841d886ebd5d0d8",
+    "copy_yarn_lock": "8fee10c56ecad526cfae1cd7c2df35894d8d3518ee88e718128dceaf44da226e"
+  }
+}

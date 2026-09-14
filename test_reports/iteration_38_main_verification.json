@@ -1,0 +1,29 @@
+{
+  "status": "pass",
+  "scope": "Order Collection scrolling, Italy/foreign checkout policy, selection invalidation and configured shipping pricing",
+  "unit_tests": "25/25 passed (8 new checkout helper tests + 17 regression tests)",
+  "typecheck": "pass",
+  "ui_evidence": [
+    "/root/.emergent/automation_output/20260914_140515/console_20260914_140515.log",
+    "/root/.emergent/automation_output/20260914_140654/console_20260914_140654.log"
+  ],
+  "verified": [
+    "Italy: actual 9 active payments and 5 national shipping methods",
+    "Foreign: only CONTANTI payment and Cassiopea 3% shipping in separate steps",
+    "Italy -> foreign clears Assegno/BRT and shows explanatory notice",
+    "Foreign -> Italy retains shared Contanti and clears foreign-only Cassiopea",
+    "Base 1000: shipping card, summary and local draft show shipping 30 and total 1030",
+    "Cold valid foreign draft retains allowed payment/shipping IDs and correct cost",
+    "Obsolete foreign draft removes incompatible IDs/cost, redirects to payment, autosaves safely",
+    "30 long-name payments: last selectable, footer visible, no horizontal overflow at 320x568 and 390x844",
+    "Missing Contanti blocks Next; no fallback to Contanti al Corriere or other Italy payments",
+    "Missing Cassiopea blocks Next; no fallback to Ritiro or Italy carriers",
+    "Privacy screen works with existing testIDs; no production change needed"
+  ],
+  "iteration_38_correction": "The reported missing privacy testIDs were already present. Wrong HTML input selectors and an early visibility probe caused automation failures. Read-only RCA and direct DOM verification confirmed the issue was the test, not app login or consent logic.",
+  "fixtures": "Isolated browser only: customer, product and available stock; long/empty method lists only for edge tests. Normal payment/shipping configuration read from real API. No fixtures added to production code or database.",
+  "operational_write_attempts": [],
+  "real_order_submission": "Not performed to protect operational data. UI guards and shared pricing payload code checked.",
+  "native_device": "Not directly tested; user confirmation on device pending",
+  "credentials": "Existing test administrator from memory/test_credentials.md; no new credentials created or exposed"
+}

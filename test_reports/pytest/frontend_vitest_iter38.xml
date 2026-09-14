@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="25" failures="0" errors="0" time="0.158640763">
+    <testsuite name="tests/appointments_aitour_iter32.test.ts" timestamp="2026-09-14T13:53:41.316Z" hostname="agent-env-d869b047-c78d-4df0-840f-fe88cc5b5aa6" tests="5" failures="0" errors="0" skipped="0" time="0.005234569">
+        <testcase classname="tests/appointments_aitour_iter32.test.ts" name="appointments + AI Tour agenda (iter32) &gt; localAppointmentDate validates invalid date/time" time="0.002199209">
+        </testcase>
+        <testcase classname="tests/appointments_aitour_iter32.test.ts" name="appointments + AI Tour agenda (iter32) &gt; createAppointment free payload stores empty quick fields (not null)" time="0.000589533">
+        </testcase>
+        <testcase classname="tests/appointments_aitour_iter32.test.ts" name="appointments + AI Tour agenda (iter32) &gt; createAppointment handles duplicate (23505) by reading existing id" time="0.000781277">
+            <system-err>
+[appointments] Salvataggio fallito: 23505 duplicate key
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/appointments_aitour_iter32.test.ts" name="appointments + AI Tour agenda (iter32) &gt; freeAppointmentCandidate keeps entity free and strict slot" time="0.000335361">
+        </testcase>
+        <testcase classname="tests/appointments_aitour_iter32.test.ts" name="appointments + AI Tour agenda (iter32) &gt; fetchFollowUpsForDates applies scheduled + not completed filters" time="0.000337053">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/appointments_tz_iter33.test.ts" timestamp="2026-09-14T13:53:41.318Z" hostname="agent-env-d869b047-c78d-4df0-840f-fe88cc5b5aa6" tests="3" failures="0" errors="0" skipped="0" time="0.013570765">
+        <testcase classname="tests/appointments_tz_iter33.test.ts" name="iter33 timezone regression - localAppointmentDate &gt; runtime timezone is Europe/Rome in this test process" time="0.011941029">
+        </testcase>
+        <testcase classname="tests/appointments_tz_iter33.test.ts" name="iter33 timezone regression - localAppointmentDate &gt; summer 18:07 local converts to 16:07Z (DST +2)" time="0.000424619">
+        </testcase>
+        <testcase classname="tests/appointments_tz_iter33.test.ts" name="iter33 timezone regression - localAppointmentDate &gt; winter 18:07 local converts to 17:07Z (DST +1)" time="0.000217667">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/drafts.test.ts" timestamp="2026-09-14T13:53:41.319Z" hostname="agent-env-d869b047-c78d-4df0-840f-fe88cc5b5aa6" tests="3" failures="0" errors="0" skipped="0" time="0.132688959">
+        <testcase classname="tests/drafts.test.ts" name="drafts manager &gt; serializes parallel writes to avoid lost drafts in queue" time="0.129828284">
+            <system-out>
+[drafts] Saved draft A (TEST_A)
+
+[drafts] Saved draft B (TEST_B)
+
+            </system-out>
+        </testcase>
+        <testcase classname="tests/drafts.test.ts" name="drafts manager &gt; propagates delete failure when persistence write fails" time="0.001339092">
+            <system-out>
+[drafts] Saved draft X (TEST_Customer_X)
+
+            </system-out>
+        </testcase>
+        <testcase classname="tests/drafts.test.ts" name="drafts manager &gt; persists scontoBenvenuto and orderChannel values" time="0.000460012">
+            <system-out>
+[drafts] Saved draft Y (TEST_Customer_Y)
+
+            </system-out>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/order-checkout.test.ts" timestamp="2026-09-14T13:53:41.319Z" hostname="agent-env-d869b047-c78d-4df0-840f-fe88cc5b5aa6" tests="8" failures="0" errors="0" skipped="0" time="0.003783446">
+        <testcase classname="tests/order-checkout.test.ts" name="order-checkout helpers: Italia/Estero filters &gt; Italia: allows all active payment methods" time="0.001191101">
+        </testcase>
+        <testcase classname="tests/order-checkout.test.ts" name="order-checkout helpers: Italia/Estero filters &gt; Estero: allows only exact Contanti (case/trim normalized), excludes others/inactive" time="0.000372288">
+        </testcase>
+        <testcase classname="tests/order-checkout.test.ts" name="order-checkout helpers: Italia/Estero filters &gt; Estero: allows only active Cassiopea 3% with foreign_only=true (no Ritiro)" time="0.000313635">
+        </testcase>
+        <testcase classname="tests/order-checkout.test.ts" name="order-checkout helpers: Italia/Estero filters &gt; Italia: allows national shipping + ritiro, excludes foreign_only Cassiopea" time="0.000177932">
+        </testcase>
+        <testcase classname="tests/order-checkout.test.ts" name="order-checkout helpers: shipping percentage parity with web &gt; keeps fixed method unchanged" time="0.000156196">
+        </testcase>
+        <testcase classname="tests/order-checkout.test.ts" name="order-checkout helpers: shipping percentage parity with web &gt; matches configured Cassiopea 3% threshold behavior" time="0.000223631">
+        </testcase>
+        <testcase classname="tests/order-checkout.test.ts" name="order-checkout helpers: shipping percentage parity with web &gt; uses unlimited top threshold when threshold_max is 0" time="0.000113801">
+        </testcase>
+        <testcase classname="tests/order-checkout.test.ts" name="order-checkout helpers: shipping percentage parity with web &gt; returns 0 when method is undefined" time="0.000123763">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/order-totals.test.ts" timestamp="2026-09-14T13:53:41.320Z" hostname="agent-env-d869b047-c78d-4df0-840f-fe88cc5b5aa6" tests="6" failures="0" errors="0" skipped="0" time="0.003363024">
+        <testcase classname="tests/order-totals.test.ts" name="orderLineBreakdown/orderBreakdown fiscal rules &gt; calculates domestic row with accisa + VAT on (net + accisa)" time="0.001273457">
+        </testcase>
+        <testcase classname="tests/order-totals.test.ts" name="orderLineBreakdown/orderBreakdown fiscal rules &gt; uses VAT 0 correctly when product iva_percentage is 0 (IVA0)" time="0.000269394">
+        </testcase>
+        <testcase classname="tests/order-totals.test.ts" name="orderLineBreakdown/orderBreakdown fiscal rules &gt; forces VAT to zero for foreign orders" time="0.000174504">
+        </testcase>
+        <testcase classname="tests/order-totals.test.ts" name="orderLineBreakdown/orderBreakdown fiscal rules &gt; forces accisa and VAT to zero for EST- products, even domestic" time="0.000162896">
+        </testcase>
+        <testcase classname="tests/order-totals.test.ts" name="orderLineBreakdown/orderBreakdown fiscal rules &gt; uses line_total as NET and does not re-apply discount_percent (no double discount)" time="0.000167434">
+        </testcase>
+        <testcase classname="tests/order-totals.test.ts" name="orderLineBreakdown/orderBreakdown fiscal rules &gt; applies shipping VAT only for domestic orders in full breakdown" time="0.000281432">
+        </testcase>
+    </testsuite>
+</testsuites>

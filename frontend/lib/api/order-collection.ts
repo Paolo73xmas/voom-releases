@@ -37,6 +37,11 @@ export interface ShippingMethod {
   cost: number;
   is_active: boolean;
   foreign_only?: boolean;
+  cost_type?: 'fixed' | 'percentage' | null;
+  cost_percentage?: number | null;
+  min_cost?: number | null;
+  threshold_min?: number | null;
+  threshold_max?: number | null;
 }
 
 export async function fetchProducts(isForeign: boolean = false): Promise<Product[]> {
@@ -77,7 +82,7 @@ export async function fetchPaymentMethods(): Promise<PaymentMethod[]> {
   }
 }
 
-export async function fetchShippingMethods(isForeign: boolean = false): Promise<ShippingMethod[]> {
+export async function fetchShippingMethods(isForeign?: boolean): Promise<ShippingMethod[]> {
   try {
     const { data, error } = await supabase
       .from('shipping_methods')
@@ -87,7 +92,9 @@ export async function fetchShippingMethods(isForeign: boolean = false): Promise<
 
     if (error) throw error;
     
-    // Filter based on foreign order
+    // Il wizard conserva il catalogo completo per filtrare immediatamente al cambio flag.
+    if (isForeign === undefined) return data || [];
+    // Mantiene il filtro geografico per i chiamanti che richiedono una modalità specifica.
     return (data || []).filter(method => {
       const isRitiro = method.name.toLowerCase().includes('ritiro');
       if (isRitiro) return true;

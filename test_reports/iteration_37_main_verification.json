@@ -1,0 +1,22 @@
+{
+  "scope": "Order Collection payment/shipping scrolling; no territory filtering yet",
+  "result": "pass_for_scroll_and_accessibility",
+  "typecheck": "pass",
+  "fixed_testing_findings": ["payment radio aria-checked", "next-button disabled semantics"],
+  "verified": [
+    "Last of 30 long-name payment options selectable at 320x568 and 390x844",
+    "Selected payment exposes aria-checked=true",
+    "No horizontal overflow; last option is above fixed footer",
+    "Shipping address reachable and editable",
+    "Payment selection retained after Shipping -> Payment",
+    "Empty payment list exposes message and next button disabled"
+  ],
+  "evidence": "/root/.emergent/automation_output/20260914_132434/console_20260914_132434.log",
+  "fixtures": "Read-only browser interception for customer and 30/empty payment lists. No production fixtures or database seeds.",
+  "operational_write_attempts": [],
+  "limitations": [
+    "Native-device keyboard/scrolling not independently verified",
+    "Agent test account has no customers: UI fixture needed; actual payment list of nine methods read separately",
+    "Territory classification unavailable in currently connected schema; waiting for web tab URL/screenshot/field"
+  ]
+}

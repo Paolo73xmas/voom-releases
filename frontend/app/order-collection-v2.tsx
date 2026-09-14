@@ -17,7 +17,7 @@ import { supabase } from '../lib/supabase';
 import { fetchCustomers } from '../lib/api/customers';
 import { fetchCustomerById } from '../lib/api/customers';
 import { fetchProducts, fetchPaymentMethods, fetchShippingMethods } from '../lib/api/order-collection';
-import type { Product } from '../lib/api/order-collection';
+import type { PaymentMethod, Product, ShippingMethod } from '../lib/api/order-collection';
 import { createReservation, getAvailableStock, getBranchAvailableStock } from '../lib/api/stock-reservation';
 import { subtractStockForOrder, verifyAndSetStockSubtracted, subtractBranchStockForOrder, isBranchVirtual } from '../lib/api/stock-management';
 import { fetchOrderById } from '../lib/api/orders';
@@ -28,6 +28,9 @@ import { useVirtualBranch } from '../hooks/useVirtualBranch';
 import type { AvailableStockMap } from '../types/reservation';
 import { COLORS, currentThemeMode } from '../lib/theme';
 import { RequireSession } from '../components/RequireSession';
+import { PaymentMethodStep } from '../components/orders/PaymentMethodStep';
+import { ShippingMethodStep } from '../components/orders/ShippingMethodStep';
+import { getShippingBaseCost, isPaymentAllowed, isShippingAllowed } from '../lib/order-checkout';
 
 // ═══════════════════════════════════════════════════════
 // TYPES
@@ -57,15 +60,6 @@ interface CartItem {
   unit_price: number;
   /** ✅ True se l'utente ha modificato a mano il prezzo: la logica cartone non lo sovrascrive mai */
   manual_price?: boolean;
-}
-
-interface PaymentMethod {
-  id: string; name: string; description?: string; is_active: boolean;
-}
-
-interface ShippingMethod {
-  id: string; name: string; description?: string; cost: number;
-  is_active: boolean; foreign_only?: boolean;
 }
 
 interface PackageData {
@@ -269,6 +263,7 @@ function OrderCollectionV2() {
 
   // ── Step 3: Payment ──
   const [selectedPayment, setSelectedPayment] = useState('');
+  const [checkoutNotice, setCheckoutNotice] = useState('');
 
   // ── Step 4: Shipping ──
   const [selectedShipping, setSelectedShipping] = useState('');
@@ -489,7 +484,8 @@ function OrderCollectionV2() {
     }
   };
 
-  // When isForeignOrder changes, re-fetch products and shipping (matching old Raccolta Ordine)
+  // Il catalogo pagamenti/spedizioni resta completo: filtro e invalidazione sono sincroni.
+  // Solo i prodotti richiedono un nuovo caricamento al cambio modalità.
   const isForeignInitialMount = React.useRef(true);
   useEffect(() => {
     if (isForeignInitialMount.current) {
@@ -548,16 +544,12 @@ function OrderCollectionV2() {
   const reloadForForeignToggle = async () => {
     setLoadingProducts(true);
     try {
-      const [productsData, shippingsData] = await Promise.all([
-        fetchProducts(isForeignOrder),
-        fetchShippingMethods(isForeignOrder),
-      ]);
+      const productsData = await fetchProducts(isForeignOrder);
       // ✅ Web parity: filtra categorie disabilitate anche al toggle Italia/Estero
       const filteredProducts = (productsData || []).filter(
         (p: Product) => !p.category_id || !disabledCategoryIds.includes(p.category_id)
       );
       setProducts(filteredProducts);
-      setShippingMethods(shippingsData);
 
       // Reload available stock for new product set (branch-aware, virtual branches use central stock)
       if (filteredProducts.length > 0) {
@@ -649,7 +641,7 @@ function OrderCollectionV2() {
         fetchCustomers(user?.id || '', user?.role || 'agent', user?.branchId),
         fetchProducts(isForeignOrder),
         fetchPaymentMethods(),
-        fetchShippingMethods(isForeignOrder),
+        fetchShippingMethods(),
         loadDisabledCategoryIds(),
       ]);
 
@@ -833,14 +825,23 @@ function OrderCollectionV2() {
     return list.slice(0, 50);
   }, [products, productSearch, isForeignOrder]);
 
-  const filteredShippingMethods = useMemo(() => {
-    return shippingMethods.filter(m => {
-      const isRitiro = m.name.toLowerCase().includes('ritiro');
-      if (isRitiro) return true;
-      if (isForeignOrder) return m.foreign_only === true;
-      return m.foreign_only !== true;
-    });
-  }, [shippingMethods, isForeignOrder]);
+  const filteredPaymentMethods = useMemo(() => paymentMethods.filter(method => isPaymentAllowed(method, isForeignOrder)), [paymentMethods, isForeignOrder]);
+  const filteredShippingMethods = useMemo(() => shippingMethods.filter(method => isShippingAllowed(method, isForeignOrder)), [shippingMethods, isForeignOrder]);
+  const selectedPaymentMethod = filteredPaymentMethods.find(method => method.id === selectedPayment);
+  const selectedShippingMethod = filteredShippingMethods.find(method => method.id === selectedShipping);
+  const paymentIsValid = !!selectedPaymentMethod;
+  const shippingIsValid = !!selectedShippingMethod;
+
+  useEffect(() => {
+    if (isLoading) return;
+    const invalidPayment = !!selectedPayment && !paymentIsValid;
+    const invalidShipping = !!selectedShipping && !shippingIsValid;
+    if (!invalidPayment && !invalidShipping) return;
+    if (invalidPayment) setSelectedPayment('');
+    if (invalidShipping) setSelectedShipping('');
+    setCheckoutNotice(`Le scelte non valide per un ordine ${isForeignOrder ? 'Estero' : 'Italia'} sono state rimosse. Seleziona nuovamente pagamento o spedizione.`);
+    setCurrentStep(step => Math.min(step, invalidPayment ? 2 : 3));
+  }, [isLoading, isForeignOrder, selectedPayment, selectedShipping, paymentIsValid, shippingIsValid]);
 
   // ── Cart totals (matching web app calculation) ──
   const cartTotals = useMemo(() => {
@@ -864,8 +865,7 @@ function OrderCollectionV2() {
       }
       lineTotal += calculateLineTotal(item.quantity, item.unit_price, accisa, iva, isForeignOrder, p.short_description);
     }
-    const shippingMethod = shippingMethods.find(s => s.id === selectedShipping);
-    const shippingBase = shippingMethod?.cost || 0;
+    const shippingBase = getShippingBaseCost(selectedShippingMethod, imponibile + accisaTotal);
     const shippingWithVAT = getShippingCostWithVAT(shippingBase, isForeignOrder);
     const totalProducts = cart.reduce((s, i) => s + i.quantity, 0);
     return {
@@ -878,7 +878,7 @@ function OrderCollectionV2() {
       grandTotal: Math.round((lineTotal + shippingWithVAT) * 100) / 100,
       totalProducts,
     };
-  }, [cart, isForeignOrder, selectedShipping, shippingMethods]);
+  }, [cart, isForeignOrder, selectedShippingMethod]);
 
   // ── Rottamazione helpers ──
   const getRottamazioneNetAmount = (gross: number) => Math.round((gross / rottamazioneIvaRate) * 100) / 100;
@@ -1144,8 +1144,8 @@ function OrderCollectionV2() {
       itemsTotal += calculateLineTotal(oi.quantity, oi.unit_price, accisa, iva, isForeignOrder, product?.short_description);
     }
 
-    const shippingMethod = shippingMethods.find(sm => sm.id === selectedShipping);
-    const shippingBase = shippingMethod?.cost || 0;
+    const shippingMethod = selectedShippingMethod;
+    const shippingBase = cartTotals.shippingBase;
     const shippingWithVAT = getShippingCostWithVAT(shippingBase, isForeignOrder);
     const finalTotalAmount = Math.round((itemsTotal + shippingWithVAT) * 100) / 100;
 
@@ -1158,14 +1158,14 @@ function OrderCollectionV2() {
     const draft: OrderDraft = {
       id: draftId, customerId: selectedCustomer.id, customerName: selectedCustomer.business_name,
       cart: cart.map(c => ({ product: c.product, quantity: c.quantity, unit_price: c.unit_price, manual_price: c.manual_price })),
-      currentStep, isForeignOrder, selectedPaymentId: selectedPayment || null,
-      selectedShippingId: selectedShipping || null, customShippingAddress: shippingAddress,
+      currentStep, isForeignOrder, selectedPaymentId: paymentIsValid ? selectedPayment : null,
+      selectedShippingId: shippingIsValid ? selectedShipping : null, customShippingAddress: shippingAddress,
       notes, rottamazioneAmount, rottamazioneDescription, cashBackToUse, scontoBenvenuto, orderChannel,
       totalAmount: draftTotal, productCount: cartTotals.totalProducts, savedAt: new Date().toISOString(),
     };
     try { await saveDraft(draft); setDraftError(''); }
     catch (error) { setDraftError('Bozza NON salvata. Riprova prima di uscire.'); throw error; }
-  }, [draftId, selectedCustomer, cart, currentStep, isForeignOrder, selectedPayment, selectedShipping, shippingAddress, notes, rottamazioneAmount, rottamazioneDescription, cashBackToUse, scontoBenvenuto, orderChannel, draftTotal, cartTotals.totalProducts]);
+  }, [draftId, selectedCustomer, cart, currentStep, isForeignOrder, selectedPayment, selectedShipping, paymentIsValid, shippingIsValid, shippingAddress, notes, rottamazioneAmount, rottamazioneDescription, cashBackToUse, scontoBenvenuto, orderChannel, draftTotal, cartTotals.totalProducts]);
 
   useEffect(() => {
     if (isSubmitting || orderCreated || (params.draftId && !draftLoaded)) return;
@@ -1207,7 +1207,7 @@ function OrderCollectionV2() {
         };
       });
 
-      const paymentMethod = paymentMethods.find(pm => pm.id === selectedPayment);
+      const paymentMethod = selectedPaymentMethod;
 
       await generateAndShareQuotePdf({
         customer: {
@@ -1249,8 +1249,8 @@ function OrderCollectionV2() {
 
   const handleSubmitOrder = async () => {
     if (!selectedCustomer || !user || cart.length === 0) return;
-    if (!selectedPayment) { Alert.alert('Errore', 'Seleziona un metodo di pagamento'); return; }
-    if (!selectedShipping) { Alert.alert('Errore', 'Seleziona un metodo di spedizione'); return; }
+    if (!paymentIsValid) { setCurrentStep(2); Alert.alert('Errore', 'Seleziona un pagamento valido per questo ordine'); return; }
+    if (!shippingIsValid) { setCurrentStep(3); Alert.alert('Errore', 'Seleziona una spedizione valida per questo ordine'); return; }
     if (rottamazioneAmount > 0 && !rottamazioneDescription.trim()) {
       Alert.alert('Errore', 'Inserisci la descrizione della merce da rottamare'); return;
     }
@@ -1460,14 +1460,15 @@ function OrderCollectionV2() {
   const canAdvance = () => {
     switch (currentStep) {
       case 0: return !!selectedCustomer;
-      case 1: return cart.length > 0 && !hasStockConflicts && incompatibleCartItems.length === 0;
-      case 2: return !!selectedPayment;
-      case 3: return !!selectedShipping;
+      case 1: return !loadingProducts && cart.length > 0 && !hasStockConflicts && incompatibleCartItems.length === 0;
+      case 2: return paymentIsValid;
+      case 3: return paymentIsValid && shippingIsValid;
       default: return true;
     }
   };
 
   const handleNext = () => {
+    if (!canAdvance()) return;
     if (currentStep < STEPS.length - 1) {
       if (currentStep === 0 && selectedCustomer) {
         loadCashBackBalance(selectedCustomer.id);
@@ -1510,6 +1511,7 @@ function OrderCollectionV2() {
         {STEPS.map((step, i) => (
           <React.Fragment key={i}>
             <TouchableOpacity
+              testID={`order-step-${i + 1}`}
               style={[s.stepDot, i < currentStep && s.stepDotDone, i === currentStep && s.stepDotCurrent]}
               onPress={() => i < currentStep && setCurrentStep(i)}
             >
@@ -1536,14 +1538,16 @@ function OrderCollectionV2() {
       <Text style={s.stepTitle}>Seleziona Cliente</Text>
       <View style={s.searchBar}>
         <Ionicons name="search" size={18} color="#9CA3AF" />
-        <TextInput style={s.searchInput} placeholder="Cerca cliente..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor={COLORS.textLight} />
-        {customerSearch.length > 0 && <TouchableOpacity onPress={() => setCustomerSearch('')}><Ionicons name="close-circle" size={18} color="#9CA3AF" /></TouchableOpacity>}
+        <TextInput testID="order-customer-search" style={s.searchInput} placeholder="Cerca cliente..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor={COLORS.textLight} />
+        {customerSearch.length > 0 && <TouchableOpacity testID="order-customer-search-clear" accessibilityLabel="Cancella ricerca cliente" hitSlop={13} onPress={() => setCustomerSearch('')}><Ionicons name="close-circle" size={18} color="#9CA3AF" /></TouchableOpacity>}
       </View>
       <FlatList
+        testID="order-customer-list"
         data={filteredCustomers}
         keyExtractor={c => c.id}
         renderItem={({ item }) => (
           <TouchableOpacity
+            testID={`order-customer-option-${item.id}`}
             style={[s.customerRow, selectedCustomer?.id === item.id && s.customerRowSelected]}
             onPress={() => {
               // Parità web: al cambio cliente si azzerano rottamazione e CashBack
@@ -1665,6 +1669,7 @@ function OrderCollectionV2() {
             <>
               <TouchableOpacity
                 style={[s.addBtn, (isOutOfStock || isMaxedOut) && s.addBtnDisabled]}
+                testID={`order-product-add-one-${item.id}`}
                 onPress={() => addToCart(item, 1)}
                 disabled={isOutOfStock || isMaxedOut}
               >
@@ -1672,6 +1677,7 @@ function OrderCollectionV2() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[s.addBtn, s.addBtn10, (isOutOfStock || isMaxedOut) && s.addBtnDisabled]}
+                testID={`order-product-add-ten-${item.id}`}
                 onPress={() => addToCart(item, 10)}
                 disabled={isOutOfStock || isMaxedOut}
               >
@@ -1688,10 +1694,11 @@ function OrderCollectionV2() {
 
   const renderStep2 = () => (
     <View style={s.stepContent}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+      <View style={s.productStepHeader}>
         <Text style={s.stepTitle}>Prodotti</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={s.productHeaderActions}>
           <TouchableOpacity
+            testID="order-products-refresh"
             style={s.headerBtn}
             onPress={() => refreshStock(false)}
             disabled={refreshingStock}
@@ -1706,17 +1713,17 @@ function OrderCollectionV2() {
             </Text>
           </TouchableOpacity>
           {canToggleEstero && (
-            <TouchableOpacity style={s.headerBtn} onPress={() => setIsForeignOrder(!isForeignOrder)}>
+            <TouchableOpacity testID="order-foreign-toggle" accessibilityRole="switch" accessibilityLabel="Ordine Estero" accessibilityState={{ checked: isForeignOrder }} aria-checked={isForeignOrder} style={[s.headerBtn, s.foreignToggle]} onPress={() => setIsForeignOrder(value => !value)}>
               <Ionicons name={isForeignOrder ? 'airplane' : 'flag'} size={16} color={isForeignOrder ? '#DC2626' : '#6B7280'} />
-              <Text style={[s.headerBtnText, isForeignOrder && { color: '#DC2626' }]}>{isForeignOrder ? 'Estero' : 'Italia'}</Text>
+              <Text testID="order-foreign-mode" style={[s.headerBtnText, isForeignOrder && { color: '#DC2626' }]}>{isForeignOrder ? 'Estero' : 'Italia'}</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={s.headerBtn} onPress={() => { loadPackages(); setShowPackageModal(true); }}>
+          <TouchableOpacity testID="order-packages-open" style={s.headerBtn} onPress={() => { loadPackages(); setShowPackageModal(true); }}>
             <Ionicons name="cube" size={16} color="#7C3AED" />
             <Text style={[s.headerBtnText, { color: '#7C3AED' }]}>Pacchetto</Text>
           </TouchableOpacity>
           {cart.length > 0 && (
-            <TouchableOpacity style={s.headerBtn} onPress={clearCart}>
+            <TouchableOpacity testID="order-cart-clear" accessibilityLabel="Svuota carrello" style={s.headerBtn} onPress={clearCart}>
               <Ionicons name="trash-outline" size={16} color="#DC2626" />
             </TouchableOpacity>
           )}
@@ -1816,15 +1823,8 @@ function OrderCollectionV2() {
   // ═══════════════════════════════════════════════════
 
   const renderStep3 = () => (
-    <View style={s.stepContent}>
-      <Text style={s.stepTitle}>Metodo di Pagamento</Text>
-      {paymentMethods.map(pm => (
-        <TouchableOpacity key={pm.id} style={[s.optionRow, selectedPayment === pm.id && s.optionSelected]} onPress={() => setSelectedPayment(pm.id)}>
-          <Ionicons name={selectedPayment === pm.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={selectedPayment === pm.id ? '#7C3AED' : '#D1D5DB'} />
-          <Text style={s.optionText}>{pm.name}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
+    <PaymentMethodStep methods={filteredPaymentMethods} selectedId={selectedPayment} isForeignOrder={isForeignOrder}
+      onSelect={id => { setSelectedPayment(id); setCheckoutNotice(''); }} />
   );
 
   // ═══════════════════════════════════════════════════
@@ -1832,20 +1832,9 @@ function OrderCollectionV2() {
   // ═══════════════════════════════════════════════════
 
   const renderStep4 = () => (
-    <View style={s.stepContent}>
-      <Text style={s.stepTitle}>Metodo di Spedizione</Text>
-      {filteredShippingMethods.map(sm => (
-        <TouchableOpacity key={sm.id} style={[s.optionRow, selectedShipping === sm.id && s.optionSelected]} onPress={() => setSelectedShipping(sm.id)}>
-          <Ionicons name={selectedShipping === sm.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={selectedShipping === sm.id ? '#7C3AED' : '#D1D5DB'} />
-          <View style={{ flex: 1 }}>
-            <Text style={s.optionText}>{sm.name}</Text>
-            {sm.cost > 0 && <Text style={s.optionSub}>{formatCurrency(sm.cost)} {!isForeignOrder && `(${formatCurrency(sm.cost * 1.22)} con IVA)`}</Text>}
-          </View>
-        </TouchableOpacity>
-      ))}
-      <Text style={[s.stepTitle, { marginTop: 20 }]}>Indirizzo di spedizione (opzionale)</Text>
-      <TextInput style={s.textArea} placeholder="Indirizzo personalizzato..." value={shippingAddress} onChangeText={setShippingAddress} multiline placeholderTextColor={COLORS.textLight} />
-    </View>
+    <ShippingMethodStep methods={filteredShippingMethods} selectedId={selectedShipping} isForeignOrder={isForeignOrder}
+      orderBase={cartTotals.imponibile + cartTotals.accisaTotal} address={shippingAddress} onAddressChange={setShippingAddress}
+      onSelect={id => { setSelectedShipping(id); setCheckoutNotice(''); }} />
   );
 
   // ═══════════════════════════════════════════════════
@@ -1952,10 +1941,10 @@ function OrderCollectionV2() {
           <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>Imponibile</Text><Text style={s.summaryValue}>{formatCurrency(cartTotals.imponibile)}</Text></View>
           <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>Accisa</Text><Text style={s.summaryValue}>{formatCurrency(cartTotals.accisaTotal)}</Text></View>
           {!isForeignOrder && <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>IVA</Text><Text style={s.summaryValue}>{formatCurrency(cartTotals.ivaTotal)}</Text></View>}
-          <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>Spedizione {!isForeignOrder && '(IVA incl.)'}</Text><Text style={s.summaryValue}>{formatCurrency(cartTotals.shippingWithVAT)}</Text></View>
+          <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>Spedizione {!isForeignOrder && '(IVA incl.)'}</Text><Text testID="order-summary-shipping-cost" style={s.summaryValue}>{formatCurrency(cartTotals.shippingWithVAT)}</Text></View>
           <View style={[s.summaryTotalRow, s.summaryGrandTotal]}>
             <Text style={s.summaryGrandLabel}>TOTALE</Text>
-            <Text style={s.summaryGrandValue}>{formatCurrency(cartTotals.grandTotal)}</Text>
+            <Text testID="order-summary-grand-total" style={s.summaryGrandValue}>{formatCurrency(cartTotals.grandTotal)}</Text>
           </View>
         </View>
 
@@ -2512,6 +2501,7 @@ function OrderCollectionV2() {
           <TouchableOpacity testID="order-customer-retry" style={s.auditNoticeButton} onPress={() => setPreselectRetry(v => v + 1)}><Text style={s.auditNoticeText}>Riprova</Text></TouchableOpacity>
         </View>}
         {!!draftError && <Text testID="order-draft-error" accessibilityRole="alert" style={s.auditError}>{draftError}</Text>}
+        {!!checkoutNotice && <Text testID="order-checkout-selection-notice" accessibilityRole="alert" style={s.auditError}>{checkoutNotice}</Text>}
         {!!duplicateMessage && <Text testID="order-duplicate-warning" accessibilityRole="alert" style={s.auditError}>{duplicateMessage}</Text>}
         {!!orderCreated && <View testID="order-created" style={s.auditNotice}>
           <Text testID="order-created-number" style={s.auditNoticeText}>Ordine {orderCreated} creato. Non inviarlo nuovamente.</Text>
@@ -2519,7 +2509,7 @@ function OrderCollectionV2() {
         </View>}
 
         {/* Step Content */}
-        <View style={{ flex: 1, paddingHorizontal: 12 }}>
+        <View style={s.stepViewport}>
           {currentStep === 0 && renderStep1()}
           {currentStep === 1 && renderStep2()}
           {currentStep === 2 && renderStep3()}
@@ -2528,7 +2518,7 @@ function OrderCollectionV2() {
         </View>
 
         {/* Bottom Navigation — with safe area inset */}
-        <View style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <View testID="order-bottom-navigation" style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {currentStep > 0 && (
             <TouchableOpacity testID="order-previous-step" style={s.backBtn} onPress={handleBack}>
               <Ionicons name="arrow-back" size={18} color="#374151" />
@@ -2537,12 +2527,12 @@ function OrderCollectionV2() {
           )}
           <View style={{ flex: 1 }} />
           {currentStep < STEPS.length - 1 ? (
-            <TouchableOpacity testID="order-next-step" style={[s.nextBtn, !canAdvance() && s.nextBtnDisabled]} onPress={handleNext} disabled={!canAdvance()}>
+            <TouchableOpacity testID="order-next-step" accessibilityRole="button" accessibilityState={{ disabled: !canAdvance() }} aria-disabled={!canAdvance()} style={[s.nextBtn, !canAdvance() && s.nextBtnDisabled]} onPress={handleNext} disabled={!canAdvance()}>
               <Text style={s.nextBtnText}>{NEXT_LABELS[currentStep] || 'Avanti'}</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity testID="order-submit" style={[s.submitBtn, (isSubmitting || !!orderCreated) && s.nextBtnDisabled]} onPress={handleSubmitOrder} disabled={isSubmitting || !!orderCreated}>
+            <TouchableOpacity testID="order-submit" accessibilityRole="button" accessibilityState={{ disabled: isSubmitting || !!orderCreated || !paymentIsValid || !shippingIsValid }} style={[s.submitBtn, (isSubmitting || !!orderCreated || !paymentIsValid || !shippingIsValid) && s.nextBtnDisabled]} onPress={handleSubmitOrder} disabled={isSubmitting || !!orderCreated || !paymentIsValid || !shippingIsValid}>
               {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : (
                 <>
                   <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
@@ -2582,7 +2572,9 @@ const s = StyleSheet.create({
   stepLine: { flex: 1, height: 2, backgroundColor: COLORS.border, marginHorizontal: 4 },
   stepLineDone: { backgroundColor: '#10B981' },
   stepperLabel: { textAlign: 'center', fontSize: 12, fontWeight: '600', color: COLORS.textMuted, paddingBottom: 8 },
-  stepContent: { flex: 1, paddingTop: 12 },
+  stepViewport: { flex: 1, minHeight: 0, paddingHorizontal: 12 },
+  stepContent: { flex: 1, minHeight: 0, paddingTop: 12 },
+  scrollContent: { paddingBottom: 24 },
   stepTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: 12 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8, gap: 8 },
   searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
@@ -2590,8 +2582,11 @@ const s = StyleSheet.create({
   customerRowSelected: { borderWidth: 2, borderColor: '#7C3AED', backgroundColor: COLORS.primarySoft },
   customerName: { fontSize: 15, fontWeight: '600', color: COLORS.text },
   customerCity: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-  headerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.bg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  productStepHeader: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 8 },
+  productHeaderActions: { flex: 1, minWidth: 200, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8 },
+  headerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 44, minWidth: 44, gap: 4, backgroundColor: COLORS.bg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   headerBtnText: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
+  foreignToggle: { minHeight: 44, minWidth: 44 },
   prodRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 8, padding: 8, marginBottom: 4, gap: 8 },
   prodRowInCart: { backgroundColor: COLORS.primarySoft, borderWidth: 1, borderColor: '#DDD6FE' },
   prodRowDisabled: { backgroundColor: COLORS.bgAlt, opacity: 0.7 },
@@ -2628,7 +2623,7 @@ const s = StyleSheet.create({
   cartBarDetail: { color: '#C4B5FD', fontSize: 10 },
   optionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 10, padding: 14, marginBottom: 6, gap: 10 },
   optionSelected: { borderWidth: 2, borderColor: '#7C3AED', backgroundColor: COLORS.primarySoft },
-  optionText: { fontSize: 15, fontWeight: '500', color: COLORS.text },
+  optionText: { flexShrink: 1, fontSize: 15, fontWeight: '500', color: COLORS.text },
   optionSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   textInput: { backgroundColor: COLORS.surface, borderRadius: 8, padding: 12, fontSize: 14, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border },
   textArea: { backgroundColor: COLORS.surface, borderRadius: 8, padding: 12, fontSize: 14, color: COLORS.text, borderWidth: 1, borderColor: COLORS.border, minHeight: 80, textAlignVertical: 'top' },
@@ -2700,12 +2695,12 @@ const s = StyleSheet.create({
   qtyBtnLabel: { fontSize: 13, fontWeight: '700', color: '#7C3AED' },
   qtyDisplay: { minWidth: 56, height: 48, borderRadius: 12, backgroundColor: '#7C3AED', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   qtyDisplayText: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
-  bottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
+  bottomBar: { flexDirection: 'row', flexShrink: 0, alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: COLORS.surface, borderTopWidth: 1, borderTopColor: COLORS.border },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: COLORS.bg },
   backBtnText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
-  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#7C3AED', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 },
+  nextBtn: { flexDirection: 'row', flexShrink: 1, minHeight: 44, alignItems: 'center', gap: 6, backgroundColor: '#7C3AED', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 },
   nextBtnDisabled: { backgroundColor: '#9CA3AF' },
-  nextBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+  nextBtnText: { flexShrink: 1, fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   submitBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '80%' },

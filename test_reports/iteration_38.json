@@ -1,0 +1,64 @@
+{
+  "summary": "Executed frontend unit + TypeScript checks for Order Collection Italia/Estero rules and shipping-cost parity; all unit tests passed. Backend public read-only API smoke checks passed. UI E2E for order flow is currently blocked before login by Privacy consent gate interaction in web automation.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Privacy consent gate",
+        "issue": "Automation cannot reliably progress beyond Privacy/Terms screen to login (checkbox/accept controls not reliably targetable by stable testIDs in RN web preview).",
+        "testID": "N/A",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Login -> Dashboard -> Raccolta Ordine UI validation",
+        "issue": "Blocked at privacy gate, so requested UI assertions (default 9 payments, 5 shipping, estero toggle invalidation/reset, long-name scroll, draft restore scenarios) could not be fully executed in this run.",
+        "affected_testIDs": [
+          "login-email",
+          "login-password",
+          "login-submit",
+          "order-foreign-toggle",
+          "order-next-step"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/order-checkout.test.ts",
+    "/app/test_reports/pytest/frontend_vitest_iter38.xml",
+    "/app/test_reports/artifacts_iter38/iter38_order_loaded.jpeg",
+    "/app/test_reports/artifacts_iter38/iter38_error.jpeg",
+    "/app/test_reports/artifacts_iter38/iter38_error_retry2.jpeg",
+    "/app/scripts/run_api_checks_iter38.py"
+  ],
+  "action_items": [
+    "Add stable testIDs for Privacy consent controls (all checkboxes + accept button) so auth E2E can proceed deterministically.",
+    "After privacy gate testability is fixed, rerun mobile UI scenarios for: Italia default counts, estero toggle invalidation/reset, shipping/payment constraints, long-name scrolling, and draft cold-restore cases.",
+    "Optional hardening: add testIDs in Step 1 customer rows and Step 2 product +1/+10 buttons for stable order wizard automation."
+  ],
+  "critical_code_review_comments": [
+    "order-collection-v2 Step 1 customer row selection lacks dedicated testIDs; automation falls back to brittle text/DOM matching.",
+    "Step 2 product quantity actions (+1/+10) also lack dedicated testIDs, reducing regression reliability.",
+    "Unit parity for helper order-checkout.ts is now covered (Italia/Estero payment & shipping filters + Cassiopea threshold pricing), but UI integration remains pending due privacy gate blocker."
+  ],
+  "updated_files": [
+    "/app/frontend/tests/order-checkout.test.ts",
+    "/app/scripts/run_api_checks_iter38.py",
+    "/app/test_reports/iteration_38.json"
+  ],
+  "success_rate": {
+    "backend": "100% (3/3 read-only API checks)",
+    "frontend": "65% (unit/tsc pass; UI E2E blocked by privacy gate)"
+  },
+  "seed_data_creation": "No DB seed and no POST/PATCH/DELETE executed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend unit suite now includes order-checkout helper coverage with 8 new tests in tests/order-checkout.test.ts; full vitest total is 25 passing tests. Use same AGENTE credentials from /app/memory/test_credentials.md. Start from privacy gate handling first, then continue login and order wizard E2E.",
+  "rca_of_issue": "RCA: Browser automation repeatedly timed out waiting for login-email because app remained on Privacy/Terms gate. Existing script interactions with generic checkbox selectors were not sufficient/reliable. Missing dedicated testIDs on privacy controls caused unstable selector strategy, blocking downstream order UI verification."
+}

@@ -102,7 +102,36 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Ultima priorità: riverificare errore build iOS EAS Vitest5/Node20.19.4, stesso buildID53fce907 del12settembre17:12UTC. Utente autorizza controllo deployment e test compatibilità, solo correzioni confermate senza Docker/DB/env/credenziali."
+user_problem_statement: "Order Collection: elenco pagamenti lungo non scorre; filtro Italia/Estero/entrambi. Utente conferma Esteroattivo=Estero+entrambi,disattivo=Italia+entrambi e deselezione pagamento incompatibile. Categorie secondo utente nella tabOrdini>Metodi pagamento del gestionale web."
+
+order_payment_scroll:
+  implemented: true
+  working: true
+  needs_retesting: false
+  native_device_verified: false
+  priority: high
+  files: [frontend/app/order-collection-v2.tsx, frontend/components/orders/PaymentMethodStep.tsx]
+  status_history:
+    - agent: main
+      comment: "Iteration37letta.2issuessemantici corretti aria-checkedesplicito e buttonrole+disabledstate+handleNextguard. SelftestfinalePASS in/root/.emergent/automation_output/20260914_132434:320x568/390x844 ultima30esimaopzionechecktrue,footerfisso,nienteoverflow,nextabilitato;Spedizioneindirizzoreachable,backpersisteselezione;emptylistnextdisabled. TentativiDBwrites[]=nessuno. Prima assertionselftestaria-disabled=false falliva perché attributofalsoomesso correttamente suHTMLbutton: correttoTESTa to_be_enabled/to_be_disabled,nessuna patchspeculativa. TSCPASS. Filtri non inclusi,categoriepending."
+    - agent: main
+      comment: "Pagamento sostituito Viewmap con FlatList in componente separato,nomi multilinea,radioaccessibili e testID,viewport limitata sopra navigazione fissa. Stesso difetto spedizione corretto con ScrollView+paddingfondo+inputtestID. NavnexttestoflexShrink per schermi320. DA TESTARE senza creareordini o DBwrites: lettura9pagamenti reali+fixture lunga solo test,ultimoelemento cliccabile,navfissa,persistenzaselezione tra step ebozzalocale,spedizioneindirizzo visibile e tastiera."
+order_payment_territory_filter:
+  implemented: true
+  working: true
+  needs_retesting: false
+  native_device_verified: false
+  real_order_submission_tested: false
+  priority: high
+  status_history:
+    - agent: main
+      comment: "FINALE iteration38letta+filetest/APIchecksletti.25unitPASS,TSCPASS. UIblockerprivacy ERAerroreselettoreautotest:IDs giàesistenti,nessunfixauthnecessario. Selftests14:05:15e14:06:54 PASS:Italia9PM5shipping;EsteroContanti/Cassiopeasoltanto;resetAssegno/BRT,ritornoItaliaconservaContantiresettaCassiopea;card/riepilogo/bozza30+1030(base1000);restorevalidonoreset;restoreobsoletoresetIDS/nohiddenshipping1000;30nomilunghilastselected+footer+nooverflow320/390;nocash/nocassiobloccoNextsenza fallback. ZeroDBwritetentati;customereproduct/stockfixturebrowser,configmetodi lettareale. AdminTestperflagEstero,nessunaccountcreato. AggiuntitestIDcliente/quantità/step e importi. Reportiteration38_main_verification.json dettagliaevidenze/limitenativo."
+    - agent: main
+      comment: "SBLOCCATO:utente 'le categorie valide per estero sono soloCassiopea3% eContanti'+screenshotURLcrm.voomweb.it/orders. Lettura DB/web/RCA confermaCassiopea3%=shipping_methods e2e5d52b-363f-41f5-9bbd-37ac2c94c450 foreign_onlytrue costtypepercentage 3,min_cost10,thresholdmin300,max2000. CONTANTI=payment_methods5f59e1ca-5aa8-4b02-b947-2cfb41d1f951. Implementate due scelte NEI RISPETTIVIstep:Estero soloContanti pagamento eCassiopea3%spedizione (noContantialCorriere,noRitiroEstero).Italia tuttiPMattivi e shippingnazionali/ritiro. Filtri nomeesatto normalizzato autorizzatouser,noUUIDhardcoded,noDBwrites/creazionimetodi. Catalogoshippingcompletoevitarace/persceltabozzaforeign. Invalidazioneflag/resetnotice/redirectearlieststep,guardsnext/submit,bozzePDFnonusanoscelteincompatibili. Helperfee allineatoESATTAMENTEwebshipping-metodi:<=30010,300<base<=2000 base*3%,>2000cap60 (301=>9.03,nonmax10poichéregolaweb). Baseprodotti+accisapreIVA/postlistpricecart,prediscountsriepilogo. UIshippingcost/summary/draft/PDF/invio stesso calcolo. Newhelpers/PaymentStep/ShippingStep,TSC17testbaselinePASS,lintsnewPASS,15warninglegacy. Testing necessarioscopetotaleflag/bozze/costi,zeroordinireali."
+    - agent: main
+      comment: "Utente precisa Ordini>tabMetodipagamento nelweb. NonfornisceURL né screenshotcategorie. Dopo ricercareferencePRD vecchiorepoGitHub404nessunauth/allegatoutile. Chiedere URLcompletooppurescreenshot/nomecampo per completare vero filtro. Non assegnaremetodiaItalia/Esteroautonomamente."
+    - agent: main
+      comment: "BLOCCO fonteclassificazioni. DB Supabase collegato(agente+adminselect*autenticati)payment_methods restituisce soloid,name,description,is_active,display_order,created_at,updated_at,payment_code:9attivi nessuna colonnaItalia/Estero/both. RCA conferma nessunmapping alternativo trovato; NON dedurre categorie dai nomi/MPcode,NON migrare arbitrariamente DBreale. Utente indica tabOrdini>Metodipagamento nelweb, ma manca URL/campovalori. VecchiorepoPaolo73xmas/voom daPRD restituisceGitHub404pubblico; nessunGitHubtokenconfigurato,nessunwebsource o screenshotpagamenti negli asset recenti. Filtro NON implementato in attesa fonte reale. Scorrimento indipendente da questo blocco,completare/testare senza ulteriori ritardi."
 
 eas_same_build_recheck:
   implemented: true

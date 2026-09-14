@@ -1,0 +1,66 @@
+{
+  "summary": "Frontend-only mobile testing completed for Order Collection V2 payment/shipping flow. Core scroll/layout behavior is working on long payment lists and selection persistence works; however, semantic accessibility state for radio selection is missing in DOM and real-agent integration is blocked by zero real customers (flow tested with read-only GET fixtures).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Payment method radio options",
+        "issue": "Option has role=radio but aria-checked is not rendered in DOM after selection (remains null).",
+        "testID": "order-payment-option-{id}",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Payment step next button (empty list)",
+        "issue": "Behavior is blocked correctly (cannot advance), but semantic disabled state is not exposed to web automation via disabled/aria-disabled; button appears actionable in DOM checks.",
+        "testID": "order-next-step",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Authenticated real-data path to Step 3 (Agent account)",
+        "issue": "Real account loaded 0 customers; payment step could not be reached with real customer data. To validate requested payment/shipping scenarios without DB writes, read-only GET fixtures were used for customers (and for dedicated long-list/empty-list payment tests).",
+        "affected_testIDs": [
+          "order-current-step",
+          "order-next-step",
+          "order-payment-list"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts_iter37/iter37_real9_payment_last_selectable.jpeg",
+    "/app/test_reports/artifacts_iter37/iter37_real9_persistence.jpeg",
+    "/app/test_reports/artifacts_iter37/iter37_shipping_layout.jpeg",
+    "/app/test_reports/artifacts_iter37/iter37_longlist_320x568.jpeg",
+    "/app/test_reports/artifacts_iter37/iter37_longlist_390x844.jpeg",
+    "/app/test_reports/artifacts_iter37/iter37_empty_payments.jpeg"
+  ],
+  "action_items": [
+    "Expose selected state for payment options with proper web accessibility attribute (aria-checked=true/false) on order-payment-option-{id}.",
+    "Review semantic disabled state exposure for order-next-step in empty-payment scenario (functional block already works).",
+    "Provide a non-empty testable customer context for AGENTE in preview (or approved fixture path) to run full real-data integration without fallback fixtures."
+  ],
+  "critical_code_review_comments": [
+    "Step 1 and Step 2 interactive controls (customer rows, product add buttons, search inputs) still lack dedicated testIDs, reducing automation robustness.",
+    "PaymentMethodStep relies on accessibilityState checked, but resulting web DOM does not expose aria-checked as expected for radio validation.",
+    "Console repeatedly shows 406 during first-order check path; likely non-blocking but should be handled to avoid noisy diagnostics."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_37.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (not requested)",
+    "frontend": "82%"
+  },
+  "seed_data_creation": "No DB seed/writes. TESTS USED READ-ONLY FIXTURE INTERCEPTION ONLY (MOCKED) for customers and for dedicated payment_methods long-list/empty-list scenarios.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Confirmed: long payment list (30 fixture methods) scrolls to last option on 320x568 and 390x844; no horizontal overflow; footer navigation remains visible; shipping address field reachable and payment choice persists back-navigation + appears in @order_drafts selectedPaymentId. Real payment methods count observed = 9. Do not test Italia/Estero payment filter in this batch (explicitly blocked by scope).",
+  "rca_of_issue": "RCA-1: AGENTE account currently returns customers:0 in preview, preventing full real-data progression to payment step. RCA-2: Payment option selected visual state updates (border/icon) but aria-checked is not emitted in web DOM despite role=radio, causing accessibility/test assertion mismatch. RCA-3: Empty list next action is logically blocked in handler/canAdvance (click does not advance) but semantic disabled exposure is weak in web representation."
+}

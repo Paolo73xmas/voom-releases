@@ -35,12 +35,13 @@ describe('order-checkout helpers: Italia/Estero filters', () => {
   });
 
   // shipping_methods rules
-  it('Estero: allows only active Cassiopea 3% with foreign_only=true (no Ritiro)', () => {
+  it('Estero: allows Cassiopea 3% and the foreign_only Ritiro in sede', () => {
     const methods: ShippingMethod[] = [
       { id: 'sm-cass', name: 'Cassiopea 3%', is_active: true, foreign_only: true, cost: 0 },
       { id: 'sm-cass-spaced', name: ' cassiopea   3 % ', is_active: true, foreign_only: true, cost: 0 },
       { id: 'sm-cass-no-foreign', name: 'Cassiopea 3%', is_active: true, foreign_only: false, cost: 0 },
-      { id: 'sm-ritiro', name: 'Ritiro in sede', is_active: true, foreign_only: false, cost: 0 },
+      { id: 'sm-ritiro-foreign', name: 'RITIRO IN SEDE', is_active: true, foreign_only: true, cost: 0 },
+      { id: 'sm-ritiro-italia', name: 'Ritiro in sede', is_active: true, foreign_only: false, cost: 0 },
       { id: 'sm-brt', name: 'BRT', is_active: true, foreign_only: false, cost: 0 },
       { id: 'sm-cass-inactive', name: 'Cassiopea 3%', is_active: false, foreign_only: true, cost: 0 },
     ];
@@ -48,15 +49,17 @@ describe('order-checkout helpers: Italia/Estero filters', () => {
     expect(isShippingAllowed(methods[0], true)).toBe(true);
     expect(isShippingAllowed(methods[1], true)).toBe(true);
     expect(isShippingAllowed(methods[2], true)).toBe(false);
-    expect(isShippingAllowed(methods[3], true)).toBe(false);
+    expect(isShippingAllowed(methods[3], true)).toBe(true);
     expect(isShippingAllowed(methods[4], true)).toBe(false);
     expect(isShippingAllowed(methods[5], true)).toBe(false);
+    expect(isShippingAllowed(methods[6], true)).toBe(false);
   });
 
-  it('Italia: allows national shipping + ritiro, excludes foreign_only Cassiopea', () => {
+  it('Italia: allows national shipping + ritiro non foreign_only, no duplicate ritiro', () => {
     const methods: ShippingMethod[] = [
       { id: 'sm-brt', name: 'BRT', is_active: true, foreign_only: false, cost: 0 },
-      { id: 'sm-ritiro', name: 'Ritiro in sede', is_active: true, foreign_only: true, cost: 0 },
+      { id: 'sm-ritiro-italia', name: 'Ritiro in sede', is_active: true, foreign_only: false, cost: 0 },
+      { id: 'sm-ritiro-foreign', name: 'RITIRO IN SEDE', is_active: true, foreign_only: true, cost: 0 },
       { id: 'sm-cass', name: 'Cassiopea 3%', is_active: true, foreign_only: true, cost: 0 },
       { id: 'sm-inactive', name: 'GLS', is_active: false, foreign_only: false, cost: 0 },
     ];
@@ -65,6 +68,7 @@ describe('order-checkout helpers: Italia/Estero filters', () => {
     expect(isShippingAllowed(methods[1], false)).toBe(true);
     expect(isShippingAllowed(methods[2], false)).toBe(false);
     expect(isShippingAllowed(methods[3], false)).toBe(false);
+    expect(isShippingAllowed(methods[4], false)).toBe(false);
   });
 });
 

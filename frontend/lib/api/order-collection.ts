@@ -95,12 +95,7 @@ export async function fetchShippingMethods(isForeign?: boolean): Promise<Shippin
     // Il wizard conserva il catalogo completo per filtrare immediatamente al cambio flag.
     if (isForeign === undefined) return data || [];
     // Mantiene il filtro geografico per i chiamanti che richiedono una modalità specifica.
-    return (data || []).filter(method => {
-      const isRitiro = method.name.toLowerCase().includes('ritiro');
-      if (isRitiro) return true;
-      if (isForeign) return method.foreign_only === true;
-      return method.foreign_only !== true;
-    });
+    return (data || []).filter(method => (isForeign ? method.foreign_only === true : method.foreign_only !== true));
   } catch (error) {
     console.error('[fetchShippingMethods] Error:', error);
     throw error;

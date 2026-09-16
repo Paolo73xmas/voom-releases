@@ -10,12 +10,17 @@ export function isPaymentAllowed(method: PaymentMethod, isForeign: boolean): boo
   return method.is_active === true && (!isForeign || normalizedName(method.name) === 'contanti');
 }
 
+/** Le spedizioni seguono esattamente il flag foreign_only del gestionale:
+ * Estero → Cassiopea 3% e il ritiro in sede marcato foreign_only.
+ * Italia → spedizioni nazionali e il ritiro in sede non foreign_only (nessun doppione).
+ */
 export function isShippingAllowed(method: ShippingMethod, isForeign: boolean): boolean {
   if (!method.is_active) return false;
+  const name = normalizedName(method.name);
   if (isForeign) {
-    return method.foreign_only === true && /^cassiopea\s*3\s*%$/.test(normalizedName(method.name));
+    return method.foreign_only === true && (/^cassiopea\s*3\s*%$/.test(name) || name.includes('ritiro'));
   }
-  return method.foreign_only !== true || normalizedName(method.name).includes('ritiro');
+  return method.foreign_only !== true;
 }
 
 /** Stesse fasce del gestionale web (shipping-methods): minimo sotto soglia,

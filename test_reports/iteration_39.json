@@ -1,0 +1,46 @@
+{
+  "summary": "Frontend-only E2E reproduction of the 'Ritiro in sede' visibility issue on Step 4 (Metodo di Spedizione) of Order Collection V2. Test performed on viewports 390x844 and 320x568 using account tadini@voomweb.it (269 clienti). RESULT: The ScrollView order-shipping-list DOES scroll correctly on both viewports; the option order-shipping-option-91a06b88-37e7-4b53-a162-d45c5bd80475 (Ritiro in sede) IS present in the DOM, is reachable via scroll (bounding box moves from y=645/687 to y=450/174 after scrollTop=scrollHeight), is selectable (aria-checked flips to true after tap), and the following order-shipping-address input remains reachable. The bottom bar (order-bottom-navigation) does NOT cover Ritiro in sede on either viewport. The Italia list actually contains 6 shipping methods (not 4 Bartolini + 1 Ritiro as expected): 3× Bartolini + 1× BARTOLINI SPEDIZIONE INGOMBRANTE + 2 DUPLICATE 'Ritiro in sede' entries with distinct IDs. Estero flow (foreign toggle from Step 2 header, then step 3/4) correctly shows only 'Cassiopea 3%' as shipping and only 'CONTANTI' as payment — Ritiro NOT present in Estero, matching the coded rule isShippingAllowed. Also observed: order-foreign-toggle is NOT rendered on Step 4 (only on Step 1/2 header), matching current implementation.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Order Collection V2 · Step 4 Italia shipping list",
+        "issue": "SUPABASE DATA DUPLICATION: shipping_methods contains TWO entries whose name normalizes to 'ritiro in sede' — id 91a06b88-37e7-4b53-a162-d45c5bd80475 ('Ritiro in sede') AND id 5dc9deb7-7cdc-4fe5-9579-f2e76e376adb ('RITIRO IN SEDE'). Both survive the isShippingAllowed filter for Italia because the filter allows any method whose name includes 'ritiro' as an OR-branch. Because Supabase returns them alphabetically, 'RITIRO IN SEDE' (uppercase) sorts BEFORE 'Ritiro in sede' (mixed case) in some collations OR the extra Bartolini method 'BARTOLINI SPEDIZIONE INGOMBRANTE' pushes the primary Ritiro further down. This likely explains the agent's confusion: they saw TWO nearly identical 'Ritiro' rows and could not tell which one is the canonical.",
+        "affected_testIDs": ["order-shipping-option-91a06b88-37e7-4b53-a162-d45c5bd80475", "order-shipping-option-5dc9deb7-7cdc-4fe5-9579-f2e76e376adb", "order-shipping-list"]
+      }
+    ],
+    "design_issues": [
+      {"screen": "Order Collection V2 · Step 4 Spedizione", "issues": ["Bottom bar does NOT cover Ritiro in sede but padding-bottom of content is only 24px; after 6 rows the last row (mixed-case Ritiro) and address input still remain scroll-reachable, no clipping observed on 390x844 and 320x568."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts_iter39/step4_italia_top_390x844.jpeg",
+    "/app/test_reports/artifacts_iter39/step4_italia_scrolled_390x844.jpeg",
+    "/app/test_reports/artifacts_iter39/step4_italia_final_390x844.jpeg",
+    "/app/test_reports/artifacts_iter39/step4_italia_top_320x568.jpeg",
+    "/app/test_reports/artifacts_iter39/step4_italia_scrolled_320x568.jpeg",
+    "/app/test_reports/artifacts_iter39/step4_italia_final_320x568.jpeg",
+    "/app/test_reports/artifacts_iter39/step4_estero_final.jpeg"
+  ],
+  "action_items": [
+    "PRIMARY: Deduplicate shipping_methods in Supabase — deactivate/rename ONE of the two 'Ritiro in sede' rows (id 5dc9deb7-7cdc-4fe5-9579-f2e76e376adb appears to be the accidental uppercase duplicate). This is a DATA fix, not a code fix.",
+    "DEFENSIVE: In isShippingAllowed (frontend/lib/order-checkout.ts) OR in the useMemo filteredShippingMethods, add client-side de-duplication by normalizedName to prevent identical labels from rendering twice, so future data drift does not resurface this problem.",
+    "OPTIONAL COPY: In frontend/components/orders/ShippingMethodStep.tsx consider adding a subtle 'Consigliato per ritiro presso deposito' subtitle to differentiate multiple ritiro entries when they exist.",
+    "OPTIONAL UX: Increase ScrollView content paddingBottom from 24 to ~32 (still within 8pt grid) to add visual breathing room above the sticky bottom bar; current spacing is adequate but tight on 320x568."
+  ],
+  "critical_code_review_comments": [
+    "Step 1 customer rows still lack dedicated testIDs (tests fall back to page.get_by_text). Iteration 38 already flagged this.",
+    "Step 2 product +1/+10 buttons still lack dedicated testIDs; adding them (product-add-{id}, product-add10-{id}) would make regression suites deterministic.",
+    "isShippingAllowed Italia branch uses OR on 'ritiro' name substring — while intentional for Estero-only pickup, it also whitelists any duplicate 'ritiro' rows, so the filter is data-quality sensitive.",
+    "ShippingMethodStep does not visually distinguish two methods with identical/near-identical names; consider showing method.id last-4 or an admin badge in dev builds."
+  ],
+  "updated_files": ["/app/test_reports/iteration_39.json"],
+  "success_rate": {"backend": "N/A (not requested)", "frontend": "100% (all four requested scenarios reproduced end-to-end)"},
+  "seed_data_creation": "No writes performed — flow stopped BEFORE order submission as instructed. No draft persisted intentionally; browser storage cleared between viewport runs.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use tadini@voomweb.it / Tadini2025! (269 clienti) to reach Step 4 with real data. Foreign toggle is only visible on Step 1/2 header — toggle it BEFORE entering Payment/Shipping steps. Italia shipping list currently returns 6 rows: 3 Bartolini + BARTOLINI SPEDIZIONE INGOMBRANTE + 2 duplicate Ritiro entries. Estero returns 1 row (Cassiopea 3%) and payments returns 1 row (CONTANTI). Scroll works fine on 390x844 and 320x568. Screenshots stored under artifacts_iter39.",
+  "rca_of_issue": "ROOT CAUSE: Supabase shipping_methods contains a DUPLICATE 'Ritiro in sede' row (id 5dc9deb7-7cdc-4fe5-9579-f2e76e376adb) in addition to the canonical 91a06b88-…-d45c5bd80475. Both pass isShippingAllowed for Italia because the Italy branch returns true when name normalizes to include 'ritiro'. The user's complaint 'difficoltà a visualizzare Ritiro in sede' is NOT a scroll or overlay issue: the ScrollView is fully functional and both viewports render the option above the bottom bar. The confusion likely arises because (a) the list has 6 rows instead of the expected 5, (b) two rows share the same label (case-insensitively) yielding an unclear 'which Ritiro?' choice, and (c) in Estero mode the option correctly disappears (rule: only Cassiopea 3%), which the user may perceive as inconsistent. REPRODUCTION STEPS: 1) Login tadini, 2) open /order-collection-v2, 3) select any customer, 4) press Continua ai Prodotti, 5) add any Italia product via +1, 6) Continua al Pagamento, 7) pick first payment, 8) Continua alla Spedizione, 9) scroll list — verify TWO ritiro rows. MITIGATION: fix the data (primary) and add client-side dedup-by-normalized-name in filteredShippingMethods (defensive)."
+}

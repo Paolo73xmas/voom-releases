@@ -551,3 +551,12 @@ agent_communication:
 agent_communication:
     - agent: "main"
       message: "SMOKE TOUR LIVE COMPLETO + ORDINI (08/09-c): completate TUTTE le verifiche live rimaste in sospeso, via automazione browser con GPS mock + verifiche DB. PASS: ripresa tour active (4 sessioni), Navigatore (coord tappa), Sono arrivato, ordine da tappa con chiusura automatica outcome=ordine al rientro, Salta visita (titolare_assente + ricalcolo), Ispezione da tappa con EsitoModal + 2 foto (file chooser) + esito non_interessato, Termina con consuntivo → tour completed. Ordine ROTTAMAZIONE €100 su 141 pod (€310.20 imponibile) PASS con note e prezzi spalmati corretti (2.20→1.62, tot €228.42). BUG TROVATO E FIXATO su SCONTO BENVENUTO: order_items con discount_percent=25 E prezzo già scontato → totale server-side applicava lo sconto 2 volte (12.38 vs 16.50); il web usa discount_percent=0 (verificato su ordini web reali). Fix in order-collection-v2.tsx (~1149): discount_percent 0 sui distributed items. Re-test PASS: tot 16.50, disc 0, note corrette. Cleanup ID-based totale: 0 residui, stock ripristinato a delta per item via admin, foto bucket rimosse. Script riusabili: scripts/seed_live_smoke.mjs, verify_live_smoke.mjs, cleanup_live_smoke.mjs. Lint: solo issue legacy preesistenti. RICHIEDE PUBLISH per portare il fix in produzione."
+
+## Fix spedizioni Italia/Estero (ritiro in sede) — iteration 39/40
+- Diagnosi: scroll step spedizione OK; causa reale = due record in shipping_methods ("Ritiro in sede" foreign_only=false, "RITIRO IN SEDE" foreign_only=true). L eccezione includes("ritiro") mostrava entrambi in Italia e nessuno in Estero.
+- Fix (confermato dall utente): isShippingAllowed segue il flag foreign_only. Italia = 4 Bartolini + "Ritiro in sede"; Estero = "Cassiopea 3
+## Fix spedizioni Italia/Estero (ritiro in sede) - iteration 39/40
+- Diagnosi: scroll step spedizione OK; causa reale = due record in shipping_methods ("Ritiro in sede" foreign_only=false, "RITIRO IN SEDE" foreign_only=true). L'eccezione includes('ritiro') mostrava entrambi in Italia e nessuno in Estero.
+- Fix (confermato dall'utente): isShippingAllowed segue il flag foreign_only. Italia = 4 Bartolini + "Ritiro in sede"; Estero = "Cassiopea 3%" + "RITIRO IN SEDE". Scope label aggiornata. Rimossa eccezione ritiro anche in fetchShippingMethods.
+- Test: 8 test vitest order-checkout passati, tsc OK, review statica iteration_40 PASS. Dati Supabase non modificati.
+- Pendente: conferma utente su telefono reale.

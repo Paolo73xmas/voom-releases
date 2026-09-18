@@ -72,6 +72,7 @@ export async function fetchPaymentMethods(): Promise<PaymentMethod[]> {
       .from('payment_methods')
       .select('*')
       .eq('is_active', true)
+      .order('display_order')
       .order('name');
 
     if (error) throw error;
@@ -88,6 +89,7 @@ export async function fetchShippingMethods(isForeign?: boolean): Promise<Shippin
       .from('shipping_methods')
       .select('*')
       .eq('is_active', true)
+      .order('display_order')
       .order('name');
 
     if (error) throw error;

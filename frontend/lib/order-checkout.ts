@@ -3,24 +3,19 @@ import type { PaymentMethod, ShippingMethod } from './api/order-collection';
 const normalizedName = (name: string) => name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
 
 /** Regola confermata: Estero paga con CONTANTI, non Contanti al Corriere.
- * Cassiopea 3% è invece una spedizione: non va mai usata come payment_method_id.
  * Italia mantiene tutti i pagamenti attivi, incluso Contanti (valido per entrambi).
  */
 export function isPaymentAllowed(method: PaymentMethod, isForeign: boolean): boolean {
   return method.is_active === true && (!isForeign || normalizedName(method.name) === 'contanti');
 }
 
-/** Le spedizioni seguono esattamente il flag foreign_only del gestionale:
- * Estero → Cassiopea 3% e il ritiro in sede marcato foreign_only.
- * Italia → spedizioni nazionali e il ritiro in sede non foreign_only (nessun doppione).
+/** Le spedizioni seguono solo i dati del gestionale: colonna STATO (is_active) e
+ * colonna TIPO (foreign_only). Nessun nome o codice è codificato nella app, così
+ * nuovi metodi Italia/Estero creati sul web compaiono subito senza modifiche.
  */
 export function isShippingAllowed(method: ShippingMethod, isForeign: boolean): boolean {
   if (!method.is_active) return false;
-  const name = normalizedName(method.name);
-  if (isForeign) {
-    return method.foreign_only === true && (/^cassiopea\s*3\s*%$/.test(name) || name.includes('ritiro'));
-  }
-  return method.foreign_only !== true;
+  return isForeign ? method.foreign_only === true : method.foreign_only !== true;
 }
 
 /** Stesse fasce del gestionale web (shipping-methods): minimo sotto soglia,

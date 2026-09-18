@@ -560,3 +560,9 @@ agent_communication:
 - Fix (confermato dall'utente): isShippingAllowed segue il flag foreign_only. Italia = 4 Bartolini + "Ritiro in sede"; Estero = "Cassiopea 3%" + "RITIRO IN SEDE". Scope label aggiornata. Rimossa eccezione ritiro anche in fetchShippingMethods.
 - Test: 8 test vitest order-checkout passati, tsc OK, review statica iteration_40 PASS. Dati Supabase non modificati.
 - Pendente: conferma utente su telefono reale.
+
+## Spedizioni dinamiche per TIPO Italia/Estero - iteration 41
+- Richiesta utente (con screenshot gestionale): Step 4 deve mostrare le spedizioni in base alla colonna TIPO (ITALIA/ESTERO) letta ogni volta dal DB, senza nomi/codici hardcoded.
+- isShippingAllowed = is_active && (isForeign ? foreign_only===true : foreign_only!==true). Rimosse tutte le regole per nome (Cassiopea/ritiro). fetchPaymentMethods/fetchShippingMethods ordinano per display_order (colonna ORDINE del web).
+- Pagamenti: regola confermata dall'utente, Estero = solo CONTANTI (payment_methods non ha campo TIPO).
+- E2E iteration_41: Italia 5 spedizioni corrette, Estero 2 (RITIRO IN SEDE EST + Cassiopea 3%), pagamenti Italia 9 / Estero 1, toggle con reset selezione OK, nessun ordine creato. 8 test vitest + tsc OK.

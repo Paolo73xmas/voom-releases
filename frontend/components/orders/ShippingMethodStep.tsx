@@ -15,7 +15,7 @@ export function ShippingMethodStep(props: Props) {
   const { methods, selectedId, onSelect, isForeignOrder, orderBase, address, onAddressChange } = props;
   return <ScrollView testID="order-shipping-list" style={styles.list} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
     <Text testID="order-shipping-title" style={styles.title}>Metodo di Spedizione</Text>
-    <Text testID="order-shipping-scope" style={styles.scope}>{isForeignOrder ? 'Ordine Estero · Cassiopea 3% o Ritiro in sede' : 'Ordine Italia · Spedizioni nazionali e ritiro'}</Text>
+    <Text testID="order-shipping-scope" style={styles.scope}>{isForeignOrder ? 'Ordine Estero · Spedizioni tipo ESTERO del gestionale' : 'Ordine Italia · Spedizioni tipo ITALIA del gestionale'}</Text>
     {methods.length === 0 && <Text testID="order-shipping-empty" style={styles.scope}>Nessuna spedizione attiva compatibile con questo ordine.</Text>}
     {methods.map(method => {
       const cost = getShippingBaseCost(method, orderBase);

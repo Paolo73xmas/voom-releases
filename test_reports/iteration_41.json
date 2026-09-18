@@ -1,0 +1,57 @@
+{
+  "summary": "Iteration 41 — VERIFICA E2E COMPLETA FIX SPEDIZIONI FOREIGN_ONLY. Tutti i 4 scenari richiesti superati end-to-end in preview con account tadini@voomweb.it a viewport 390x844. Consenso privacy pre-impostato via localStorage (@privacy_terms_accepted=true) come workaround non-persistente, senza scrivere su Supabase. Nessun ordine creato. Test superato al 100%: Italia mostra ESATTAMENTE 5 spedizioni corrette (Ritiro in sede 91a06b88, senza 5dc9deb7 né e2e5d52b); Estero mostra ESATTAMENTE 2 spedizioni corrette (5dc9deb7 RITIRO IN SEDE EST €0.00 + e2e5d52b Cassiopea 3%); Pagamenti Italia=9 attivi; Pagamenti Estero=SOLO 5f59e1ca (CONTANTI); selezione RITIRO IN SEDE EST in Estero -> aria-checked=true e order-next-step aria-disabled=None; toggle Estero->Italia con quella selezione -> checkoutNotice mostrato correttamente ('Le scelte non valide per un ordine Italia sono state rimosse. Seleziona nuovamente pagamento o spedizione.'), nessun crash, nessun red screen, selezione resettata come atteso.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts_iter41/01_oc_landing.jpeg",
+    "/app/test_reports/artifacts_iter41/02_step2_products.jpeg",
+    "/app/test_reports/artifacts_iter41/03_step4_italia.jpeg",
+    "/app/test_reports/artifacts_iter41/04_step4_estero.jpeg",
+    "/app/test_reports/artifacts_iter41/05_ritiro_selected.jpeg",
+    "/app/test_reports/artifacts_iter41/06_after_toggle_back.jpeg"
+  ],
+  "test_results": {
+    "italia_shipping_options": [
+      {"id": "9c9df63a-d8c8-497e-b8e7-3fa69375581e", "name": "Bartolini base - Corriere", "cost": "€6.00 (€7.32 con IVA)"},
+      {"id": "7ec7f0fa-a785-4286-9c4e-aa04a2267aa5", "name": "Bartolini con compensazione - Corriere", "cost": "€12.00 (€14.64 con IVA)"},
+      {"id": "91a06b88-37e7-4b53-a162-d45c5bd80475", "name": "Ritiro in sede", "cost": "€0.00 (€0.00 con IVA)"},
+      {"id": "32f8ed98-fc37-4e46-afe5-a07d38f7f3b7", "name": "Bartolini Spedizione Gratuita", "cost": "€0.00 (€0.00 con IVA)"},
+      {"id": "af136fec-56f8-4d8c-a9b1-763358877c71", "name": "BARTOLINI SPEDIZIONE INGOMBRANTE", "cost": "€10.00 (€12.20 con IVA)"}
+    ],
+    "italia_shipping_count": 5,
+    "italia_shipping_excluded_ok": ["5dc9deb7-7cdc-4fe5-9579-f2e76e376adb (RITIRO IN SEDE EST) NOT present", "e2e5d52b-363f-41f5-9bbd-37ac2c94c450 (Cassiopea 3%) NOT present"],
+    "estero_shipping_options": [
+      {"id": "5dc9deb7-7cdc-4fe5-9579-f2e76e376adb", "name": "RITIRO IN SEDE EST", "cost": "€0.00"},
+      {"id": "e2e5d52b-363f-41f5-9bbd-37ac2c94c450", "name": "Cassiopea 3%", "cost": "€10.00 · Tariffa 3% (min_cost applicato)"}
+    ],
+    "estero_shipping_count": 2,
+    "italia_payment_count": 9,
+    "estero_payment_count": 1,
+    "estero_payment_id": "5f59e1ca-5aa8-4b02-b947-2cfb41d1f951 (CONTANTI)",
+    "ritiro_est_selection": {"aria_checked": "true", "order_next_step_aria_disabled": "None (enabled)", "order_submit_seen": "not on Step 4"},
+    "toggle_estero_to_italia": {"notice_shown": "Le scelte non valide per un ordine Italia sono state rimosse. Seleziona nuovamente pagamento o spedizione.", "step_after_toggle": "Step 2 (products)", "crash": false, "red_screen": false},
+    "italia_scope_text": "Ordine Italia · Spedizioni tipo ITALIA del gestionale",
+    "estero_scope_text": "Ordine Estero · Spedizioni tipo ESTERO del gestionale"
+  },
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fix isShippingAllowed in /app/frontend/lib/order-checkout.ts:16-19 CONFERMATO IN RUNTIME: separazione basata puramente su method.foreign_only, senza pattern testuali su nomi. Coerente con schema shipping_methods.foreign_only del gestionale web.",
+    "Fix isPaymentAllowed in /app/frontend/lib/order-checkout.ts:8-10 CONFERMATO IN RUNTIME: Estero filtra a normalizedName === 'contanti', restituendo esattamente 1 metodo (5f59e1ca). Italia mantiene 9 metodi attivi.",
+    "L'useEffect di invalidazione in order-collection-v2.tsx:834-844 gestisce correttamente il toggle Estero->Italia con RITIRO IN SEDE EST selezionato: nessun crash, checkoutNotice mostrato, currentStep clampato a Step 2 (mostrato come 'Step 2 di 5' nel banner audit).",
+    "ShippingMethodStep scope text (line 18) coerente col nuovo criterio TIPO del gestionale (ITALIA/ESTERO), senza hardcoded name.",
+    "fetchShippingMethods senza parametro isForeign (order-collection-v2.tsx:642 loadInitialData) restituisce catalogo completo; il gate client-side via isShippingAllowed su filteredShippingMethods (line 829) è l'unico filtro, coerente e testato.",
+    "Osservazione minore (non bloccante): la label 'Cassiopea 3%' in Estero mostra €10.00 anche a orderBase bassissimo perché la logica getShippingBaseCost applica min_cost quando value<=threshold_min (order-checkout.ts:32). È il comportamento web-parity corretto. Il problem statement menzionava '€0.00' per RITIRO IN SEDE EST — verificato a €0.00 (cost=0 in DB), ok. Cassiopea 3% non è oggetto di asserzione sul costo, solo sulla presenza."
+  ],
+  "updated_files": ["/app/test_reports/iteration_41.json"],
+  "success_rate": {"backend": "N/A (frontend-only)", "frontend": "100% — tutti i 4 scenari del review_request superati end-to-end con evidenze screenshot"},
+  "seed_data_creation": "Nessuna. Solo pre-set di localStorage @privacy_terms_accepted=true nella sessione browser di test (transiente, non persistito in Supabase). Nessun ordine creato, nessun draft salvato, nessuna scrittura su Supabase.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Il fix isShippingAllowed su foreign_only è confermato in runtime a viewport 390x844 con account tadini@voomweb.it. Ordine dei metodi Italia da display_order: Bartolini base -> Bartolini compensazione -> Ritiro in sede -> Bartolini Gratuita -> Bartolini INGOMBRANTE. Estero: RITIRO IN SEDE EST (5dc9deb7) -> Cassiopea 3% (e2e5d52b). Pagamento Estero = solo CONTANTI (5f59e1ca). Per test futuri: usare tadini@voomweb.it / Tadini2025! con pre-set localStorage; il consent screen è unico blocco. Le immagini di prova sono in /app/test_reports/artifacts_iter41/.",
+  "rca_of_issue": "Nessun bug residuo. Il fix applicato dopo iteration 40 (isShippingAllowed strettamente basato su method.foreign_only, senza matching testuale) risolve completamente il problema originale del doppio 'Ritiro in sede' e dell'accoppiata Italia/Estero con hardcoded names. La verifica E2E conferma parità con la colonna TIPO del gestionale web."
+}

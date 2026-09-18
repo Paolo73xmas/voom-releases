@@ -25,7 +25,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { listAllZones, pointInZones, zoneLabel, intersectDrawnWithZones, type TerritoryZone } from '../lib/aitour/territories';
 import { loadCandidates, loadFreeTabaccherie, type CandidatePool } from '../lib/aitour/data';
-import { scoreCandidates, computePortfolioStats, splitRecentlyServed, isRecentlyServed } from '../lib/aitour/scoring';
+import { scoreCandidates, computePortfolioStats, splitRecentlyServed, isRecentlyServed, RECENT_CONTACT_DAYS } from '../lib/aitour/scoring';
 import { planTour, filterByArea, pickBestCluster, candidatesForDayType, sweepPartition, type AreaFilter } from '../lib/aitour/planner';
 import { getStrategySummary, recommendDayType } from '../lib/aitour/ai';
 import { getSettings, saveTour, saveToursBatch, listTours, loadTourStops, deleteTour, replaceTourPlan, type SavedTour } from '../lib/aitour/tours';
@@ -664,7 +664,7 @@ export default function AITourScreen() {
         }
       }
 
-      const recent = splitRecentlyServed(candidates);
+      const recent = splitRecentlyServed(candidates, RECENT_CONTACT_DAYS, v.date);
       candidates = recent.kept;
       // Le obbligatorie entrano anche se fuori area/tipo giornata
       const mandatoryKeys = new Set<string>();
@@ -781,7 +781,7 @@ export default function AITourScreen() {
           const inBox = (c: { lat: number; lng: number }) =>
             c.lat >= fillBounds.minLat && c.lat <= fillBounds.maxLat && c.lng >= fillBounds.minLng && c.lng <= fillBounds.maxLng;
           // orfani vicini non ancora nel giro
-          let fillers = loaded.orphans.filter((c) => !plannedKeys.has(c.key) && inBox(c) && !isRecentlyServed(c));
+          let fillers = loaded.orphans.filter((c) => !plannedKeys.has(c.key) && inBox(c) && !isRecentlyServed(c, RECENT_CONTACT_DAYS, v.date));
           if (isTerritory && territoryZones.length > 0) {
             fillers = fillers.filter((c) => pointInZones(c.lat, c.lng, territoryZones));
           }
@@ -1143,7 +1143,7 @@ export default function AITourScreen() {
       loaded.registry = await loadBriefDevelopment(brief, agentId, settings, excludeTabs, start);
       scoreCandidates(loaded.registry, settings);
       const sel = selectCandidatesV4(brief, loaded);
-      const recent = splitRecentlyServed(sel.candidates);
+      const recent = splitRecentlyServed(sel.candidates, RECENT_CONTACT_DAYS, date);
       let candidates = brief.includeAutomatic === false ? [] : recent.kept;
       const briefWarnings: string[] = [...sel.warnings];
       if (recent.excluded.length && brief.includeAutomatic !== false) briefWarnings.push(`${recent.excluded.length} soggetti esclusi: già visitati o con ordine negli ultimi 15 giorni`);
@@ -1173,7 +1173,7 @@ export default function AITourScreen() {
           const inKeys = new Set(candidates.map((c) => c.key));
           const extra = withinRadiusOfAnchors([...loaded.prospects, ...loaded.orphans].filter((c) => !inKeys.has(c.key)), base, radius);
           scoreCandidates(free, settings);
-          candidates = [...candidates, ...free, ...extra].filter((c) => inBriefArea(c, brief.areas, brief.journey) && !isRecentlyServed(c));
+          candidates = [...candidates, ...free, ...extra].filter((c) => inBriefArea(c, brief.areas, brief.journey) && !isRecentlyServed(c, RECENT_CONTACT_DAYS, date));
         }
       }
 

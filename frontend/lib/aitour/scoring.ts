@@ -14,13 +14,26 @@ export function cadenceWeeksFor(c: TourCandidate, settings?: CadenceSettings): n
 }
 
 export const RECENT_CONTACT_DAYS = 15;
-export function isRecentlyServed(c: TourCandidate, days = RECENT_CONTACT_DAYS): boolean {
-  if (c.appointmentAt || c.followUpDate || c.isFollowUp) return false;
+
+/** Parità web (scoring.ts): l'appuntamento/follow-up sospende la regola dei 15 giorni
+ * SOLO se è dovuto entro la data pianificata. Un appuntamento fra due settimane non
+ * deve far riproporre il cliente ogni giorno subito dopo la visita.
+ */
+function hasDueAppointment(c: TourCandidate, forDate?: string): boolean {
+  const ref = c.appointmentAt || c.followUpDate;
+  if (!ref) return false;
+  const limit = forDate || new Date().toISOString().slice(0, 10);
+  return ref.slice(0, 10) <= limit;
+}
+
+export function isRecentlyServed(c: TourCandidate, days = RECENT_CONTACT_DAYS, forDate?: string): boolean {
+  // isFollowUp: tappa di follow-up scelta esplicitamente per quella giornata
+  if (c.isFollowUp || hasDueAppointment(c, forDate)) return false;
   return (c.daysSinceVisit != null && c.daysSinceVisit < days) || (c.daysSinceOrder != null && c.daysSinceOrder < days);
 }
-export function splitRecentlyServed(candidates: TourCandidate[], days = RECENT_CONTACT_DAYS) {
+export function splitRecentlyServed(candidates: TourCandidate[], days = RECENT_CONTACT_DAYS, forDate?: string) {
   const kept: TourCandidate[] = [], excluded: TourCandidate[] = [];
-  for (const c of candidates) (isRecentlyServed(c, days) ? excluded : kept).push(c);
+  for (const c of candidates) (isRecentlyServed(c, days, forDate) ? excluded : kept).push(c);
   return { kept, excluded };
 }
 

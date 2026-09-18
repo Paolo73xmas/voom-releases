@@ -281,6 +281,21 @@ export async function completeStop(tour: SavedTour, stop: LiveStop, esito: Esito
     } catch (err) {
       console.warn('[AITour][live] insert visita CRM fallito:', err);
     }
+    // La visita chiude i follow-up già scaduti su questo cliente: se restano "scheduled"
+    // il cliente risulta sempre con appuntamento pendente e viene riproposto nei giri.
+    try {
+      const { error: closeErr } = await supabase
+        .from('appointments')
+        .update({ status: 'completed' })
+        .eq('customer_id', stop.candidate.customerId)
+        .eq('agent_id', tour.agent_id)
+        .eq('appointment_type', 'follow_up')
+        .eq('status', 'scheduled')
+        .lte('appointment_date', now.toISOString());
+      if (closeErr) console.warn('[AITour][live] chiusura follow-up scaduti fallita:', closeErr.message);
+    } catch (err) {
+      console.warn('[AITour][live] chiusura follow-up scaduti fallita:', err);
+    }
     if (esito.followUpDate) {
       try {
         const { data: session } = await supabase.auth.getSession();

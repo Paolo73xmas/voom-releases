@@ -1,0 +1,28 @@
+{
+  "summary": "Verifica statica + unit + smoke UI dei 2 allineamenti web->mobile del commit 81c5d61d (AI Tour). (1) Regola 15 giorni con appuntamento dovuto entro data del giro tramite hasDueAppointment + forDate su isRecentlyServed/splitRecentlyServed. (2) completeStop chiude i follow-up 'scheduled' scaduti dello stesso cliente/agente prima di creare il nuovo. Tutti i test passano (vitest 31/31, run_suite.sh 6/6). Smoke UI: schermata AI Tour si apre senza red screen ne errori import RECENT_CONTACT_DAYS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/recent_contact_appointment.test.ts",
+    "/app/tests/aitour/run_suite.sh"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "scoring.ts: hasDueAppointment(c, forDate?) confronta ref.slice(0,10) <= (forDate || today). Corretto: comparazione string ISO date-only e' safe. isFollowUp continua a sospendere la regola (voluto: tappa scelta esplicitamente per la giornata).",
+    "Tutti i chiamanti di isRecentlyServed/splitRecentlyServed passano una data di riferimento: app/ai-tour.tsx:667/784/1146/1176 (v.date/date), lib/aitour/week.ts:213/221 (weekEndDate), lib/aitour/liveops.ts:338 (ctx.tour.tour_date). Nessun chiamante senza forDate rilevato via grep.",
+    "live.ts completeStop (linee 286-298): chiusura follow-up scaduti eseguita PRIMA dell'insert del nuovo follow-up (linea 299+). Filtri corretti: customer_id=candidate.customerId, agent_id=tour.agent_id, appointment_type='follow_up', status='scheduled', appointment_date <= now. Impossibile chiudere appuntamenti futuri (lte su now.toISOString()) o di altri agenti/clienti. Errore non-throwing (console.warn), non blocca il flusso principale — coerente con il pattern degli altri insert CRM del metodo.",
+    "week.ts usa isRecentlyServed(c, undefined, weekEndDate): il default del parametro days (RECENT_CONTACT_DAYS) viene applicato correttamente."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "seed_data_creation": "Nessun dato scritto (vincoli critici rispettati: no tour reali, no appuntamenti, no ordini).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Suite di riferimento per AI Tour: cd /app/frontend && npx vitest run (31 test in 6 file, di cui recent_contact_appointment.test.ts 6/6) + cd /app && bash tests/aitour/run_suite.sh (6 file PASS via esbuild+node). Vincoli persistenti: NON generare/completare tour reali, NON scrivere appointments/orders/visits. Consenso privacy via localStorage @privacy_terms_accepted. La UI AI Tour senza sessione mostra il gate 'Accedi per pianificare i tuoi giri visita.' — nessun red screen atteso.",
+  "rca_of_issue": "N/A - non e' un bug fix ma verifica di feature. Entrambi gli allineamenti dal commit web 81c5d61d risultano correttamente portati sul mobile: (a) hasDueAppointment + forDate propagato in tutti i 6 call site (nessun regresso rispetto al comportamento web); (b) completeStop chiude i follow-up scaduti con filtri stretti prima dell'insert. Test unitari specifici (recent_contact_appointment.test.ts) coprono i 4 casi chiave: visita recente + appt futuro escluso, appt del giorno riammette, follow-up scaduto sospende regola, isFollowUp sempre ammesso."
+}

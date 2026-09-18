@@ -566,3 +566,9 @@ agent_communication:
 - isShippingAllowed = is_active && (isForeign ? foreign_only===true : foreign_only!==true). Rimosse tutte le regole per nome (Cassiopea/ritiro). fetchPaymentMethods/fetchShippingMethods ordinano per display_order (colonna ORDINE del web).
 - Pagamenti: regola confermata dall'utente, Estero = solo CONTANTI (payment_methods non ha campo TIPO).
 - E2E iteration_41: Italia 5 spedizioni corrette, Estero 2 (RITIRO IN SEDE EST + Cassiopea 3%), pagamenti Italia 9 / Estero 1, toggle con reset selezione OK, nessun ordine creato. 8 test vitest + tsc OK.
+
+## Allineamento commit web 22cb583..81c5d61d - 18/09
+- Analisi in memory/WEB_COMMIT_ANALYSIS_20260918.md: 15 commit, 2 allineamenti mobile necessari.
+- Implementato: regola 15 giorni con data di riferimento (appuntamento futuro non riammette il cliente) e chiusura dei follow-up scaduti al completamento tappa in Tour Live.
+- Verifiche: vitest 31 test passati (incluso nuovo tests/recent_contact_appointment.test.ts), tests/aitour/run_suite.sh 6 file PASS, tsc OK, lint OK. Nessuna scrittura su dati reali.
+- Segnalato al web, non modificato: orders.total_amount include la spedizione anche lato web OrderCollection, quindi la nuova colonna Totale del web somma due volte la spedizione sugli ordini nuovi.

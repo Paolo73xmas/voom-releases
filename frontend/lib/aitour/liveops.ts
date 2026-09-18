@@ -8,7 +8,7 @@ import type { SavedTour } from './tours';
 import { addLiveStop, updateLiveSequence, logTourEvent } from './live';
 import { planFixedOrder, planTour, candidatesForDayType } from './planner';
 import { loadCandidates, loadFreeTabaccherie } from './data';
-import { scoreCandidates, isRecentlyServed } from './scoring';
+import { scoreCandidates, isRecentlyServed, RECENT_CONTACT_DAYS } from './scoring';
 import { listAllZones, pointInZones, ringsToSyntheticZones } from './territories';
 import type { VisitSlot } from '../visit-slots';
 import { isoWeekday } from '../visit-slots';
@@ -335,7 +335,7 @@ export async function extendTourVisits(
   const inArea = await areaCheckForTour(ctx.tour, pending);
   const tourDow = isoWeekday(ctx.tour.tour_date);
   candidates = candidates.filter((c) =>
-    !isRecentlyServed(c) &&
+    !isRecentlyServed(c, RECENT_CONTACT_DAYS, ctx.tour.tour_date) &&
     !(c.customerId && excludeCustomerIds.has(c.customerId)) &&
     !(c.tabaccheriaId && excludeTabIds.has(c.tabaccheriaId)) &&
     !(Array.isArray(c.excludedDays) && c.excludedDays.includes(tourDow)) &&

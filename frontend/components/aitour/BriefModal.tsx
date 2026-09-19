@@ -40,12 +40,19 @@ import {
 } from '../../lib/aitour/brief-v4';
 import { loadBriefCustomers, type BriefCustomer } from '../../lib/aitour/brief-customers';
 import { briefReviewProblems, identifyBriefStops } from '../../lib/aitour/brief-review';
+import { briefConsistencyIssues, briefClarifications } from '../../lib/aitour/brief-consistency';
+import { briefSummary, resolveBriefDate } from '../../lib/aitour/brief-summary';
+import { previewBriefCandidates, type BriefPreview } from '../../lib/aitour/brief-preview';
+import { loadCandidates, type CandidatePool } from '../../lib/aitour/data';
+import { scoreCandidates } from '../../lib/aitour/scoring';
 import { bindSavedBriefPlaces } from '../../lib/aitour/brief-saved-places';
 import { bindJourneyEnd } from '../../lib/aitour/brief-journey';
 import type { AiTourSettings } from '../../lib/aitour/types';
 import { BriefPlacePicker } from './brief/BriefPlacePicker';
 import { BriefStopsReview } from './brief/BriefStopsReview';
 import { BriefJourneyReview } from './brief/BriefJourneyReview';
+import { BriefIssues } from './brief/BriefIssues';
+import { BriefPreviewBox } from './brief/BriefPreviewBox';
 import { reviewStyles } from './brief/controls';
 
 const API = `${Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
@@ -77,13 +84,24 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
   const [brief, setBrief] = useState<TourBriefV4 | null>(null);
   const [err, setErr] = useState('');
   const [customers, setCustomers] = useState<BriefCustomer[]>([]);
+  const [preview, setPreview] = useState<BriefPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const poolRef = useRef<{ agentId: string; pool: Promise<CandidatePool> } | null>(null);
   const epoch = useRef(0);
   const parsedRequest = useRef<AbortController | null>(null);
   useEffect(() => () => { epoch.current++; parsedRequest.current?.abort(); }, []);
   useEffect(() => { if (visible && generationError) setErr(generationError); }, [generationError, visible]);
   const reviewed = brief ? bindJourneyEnd(bindSavedBriefPlaces(brief, settings)) : null;
-  const problems = reviewed ? briefReviewProblems(reviewed, customers) : [];
+  // Contraddizioni interne e domande mirate: si risolvono con un tocco, senza riscrivere la richiesta.
+  const issues = reviewed ? briefConsistencyIssues(reviewed, customers) : [];
+  const clarifications = reviewed ? briefClarifications(reviewed) : [];
+  const hidden = [...issues, ...clarifications].map((i) => i.hides).filter((h): h is string => !!h);
+  const problems = reviewed ? briefReviewProblems(reviewed, customers).filter((p) => !hidden.some((h) => p.startsWith(h))) : [];
+  // Riassunto rigenerato dal CRM sui chip finali: coerente con ciò che riceve il planner.
+  const crmSummary = reviewed ? briefSummary(reviewed, customers) : '';
   const updateBrief = (b: TourBriefV4) => { setBrief(bindJourneyEnd(bindSavedBriefPlaces(b, settings))); setErr(''); };
+  const applyFix = (fix: (b: TourBriefV4) => TourBriefV4) => { hap.light(); setBrief((current) => current ? bindJourneyEnd(bindSavedBriefPlaces(fix(bindJourneyEnd(bindSavedBriefPlaces(current, settings))), settings)) : null); setErr(''); };
 
   const reset = () => {
     epoch.current++;
@@ -243,7 +261,36 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
     });
   };
 
-  const alerts = brief ? [...brief.interpretation.warnings, ...brief.interpretation.unresolvedEntities.map((e) => `Non riconosciuto: ${e}`)] : [];
+  const previewKey = reviewed && !issues.length && !clarifications.length && !problems.length
+    ? JSON.stringify([agentId, reviewed.selection, reviewed.exclusions, reviewed.areas, reviewed.journey?.stages, reviewed.mandatoryStops, reviewed.preferredStops, reviewed.includeAutomatic, reviewed.visitTarget, reviewed.dayType, reviewed.requestedDate, reviewed.preferences])
+    : '';
+  const reviewedRef = useRef(reviewed);
+  reviewedRef.current = reviewed;
+
+  useEffect(() => {
+    if (!previewKey || !visible) { setPreview(null); setPreviewLoading(false); setPreviewError(null); return; }
+    let alive = true;
+    setPreviewLoading(true); setPreviewError(null);
+    const timer = setTimeout(async () => {
+      try {
+        if (!poolRef.current || poolRef.current.agentId !== agentId) {
+          poolRef.current = { agentId, pool: loadCandidates(agentId, settings).then((p) => { scoreCandidates([...p.clients, ...p.prospects, ...p.orphans], settings); return p; }) };
+        }
+        const pool = await poolRef.current.pool;
+        const b = reviewedRef.current;
+        if (!alive || !b) return;
+        setPreview(previewBriefCandidates(b, pool, resolveBriefDate(b)));
+      } catch (error) {
+        poolRef.current = null;
+        if (alive) setPreviewError(error instanceof Error ? error.message : 'errore di caricamento');
+      } finally {
+        if (alive) setPreviewLoading(false);
+      }
+    }, 350);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [previewKey, visible, agentId, settings]);
+
+  const alerts = brief ? [...brief.interpretation.warnings] : [];
 
   const busy = transcribing || parsing || recording;
 
@@ -309,7 +356,8 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
 
             {brief && (
               <View style={styles.briefBox}>
-                {!!brief.summary && <Text testID="brief-summary" style={styles.summary}>{brief.summary}</Text>}
+                {!!crmSummary && <Text testID="brief-summary" style={styles.summary}><Text style={styles.summaryLead}>Ho capito così: </Text>{crmSummary}</Text>}
+                <BriefIssues issues={issues} clarifications={clarifications} onApply={applyFix} />
                 {reviewed && <>
                   <BriefPlacePicker id="brief-start-place" label="Partenza" value={reviewed.route.startPlace} settings={settings} customers={customers} onChange={(p) => updateBrief({ ...reviewed, route: { ...reviewed.route, startPlace: p } })} />
                   {reviewed.journey && <BriefJourneyReview value={reviewed.journey} customers={customers} onChange={(j) => { setBrief((current) => current ? bindJourneyEnd(bindSavedBriefPlaces({ ...current, journey: j }, settings)) : null); setErr(''); }} />}
@@ -493,18 +541,22 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
                   />
                 </View>
 
+                <BriefPreviewBox preview={preview} loading={previewLoading} error={previewError} />
+
                 <TouchableOpacity
                   testID="brief-generate"
-                  disabled={busy || problems.length > 0}
-                  style={[styles.generateBtn, (busy || problems.length > 0) && styles.btnDisabled]}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: busy || problems.length > 0 || issues.length > 0 || clarifications.length > 0 }}
+                  disabled={busy || problems.length > 0 || issues.length > 0 || clarifications.length > 0}
+                  style={[styles.generateBtn, (busy || problems.length > 0 || issues.length > 0 || clarifications.length > 0) && styles.btnDisabled]}
                   onPress={() => {
-                    if (!reviewed || problems.length) return;
+                    if (!reviewed || problems.length || issues.length || clarifications.length) return;
                     if (brief.selection.conditions.length === 0 && brief.mandatoryStops.length === 0 && brief.preferredStops.length === 0 && !brief.journey && !brief.dayType) {
                       setErr('Serve almeno un criterio o una tappa richiesta');
                       return;
                     }
                     hap.medium();
-                    onConfirm(reviewed);
+                    onConfirm({ ...reviewed, modelSummary: reviewed.summary, summary: crmSummary || reviewed.summary });
                   }}
                   activeOpacity={0.85}
                 >
@@ -539,6 +591,7 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.45 },
   briefBox: { marginTop: 18, borderTopWidth: 1, borderTopColor: DS.border, paddingTop: 14 },
   summary: { fontFamily: JAKARTA.medium, fontSize: 14, color: DS.ink, backgroundColor: AI_PURPLE_SOFT, borderRadius: 10, padding: 12, marginBottom: 14, lineHeight: 20 },
+  summaryLead: { fontFamily: JAKARTA.bold, color: AI_PURPLE_TEXT },
   alertBox: { borderWidth: 1, borderColor: '#D97706', backgroundColor: 'rgba(217,119,6,0.10)', borderRadius: 10, padding: 10, marginBottom: 12, gap: 4 },
   alertTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   alertTitle: { flex: 1, fontFamily: JAKARTA.semibold, fontSize: 12, color: '#D97706' },

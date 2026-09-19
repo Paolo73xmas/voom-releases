@@ -572,3 +572,9 @@ agent_communication:
 - Implementato: regola 15 giorni con data di riferimento (appuntamento futuro non riammette il cliente) e chiusura dei follow-up scaduti al completamento tappa in Tour Live.
 - Verifiche: vitest 31 test passati (incluso nuovo tests/recent_contact_appointment.test.ts), tests/aitour/run_suite.sh 6 file PASS, tsc OK, lint OK. Nessuna scrittura su dati reali.
 - Segnalato al web, non modificato: orders.total_amount include la spedizione anche lato web OrderCollection, quindi la nuova colonna Totale del web somma due volte la spedizione sugli ordini nuovi.
+
+## Parità "Dillo all'AI" con commit web 06790e97 - iteration 43
+- Implementati sul mobile: validatore contraddizioni con fix a un tocco, domande mirate sulle entità non riconosciute, riassunto CRM dai chip ("Ho capito così:"), anteprima candidati prima di generare.
+- File nuovi: lib/aitour/brief-consistency.ts, brief-summary.ts, brief-preview.ts, components/aitour/brief/BriefIssues.tsx, BriefPreviewBox.tsx, tests/brief_consistency.test.ts.
+- Modificati: BriefModal.tsx, brief-review.ts (pendingUnresolvedEntities), brief-v4.ts (modelSummary), app/ai-tour.tsx (guardia contraddizioni + resolveBriefDate).
+- Verifiche: vitest 46 test/7 file PASS, tests/aitour/run_suite.sh 6/6 PASS, tsc e lint puliti, smoke UI del modale OK. Nessun tour generato/salvato.

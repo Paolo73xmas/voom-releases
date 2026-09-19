@@ -40,3 +40,12 @@ Analisi statica: non certifica lo stato delle migrazioni sul progetto Supabase i
 - `lib/aitour/live.ts` `completeStop`: dopo la visita imposta `status='completed'` sugli appuntamenti `follow_up` `scheduled` con data <= adesso dello stesso cliente/agente (come il web), prima dell'inserimento del nuovo follow-up.
 - Test: nuovo `frontend/tests/recent_contact_appointment.test.ts` (6 test, porting del test web) — vitest 31 test passati, suite `tests/aitour/run_suite.sh` 6 file PASS, tsc e lint puliti.
 - Non implementati per scelta dell'utente: semantica `total_amount` (solo segnalata al web) e tab Rientri mobile.
+
+## Commit web 06790e97 (18/09) — parità implementata sul mobile (autorizzata dall'utente)
+- Nuovi: `lib/aitour/brief-consistency.ts` (validatore contraddizioni + `briefClarifications` + `pendingUnresolvedEntities`), `lib/aitour/brief-summary.ts` (`briefSummary`, `resolveBriefDate`), `lib/aitour/brief-preview.ts` (`previewBriefCandidates`).
+- Nuovi componenti RN: `components/aitour/brief/BriefIssues.tsx` (fix a un tocco, target 44px) e `components/aitour/brief/BriefPreviewBox.tsx`.
+- `components/aitour/BriefModal.tsx`: riassunto CRM "Ho capito così:", contraddizioni e domande con correzione immediata, anteprima candidati con debounce 350 ms e pool riusato, generazione disabilitata con contraddizioni/domande aperte, invio di `summary` rigenerato + `modelSummary`.
+- `lib/aitour/brief-review.ts`: usa `pendingUnresolvedEntities` (le entità già collocate non bloccano più la generazione).
+- `app/ai-tour.tsx`: guardia contraddizioni prima della generazione e data del giro da `resolveBriefDate`.
+- `lib/aitour/brief-v4.ts`: campo `modelSummary`.
+- Test: nuovo `frontend/tests/brief_consistency.test.ts` (15 test, porting del test web) — vitest 46 test/7 file PASS, suite AI Tour 6/6 PASS, tsc e lint puliti. Iteration 43: smoke UI del modale OK, nessun tour generato.

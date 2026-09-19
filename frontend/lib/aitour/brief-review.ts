@@ -3,6 +3,7 @@ import type { BriefCustomer } from './brief-customers';
 import { matchBriefCustomers, validCustomerPoint } from './brief-customers';
 import { areaProblem, areaConsentKey, outsideAreaReason } from './brief-area';
 import { journeyProblems } from './brief-journey';
+import { pendingUnresolvedEntities } from './brief-consistency';
 
 export function identifyBriefStops(refs: BriefStopRef[], customers: BriefCustomer[]): BriefStopRef[] {
   return refs.map((r) => { const m = matchBriefCustomers(r, customers); return { ...r, selectedCustomerId: m.status === 'resolved' ? m.options[0].id : undefined }; });
@@ -34,7 +35,8 @@ export function briefReviewProblems(brief: TourBriefV4, customers: BriefCustomer
     const lower = vt.mode === 'range' ? vt.min : vt.value;
     if (lower && lower > kept.length) errors.push(`Hai indicato ${kept.length} clienti per ${lower} visite: correggi il numero o autorizza altri clienti`);
   }
-  errors.push(...brief.interpretation.unresolvedEntities.map((e) => `Da chiarire nella richiesta: ${e}`));
+  const pending = pendingUnresolvedEntities(brief);
+  errors.push(...pending.map((e) => `Da chiarire nella richiesta: ${e}`));
   for (const time of [brief.route.startTime, brief.route.endTime, brief.route.finishBy]) if (time && !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) errors.push('Usa orari validi nel formato HH:MM');
   const start = brief.route.startTime, finish = brief.route.finishBy || brief.route.endTime;
   if (start && finish && start >= finish) errors.push('L’orario di arrivo/fine deve essere successivo alla partenza');

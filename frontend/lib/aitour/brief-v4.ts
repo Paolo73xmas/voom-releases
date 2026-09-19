@@ -85,6 +85,8 @@ export interface TourBriefV4 {
   route: BriefRoute;
   interpretation: { confidence: number; needsConfirmation: boolean; unresolvedEntities: string[]; warnings: string[] };
   summary: string;
+  /** Riassunto originale del modello (summary viene rigenerato dal CRM dai chip finali) */
+  modelSummary?: string;
 }
 
 const isTime = (s: unknown): s is string => typeof s === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(s);

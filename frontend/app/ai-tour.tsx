@@ -44,6 +44,8 @@ import { TourNameDialog } from '../components/aitour/TourNameDialog';
 import { selectCandidatesV4, applyAppointment, targetCap, withinRadiusOfAnchors, type TourBriefV4 } from '../lib/aitour/brief-v4';
 import { loadBriefCustomers } from '../lib/aitour/brief-customers';
 import { briefReviewProblems } from '../lib/aitour/brief-review';
+import { briefConsistencyIssues } from '../lib/aitour/brief-consistency';
+import { resolveBriefDate } from '../lib/aitour/brief-summary';
 import { bindSavedBriefPlaces } from '../lib/aitour/brief-saved-places';
 import { inBriefArea, matchesArea } from '../lib/aitour/brief-area';
 import { assignJourneyStages, balanceJourneyCandidates, bindJourneyEnd, journeyLabel } from '../lib/aitour/brief-journey';
@@ -1077,17 +1079,15 @@ export default function AITourScreen() {
     try {
       brief = bindJourneyEnd(bindSavedBriefPlaces(brief, settings));
       setProgress('Verifico clienti e luoghi confermati...');
-      const reviewErrors = briefReviewProblems(brief, await loadBriefCustomers(agentId));
+      const briefDirectory = await loadBriefCustomers(agentId);
+      const reviewErrors = briefReviewProblems(brief, briefDirectory);
       if (reviewErrors.length) throw new Error(reviewErrors.join('. '));
+      const contradictions = briefConsistencyIssues(brief, briefDirectory);
+      if (contradictions.length) throw new Error(`Contraddizioni da risolvere: ${contradictions.map((i) => i.message).join('. ')}`);
       // Data richiesta: oggi/domani/esplicita; per date future niente aggancio all'ora corrente
       const todayStr = localDateStr();
-      let date = todayStr;
-      if (brief.requestedDate.type === 'tomorrow') {
-        date = brief.requestedDate.value || localDateStr(1);
-      } else if ((brief.requestedDate.type === 'explicit' || brief.requestedDate.type === 'selected') && brief.requestedDate.value) {
-        date = brief.requestedDate.value;
-      }
-      if (date < todayStr) throw new Error('La data richiesta è già passata: correggi il giorno prima di generare');
+      const date = resolveBriefDate(brief);
+      if (brief.requestedDate.value && brief.requestedDate.value < todayStr) throw new Error('La data richiesta è già passata: correggi il giorno prima di generare');
       const startTime = brief.route.startTime || settings.work_start;
       let endTime = brief.route.endTime || settings.work_end;
       // finishBy = fine tassativa: comprime l'orario e rende il rientro NON flessibile

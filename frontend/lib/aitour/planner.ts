@@ -346,6 +346,21 @@ export function sweepPartition(cands: TourCandidate[], start: GeoPoint, k: numbe
   return bestChain.map((i) => groups[i]);
 }
 
+// Rete di sicurezza: lo stesso punto vendita (scheda CRM o tabaccheria) entra una sola volta.
+// Vince l'obbligatoria, poi il punteggio piu' alto; l'ordine originale viene conservato.
+export function dedupeSamePlace(list: TourCandidate[], mandatoryKeys: Set<string>): TourCandidate[] {
+  const ranked = [...list].sort((a, b) => Number(mandatoryKeys.has(b.key)) - Number(mandatoryKeys.has(a.key)) || b.score - a.score);
+  const seen = new Set<string>();
+  const keep = new Set<string>();
+  for (const c of ranked) {
+    const ids = [c.customerId ? `c:${c.customerId}` : null, c.tabaccheriaId ? `t:${c.tabaccheriaId}` : null].filter((x): x is string => !!x);
+    if (ids.some((id) => seen.has(id))) continue;
+    ids.forEach((id) => seen.add(id));
+    keep.add(c.key);
+  }
+  return list.filter((c) => keep.has(c.key));
+}
+
 export async function planTour(input: PlanInput): Promise<TourPlan> {
   const { start, end, startMin, endMin, bufferPct } = input;
   const warnings: string[] = [];
@@ -359,7 +374,8 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   const tourDow = isoWeekday(input.tourDate);
   const tourDayName = WEEKDAY_NAMES[tourDow] || '';
   const dayExcluded: { candidate: TourCandidate; why: string }[] = [];
-  const dayCandidates = input.skipDayExclusion ? input.candidates : input.candidates.filter((c) => {
+  const uniqueCandidates = dedupeSamePlace(input.candidates, input.mandatoryKeys);
+  const dayCandidates = input.skipDayExclusion ? uniqueCandidates : uniqueCandidates.filter((c) => {
     if (!Array.isArray(c.excludedDays) || !c.excludedDays.includes(tourDow)) return true;
     if (input.mandatoryKeys.has(c.key)) {
       warnings.push(`"${c.name}": il cliente non riceve visite il ${tourDayName}, mantenuta perche' obbligatoria`);

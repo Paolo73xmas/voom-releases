@@ -49,3 +49,14 @@ Analisi statica: non certifica lo stato delle migrazioni sul progetto Supabase i
 - `app/ai-tour.tsx`: guardia contraddizioni prima della generazione e data del giro da `resolveBriefDate`.
 - `lib/aitour/brief-v4.ts`: campo `modelSummary`.
 - Test: nuovo `frontend/tests/brief_consistency.test.ts` (15 test, porting del test web) — vitest 46 test/7 file PASS, suite AI Tour 6/6 PASS, tsc e lint puliti. Iteration 43: smoke UI del modale OK, nessun tour generato.
+
+## Commit web e2275d4c (19/09) — verificato e allineato
+- Web: `loadCandidates` include i prospect tra gli orfani propri e deduplica per punto vendita; nuovo `dedupeSamePlace` nel planner.
+- Mobile: `lib/aitour/data.ts` era già allineato (prospect negli orfani propri + `notInOrphans` per customer/tabaccheria). Mancava la rete di sicurezza del planner: portato `dedupeSamePlace` in `lib/aitour/planner.ts` e applicato a `input.candidates` in `planTour`.
+- Test: nuovo `frontend/tests/planner_dedupe_same_place.test.ts` (4 test, porting del test web).
+
+## Extra richiesto dall'utente: "Esclusi recuperabili" (non presente nel web)
+- `components/aitour/brief/BriefPreviewBox.tsx`: nell'elenco degli esclusi dai 15 giorni ogni cliente con scheda ha il pulsante "Includi" (target 44px); per i soggetti senza scheda resta l'indicazione di nominarli nella richiesta.
+- `components/aitour/BriefModal.tsx`: `includeExcluded` aggiunge il soggetto come tappa nominata obbligatoria (priorità 2) se non già presente; l'anteprima si ricalcola e la tappa è rimovibile dai chip.
+- Test: caso aggiunto in `tests/brief_consistency.test.ts` (escluso nominato → esce da recentlyExcluded, named +1).
+- Iteration 44: vitest 8 file/51 test PASS, suite AI Tour 6/6, UI verificata (esclusi 6→5, nominati +1, nessun doppione), nessun tour generato.

@@ -1,0 +1,33 @@
+{
+  "summary": "Iteration 44 — Mobile parity for web commit e2275d4c (dedupeSamePlace) + new 'Esclusi Recuperabili' feature: TUTTI I TEST VERDI. vitest: 8/8 files, 51/51 tests PASS (inclusi tests/planner_dedupe_same_place.test.ts con 4 test e tests/brief_consistency.test.ts con 16 test). Shell suite bash tests/aitour/run_suite.sh: 6/6 files PASS (core_journey_planner, brief_customer_area_dev_saved, normalize_recent15_feasibility, edit_plan, live_save_guards, liveops_protected). Verifica statica in lib/aitour/planner.ts confermata: dedupeSamePlace (righe 351-362) prima ordina con ranked (mandatory prima via Number(mandatoryKeys.has(b.key)) - Number(mandatoryKeys.has(a.key)), poi b.score - a.score), poi conserva l'ordine originale via list.filter((c) => keep.has(c.key)); planTour usa uniqueCandidates sia nel ramo skipDayExclusion sia nel filter dei giorni (riga 378: input.skipDayExclusion ? uniqueCandidates : uniqueCandidates.filter(...)). Smoke UI su /ai-tour con tadini@voomweb.it (mobile 390x844, consenso privacy via localStorage @privacy_terms_accepted): apertura brief-modal OK; brief-request-input='Fammi un giro sui miei clienti a Milano e provincia' + brief-interpret → brief-preview appare senza errori. brief-preview-counts iniziale='6 clienti idonei → fino a 6 visite proposte' con 6 esclusi; brief-preview-excluded-toggle apre brief-preview-excluded-list con 6 pulsanti brief-preview-include-*. Cliccato il primo (TABACCHERIA DI POZZI MAURIZIO/PESCHIERA BORROMEO): counts diventa '6 clienti idonei + 1 nominato → fino a 7 visite proposte', esclusi 6→5, pulsante include scompare (canInclude ora false perché già in mandatoryStops), quindi doppio-click impossibile → nessun doppione. brief-generate ha aria-disabled=None (utilizzabile) e NON è stato premuto. Nessun tour generato/salvato, nessun ordine creato, nessun dato Supabase modificato. Nessun errore console durante l'intero flusso.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/planner_dedupe_same_place.test.ts",
+    "/app/frontend/tests/brief_consistency.test.ts",
+    "/app/tests/aitour/run_suite.sh",
+    "/app/test_reports/artifacts_iter44/05_brief_typed.jpeg",
+    "/app/test_reports/artifacts_iter44/06_after_interpret.jpeg",
+    "/app/test_reports/artifacts_iter44/07_excluded_list.jpeg",
+    "/app/test_reports/artifacts_iter44/08_after_include1.jpeg",
+    "/app/test_reports/artifacts_iter44/09_after_include2.jpeg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "BriefModal.tsx supera le ~640 LOC: valutare split (chip renderer, controlli percorso, blocco Percorso/Rientro) — regola >700 LOC in avvicinamento.",
+    "includeExcluded (BriefModal.tsx:107-113) è idempotente (già presente in mandatory o preferred → no-op) e canInclude=(c) => !!c.customerId && customers.some(...): coerente con l'osservazione che il pulsante scompare dopo l'aggiunta.",
+    "dedupeSamePlace: la scrittura è chiara e mantiene l'ordine originale filtrando su keep, ottimo. Nessuna nota bloccante."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "seed_data_creation": "Nessuno. Consenso privacy impostato solo via localStorage transient (@privacy_terms_accepted).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 44 verifica (1) allineamento web e2275d4c (dedupeSamePlace) portato in mobile lib/aitour/planner.ts e (2) nuova feature 'Esclusi Recuperabili' nel modale Dillo all'AI (BriefPreviewBox + BriefModal.includeExcluded). vitest 51/51 PASS, shell 6/6 PASS, UI smoke su /ai-tour con tadini@voomweb.it verde: include button aggiunge il cliente a mandatoryStops, ricalcola brief-preview-counts (+1 nominato, -1 escluso), è idempotente (button scompare), brief-generate resta utilizzabile. brief-generate MAI premuto come richiesto. Iter 39-43 già coperti: non ripetere.",
+  "rca_of_issue": "N/A - nessun bug trovato."
+}

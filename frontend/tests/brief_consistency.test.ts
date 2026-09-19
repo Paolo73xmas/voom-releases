@@ -162,4 +162,15 @@ describe('previewBriefCandidates', () => {
     b.visitTarget = { mode: 'exact', value: 1, min: null, max: null, scope: 'automatic_plus_mandatory' };
     expect(previewBriefCandidates(b, pool, '2026-06-16').planned).toBe(2);
   });
+
+  it('un escluso dai 15 giorni nominato come tappa rientra nel giro', () => {
+    const b = base({ areas: [{ kind: 'city', value: 'Pavia', mode: 'include' }] });
+    const before = previewBriefCandidates(b, pool, '2026-06-16');
+    expect(before.recentlyExcluded.map((c) => c.key)).toEqual(['b']);
+    // Stessa operazione del pulsante "Includi" nell'anteprima
+    const recovered = { ...b, mandatoryStops: [{ rawReference: 'b', cityHint: 'Pavia', appointment: null, priority: 2, selectedCustomerId: 'b' }] };
+    const after = previewBriefCandidates(recovered, pool, '2026-06-16');
+    expect(after.recentlyExcluded.map((c) => c.key)).toEqual([]);
+    expect([after.named, after.eligible, after.planned]).toEqual([1, 2, 3]);
+  });
 });

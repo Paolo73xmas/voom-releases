@@ -578,3 +578,8 @@ agent_communication:
 - File nuovi: lib/aitour/brief-consistency.ts, brief-summary.ts, brief-preview.ts, components/aitour/brief/BriefIssues.tsx, BriefPreviewBox.tsx, tests/brief_consistency.test.ts.
 - Modificati: BriefModal.tsx, brief-review.ts (pendingUnresolvedEntities), brief-v4.ts (modelSummary), app/ai-tour.tsx (guardia contraddizioni + resolveBriefDate).
 - Verifiche: vitest 46 test/7 file PASS, tests/aitour/run_suite.sh 6/6 PASS, tsc e lint puliti, smoke UI del modale OK. Nessun tour generato/salvato.
+
+## Commit web e2275d4c + "Esclusi recuperabili" - iteration 44
+- Portato dedupeSamePlace nel planner mobile (un punto vendita = una tappa, obbligatoria prioritaria); data.ts era già allineato.
+- Nuova funzione: pulsante "Includi" sugli esclusi dai 15 giorni nell'anteprima di Dillo all'AI, che li nomina come tappa obbligatoria.
+- Verifiche: vitest 8 file/51 test PASS (nuovi planner_dedupe_same_place.test.ts e caso preview), suite AI Tour 6/6, tsc e lint puliti, UI verificata in anteprima senza generare tour.

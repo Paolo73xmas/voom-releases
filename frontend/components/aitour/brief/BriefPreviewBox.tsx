@@ -5,10 +5,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA } from '../../../lib/theme';
 import { RECENT_CONTACT_DAYS } from '../../../lib/aitour/scoring';
 import type { BriefPreview } from '../../../lib/aitour/brief-preview';
+import type { TourCandidate } from '../../../lib/aitour/types';
 
-interface Props { preview: BriefPreview | null; loading: boolean; error: string | null }
+interface Props {
+  preview: BriefPreview | null;
+  loading: boolean;
+  error: string | null;
+  /** Recupero di un escluso: true solo se il soggetto è nominabile come tappa */
+  canInclude: (c: TourCandidate) => boolean;
+  onInclude: (c: TourCandidate) => void;
+}
 
-export function BriefPreviewBox({ preview, loading, error }: Props) {
+export function BriefPreviewBox({ preview, loading, error, canInclude, onInclude }: Props) {
   const [showExcluded, setShowExcluded] = useState(false);
   if (loading) return (
     <View testID="brief-preview-loading" accessibilityRole="progressbar" style={styles.loadingRow}>
@@ -49,10 +57,29 @@ export function BriefPreviewBox({ preview, loading, error }: Props) {
             <Text style={styles.toggleText}>{showExcluded ? 'Nascondi' : 'Vedi chi'}</Text>
           </TouchableOpacity>
           {showExcluded && (
-            <Text testID="brief-preview-excluded-list" style={styles.excludedList}>
-              {ex.slice(0, 12).map((c) => `${c.name}${c.city ? ` (${c.city})` : ''}`).join(' · ')}
-              {ex.length > 12 ? ` · +${ex.length - 12}` : ''} — per includerne uno, nominalo nella richiesta.
-            </Text>
+            <View testID="brief-preview-excluded-list" style={styles.excludedItems}>
+              {ex.slice(0, 12).map((c) => (
+                <View key={c.key} testID={`brief-preview-excluded-${c.key}`} style={styles.excludedRow}>
+                  <Text style={styles.excludedName}>{c.name}{c.city ? ` (${c.city})` : ''}</Text>
+                  {canInclude(c) ? (
+                    <TouchableOpacity
+                      testID={`brief-preview-include-${c.key}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Includi ${c.name} nel giro`}
+                      style={styles.includeBtn}
+                      onPress={() => onInclude(c)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="add-circle-outline" size={15} color="#0369A1" />
+                      <Text style={styles.includeText}>Includi</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Text testID={`brief-preview-include-unavailable-${c.key}`} style={styles.excludedHint}>nominalo nella richiesta</Text>
+                  )}
+                </View>
+              ))}
+              {ex.length > 12 && <Text style={styles.excludedHint}>e altri {ex.length - 12}: per includerli, nominali nella richiesta.</Text>}
+            </View>
           )}
         </View>
       )}
@@ -74,7 +101,12 @@ const styles = StyleSheet.create({
   excludedWrap: { gap: 4 },
   toggleBtn: { minHeight: 44, justifyContent: 'center' },
   toggleText: { fontFamily: JAKARTA.medium, fontSize: 13, color: '#0369A1', textDecorationLine: 'underline' },
-  excludedList: { fontFamily: JAKARTA.regular, fontSize: 12, color: DS.inkMuted, lineHeight: 17 },
+  excludedItems: { gap: 4 },
+  excludedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 44 },
+  excludedName: { flex: 1, fontFamily: JAKARTA.regular, fontSize: 12, color: DS.ink2, lineHeight: 17 },
+  excludedHint: { fontFamily: JAKARTA.regular, fontSize: 11, color: DS.inkMuted },
+  includeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 12, borderWidth: 1, borderColor: '#0284C7', borderRadius: 20, backgroundColor: DS.surface },
+  includeText: { fontFamily: JAKARTA.medium, fontSize: 13, color: '#0369A1' },
   empty: { fontFamily: JAKARTA.semibold, fontSize: 13, color: '#DC2626', lineHeight: 18 },
   warning: { fontFamily: JAKARTA.regular, fontSize: 12, color: '#D97706', lineHeight: 17 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },

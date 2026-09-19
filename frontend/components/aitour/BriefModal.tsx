@@ -48,6 +48,7 @@ import { scoreCandidates } from '../../lib/aitour/scoring';
 import { bindSavedBriefPlaces } from '../../lib/aitour/brief-saved-places';
 import { bindJourneyEnd } from '../../lib/aitour/brief-journey';
 import type { AiTourSettings } from '../../lib/aitour/types';
+import type { TourCandidate } from '../../lib/aitour/types';
 import { BriefPlacePicker } from './brief/BriefPlacePicker';
 import { BriefStopsReview } from './brief/BriefStopsReview';
 import { BriefJourneyReview } from './brief/BriefJourneyReview';
@@ -102,6 +103,14 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
   const crmSummary = reviewed ? briefSummary(reviewed, customers) : '';
   const updateBrief = (b: TourBriefV4) => { setBrief(bindJourneyEnd(bindSavedBriefPlaces(b, settings))); setErr(''); };
   const applyFix = (fix: (b: TourBriefV4) => TourBriefV4) => { hap.light(); setBrief((current) => current ? bindJourneyEnd(bindSavedBriefPlaces(fix(bindJourneyEnd(bindSavedBriefPlaces(current, settings))), settings)) : null); setErr(''); };
+  // Recupero di un escluso dai 15 giorni: diventa tappa nominata, quindi rientra nel giro.
+  const includeExcluded = (c: TourCandidate) => {
+    const customerId = c.customerId;
+    if (!customerId) return;
+    applyFix((b) => b.mandatoryStops.some((s) => s.selectedCustomerId === customerId) || b.preferredStops.some((s) => s.selectedCustomerId === customerId)
+      ? b
+      : { ...b, mandatoryStops: [...b.mandatoryStops, { rawReference: c.name, cityHint: c.city || null, appointment: null, priority: 2, selectedCustomerId: customerId }] });
+  };
 
   const reset = () => {
     epoch.current++;
@@ -541,7 +550,13 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
                   />
                 </View>
 
-                <BriefPreviewBox preview={preview} loading={previewLoading} error={previewError} />
+                <BriefPreviewBox
+                  preview={preview}
+                  loading={previewLoading}
+                  error={previewError}
+                  canInclude={(c) => !!c.customerId && customers.some((x) => x.id === c.customerId)}
+                  onInclude={includeExcluded}
+                />
 
                 <TouchableOpacity
                   testID="brief-generate"

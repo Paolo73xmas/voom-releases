@@ -2,7 +2,7 @@
 // e' sempre coerente con cio' che il planner ricevera', anche dopo modifiche manuali.
 // Parità web src/lib/aitour/brief-summary.ts
 import type { TourBriefV4, BriefStopRef } from './brief-v4';
-import { conditionLabel, preferenceLabel } from './brief-v4';
+import { conditionLabel, preferenceLabel, projectRuleLabel, fillerLabel } from './brief-v4';
 import type { BriefCustomer } from './brief-customers';
 import { journeyLabel } from './brief-journey';
 import { RECENT_CONTACT_DAYS } from './scoring';
@@ -62,6 +62,8 @@ export function briefSummary(brief: TourBriefV4, customers: BriefCustomer[], now
   if (excl.length) sentences.push(`Esclusi: ${joinIt(excl)}.`);
   const prefs = brief.preferences.map((p) => lower(preferenceLabel(p)));
   if (prefs.length) sentences.push(`Preferenze: ${joinIt(prefs)}.`);
+  if (brief.projectRules.length) sentences.push(`Quote tra progetti: ${joinIt(brief.projectRules.map((r) => lower(projectRuleLabel(r))))}.`);
+  if (brief.fillers.length) sentences.push(`${joinIt(brief.fillers.map(fillerLabel), '; ', '; ')} (aggiunti solo nel tempo residuo, vicino al giro).`);
 
   if (mand.length) sentences.push(`${mand.length === 1 ? 'Tappa obbligatoria' : `${mand.length} tappe obbligatorie`}: ${joinIt(mand.map((s) => stopText(s, customers)))}.`);
   if (pref.length) sentences.push(`Se possibile anche ${joinIt(pref.map((s) => stopText(s, customers)))}.`);

@@ -2,6 +2,7 @@
 // Nessuna chiamata AI: tutto calcolato lato CRM dai chip che l'agente vede.
 // Parità web src/lib/aitour/brief-consistency.ts
 import type { TourBriefV4, BriefCondition, BriefArea, BriefStopRef } from './brief-v4';
+import { projectRuleLabel, fillerLabel } from './brief-v4';
 import type { BriefCustomer } from './brief-customers';
 import { normalizeLocality, provinceCode } from './brief-area';
 import { timeToMin, minToTime } from './types';
@@ -200,9 +201,36 @@ export function briefConsistencyIssues(brief: TourBriefV4, customers: BriefCusto
     ] });
   }
 
+  // Quote progetti: coerenza con selezione e con il numero totale di visite
+  const selProjects = sel.filter(isProject).flatMap(condNames);
+  const rmRule = (b: TourBriefV4, i: number): TourBriefV4 => ({ ...b, projectRules: b.projectRules.filter((_, x) => x !== i) });
+  brief.projectRules.forEach((r, i) => {
+    if (selProjects.length && !selProjects.some((n) => sameName(n, r.project))) out.push({ id: `rule-sel-${i}`, message: `"${r.project}" ha una regola ma non è tra i progetti richiesti (${selProjects.join(', ')})`, fixes: [
+      { label: `Aggiungi ${r.project} ai progetti`, apply: (b) => ({ ...b, selection: { ...b.selection, conditions: b.selection.conditions.map((c) => isProject(c) ? { ...c, names: [...condNames(c), r.project] } : c) } }) },
+      { label: 'Togli la regola', apply: (b) => rmRule(b, i) },
+    ] });
+    if (ex.some((e) => isProject(e) && condNames(e).some((n) => sameName(n, r.project))) && r.type !== 'maximum_count') out.push({ id: `rule-ex-${i}`, message: `"${r.project}": regola "${projectRuleLabel(r)}" ma il progetto è escluso`, fixes: [
+      { label: `Visita ${r.project}`, apply: (b) => ({ ...b, exclusions: b.exclusions.filter((e) => !(isProject(e) && condNames(e).some((n) => sameName(n, r.project)))) }) },
+      { label: 'Togli la regola', apply: (b) => rmRule(b, i) },
+    ] });
+  });
+  const mins = brief.projectRules.filter((r) => (r.type === 'minimum_count' || r.type === 'exact_count') && r.value);
+  if (upper && mins.length) {
+    const sumMin = mins.reduce((s, r) => s + (r.value || 0), 0);
+    if (sumMin > upper) out.push({ id: 'rule-total', message: `Le quote minime (${mins.map(projectRuleLabel).join(', ')}) superano le ${upper} visite totali`, fixes: [
+      { label: `Porta a ${sumMin} visite`, apply: (b) => ({ ...b, visitTarget: { ...b.visitTarget, value: vt.mode === 'range' ? b.visitTarget.value : sumMin, max: vt.mode === 'range' ? sumMin : b.visitTarget.max } }) },
+      { label: 'Togli le quote', apply: (b) => ({ ...b, projectRules: b.projectRules.filter((r) => r.type === 'priority' || r.type === 'maximum_count') }) },
+    ] });
+  }
+  brief.fillers.forEach((f, i) => {
+    const same = f.selection.conditions.every((c) => sel.some((s) => s.type === c.type && JSON.stringify(condNames(s)) === JSON.stringify(condNames(c))));
+    if (same) out.push({ id: `filler-same-${i}`, message: `"${fillerLabel(f)}": è già la selezione principale, non un riempitivo`, fixes: [
+      { label: 'Togli il riempitivo', apply: (b) => ({ ...b, fillers: b.fillers.filter((_, x) => x !== i) }) },
+    ] });
+  });
+
   const rd = brief.requestedDate;
-  if (rd.value && rd.value < today) {
-    const t = new Date(`${today}T12:00:00`); t.setDate(t.getDate() + 1);
+  if (rd.value && rd.value < today) {    const t = new Date(`${today}T12:00:00`); t.setDate(t.getDate() + 1);
     const tomorrow = t.toLocaleDateString('sv-SE');
     out.push({ id: 'date-past', message: `La data ${rd.value.slice(8, 10)}/${rd.value.slice(5, 7)} è già passata`, hides: 'La data richiesta', fixes: [
       { label: 'Oggi', apply: (b) => ({ ...b, requestedDate: { type: 'today', value: today } }) },
@@ -213,10 +241,15 @@ export function briefConsistencyIssues(brief: TourBriefV4, customers: BriefCusto
 }
 
 export function pendingUnresolvedEntities(brief: TourBriefV4): string[] {
+  const projectNames = [...brief.selection.conditions, ...brief.exclusions, ...brief.fillers.flatMap((f) => f.selection.conditions)]
+    .filter(isProject).flatMap(condNames);
   const placed = new Set([
     ...brief.areas.map((a) => normalizeLocality(a.value)),
     ...(brief.journey?.stages || []).map((s) => normalizeLocality(s.name)),
     ...[...brief.mandatoryStops, ...brief.preferredStops].map((s) => normalizeLocality(s.rawReference)),
+    // Progetti e regole già collocati: non vanno richiesti di nuovo all'agente
+    ...projectNames.map(normalizeLocality),
+    ...brief.projectRules.map((r) => normalizeLocality(r.project)),
   ]);
   return brief.interpretation.unresolvedEntities.filter((e) => !placed.has(normalizeLocality(e)));
 }

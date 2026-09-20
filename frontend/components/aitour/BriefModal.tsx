@@ -1,6 +1,6 @@
 // "Dillo all'AI": l'agente descrive il giro a voce o per iscritto, l'AI interpreta
 // la richiesta e mostra dei chip modificabili prima di generare il giro.
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,8 @@ import {
   applyReturnHomeFallback,
   conditionLabel,
   preferenceLabel,
+  projectRuleLabel,
+  fillerLabel,
   targetLabel,
   dateChipLabel,
   type TourBriefV4,
@@ -47,13 +49,15 @@ import { loadCandidates, type CandidatePool } from '../../lib/aitour/data';
 import { scoreCandidates } from '../../lib/aitour/scoring';
 import { bindSavedBriefPlaces } from '../../lib/aitour/brief-saved-places';
 import { bindJourneyEnd } from '../../lib/aitour/brief-journey';
-import type { AiTourSettings } from '../../lib/aitour/types';
-import type { TourCandidate } from '../../lib/aitour/types';
+import type { AiTourSettings, TourCandidate } from '../../lib/aitour/types';
 import { BriefPlacePicker } from './brief/BriefPlacePicker';
 import { BriefStopsReview } from './brief/BriefStopsReview';
 import { BriefJourneyReview } from './brief/BriefJourneyReview';
 import { BriefIssues } from './brief/BriefIssues';
 import { BriefPreviewBox } from './brief/BriefPreviewBox';
+import { buildDictationVocabulary } from '../../lib/aitour/brief-vocabulary';
+import { validateBriefSchema, repairInstructions, schemaErrorSummary } from '../../lib/aitour/brief-schema';
+import { logBriefInterpretation, logBriefGenerated, briefCorrections } from '../../lib/aitour/brief-memory';
 import { reviewStyles } from './brief/controls';
 
 const API = `${Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
@@ -89,6 +93,16 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const poolRef = useRef<{ agentId: string; pool: Promise<CandidatePool> } | null>(null);
+  const directoryRef = useRef<{ agentId: string; p: Promise<BriefCustomer[]> } | null>(null);
+  const dictatedRef = useRef(false);
+  const memoryRef = useRef<{ id: string | null; brief: TourBriefV4 } | null>(null);
+  // Portafoglio riusato: serve al vocabolario di dettatura e all'identificazione delle tappe
+  const loadDirectory = useCallback(() => {
+    if (!directoryRef.current || directoryRef.current.agentId !== agentId) {
+      directoryRef.current = { agentId, p: loadBriefCustomers(agentId) };
+    }
+    return directoryRef.current.p;
+  }, [agentId]);
   const epoch = useRef(0);
   const parsedRequest = useRef<AbortController | null>(null);
   useEffect(() => () => { epoch.current++; parsedRequest.current?.abort(); }, []);
@@ -195,8 +209,15 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
         // @ts-expect-error React Native FormData file object
         fd.append('audio', { uri, name, type: `audio/${ext === 'm4a' ? 'm4a' : ext}` });
       }
-      const res = await fetch(`${API}/ai-tour/transcribe`, { method: 'POST', body: fd });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Vocabolario dell'agente (progetti, comuni, insegne): orienta il riconoscimento
+      try {
+        const directory = customers.length ? customers : await loadDirectory();
+        const vocabulary = buildDictationVocabulary(projects, directory);
+        if (vocabulary.trim()) fd.append('prompt', vocabulary.trim());
+      } catch {
+        // senza vocabolario la dettatura funziona comunque
+      }
+      const res = await fetch(`${API}/ai-tour/transcribe`, { method: 'POST', body: fd });      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (epoch.current !== token) return;
       const t = (data.text || '').trim();
@@ -205,6 +226,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
         return;
       }
       setText((prev) => (prev.trim() ? `${prev.trim()} ${t}` : t));
+      dictatedRef.current = true;
       setBrief(null);
     } catch (e) {
       console.warn('[BriefModal] transcribe:', e);
@@ -227,19 +249,47 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
     try {
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const [res, portfolio] = await Promise.all([fetch(`${API}/ai-tour/parse-brief`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim(), projects, cities, today, capabilities: ['ordered_journey_v1'] }),
-        signal: controller.signal,
-      }), loadBriefCustomers(agentId)]);
-      const raw = await res.json();
-      if (!res.ok) throw new Error(raw.detail || raw.error || `HTTP ${res.status}`);
+      const body = { text: text.trim(), projects, cities, today, capabilities: ['ordered_journey_v1'] };
+      const call = async (extra: Record<string, unknown> = {}) => {
+        const res = await fetch(`${API}/ai-tour/parse-brief`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...body, ...extra }),
+          signal: controller.signal,
+        });
+        const raw = await res.json();
+        if (!res.ok) throw new Error(raw.detail || raw.error || `HTTP ${res.status}`);
+        if (raw.contractVersion !== '4.1' || !raw.capabilities?.includes('ordered_journey_v1') || !raw.brief || !Object.hasOwn(raw.brief, 'journey')) throw new Error('L’interprete AI non supporta ancora questa versione del giro. Riprova più tardi.');
+        return raw.brief as Record<string, unknown>;
+      };
+      const [firstBrief, portfolio] = await Promise.all([call(), loadDirectory()]);
       if (token !== epoch.current) return;
-      if (raw.contractVersion !== '4.1' || !raw.capabilities?.includes('ordered_journey_v1') || !raw.brief || !Object.hasOwn(raw.brief, 'journey')) throw new Error('L’interprete AI non supporta ancora questa versione del giro. Riprova più tardi.');
-      const normalized = applyReturnHomeFallback(normalizeBriefV4(raw.brief), text);
+      let rawBrief = firstBrief;
+      let schemaErrors = validateBriefSchema(rawBrief);
+      if (schemaErrors.length) {
+        // Un solo ritentativo con gli errori dello schema: poi i campi fuori schema vengono scartati.
+        try {
+          const retry = await call({ previousJson: JSON.stringify(rawBrief), schemaErrors: repairInstructions(schemaErrors) });
+          const retryErrors = validateBriefSchema(retry);
+          if (retryErrors.length < schemaErrors.length) { rawBrief = retry; schemaErrors = retryErrors; }
+        } catch {
+          // il primo risultato resta utilizzabile
+        }
+        if (token !== epoch.current) return;
+      }
+      const normalized = applyReturnHomeFallback(normalizeBriefV4(rawBrief), text);
+      if (schemaErrors.length) {
+        normalized.schemaIssues = schemaErrors.map((e) => `${e.path}: ${e.message}`);
+        normalized.interpretation.warnings = [...normalized.interpretation.warnings, schemaErrorSummary(schemaErrors)];
+      }
       setCustomers(portfolio);
-      updateBrief({ ...normalized, sourceText: text.trim(), mandatoryStops: identifyBriefStops(normalized.mandatoryStops, portfolio), preferredStops: identifyBriefStops(normalized.preferredStops, portfolio) });
+      const identified = { ...normalized, sourceText: text.trim(), mandatoryStops: identifyBriefStops(normalized.mandatoryStops, portfolio), preferredStops: identifyBriefStops(normalized.preferredStops, portfolio) };
+      updateBrief(identified);
+      // Memoria non bloccante: richiesta + interpretazione, per migliorare l'AI nel tempo
+      const snapshot = JSON.parse(JSON.stringify(identified)) as TourBriefV4;
+      memoryRef.current = { id: null, brief: snapshot };
+      void logBriefInterpretation({ agentId, sourceText: snapshot.sourceText || '', dictated: dictatedRef.current, brief: snapshot })
+        .then((id) => { if (memoryRef.current?.brief === snapshot) memoryRef.current.id = id; });
       hap.success();
     } catch (e) {
       console.warn('[BriefModal] parse:', e);
@@ -271,7 +321,7 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
   };
 
   const previewKey = reviewed && !issues.length && !clarifications.length && !problems.length
-    ? JSON.stringify([agentId, reviewed.selection, reviewed.exclusions, reviewed.areas, reviewed.journey?.stages, reviewed.mandatoryStops, reviewed.preferredStops, reviewed.includeAutomatic, reviewed.visitTarget, reviewed.dayType, reviewed.requestedDate, reviewed.preferences])
+    ? JSON.stringify([agentId, reviewed.selection, reviewed.exclusions, reviewed.areas, reviewed.journey?.stages, reviewed.mandatoryStops, reviewed.preferredStops, reviewed.includeAutomatic, reviewed.visitTarget, reviewed.dayType, reviewed.requestedDate, reviewed.preferences, reviewed.projectRules, reviewed.fillers])
     : '';
   const reviewedRef = useRef(reviewed);
   reviewedRef.current = reviewed;
@@ -299,9 +349,12 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
     return () => { alive = false; clearTimeout(timer); };
   }, [previewKey, visible, agentId, settings]);
 
+  // Anteprima vuota: senza soggetti idonei la generazione non produrrebbe nulla
+  const previewEmpty = !!preview && preview.eligible === 0 && preview.named === 0 && !preview.registryPending && !preview.newAroundPending;
   const alerts = brief ? [...brief.interpretation.warnings] : [];
 
   const busy = transcribing || parsing || recording;
+  const generateBlocked = busy || problems.length > 0 || issues.length > 0 || clarifications.length > 0 || previewEmpty;
 
   return (
     <Modal testID="brief-modal" visible={visible} animationType="slide" transparent onRequestClose={close}>
@@ -423,6 +476,22 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
                       <Text style={styles.prefChipText}>{preferenceLabel(p)}</Text>
                       <TouchableOpacity testID={`brief-remove-preference-${i}`} onPress={() => rmPreference(i)} hitSlop={8}>
                         <Ionicons name="close-circle" size={16} color={AI_PURPLE_TEXT} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {brief.projectRules.map((r, i) => (
+                    <View key={`rule${i}`} testID={`brief-rule-${i}`} style={styles.ruleChip}>
+                      <Text style={styles.ruleChipText}>{projectRuleLabel(r)}</Text>
+                      <TouchableOpacity testID={`brief-remove-rule-${i}`} onPress={() => updateBrief({ ...brief, projectRules: brief.projectRules.filter((_, x) => x !== i) })} hitSlop={8}>
+                        <Ionicons name="close-circle" size={16} color="#4338CA" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {brief.fillers.map((f, i) => (
+                    <View key={`fill${i}`} testID={`brief-filler-${i}`} style={styles.fillerChip}>
+                      <Text style={styles.fillerChipText}>{fillerLabel(f)}</Text>
+                      <TouchableOpacity testID={`brief-remove-filler-${i}`} onPress={() => updateBrief({ ...brief, fillers: brief.fillers.filter((_, x) => x !== i) })} hitSlop={8}>
+                        <Ionicons name="close-circle" size={16} color="#0F766E" />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -561,17 +630,20 @@ export function BriefModal({ visible, onClose, onConfirm, projects, cities, agen
                 <TouchableOpacity
                   testID="brief-generate"
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: busy || problems.length > 0 || issues.length > 0 || clarifications.length > 0 }}
-                  disabled={busy || problems.length > 0 || issues.length > 0 || clarifications.length > 0}
-                  style={[styles.generateBtn, (busy || problems.length > 0 || issues.length > 0 || clarifications.length > 0) && styles.btnDisabled]}
+                  accessibilityState={{ disabled: generateBlocked }}
+                  disabled={generateBlocked}
+                  style={[styles.generateBtn, generateBlocked && styles.btnDisabled]}
                   onPress={() => {
-                    if (!reviewed || problems.length || issues.length || clarifications.length) return;
+                    if (!reviewed || generateBlocked) return;
                     if (brief.selection.conditions.length === 0 && brief.mandatoryStops.length === 0 && brief.preferredStops.length === 0 && !brief.journey && !brief.dayType) {
                       setErr('Serve almeno un criterio o una tappa richiesta');
                       return;
                     }
                     hap.medium();
-                    onConfirm({ ...reviewed, modelSummary: reviewed.summary, summary: crmSummary || reviewed.summary });
+                    const final = { ...reviewed, modelSummary: reviewed.summary, summary: crmSummary || reviewed.summary };
+                    const mem = memoryRef.current;
+                    if (mem?.id) void logBriefGenerated(mem.id, final, briefCorrections(mem.brief, final));
+                    onConfirm(final);
                   }}
                   activeOpacity={0.85}
                 >
@@ -620,6 +692,10 @@ const styles = StyleSheet.create({
   exChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: '#EF4444' },
   prefChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: AI_PURPLE, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12 },
   prefChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: AI_PURPLE_TEXT },
+  ruleChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#818CF8', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: 'rgba(99,102,241,0.08)' },
+  ruleChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: '#4338CA' },
+  fillerChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#5EEAD4', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: 'rgba(20,184,166,0.08)' },
+  fillerChipText: { fontFamily: JAKARTA.medium, fontSize: 13, color: '#0F766E' },
   mandChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#DC2626', borderRadius: 20, paddingVertical: 7, paddingHorizontal: 12 },
   mandChipText: { fontFamily: JAKARTA.semibold, fontSize: 13, color: '#FFF' },
   wishChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#D97706', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: 'rgba(217,119,6,0.08)' },

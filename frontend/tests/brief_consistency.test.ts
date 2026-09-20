@@ -124,6 +124,15 @@ describe('briefClarifications: domande mirate', () => {
     const b = base({ areas: [{ kind: 'city', value: 'Pippolandia', mode: 'include' }], interpretation: { confidence: 0.5, needsConfirmation: true, unresolvedEntities: ['pippolandia'], warnings: [] } });
     expect(briefClarifications(b)).toHaveLength(0);
   });
+
+  it('progetti già usati nei criteri o nelle quote: nessuna domanda ridondante', () => {
+    const b = base({
+      selection: { operator: 'AND', conditions: [{ type: 'project_membership', names: ['FED', 'DoctorVape'], match: 'any' }] },
+      projectRules: [{ type: 'minimum_count', project: 'Nuvola', value: 2 }],
+      interpretation: { confidence: 0.6, needsConfirmation: true, unresolvedEntities: ['FED', 'DoctorVape', 'Nuvola', 'Pippolandia'], warnings: [] },
+    });
+    expect(briefClarifications(b).map((c) => c.message)).toEqual(['"Pippolandia": cosa intendevi?']);
+  });
 });
 
 describe('briefSummary e resolveBriefDate', () => {

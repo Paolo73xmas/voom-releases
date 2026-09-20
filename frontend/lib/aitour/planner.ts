@@ -64,6 +64,21 @@ export interface PlanInput {
   skipDayExclusion?: boolean;
   /** Rientro flessibile: il percorso termina verso "end" ma il viaggio di ritorno può sforare l'orario */
   returnFlexible?: boolean;
+  /** Quote per gruppo (es. "almeno 6 FED", "max 3 riempitivi"): minimi riservati, massimi non superati */
+  quotas?: PlanQuota[];
+}
+
+export interface PlanQuota { label: string; keys: Set<string>; min: number | null; max: number | null }
+
+// Porta in testa alla lista i minimi di ogni quota (nell'ordine dato): sopravvivono al cap matrice OSRM.
+export function reserveQuotaMinimums(list: TourCandidate[], quotas: PlanQuota[]): TourCandidate[] {
+  const front = new Set<string>();
+  for (const q of quotas) {
+    if (q.min == null) continue;
+    let n = 0;
+    for (const c of list) { if (n >= q.min) break; if (q.keys.has(c.key) && !front.has(c.key)) { front.add(c.key); n++; } }
+  }
+  return front.size ? [...list.filter((c) => front.has(c.key)), ...list.filter((c) => !front.has(c.key))] : list;
 }
 
 const MAX_MATRIX_POINTS = 40; // start + max 38 candidati + end (demo OSRM regge fino a ~100)
@@ -389,7 +404,8 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   const sorted = [...dayCandidates].sort((a, b) => b.score - a.score);
   const mandatory = sorted.filter((c) => input.mandatoryKeys.has(c.key)).sort((a, b) => (a.requestedPriority ?? 2) - (b.requestedPriority ?? 2) || b.score - a.score);
   const optionalSorted = sorted.filter((c) => !input.mandatoryKeys.has(c.key));
-  const optional = input.enforceJourneyOrder ? balanceJourneyCandidates(optionalSorted) : optionalSorted;
+  const quotas = input.quotas || [];
+  const optional = reserveQuotaMinimums(input.enforceJourneyOrder ? balanceJourneyCandidates(optionalSorted) : optionalSorted, quotas);
   const capOptional = Math.max(0, MAX_MATRIX_POINTS - 2 - mandatory.length);
   const pool = [...mandatory, ...optional.slice(0, capOptional)];
 
@@ -408,6 +424,11 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   let currentIdx = 0;
   let clock = startMin;
   const mandatoryIdx = new Set(mandatory.map((_, i) => i + 1));
+
+  // Quote: conteggio sul giro corrente; un massimo raggiunto blocca, un minimo mancante ha la precedenza
+  const quotaCount = (q: PlanQuota) => { let n = 0; for (const i of inTour) if (q.keys.has(pool[i - 1].key)) n++; return n; };
+  const quotaMaxHit = (c: TourCandidate) => quotas.some((q) => q.max != null && q.keys.has(c.key) && quotaCount(q) >= q.max);
+  const quotaNeeded = (c: TourCandidate) => quotas.some((q) => q.min != null && q.keys.has(c.key) && quotaCount(q) < q.min);
 
   const windowBlockedKeys = new Set<string>();
 
@@ -451,9 +472,12 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
   for (;;) {
     let bestI = -1;
     let bestVal = -Infinity;
+    let bestNeededI = -1;
+    let bestNeededVal = -Infinity;
     for (let i = 1; i <= pool.length; i++) {
       if (inTour.has(i)) continue;
       const cand = pool[i - 1];
+      if (quotaMaxHit(cand)) continue;
       if (input.enforceJourneyOrder && currentIdx > 0 && (cand.journeyStage ?? 0) < (pool[currentIdx - 1].journeyStage ?? 0)) continue;
       const wa = windowArrival(cand, clock + durMin(currentIdx, i));
       if (wa.outside) { windowBlockedKeys.add(cand.key); continue; }
@@ -467,7 +491,9 @@ export async function planTour(input: PlanInput): Promise<TourPlan> {
       // Con rientro previsto, allontanarsi dalla direzione di casa ha un costo crescente
       if (end) val -= Math.max(0, durMin(i, endIdx) - durMin(currentIdx, endIdx)) * 0.3;
       if (val > bestVal) { bestVal = val; bestI = i; }
+      if (quotaNeeded(cand) && val > bestNeededVal) { bestNeededVal = val; bestNeededI = i; }
     }
+    if (bestNeededI !== -1) bestI = bestNeededI;
     if (bestI === -1) break;
     const cand = pool[bestI - 1];
     const wa = windowArrival(cand, clock + durMin(currentIdx, bestI));

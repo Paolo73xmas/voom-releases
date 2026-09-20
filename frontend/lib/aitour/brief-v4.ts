@@ -53,6 +53,19 @@ export interface BriefVisitTarget {
   scope: 'total_including_mandatory' | 'automatic_plus_mandatory';
 }
 
+export interface BriefProjectRule {
+  type: 'priority' | 'minimum_count' | 'maximum_count' | 'exact_count' | 'ratio';
+  project: string;
+  value: number | null;
+  priority: number | null;
+}
+
+export interface BriefFiller {
+  selection: { operator: 'AND' | 'OR'; conditions: BriefCondition[] };
+  when: 'time_available';
+  target: { mode: 'maximum' | 'exact' | 'unspecified'; value: number | null };
+}
+
 export interface BriefRoute {
   startPlace?: BriefPlace | null;
   endPlace?: BriefPlace | null;
@@ -79,14 +92,16 @@ export interface TourBriefV4 {
   preferredStops: BriefStopRef[];
   exclusions: BriefCondition[];
   preferences: { type: string; value?: string }[];
-  projectRules: Record<string, unknown>[];
-  fillers: Record<string, unknown>[];
+  projectRules: BriefProjectRule[];
+  fillers: BriefFiller[];
   visitTarget: BriefVisitTarget;
   route: BriefRoute;
   interpretation: { confidence: number; needsConfirmation: boolean; unresolvedEntities: string[]; warnings: string[] };
   summary: string;
   /** Riassunto originale del modello (summary viene rigenerato dal CRM dai chip finali) */
   modelSummary?: string;
+  /** Violazioni dello schema rigido rimaste dopo il ritentativo: i campi relativi sono stati scartati */
+  schemaIssues?: string[];
 }
 
 const isTime = (s: unknown): s is string => typeof s === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(s);
@@ -138,6 +153,44 @@ function flattenConditions(list: unknown, depth = 0): BriefCondition[] {
   return out.slice(0, 15);
 }
 
+const RULE_TYPES = new Set(['priority', 'minimum_count', 'maximum_count', 'exact_count', 'ratio']);
+function normProjectRules(raw: unknown): BriefProjectRule[] {
+  if (!Array.isArray(raw)) return [];
+  const out: BriefProjectRule[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== 'object') continue;
+    const o = x as Record<string, unknown>;
+    const project = typeof o.project === 'string' ? o.project.trim() : typeof o.name === 'string' ? o.name.trim() : '';
+    if (!project || !RULE_TYPES.has(String(o.type))) continue;
+    const type = o.type as BriefProjectRule['type'];
+    const v = typeof o.value === 'number' ? o.value : null;
+    const value = type === 'ratio' ? (v != null && v > 0 && v <= 1 ? v : v != null && v > 1 && v <= 100 ? v / 100 : null) : v != null && v >= 0 ? Math.min(Math.round(v), 60) : null;
+    if (type !== 'priority' && value == null) continue;
+    out.push({ type, project, value, priority: typeof o.priority === 'number' ? Math.max(1, Math.round(o.priority)) : null });
+  }
+  return out.slice(0, 6);
+}
+
+function normFillers(raw: unknown): BriefFiller[] {
+  if (!Array.isArray(raw)) return [];
+  const out: BriefFiller[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== 'object') continue;
+    const o = x as Record<string, unknown>;
+    const conditions = flattenConditions((o.selection as { conditions?: unknown } | undefined)?.conditions ?? o.conditions);
+    if (!conditions.length) continue;
+    const t = (o.target && typeof o.target === 'object' ? o.target : {}) as { mode?: string; value?: unknown };
+    const value = typeof t.value === 'number' && t.value > 0 ? Math.min(Math.round(t.value), 30) : null;
+    out.push({
+      selection: { operator: (o.selection as { operator?: string } | undefined)?.operator === 'OR' ? 'OR' : 'AND', conditions },
+      when: 'time_available',
+      target: { mode: value == null ? 'unspecified' : t.mode === 'exact' ? 'exact' : 'maximum', value },
+    });
+  }
+  return out.slice(0, 3);
+}
+
+
 export function normalizeBriefV4(raw: Record<string, unknown>): TourBriefV4 {
   const r = raw as Partial<TourBriefV4> & Record<string, unknown>;
   const rd = (r.requestedDate && typeof r.requestedDate === 'object' ? r.requestedDate : {}) as TourBriefV4['requestedDate'];
@@ -170,8 +223,8 @@ export function normalizeBriefV4(raw: Record<string, unknown>): TourBriefV4 {
     preferences: (Array.isArray(r.preferences) ? r.preferences : [])
       .filter((p): p is { type: string; value?: string } => !!p && typeof p === 'object' && typeof (p as { type?: unknown }).type === 'string')
       .slice(0, 6),
-    projectRules: Array.isArray(r.projectRules) ? (r.projectRules as Record<string, unknown>[]) : [],
-    fillers: Array.isArray(r.fillers) ? (r.fillers as Record<string, unknown>[]) : [],
+    projectRules: normProjectRules(r.projectRules),
+    fillers: normFillers(r.fillers),
     visitTarget: {
       mode: ['exact', 'approximately', 'minimum', 'maximum', 'range', 'all', 'maximize', 'unspecified'].includes(vtRaw.mode) ? vtRaw.mode : 'unspecified',
       value: num(vtRaw.value, 60),
@@ -334,9 +387,25 @@ export function selectCandidatesV4(brief: TourBriefV4, pool: CandidatePool): Sel
     }
     return bonus > 0 ? { ...c, score: c.score + Math.round(bonus) } : c;
   });
-  if (brief.projectRules.length > 0) warnings.push('Quote/priorità tra progetti: verranno applicate in una prossima versione');
-  if (brief.fillers.length > 0) warnings.push('Visite "se avanza tempo" (riempitivi): verranno applicate in una prossima versione');
   return { candidates: boosted, anchors: anchors.length > 0 ? dedup(anchors) : boosted, newAround, warnings };
+}
+
+export const matchProjectName = matchProject;
+
+export function projectRuleLabel(r: BriefProjectRule): string {
+  switch (r.type) {
+    case 'minimum_count': return `Almeno ${r.value} ${r.project}`;
+    case 'maximum_count': return `Massimo ${r.value} ${r.project}`;
+    case 'exact_count': return `Esattamente ${r.value} ${r.project}`;
+    case 'ratio': return `${Math.round((r.value || 0) * 100)}% ${r.project}`;
+    default: return `Priorità${r.priority ? ` ${r.priority}` : ''}: ${r.project}`;
+  }
+}
+
+export function fillerLabel(f: BriefFiller): string {
+  const what = f.selection.conditions.map((c) => conditionLabel(c).toLowerCase()).join(f.selection.operator === 'OR' ? ' o ' : ' e ');
+  const n = f.target.value ? (f.target.mode === 'exact' ? `${f.target.value} ` : `max ${f.target.value} `) : '';
+  return `Se avanza tempo: ${n}${what}`;
 }
 
 export function withinRadiusOfAnchors(list: TourCandidate[], anchors: TourCandidate[], radiusKm: number): TourCandidate[] {

@@ -60,3 +60,25 @@ Analisi statica: non certifica lo stato delle migrazioni sul progetto Supabase i
 - `components/aitour/BriefModal.tsx`: `includeExcluded` aggiunge il soggetto come tappa nominata obbligatoria (priorità 2) se non già presente; l'anteprima si ricalcola e la tappa è rimovibile dai chip.
 - Test: caso aggiunto in `tests/brief_consistency.test.ts` (escluso nominato → esce da recentlyExcluded, named +1).
 - Iteration 44: vitest 8 file/51 test PASS, suite AI Tour 6/6, UI verificata (esclusi 6→5, nominati +1, nessun doppione), nessun tour generato.
+
+## Commit web 7bdb4357 + 742a0f15 (19/09) — parità completa implementata (autorizzata dall'utente)
+### Fase 2 — quote tra progetti e riempitivi applicati davvero
+- `lib/aitour/brief-v4.ts`: tipi `BriefProjectRule`/`BriefFiller`, `normProjectRules`/`normFillers` (percentuale 50 → 0.5, scarti ignorati, max 6 regole e 3 riempitivi), `matchProjectName`, `projectRuleLabel`, `fillerLabel`, campo `schemaIssues`; rimossi gli avvisi "verranno applicate in una prossima versione".
+- `lib/aitour/planner.ts`: `PlanQuota`, `reserveQuotaMinimums` (i minimi sopravvivono al cap matrice OSRM), `quotaMaxHit`/`quotaNeeded` nel greedy, `quotas` in `PlanInput`.
+- Nuovi `lib/aitour/brief-quotas.ts` (priorità progetto, `buildProjectQuotas`, `pickWithQuotas`, `quotaReport`) e `lib/aitour/brief-fillers.ts` (candidati vicini al giro, punteggio sotto le tappe principali, `addBriefFillers` che non toglie mai tappe).
+- `brief-preview.ts`: `quotaNotes`/`fillerNotes`; `brief-summary.ts`: quote e riempitivi dichiarati; `brief-consistency.ts`: regola su progetto non richiesto/escluso, quote minime oltre il totale, riempitivo identico alla selezione.
+- `app/ai-tour.tsx`: `applyProjectPriority` → `buildProjectQuotas` → `pickWithQuotas` sul cap, `quotas` al planner, `quotaReport` nei warning/raccomandazione, `addBriefFillers` dopo la pianificazione.
+- UI: chip quote/riempitivi rimovibili in `BriefModal.tsx`, righe quota/riempitivo nell'anteprima, "Genera il giro" disabilitato anche con anteprima a zero idonei (parità web `previewEmpty`).
+
+### Fasi 3-4 — dettatura, schema rigido, memoria
+- Nuovi `lib/aitour/brief-schema.ts` (validazione deterministica + `repairInstructions` + `schemaErrorSummary`), `brief-vocabulary.ts` (prompt Whisper con progetti/comuni/insegne, max 850 char), `brief-memory.ts` (`logBriefInterpretation`, `logBriefGenerated`, `briefCorrections`, `exportBriefMemoryCases` su `ai_tour_brief_memory`, tabella già presente con RLS).
+- `BriefModal.tsx`: vocabolario allegato alla trascrizione, un solo ritentativo guidato dallo schema, avviso sulle parti ignorate, memoria non bloccante di interpretazione e correzioni.
+- `backend/server.py`: `/api/ai-tour/transcribe` accetta il form `prompt` (vocabolario, 900 char) e `/api/ai-tour/parse-brief` i campi `previousJson` + `schemaErrors` per il ritentativo.
+
+### Extra oltre il web
+- `pendingUnresolvedEntities` considera collocati anche i progetti presenti in criteri, esclusioni, riempitivi e quote: senza questo l'AI chiedeva "FED: cosa intendevi?" bloccando la generazione (riprodotto in anteprima e risolto).
+
+### Verifiche
+- vitest 10 file / 79 test PASS (nuovi `brief_quotas_fillers.test.ts` 18 e `brief_schema_memory.test.ts` 9, porting dei test web), `tests/aitour/run_suite.sh` 6/6, tsc e lint puliti.
+- Backend: nuovo `backend/tests/test_ai_tour_brief_fase34.py` 7/7 PASS su URL esterno (iteration 45).
+- Prova reale in anteprima con account agente: chip quote, riassunto con "Quote tra progetti"/"Se avanza tempo", anteprima con idonei per quota e riempitivo, nessuna domanda ridondante. Nessun tour generato o salvato.

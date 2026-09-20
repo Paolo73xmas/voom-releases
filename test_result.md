@@ -583,3 +583,10 @@ agent_communication:
 - Portato dedupeSamePlace nel planner mobile (un punto vendita = una tappa, obbligatoria prioritaria); data.ts era già allineato.
 - Nuova funzione: pulsante "Includi" sugli esclusi dai 15 giorni nell'anteprima di Dillo all'AI, che li nomina come tappa obbligatoria.
 - Verifiche: vitest 8 file/51 test PASS (nuovi planner_dedupe_same_place.test.ts e caso preview), suite AI Tour 6/6, tsc e lint puliti, UI verificata in anteprima senza generare tour.
+
+## Parità Dillo all'AI Fasi 2-3-4 (commit web 7bdb4357 + 742a0f15) - iteration 45
+- Fase 2: quote tra progetti (almeno/massimo/esatto/percentuale/priorità) e riempitivi "se avanza tempo" ora applicati dal planner, con anteprima, chip rimovibili e report post-generazione.
+- Fasi 3-4: vocabolario dell'agente nella dettatura (prompt Whisper), schema rigido del TourBrief con un ritentativo guidato e avviso sulle parti ignorate, memoria delle interpretazioni/correzioni su ai_tour_brief_memory (non bloccante).
+- Backend: /api/ai-tour/transcribe accetta il form prompt; /api/ai-tour/parse-brief accetta previousJson + schemaErrors.
+- Extra: le entità già usate come progetti non generano più domande di chiarimento (bloccavano la generazione).
+- Verifiche: vitest 79 test/10 file PASS, suite AI Tour 6/6, backend test_ai_tour_brief_fase34.py 7/7, tsc e lint puliti, prova live in anteprima senza generare tour.

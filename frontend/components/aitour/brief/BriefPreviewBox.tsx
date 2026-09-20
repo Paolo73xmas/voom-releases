@@ -39,6 +39,16 @@ export function BriefPreviewBox({ preview, loading, error, canInclude, onInclude
         {' → fino a '}
         <Text testID="brief-preview-planned" style={styles.strong}>{preview.planned}</Text> visite proposte
       </Text>
+      {preview.quotaNotes.map((q, i) => (
+        <Text key={`q${i}`} testID={`brief-preview-quota-${i}`} style={q.short ? styles.warning : styles.note}>
+          {q.label}: <Text style={styles.strong}>{q.available}</Text> idonei{q.short ? ' — la quota non potrà essere raggiunta' : ''}
+        </Text>
+      ))}
+      {preview.fillerNotes.map((f, i) => (
+        <Text key={`f${i}`} testID={`brief-preview-filler-${i}`} style={f.available ? styles.note : styles.warning}>
+          {f.label}: <Text style={styles.strong}>{f.available}</Text> soggetti disponibili{f.available ? ', entrano solo se resta tempo' : ''}
+        </Text>
+      ))}
       {preview.registryPending && <Text testID="brief-preview-registry" style={styles.note}>Le tabaccherie del registro per lo sviluppo vengono caricate in generazione.</Text>}
       {preview.newAroundPending && <Text testID="brief-preview-new-around" style={styles.note}>I nuovi punti vendita nel raggio vengono cercati in generazione.</Text>}
       {ex.length > 0 && (

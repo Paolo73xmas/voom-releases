@@ -45,6 +45,8 @@ import { selectCandidatesV4, applyAppointment, targetCap, withinRadiusOfAnchors,
 import { loadBriefCustomers } from '../lib/aitour/brief-customers';
 import { briefReviewProblems } from '../lib/aitour/brief-review';
 import { briefConsistencyIssues } from '../lib/aitour/brief-consistency';
+import { applyProjectPriority, buildProjectQuotas, pickWithQuotas, quotaReport } from '../lib/aitour/brief-quotas';
+import { addBriefFillers } from '../lib/aitour/brief-fillers';
 import { resolveBriefDate } from '../lib/aitour/brief-summary';
 import { bindSavedBriefPlaces } from '../lib/aitour/brief-saved-places';
 import { inBriefArea, matchesArea } from '../lib/aitour/brief-area';
@@ -1218,14 +1220,19 @@ export default function AITourScreen() {
       candidates = assignJourneyStages([...new Map(candidates.map((c) => [c.tabaccheriaId || c.customerId || c.key, c])).values()], brief.journey);
       const journeyStageCounts = brief.journey?.stages.map((s, index) => ({ index, label: journeyLabel(s), eligible: candidates.filter((c) => c.journeyStage === index).length }));
       if (brief.visitTarget.mode === 'all') candidates.forEach((c) => mandatoryKeys.add(c.key));
+      candidates = applyProjectPriority(candidates, brief.projectRules);
       const cap = targetCap(brief.visitTarget);
+      const quotaBuild = buildProjectQuotas(candidates, brief.projectRules, cap);
+      briefWarnings.push(...quotaBuild.warnings);
+      const quotas = quotaBuild.quotas;
       if (cap && candidates.length > cap) {
         const mand = candidates.filter((c) => mandatoryKeys.has(c.key));
         const optional = candidates.filter((c) => !mandatoryKeys.has(c.key));
         const rest = brief.journey ? balanceJourneyCandidates(optional) : optional.sort((a, b) => b.score - a.score);
-        candidates = brief.visitTarget.scope === 'automatic_plus_mandatory'
-          ? [...mand, ...rest.slice(0, cap)]
-          : [...mand, ...rest.slice(0, Math.max(0, cap - mand.length))];
+        const autoCap = brief.visitTarget.scope === 'automatic_plus_mandatory' ? cap : Math.max(0, cap - mand.length);
+        candidates = quotas.length
+          ? pickWithQuotas([...mand, ...rest], mand.length + autoCap, quotas, mandatoryKeys)
+          : [...mand, ...rest.slice(0, autoCap)];
       }
       if (brief.visitTarget.mode === 'minimum' && brief.visitTarget.value && candidates.length < brief.visitTarget.value) {
         briefWarnings.push(`Hai chiesto almeno ${brief.visitTarget.value} visite ma i soggetti disponibili sono ${candidates.length}`);
@@ -1249,19 +1256,32 @@ export default function AITourScreen() {
         : { mode: 'auto' };
 
       setProgress('Pianificazione del giro...');
-      const plan1 = await planTour({
+      const planInput = {
         candidates, mandatoryKeys, start, end: briefEnd, tourDate: date,
         startMin: effStartMin, endMin,
         dayType: resolved, resolvedDayType: resolved, bufferPct, bufferMaxMin: settings.buffer_max_min,
         area: areaFilter, returnFlexible, enforceJourneyOrder: !!brief.journey,
-      });
+        quotas,
+      };
+      let plan1 = await planTour(planInput);
       if (plan1.stops.length === 0) {
         setErrMsg('Nessuna visita pianificabile con la richiesta indicata: prova ad ampliare la zona o l\'orario');
         setGenerating(false);
         return;
       }
+      const quotaRes = quotaReport(plan1.stops.map((s) => s.candidate), quotas);
+      briefWarnings.push(...quotaRes.unmet.map((u) => `Quota non raggiunta — ${u}`));
+
+      // Riempitivi "se avanza tempo": aggiunti solo nel tempo residuo, vicino al giro, senza togliere tappe
+      if (brief.fillers.length > 0) {
+        setProgress('Verifica tempo residuo per i riempitivi...');
+        const excludedIds = new Set<string | undefined>([...brief.mandatoryStops, ...brief.preferredStops].filter((s) => s.areaDecision === 'exclude').map((s) => s.selectedCustomerId));
+        const fillerRes = await addBriefFillers({ brief, plan: plan1, loaded, excludedIds, date, mandatoryKeys, quotas, planInput });
+        plan1 = fillerRes.plan;
+        briefWarnings.push(...fillerRes.notes);
+      }
       plan1.areaLabel = areaLabel;
-      plan1.aiRecommendation = brief.summary || null;
+      plan1.aiRecommendation = [brief.summary || null, quotaRes.met.length ? `Quote progetti rispettate: ${quotaRes.met.join('; ')}.` : null].filter(Boolean).join(' ') || null;
       plan1.warnings.unshift(...briefWarnings);
       const wantVal = brief.visitTarget.mode === 'exact' || brief.visitTarget.mode === 'approximately'
         ? brief.visitTarget.value

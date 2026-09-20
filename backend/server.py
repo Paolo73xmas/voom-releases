@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import FileResponse, StreamingResponse, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -236,6 +236,9 @@ class BriefParseRequest(BaseModel):
     projects: List[str] = Field(default_factory=list)
     cities: List[str] = Field(default_factory=list)
     today: str = ""
+    # Ritentativo guidato dallo schema rigido del CRM (Fase 3)
+    previousJson: str = ""
+    schemaErrors: List[str] = Field(default_factory=list)
 
 
 def _extract_json(raw: str):
@@ -260,7 +263,7 @@ def _extract_json(raw: str):
 
 
 @api_router.post("/ai-tour/transcribe")
-async def ai_tour_transcribe(audio: UploadFile = File(...)):
+async def ai_tour_transcribe(audio: UploadFile = File(...), prompt: str = Form("")):
     if not EMERGENT_LLM_KEY:
         raise HTTPException(status_code=500, detail="Servizio vocale non configurato")
     suffix = os.path.splitext(audio.filename or "")[1].lower()
@@ -275,7 +278,12 @@ async def ai_tour_transcribe(audio: UploadFile = File(...)):
     tmp.close()
     try:
         stt = OpenAISpeechToText(api_key=EMERGENT_LLM_KEY)
-        resp = await stt.transcribe(file=Path(tmp.name), model="whisper-1", response_format="json", language="it")
+        # Vocabolario dell'agente (progetti, comuni, insegne): orienta la trascrizione, non la corregge
+        stt_args = {"file": Path(tmp.name), "model": "whisper-1", "response_format": "json", "language": "it"}
+        vocab = (prompt or "").strip()[:900]
+        if vocab:
+            stt_args["prompt"] = vocab
+        resp = await stt.transcribe(**stt_args)
         text = getattr(resp, "text", None)
         if text is None and isinstance(resp, dict):
             text = resp.get("text", "")
@@ -310,6 +318,16 @@ async def ai_tour_parse_brief(req: BriefParseRequest):
         "cities": req.cities[:300],
         "currentDate": req.today or "",
     }
+    repair = ""
+    if req.previousJson.strip() and req.schemaErrors:
+        errors = "\n- ".join(str(e) for e in req.schemaErrors[:12])
+        repair = (
+            "\n\nIl JSON generato in precedenza per questa stessa richiesta NON rispetta lo schema "
+            "TourBrief V4. Errori rilevati dal CRM:\n- " + errors +
+            "\nJSON precedente:\n" + req.previousJson.strip()[:12000] +
+            "\nRigenera TUTTO il JSON corretto per la stessa richiesta: correggi solo i campi segnalati, "
+            "non aggiungere campi non previsti, non inventare dati."
+        )
     chat = LlmChat(
         api_key=EMERGENT_LLM_KEY,
         session_id=f"brief-{uuid.uuid4()}",
@@ -319,7 +337,7 @@ async def ai_tour_parse_brief(req: BriefParseRequest):
         # Endpoint deliberatamente non-streaming: il planner accetta solo JSON
         # completo e validato. Mantiene l'API della libreria già in uso nell'app.
         raw = await asyncio.wait_for(
-            chat.send_message(UserMessage(text=_json.dumps(payload, ensure_ascii=False))),
+            chat.send_message(UserMessage(text=_json.dumps(payload, ensure_ascii=False) + repair)),
             timeout=90,
         )
         brief = validate_brief_contract(_extract_json(raw))

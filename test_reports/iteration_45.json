@@ -1,0 +1,28 @@
+{
+  "summary": "VOOM CRM AI Tour Fase 2/3/4 (parità web 7bdb4357 + 742a0f15). Eseguiti: vitest 10 file / 78 test PASS (inclusi brief_quotas_fillers.test.ts 18 e brief_schema_memory.test.ts 9), aitour suite 6 file PASS, tsc --noEmit PASS (0 errori). Backend contract test creato (/app/backend/tests/test_ai_tour_brief_fase34.py): 7/7 PASS su URL esterno EXPO_PUBLIC_BACKEND_URL. Verificato che POST /api/ai-tour/parse-brief accetta i campi opzionali previousJson e schemaErrors (nessun 422 di regressione) e che POST /api/ai-tour/transcribe accetta il campo form 'prompt' (anche vuoto e >900 char). Statica: applyProjectPriority + buildProjectQuotas + pickWithQuotas + quotaReport presenti in app/ai-tour.tsx; reserveQuotaMinimums + quotaMaxHit + quotaNeeded in planner.ts; addBriefFillers agganciato solo se plan1 ha tappe e brief.fillers.length>0; validateBriefSchema + un solo ritentativo guidato + logBriefInterpretation/logBriefGenerated non bloccanti in BriefModal.tsx; testID brief-summary, brief-rule-N, brief-remove-rule-N, brief-filler-N, brief-remove-filler-N in BriefModal.tsx; testID brief-preview-quota-N e brief-preview-filler-N in components/aitour/brief/BriefPreviewBox.tsx. Nessuna occorrenza residua di 'Quote/priorità tra progetti: verranno applicate in una prossima versione' né 'Visite \"se avanza tempo\" (riempitivi): verranno applicate in una prossima versione' in /app/frontend. Route /ai-tour carica senza red-screen (auth wall attesa). NON è stato premuto brief-generate, nessun tour è stato generato/salvato, nessun dato Supabase esistente è stato modificato. Il flusso interattivo end-to-end con AI live (gpt-5.6-luna) non è stato eseguito per rispettare i vincoli espliciti (no scrittura su Supabase memory oltre l'effetto atteso e no premere generate); il comportamento è coperto dai 27 test unitari nuovi che assertano quote/filler/schema/memory sulla logica pura.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": [], "react_native_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_ai_tour_brief_fase34.py",
+    "/app/test_reports/pytest/iter45_backend.xml",
+    "/app/frontend/tests/brief_quotas_fillers.test.ts",
+    "/app/frontend/tests/brief_schema_memory.test.ts",
+    "/app/test_reports/artifacts_iter45_load.jpeg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "BriefModal effettua un solo retry guidato via previousJson+schemaErrors (comportamento richiesto): comportamento corretto e coperto da tests/brief_schema_memory.test.ts.",
+    "addBriefFillers viene invocato in app/ai-tour.tsx solo quando plan1.stops.length>0 e brief.fillers.length>0: coerente con la specifica ('riempitivi solo se il giro ha tappe').",
+    "logBriefInterpretation/logBriefGenerated sono chiamati con void e catch silente: non bloccano l'utente in caso di errori Supabase (memoria tabella ai_tour_brief_memory).",
+    "Il prompt Whisper è capato a 900 char lato server (server.py:283) e mai riflesso nella response: buona pratica."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_ai_tour_brief_fase34.py (nuovo)"
+  ],
+  "success_rate": {"backend": "100% (7/7 contract tests)", "frontend": "100% (78/78 vitest + 6/6 aitour suite + tsc 0 errori)"},
+  "seed_data_creation": "Nessuna. Nessun dato creato/modificato su Supabase; nessun tour generato.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Fase 2 (quote+fillers) e Fasi 3-4 (schema retry + memoria + vocabolario) sono verificate a livello unitario, statico e contratto backend. Per un e2e completo su UI Dillo all'AI serve login (test_credentials.md ha gdeintinis@gmail.com / tadini@voomweb.it), consenso privacy transiente via localStorage @privacy_terms_accepted=true, poi /ai-tour → brief-modal, dettare/incollare 'domani 10 clienti FED e DoctorVape a Pavia, almeno 6 FED e massimo 3 DoctorVape, se avanza tempo 3 prospect' e premere brief-interpret. Attendersi chip brief-rule-0/1 (min FED 6, max DV 3), chip brief-filler-0 (3 prospect), riassunto brief-summary con 'Quote tra progetti:' e 'Se avanza tempo:', anteprima con brief-preview-quota-0/1 e brief-preview-filler-0. NON premere brief-generate (vincolo utente, evita creazione tour). L'interpretazione dipende da gpt-5.6-luna via Emergent LLM key: se timeout/502 dall'AI, non è bug del codice nuovo.",
+  "rca_of_issue": ""
+}

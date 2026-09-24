@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
 import { Visit } from '../../types';
 import { getCache, setCache } from '../memory-cache';
+import { closeDueFollowUps } from './appointments';
 
 export async function fetchVisits(userId: string, userRole: string, branchId?: string | null, opts?: { force?: boolean }): Promise<Visit[]> {
   const cacheKey = `visits:${userRole}:${userId}:${branchId || ''}`;
@@ -72,6 +73,8 @@ export async function createVisit(visitData: {
       .single();
 
     if (error) throw error;
+    // Anche la visita registrata fuori dal Tour Live chiude i follow-up dovuti su quel cliente
+    if (visitData.customer_id) await closeDueFollowUps(visitData.customer_id, visitData.agent_id);
     return data;
   } catch (error) {
     console.error('[createVisit] Error:', error);

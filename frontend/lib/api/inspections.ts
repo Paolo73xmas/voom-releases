@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
 import { Inspection } from '../../types';
 import { uploadSinglePhoto } from './photos';
+import { closeDueFollowUps } from './appointments';
 
 export async function fetchInspections(userId: string, userRole: string): Promise<Inspection[]> {
   try {
@@ -54,6 +55,8 @@ export async function createInspection(inspectionData: {
       .single();
 
     if (error) throw error;
+    // Un'ispezione è una visita: chiude i follow-up dovuti su quel cliente
+    await closeDueFollowUps(inspectionData.customer_id, inspectionData.agent_id);
     return data;
   } catch (error) {
     console.error('[createInspection] Error:', error);
@@ -102,6 +105,9 @@ export async function createTourInspection(args: {
     .update({ last_visit_date: new Date().toISOString() })
     .eq('id', args.customer_id);
   if (visitDateError) console.warn('[createTourInspection] last_visit_date:', visitDateError.message);
+
+  // L'ispezione chiude i follow-up dovuti: rete di sicurezza se l'esito Tour Live non passa da completeStop
+  await closeDueFollowUps(args.customer_id, args.agent_id);
 
   let photoFailures = 0;
   for (let i = 0; i < args.photos.length; i++) {

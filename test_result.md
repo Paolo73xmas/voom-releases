@@ -590,3 +590,10 @@ agent_communication:
 - Backend: /api/ai-tour/transcribe accetta il form prompt; /api/ai-tour/parse-brief accetta previousJson + schemaErrors.
 - Extra: le entità già usate come progetti non generano più domande di chiarimento (bloccavano la generazione).
 - Verifiche: vitest 79 test/10 file PASS, suite AI Tour 6/6, backend test_ai_tour_brief_fase34.py 7/7, tsc e lint puliti, prova live in anteprima senza generare tour.
+
+## BUG follow-up ancora attivo dopo l'ispezione - iteration 46
+- Caso reale: MARCHESI GABRIELLA (agente roberto.beretta) aveva follow-up alle 09:00 del 23/09; esito/ispezione registrati alle 07:45 dello stesso giorno. La chiusura introdotta in iteration 42 usava .lte('appointment_date', now) → il follow-up delle 09:00 non veniva chiuso e il giorno dopo risultava ancora attivo.
+- Fix: nuova closeDueFollowUps(customerId, agentId, at) in lib/api/appointments.ts con confine alla FINE della giornata della visita (23:59:59.999 locale), non bloccante. Richiamata da aitour/live.ts completeStop (prima del nuovo follow-up), inspections.ts createInspection/createTourInspection, visits.ts createVisit.
+- Verifiche iteration 46: 3 test unitari nuovi, 82 test vitest, suite AI Tour 6/6, tsc OK, E2E live su account di test (follow-up di oggi alle 23:00 → completed; follow-up di domani → scheduled). Fixture di test rimosse, inclusa la tabaccheria residua eliminata da admin.
+- PENDENTE: bonifica dell'appuntamento storico e9c9659c-128b-425b-a1ce-b8da6515f5c2 (in attesa di autorizzazione dell'utente).
+- Bonifica storica autorizzata dall'utente ed eseguita con scripts/close_stale_followups.py: individuati 42 follow-up scaduti 'scheduled', di cui 11 con visita/ispezione dello stesso giorno o successiva (incluso e9c9659c di MARCHESI GABRIELLA) → chiusi. Ricontrollo: 0 casi residui. I 31 rimanenti sono follow-up scaduti senza visita registrata, quindi correttamente ancora aperti.

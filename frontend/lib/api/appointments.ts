@@ -14,8 +14,36 @@ export function localAppointmentDate(date: string, time: string): Date {
   return value;
 }
 
-export async function createAppointment(input: AppointmentInput): Promise<string> {
-  if (!input.agentId) throw new Error('Accedi prima di salvare.');
+/**
+ * Una visita/ispezione soddisfa i follow-up pendenti di quel cliente: vengono chiusi tutti
+ * i follow-up "scheduled" con data fino alla FINE della giornata della visita.
+ * Il confine è il giorno, non l'istante: un'ispezione alle 07:45 chiude anche il follow-up
+ * previsto alle 09:00 dello stesso giorno (era il caso che restava attivo il giorno dopo).
+ * Non blocca mai la registrazione della visita: in caso di errore logga e prosegue.
+ */
+export async function closeDueFollowUps(customerId: string, agentId: string, at: Date = new Date()): Promise<number> {
+  const dayEnd = new Date(at);
+  dayEnd.setHours(23, 59, 59, 999);
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .update({ status: 'completed' })
+      .eq('customer_id', customerId)
+      .eq('agent_id', agentId)
+      .eq('appointment_type', 'follow_up')
+      .eq('status', 'scheduled')
+      .lte('appointment_date', dayEnd.toISOString())
+      .select('id');
+    if (error) { console.warn('[appointments] chiusura follow-up scaduti fallita:', error.message); return 0; }
+    return data?.length || 0;
+  } catch (err) {
+    console.warn('[appointments] chiusura follow-up scaduti fallita:', err);
+    return 0;
+  }
+}
+
+
+export async function createAppointment(input: AppointmentInput): Promise<string> {  if (!input.agentId) throw new Error('Accedi prima di salvare.');
   if (!input.customerId && !input.title.trim()) throw new Error('Inserisci il titolo dell’impegno.');
   if (!Number.isInteger(input.duration) || input.duration < 5 || input.duration > 480) throw new Error('La durata deve essere tra 5 e 480 minuti.');
   const start = localAppointmentDate(input.date, input.time);

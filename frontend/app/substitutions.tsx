@@ -15,8 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { fetchCustomers } from '../lib/api/customers';
-import { fetchSubstitutions, createSubstitution, deleteSubstitution, SubstitutionWithDetails } from '../lib/api/substitutions';
+import { fetchSubstitutionsPage, createSubstitution, deleteSubstitution, SubstitutionWithDetails } from '../lib/api/substitutions';
 import { COLORS } from '../lib/theme';
+import { substitutionLineValue, substitutionTotal } from '../lib/substitution-totals';
+import { usePagedHistory } from '../hooks/usePagedHistory';
+import { useDebounce } from '../hooks/useDebounce';
+import { HistoryFooter, ReadErrorNotice } from '../components/HistoryFeedback';
 
 const STATUS_OPTS = [
   { value: 'all', label: 'Tutti' },
@@ -45,11 +49,13 @@ export default function SubstitutionsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
 
-  const [substitutions, setSubstitutions] = useState<SubstitutionWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const debouncedSearch = useDebounce(searchText.trim(), 300);
+  const query = debouncedSearch.length >= 3 ? debouncedSearch : '';
+  const history = usePagedHistory(user ? `${user.id}:${user.role}:${user.branchId || ''}:${statusFilter}:${query}` : '',
+    offset => fetchSubstitutionsPage(user!.id, statusFilter, { userRole: user!.role, branchId: user!.branchId, search: query, offset }));
+  const { rows: filtered, loading, refreshing, error: loadError } = history;
 
   // Create wizard
   const [showCreate, setShowCreate] = useState(false);
@@ -74,19 +80,7 @@ export default function SubstitutionsScreen() {
   // Detail
   const [selectedSub, setSelectedSub] = useState<SubstitutionWithDetails | null>(null);
 
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const data = await fetchSubstitutions(
-        user.id,
-        statusFilter !== 'all' ? statusFilter : undefined,
-        { userRole: user.role, branchId: user.branchId }
-      );
-      setSubstitutions(data);
-    } catch (e) { console.error('[Substitutions] Error:', e); }
-    finally { setLoading(false); }
-  }, [user, statusFilter]);
+  const loadData = history.refresh;
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
@@ -114,15 +108,9 @@ export default function SubstitutionsScreen() {
     setProducts(data || []);
   };
 
-  const onRefresh = async () => { setRefreshing(true); await loadData(); setRefreshing(false); };
+  const onRefresh = history.refresh;
   const getProductName = (id: string | null) => { if (!id) return ''; const p = products.find(pr => pr.id === id); return p?.short_description || p?.name || ''; };
   const getProductPrice = (id: string | null) => { if (!id) return 0; const p = products.find(pr => pr.id === id); return p?.unit_price != null ? Number(p.unit_price) : 0; };
-
-  const filtered = substitutions.filter(s => {
-    if (!searchText.trim() || searchText.length < 3) return true;
-    const q = searchText.toLowerCase();
-    return (s.customers?.business_name?.toLowerCase().includes(q) || s.substitution_number?.toLowerCase().includes(q));
-  });
 
   // Totals
   const totalRetrieve = retrieveCards.reduce((sum, c) => sum + (c.product_id ? getProductPrice(c.product_id) * c.quantity : 0), 0);
@@ -200,7 +188,7 @@ export default function SubstitutionsScreen() {
     const hasOrig = sub.substitution_items?.some(i => i.original_product_id);
     const hasRepl = sub.substitution_items?.some(i => i.replacement_product_id);
     return (
-      <TouchableOpacity style={st.card} onPress={() => setSelectedSub(sub)} activeOpacity={0.7}>
+      <TouchableOpacity testID={`substitution-row-${sub.id}`} style={st.card} onPress={() => setSelectedSub(sub)} activeOpacity={0.7}>
         <View style={st.cardHeader}>
           <Text style={st.cardNumber}>{sub.substitution_number}</Text>
           <View style={[st.statusBadge, { backgroundColor: cfg.bg }]}>
@@ -230,27 +218,28 @@ export default function SubstitutionsScreen() {
     const items = selectedSub.substitution_items || [];
     const origItems = items.filter(i => i.original_product_id);
     const replItems = items.filter(i => i.replacement_product_id);
-    const totalRet = origItems.reduce((s, i) => s + getProductPrice(i.original_product_id) * ((i.original_quantity ?? i.quantity) || 1), 0);
-    const totalSnd = replItems.reduce((s, i) => s + getProductPrice(i.replacement_product_id) * ((i.replacement_quantity ?? i.quantity) || 1), 0);
+    const totalRet = substitutionTotal(items, 'original');
+    const totalSnd = substitutionTotal(items, 'replacement');
 
     return (
       <Modal visible={!!selectedSub} animationType="slide" transparent onRequestClose={() => setSelectedSub(null)}>
         <View style={st.modalOverlay}>
-          <View style={[st.modalContent, { paddingBottom: insets.bottom + 16 }]}>
+          <View testID="substitution-detail" style={[st.modalContent, { paddingBottom: insets.bottom + 16 }]}>
             <View style={st.modalHandle} />
             <ScrollView style={{ paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <View><Text style={{ fontSize: 18, fontWeight: '800', color: COLORS.text }}>{selectedSub.substitution_number}</Text>
                   <View style={[st.statusBadge, { backgroundColor: cfg.bg, marginTop: 4 }]}><Ionicons name={cfg.icon as any} size={12} color={cfg.color} /><Text style={[st.statusText, { color: cfg.color }]}>{cfg.label}</Text></View>
                 </View>
-                <TouchableOpacity onPress={() => setSelectedSub(null)} style={{ padding: 8 }}><Ionicons name="close" size={24} color="#6B7280" /></TouchableOpacity>
+                <TouchableOpacity testID="substitution-detail-close" accessibilityLabel="Chiudi dettaglio sostituzione" onPress={() => setSelectedSub(null)} style={{ padding: 8, minHeight: 44, minWidth: 44 }}><Ionicons name="close" size={24} color="#6B7280" /></TouchableOpacity>
               </View>
 
               {/* Totals */}
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                <View style={[st.totalBox, { backgroundColor: '#FEE2E2', borderColor: '#FECACA' }]}><Text style={{ fontSize: 10, fontWeight: '700', color: '#991B1B', textTransform: 'uppercase' }}>Ritiro</Text><Text style={{ fontSize: 18, fontWeight: '800', color: '#DC2626' }}>{formatCurrency(totalRet)}</Text></View>
-                <View style={[st.totalBox, { backgroundColor: '#D1FAE5', borderColor: '#A7F3D0' }]}><Text style={{ fontSize: 10, fontWeight: '700', color: '#065F46', textTransform: 'uppercase' }}>Invio</Text><Text style={{ fontSize: 18, fontWeight: '800', color: '#059669' }}>{formatCurrency(totalSnd)}</Text></View>
+                <View style={[st.totalBox, { backgroundColor: '#FEE2E2', borderColor: '#FECACA' }]}><Text style={{ fontSize: 10, fontWeight: '700', color: '#991B1B', textTransform: 'uppercase' }}>Ritiro</Text><Text testID="substitution-detail-total-retrieve" style={{ fontSize: 18, fontWeight: '800', color: '#DC2626' }}>{totalRet == null ? 'Non disponibile' : formatCurrency(totalRet)}</Text></View>
+                <View style={[st.totalBox, { backgroundColor: '#D1FAE5', borderColor: '#A7F3D0' }]}><Text style={{ fontSize: 10, fontWeight: '700', color: '#065F46', textTransform: 'uppercase' }}>Invio</Text><Text testID="substitution-detail-total-send" style={{ fontSize: 18, fontWeight: '800', color: '#059669' }}>{totalSnd == null ? 'Non disponibile' : formatCurrency(totalSnd)}</Text></View>
               </View>
+              <Text testID="substitution-detail-price-basis" style={st.priceBasis}>Valori ai prezzi di listino attuali</Text>
 
               <View style={st.infoCard}>
                 <View style={st.infoRow}><Text style={st.infoLabel}>Cliente</Text><Text style={st.infoValue}>{selectedSub.customers?.business_name}</Text></View>
@@ -275,7 +264,7 @@ export default function SubstitutionsScreen() {
                 {origItems.map((it, i) => (
                   <View key={it.id || i} style={[st.itemCard, { borderLeftWidth: 3, borderLeftColor: '#DC2626' }]}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.text }}>{it.original_product?.short_description || it.original_product?.name || 'N/D'}</Text>
-                    <Text style={{ fontSize: 11, color: COLORS.textMuted }}>Qtà: {it.original_quantity ?? it.quantity} · {formatCurrency(getProductPrice(it.original_product_id))}/pz</Text>
+                    <Text testID={`substitution-detail-original-${it.id || i}-price`} style={{ fontSize: 11, color: COLORS.textMuted }}>Qtà: {substitutionLineValue(it, 'original').quantity} · {substitutionLineValue(it, 'original').price == null ? 'Prezzo non disponibile' : `${formatCurrency(substitutionLineValue(it, 'original').price!)}/pz`}</Text>
                   </View>
                 ))}
               </>)}
@@ -286,7 +275,7 @@ export default function SubstitutionsScreen() {
                 {replItems.map((it, i) => (
                   <View key={it.id || i} style={[st.itemCard, { borderLeftWidth: 3, borderLeftColor: '#059669' }]}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.text }}>{it.replacement_product?.short_description || it.replacement_product?.name || 'N/D'}</Text>
-                    <Text style={{ fontSize: 11, color: COLORS.textMuted }}>Qtà: {it.replacement_quantity ?? it.quantity} · {formatCurrency(getProductPrice(it.replacement_product_id))}/pz</Text>
+                    <Text testID={`substitution-detail-replacement-${it.id || i}-price`} style={{ fontSize: 11, color: COLORS.textMuted }}>Qtà: {substitutionLineValue(it, 'replacement').quantity} · {substitutionLineValue(it, 'replacement').price == null ? 'Prezzo non disponibile' : `${formatCurrency(substitutionLineValue(it, 'replacement').price!)}/pz`}</Text>
                   </View>
                 ))}
               </>)}
@@ -466,17 +455,17 @@ export default function SubstitutionsScreen() {
   return (
     <View style={[st.container, { paddingTop: insets.top }]}>
       <View style={st.header}>
-        <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}><Ionicons name="arrow-back" size={24} color="#FFF" /></TouchableOpacity>
+        <TouchableOpacity testID="substitutions-back" onPress={() => router.back()} style={{ padding: 4 }}><Ionicons name="arrow-back" size={24} color="#FFF" /></TouchableOpacity>
         <Text style={st.headerTitle}>Sostituzioni</Text>
-        <TouchableOpacity onPress={openCreate} style={{ backgroundColor: COLORS.surface, borderRadius: 8, padding: 6 }}><Ionicons name="add" size={20} color="#7C3AED" /></TouchableOpacity>
+        <TouchableOpacity testID="substitutions-new" onPress={openCreate} style={{ backgroundColor: COLORS.surface, borderRadius: 8, padding: 6 }}><Ionicons name="add" size={20} color="#7C3AED" /></TouchableOpacity>
       </View>
 
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-        <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca (min 3 car.)..." value={searchText} onChangeText={setSearchText} placeholderTextColor={COLORS.textLight} />{searchText.length > 0 && <TouchableOpacity onPress={() => setSearchText('')}><Ionicons name="close-circle" size={16} color="#9CA3AF" /></TouchableOpacity>}</View>
+        <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput testID="substitutions-search" style={st.searchInput} placeholder="Cerca (min 3 car.)..." value={searchText} onChangeText={setSearchText} placeholderTextColor={COLORS.textLight} />{searchText.length > 0 && <TouchableOpacity testID="substitutions-search-clear" onPress={() => setSearchText('')}><Ionicons name="close-circle" size={16} color="#9CA3AF" /></TouchableOpacity>}</View>
         {/* Status filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
           {STATUS_OPTS.map(opt => (
-            <TouchableOpacity key={opt.value} onPress={() => setStatusFilter(opt.value)}
+            <TouchableOpacity testID={`substitutions-status-${opt.value}`} key={opt.value} onPress={() => setStatusFilter(opt.value)}
               style={[st.filterChip, statusFilter === opt.value && st.filterChipActive]}>
               <Text style={[st.filterChipText, statusFilter === opt.value && st.filterChipTextActive]}>{opt.label}</Text>
             </TouchableOpacity>
@@ -484,9 +473,12 @@ export default function SubstitutionsScreen() {
         </ScrollView>
       </View>
 
+      <Text testID="substitutions-count" style={st.historyCount}>{loading ? 'Caricamento...' : loadError && !filtered.length ? 'Conteggio non disponibile' : `${history.count} sostituzioni`}</Text>
+      <ReadErrorNotice id="substitutions" message={loadError} onRetry={history.retry} busy={refreshing || history.loadingMore} />
       {loading ? <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#7C3AED" /></View> : (
-        <FlashList data={filtered} renderItem={renderSubCard} keyExtractor={s => s.id} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} refreshing={refreshing} onRefresh={onRefresh}
-          ListEmptyComponent={<View style={{ alignItems: 'center', marginTop: 60 }}><Ionicons name="swap-horizontal-outline" size={48} color="#D1D5DB" /><Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMuted, marginTop: 12 }}>Nessuna sostituzione</Text></View>} />
+        <FlashList testID="substitutions-list" data={filtered} renderItem={renderSubCard} keyExtractor={s => s.id} contentContainerStyle={{ padding: 16, paddingBottom: 40 }} refreshing={refreshing} onRefresh={onRefresh}
+          ListFooterComponent={!loadError ? <HistoryFooter id="substitutions" loaded={filtered.length} count={history.count} hasMore={history.hasMore} busy={history.loadingMore} onMore={history.loadMore} /> : null}
+          ListEmptyComponent={!loadError ? <View style={{ alignItems: 'center', marginTop: 60 }}><Ionicons name="swap-horizontal-outline" size={48} color="#D1D5DB" /><Text testID="substitutions-empty" style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMuted, marginTop: 12 }}>Nessuna sostituzione</Text></View> : null} />
       )}
 
       {renderDetail()}
@@ -496,6 +488,8 @@ export default function SubstitutionsScreen() {
 }
 
 const st = StyleSheet.create({
+  historyCount: { color: COLORS.textMuted, fontSize: 12, paddingHorizontal: 16, marginTop: 8 },
+  priceBasis: { color: COLORS.textMuted, fontSize: 12, marginBottom: 14 },
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#7C3AED', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFF' },

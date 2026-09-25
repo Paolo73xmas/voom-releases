@@ -3,6 +3,7 @@
  * Supports separate retrieve/send product lists with nullable product_ids
  */
 import { supabase } from '../supabase';
+import { literalSearch, pageRange, readPage, type ReadPageOptions } from './read-pages';
 
 export interface SubstitutionItem {
   id: string;
@@ -40,11 +41,13 @@ export interface SubstitutionWithDetails {
   substitution_items?: SubstitutionItem[];
 }
 
-export async function fetchSubstitutions(
+export async function fetchSubstitutionsPage(
   agentId: string,
   statusFilter?: string,
-  opts?: { userRole?: string; branchId?: string | null }
-): Promise<SubstitutionWithDetails[]> {
+  opts: ReadPageOptions & { userRole?: string; branchId?: string | null } = {}
+) {
+  if (!agentId) throw new Error('Agente non disponibile');
+  const { offset, end } = pageRange(opts);
   let query = supabase
     .from('substitutions')
     .select(`
@@ -53,24 +56,25 @@ export async function fetchSubstitutions(
       substitution_items (
         id, substitution_id, original_product_id, replacement_product_id,
         quantity, original_quantity, replacement_quantity, notes
-      )
-    `)
+      ), matched_customer:customers()
+    `, { count: 'exact' })
     .order('created_at', { ascending: false })
-    .limit(100);
+    .order('id').range(offset, end);
 
   // Role-based filtering (admin/supervisor see all, branch_admin sees branch agents, agent only own)
   const role = opts?.userRole;
   const isAdmin = role === 'admin' || role === 'admincustom' || role === 'supervisor';
   if (!isAdmin) {
     if (role === 'branch_admin' && opts?.branchId) {
-      const { data: branchAgents } = await supabase
+      const { data: branchAgents, error: branchError } = await supabase
         .from('profiles')
         .select('id')
         .eq('branch_id', opts.branchId);
+      if (branchError) throw branchError;
       if (branchAgents && branchAgents.length > 0) {
         query = query.in('agent_id', branchAgents.map(a => a.id));
       } else {
-        return [];
+        return readPage<SubstitutionWithDetails>([], 0, offset);
       }
     } else {
       query = query.eq('agent_id', agentId);
@@ -81,9 +85,14 @@ export async function fetchSubstitutions(
     query = query.eq('status', statusFilter);
   }
 
-  const { data, error } = await query;
+  if (opts.search?.trim()) {
+    const term = literalSearch(opts.search);
+    query = query.or(`business_name.ilike.${term},city.ilike.${term}`, { referencedTable: 'matched_customer' })
+      .or(`substitution_number.ilike.${term},matched_customer.not.is.null`);
+  }
+  const { data, error, count } = await query;
   if (error) throw error;
-  if (!data || data.length === 0) return [];
+  if (!data || data.length === 0) return readPage<SubstitutionWithDetails>([], count, offset);
 
   const productIds = new Set<string>();
   for (const sub of data) {
@@ -95,10 +104,11 @@ export async function fetchSubstitutions(
 
   let productMap = new Map<string, any>();
   if (productIds.size > 0) {
-    const { data: products } = await supabase
+    const { data: products, error: productError } = await supabase
       .from('products')
       .select('id, name, sku, short_description, unit_price, stock_quantity')
       .in('id', Array.from(productIds));
+    if (productError) throw productError;
     productMap = new Map((products || []).map(p => [p.id, p]));
   }
 
@@ -109,7 +119,7 @@ export async function fetchSubstitutions(
     }
   }
 
-  return data as SubstitutionWithDetails[];
+  return readPage(data as SubstitutionWithDetails[], count, offset);
 }
 
 export interface CreateSubstitutionInput {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,8 @@ import { setStatusBarStyle } from 'expo-status-bar';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useAuthStore } from '../../store/authStore';
 import { fetchCustomers } from '../../lib/api/customers';
-import { fetchOrders } from '../../lib/api/orders';
+import { fetchOrderCounts } from '../../lib/api/orders';
+import { fetchMonthlySales } from '../../lib/api/monthly-sales';
 import { fetchVisits } from '../../lib/api/visits';
 import { supabase } from '../../lib/supabase';
 import { getDraftCount } from '../../lib/drafts';
@@ -56,6 +57,7 @@ export default function Dashboard() {
   const [scadKpi, setScadKpi] = useState<ScadenziarioKpi | null>(null);
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState('');
   const [aptsLoaded, setAptsLoaded] = useState(false);
   // Follow-up scaduti mai gestiti (ultimi 60 giorni): promemoria in dashboard
   const [overdueFu, setOverdueFu] = useState<OverdueFollowUp[]>([]);
@@ -63,9 +65,17 @@ export default function Dashboard() {
   // Ultime ispezioni eseguite dall'agente (ognuno vede solo le proprie)
   const [lastInspections, setLastInspections] = useState<AgentInspection[]>([]);
   const [inspLoaded, setInspLoaded] = useState(false);
+  const [inspectionsError, setInspectionsError] = useState('');
+  const [inspectionsBusy, setInspectionsBusy] = useState(false);
+  const statsRequest = useRef(0);
+  const inspectionsRequest = useRef(0);
+  const scopeRef = useRef(user?.id);
+  scopeRef.current = user?.id;
 
   const loadStats = async (force: boolean = false) => {
     if (!user) return;
+    const request = ++statsRequest.current;
+    const current = () => request === statsRequest.current && scopeRef.current === user.id;
 
     // Cache hit (TTL 60s) — instant load, no flicker
     const cacheKey = `dashboard:stats:${user.id}`;
@@ -84,75 +94,33 @@ export default function Dashboard() {
       }
     }
 
+    setStatsError('');
     try {
       const [customers, orders, visits] = await Promise.all([
-        fetchCustomers(user.id, user.role, user.branchId),
-        fetchOrders(user.id, user.role, user.branchId),
-        fetchVisits(user.id, user.role, user.branchId),
+        fetchCustomers(user.id, user.role, user.branchId, { force }),
+        fetchOrderCounts(user.id, user.role, user.branchId),
+        fetchVisits(user.id, user.role, user.branchId, { force }),
       ]);
 
       const newStats = {
         customers: customers.length,
-        orders: orders.length,
+        orders: orders.total,
         visits: visits.length,
-        pendingOrders: orders.filter(o => o.status === 'confirmed' || o.status === 'processing').length,
+        pendingOrders: orders.pending,
       };
-      setStats(newStats);
-
       // Load monthly sales (net of IVA and Accisa)
-      const ms = await loadMonthlySales();
+      const ms = await fetchMonthlySales(user.id);
+      if (!current()) return;
+      setStats(newStats);
+      setMonthlySales(ms);
 
       // Cache for 60 seconds
       setCache(cacheKey, { ...newStats, monthlySales: ms }, 60_000);
     } catch (error) {
       console.error('Error loading stats:', error);
+      if (current()) setStatsError('Impossibile aggiornare i riepiloghi. I valori mostrati potrebbero non essere aggiornati.');
     } finally {
-      setStatsLoading(false);
-    }
-  };
-
-  const loadMonthlySales = async () => {
-    if (!user) return null;
-    try {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const months = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
-        'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-      const monthLabel = `${months[now.getMonth()]} ${now.getFullYear()}`;
-
-      const { data: monthOrders } = await supabase
-        .from('orders')
-        .select('id, order_items (quantity, line_total, product:products (accisa, iva_percentage))')
-        .gte('created_at', monthStart)
-        .eq('agent_id', user.id);
-
-      let netto = 0;
-      let accisa = 0;
-      let iva = 0;
-
-      for (const order of (monthOrders || [])) {
-        for (const item of (order.order_items || [])) {
-          netto += item.line_total || 0;
-          const accisaUnit = (item.product as any)?.accisa || 0;
-          accisa += accisaUnit * (item.quantity || 0);
-          const ivaRate = (item.product as any)?.iva_percentage || 22;
-          iva += (item.line_total || 0) * (ivaRate / 100);
-        }
-      }
-
-      const ms = {
-        netto,
-        accisa,
-        iva,
-        lordo: netto + accisa + iva,
-        orderCount: monthOrders?.length || 0,
-        monthLabel,
-      };
-      setMonthlySales(ms);
-      return ms;
-    } catch (error) {
-      console.error('Error loading monthly sales:', error);
-      return null;
+      if (current()) setStatsLoading(false);
     }
   };
 
@@ -167,8 +135,12 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    setLastInspections([]);
+    setInspLoaded(false);
+    setInspectionsError('');
     loadStats();
     loadScadenziario();
+    return () => { statsRequest.current += 1; inspectionsRequest.current += 1; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -218,12 +190,19 @@ export default function Dashboard() {
 
   const loadLastInspections = async () => {
     if (!user) return;
+    const request = ++inspectionsRequest.current;
+    const current = () => request === inspectionsRequest.current && scopeRef.current === user.id;
+    setInspectionsBusy(true);
     try {
-      setLastInspections(await fetchAgentInspections(user.id, { limit: 5 }));
+      const rows = await fetchAgentInspections(user.id, { limit: 5 });
+      if (!current()) return;
+      setLastInspections(rows);
+      setInspectionsError('');
     } catch (e) {
       console.warn('[Dashboard] ispezioni:', e);
+      if (current()) setInspectionsError('Impossibile aggiornare le ispezioni. Controlla la connessione e riprova.');
     } finally {
-      setInspLoaded(true);
+      if (current()) { setInspLoaded(true); setInspectionsBusy(false); }
     }
   };
 
@@ -263,12 +242,11 @@ export default function Dashboard() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    if (user?.id) clearCache(`dashboard:stats:${user.id}`);
-    await loadStats(true);
-    const dc = await getDraftCount();
-    setDraftCount(dc);
-    await Promise.all([loadUpcomingAppointments(), loadScadenziario(true), loadOverdueFollowUps()]);
-    setRefreshing(false);
+    try {
+      if (user?.id) clearCache(`dashboard:stats:${user.id}`);
+      await Promise.all([loadStats(true), getDraftCount().then(setDraftCount), loadUpcomingAppointments(),
+        loadScadenziario(true), loadOverdueFollowUps(), loadLastInspections(), loadAiTourBadge()]);
+    } finally { setRefreshing(false); }
   };
 
   const { hasAccess: hasRimborsiAccess } = useRimborsiAccess();
@@ -312,6 +290,10 @@ export default function Dashboard() {
           <Text style={styles.greeting}>{getTimeGreeting()}</Text>
           <Text style={styles.userName} numberOfLines={1}>{profile?.full_name || 'Utente'}</Text>
         </View>
+        <TouchableOpacity testID="dashboard-refresh" accessibilityRole="button" accessibilityLabel="Aggiorna dashboard"
+          disabled={refreshing} style={styles.logoutBtn} onPress={onRefresh}>
+          <Ionicons name="refresh-outline" size={20} color={refreshing ? DS.borderStrong : DS.inkMuted} />
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.logoutBtn}
           onPress={() => {
@@ -458,6 +440,10 @@ export default function Dashboard() {
 
       {/* Panoramica — griglia stats 2x2 */}
       <Text style={styles.sectionTitle}>Panoramica</Text>
+      {!!statsError && <View style={styles.readErrorBox} testID="dashboard-stats-error">
+        <Text testID="dashboard-stats-error-message" style={styles.readErrorText} accessibilityRole="alert">{statsError}</Text>
+        <TouchableOpacity testID="dashboard-stats-retry" style={styles.readRetry} onPress={() => loadStats(true)}><Text style={styles.readRetryText}>Riprova</Text></TouchableOpacity>
+      </View>}
       {statsLoading ? (
         <View style={styles.statsGrid}>
           {[0, 1, 2, 3].map((i) => (
@@ -491,36 +477,37 @@ export default function Dashboard() {
         <View style={styles.salesMainRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.salesMainLabel}>Netto (no IVA, no Accisa)</Text>
-            <Text style={styles.salesMainValue}>
+            <Text testID="dashboard-sales-net" style={styles.salesMainValue}>
               € {monthlySales.netto.toFixed(2).replace('.', ',')}
             </Text>
           </View>
           <View style={styles.salesBadge}>
             <Ionicons name="receipt-outline" size={14} color="#FFFFFF" />
-            <Text style={styles.salesBadgeText}>{monthlySales.orderCount} ordini</Text>
+            <Text testID="dashboard-sales-count" style={styles.salesBadgeText}>{monthlySales.orderCount} ordini</Text>
           </View>
         </View>
         <View style={styles.salesDivider} />
         <View style={styles.salesDetailsRow}>
           <View style={styles.salesDetailItem}>
             <Text style={styles.salesDetailLabel}>Accisa</Text>
-            <Text style={styles.salesDetailValue}>
+            <Text testID="dashboard-sales-excise" style={styles.salesDetailValue}>
               € {monthlySales.accisa.toFixed(2).replace('.', ',')}
             </Text>
           </View>
           <View style={styles.salesDetailItem}>
             <Text style={styles.salesDetailLabel}>IVA</Text>
-            <Text style={styles.salesDetailValue}>
+            <Text testID="dashboard-sales-vat" style={styles.salesDetailValue}>
               € {monthlySales.iva.toFixed(2).replace('.', ',')}
             </Text>
           </View>
           <View style={styles.salesDetailItem}>
-            <Text style={styles.salesDetailLabel}>Lordo</Text>
-            <Text style={[styles.salesDetailValue, { fontFamily: JAKARTA.bold }]}>
+            <Text style={styles.salesDetailLabel}>Lordo merce</Text>
+            <Text testID="dashboard-sales-gross" style={[styles.salesDetailValue, { fontFamily: JAKARTA.bold }]}>
               € {monthlySales.lordo.toFixed(2).replace('.', ',')}
             </Text>
           </View>
         </View>
+        <Text testID="dashboard-sales-basis" style={styles.salesBasis}>Spedizioni e ordini annullati esclusi</Text>
       </Animated.View>
 
       {/* Scadenziario — fatture da incassare */}
@@ -556,10 +543,14 @@ export default function Dashboard() {
           <Text style={styles.sectionLink}>Vedi tutte</Text>
         </TouchableOpacity>
       </View>
+      {!!inspectionsError && <View testID="dashboard-inspections-error" style={styles.readErrorBox}>
+        <Text testID="dashboard-inspections-error-message" accessibilityRole="alert" style={styles.readErrorText}>{inspectionsError}</Text>
+        <TouchableOpacity testID="dashboard-inspections-retry" style={styles.readRetry} disabled={inspectionsBusy} onPress={loadLastInspections}><Text style={styles.readRetryText}>Riprova</Text></TouchableOpacity>
+      </View>}
       <Animated.View entering={FadeInDown.delay(245).duration(400)}>
         {!inspLoaded ? (
           <Skeleton width="100%" height={80} borderRadius={16} />
-        ) : lastInspections.length === 0 ? (
+        ) : lastInspections.length === 0 && inspectionsError ? null : lastInspections.length === 0 ? (
           <Pressable
             testID="dashboard-inspections-empty"
             style={({ pressed }) => [styles.inspEmpty, pressed && styles.actionPressed]}
@@ -631,6 +622,11 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
+  readErrorBox: { padding: 14, borderRadius: 14, borderWidth: 1, borderColor: DS.error, backgroundColor: DS.surface, marginBottom: 12 },
+  readErrorText: { color: DS.error, fontFamily: JAKARTA.medium, fontSize: 13, lineHeight: 19 },
+  readRetry: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 8 },
+  readRetryText: { color: DS.brand, fontFamily: JAKARTA.semibold, fontSize: 14 },
+  salesBasis: { color: '#FFFFFFCC', fontSize: 11, fontFamily: JAKARTA.regular, marginTop: 14 },
   container: {
     flex: 1,
     backgroundColor: DS.surface,

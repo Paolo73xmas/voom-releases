@@ -9,7 +9,7 @@
  *  - Create new rimborso (categoria, importo, descrizione, foto+GPS)
  *  - Delete (only for stato='in_attesa')
  */
-import React, { useEffect, useState, useCallback, useMemo, memo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef, memo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert,
   TextInput, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform, Linking,
@@ -28,6 +28,7 @@ import {
   type Rimborso, type RimborsoCategoria, type RimborsoStato,
 } from '../lib/api/rimborsi';
 import { COLORS } from '../lib/theme';
+import { ReadErrorNotice } from '../components/HistoryFeedback';
 
 const STATI: { value: 'all' | RimborsoStato; label: string }[] = [
   { value: 'all', label: 'Tutti' },
@@ -106,6 +107,8 @@ export default function RimborsiScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filterStato, setFilterStato] = useState<'all' | RimborsoStato>('all');
+  const [loadError, setLoadError] = useState('');
+  const loadSequence = useRef(0);
 
   // Create form
   const [showCreate, setShowCreate] = useState(false);
@@ -167,22 +170,25 @@ export default function RimborsiScreen() {
 
   const load = useCallback(async () => {
     if (!user?.id) return;
+    const request = ++loadSequence.current;
+    setLoadError('');
     try {
       const [rData, cData] = await Promise.all([
         fetchRimborsiByAgent(user.id, filterStato !== 'all' ? { stato: filterStato } : undefined),
         fetchRimborsiCategorie(),
       ]);
+      if (request !== loadSequence.current) return;
       setList(rData);
       setCategorie(cData);
     } catch (e) {
       console.error(e);
-      Alert.alert('Errore', 'Impossibile caricare i rimborsi');
+      if (request === loadSequence.current) setLoadError('Impossibile aggiornare rimborsi o categorie. I dati precedenti, se presenti, restano visibili.');
     } finally {
-      setLoading(false);
+      if (request === loadSequence.current) setLoading(false);
     }
   }, [user?.id, filterStato]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { setLoading(true); void load(); return () => { loadSequence.current += 1; }; }, [load]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -453,12 +459,12 @@ export default function RimborsiScreen() {
         <View style={s.statsBanner}>
           <View style={s.statBox}>
             <Text style={s.statLbl}>In Attesa</Text>
-            <Text style={[s.statVal, { color: '#F59E0B' }]}>{formatCurrency(totals.inAttesa)}</Text>
+            <Text testID="rimborsi-pending-total" style={[s.statVal, { color: '#F59E0B' }]}>{loadError && !list.length ? '—' : formatCurrency(totals.inAttesa)}</Text>
           </View>
           <View style={s.divider} />
           <View style={s.statBox}>
             <Text style={s.statLbl}>Approvato</Text>
-            <Text style={[s.statVal, { color: '#10B981' }]}>{formatCurrency(totals.approvato)}</Text>
+            <Text testID="rimborsi-approved-total" style={[s.statVal, { color: '#10B981' }]}>{loadError && !list.length ? '—' : formatCurrency(totals.approvato)}</Text>
           </View>
         </View>
 
@@ -467,6 +473,7 @@ export default function RimborsiScreen() {
           {STATI.map(st => (
             <TouchableOpacity
               key={st.value}
+              testID={`rimborsi-status-${st.value}`}
               style={[s.chip, filterStato === st.value && s.chipActive]}
               onPress={() => setFilterStato(st.value)}
             >
@@ -476,18 +483,20 @@ export default function RimborsiScreen() {
         </ScrollView>
 
         {/* List */}
+        <ReadErrorNotice id="rimborsi" message={loadError} onRetry={onRefresh} busy={refreshing} />
         <FlashList
+          testID="rimborsi-list"
           data={list}
           renderItem={({ item }) => <RimborsoCard item={item} onDelete={handleDelete} />}
           keyExtractor={r => r.id}
           contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={
+          ListEmptyComponent={!loadError ?
             <View style={{ alignItems: 'center', marginTop: 60 }}>
               <Ionicons name="receipt-outline" size={48} color="#D1D5DB" />
-              <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMuted, marginTop: 12 }}>Nessun rimborso</Text>
+              <Text testID="rimborsi-empty" style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMuted, marginTop: 12 }}>Nessun rimborso</Text>
               <Text style={{ fontSize: 13, color: COLORS.textLight, marginTop: 4 }}>Premi + per creare una richiesta</Text>
-            </View>
+            </View> : null
           }
         />
 

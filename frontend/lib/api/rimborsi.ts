@@ -61,7 +61,7 @@ export async function fetchRimborsiCategorie(includeInactive = false): Promise<R
   const { data, error } = await query;
   if (error) {
     console.error('[rimborsi] Error fetching categorie:', error);
-    return [];
+    throw error;
   }
   return data || [];
 }
@@ -84,7 +84,7 @@ export async function fetchRimborsiByAgent(
   const { data, error } = await query;
   if (error) {
     console.error('[rimborsi] Error fetching rimborsi:', error);
-    return [];
+    throw error;
   }
   return data || [];
 }

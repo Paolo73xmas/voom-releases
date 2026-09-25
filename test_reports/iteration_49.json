@@ -1,0 +1,69 @@
+{
+  "summary": "Rapporto agente preliminare parziale, integrato dalla verifica main: correzioni F01-F06 PASS nel perimetro dichiarato. Rapporto autorevole correzioni_audit_20260925.md. Video esclusi dall'utente.",
+  "main_agent_validation": {
+    "report": "/app/test_reports/correzioni_audit_20260925.md",
+    "status": "passed_with_declared_scope_limits",
+    "unit_tests": "104/104, 13 files; TSC/lint PASS; 6AI+2verification suite PASS",
+    "auth_report_correction": "Nessun bug auth accertato: login reale su /login ripetutamente riuscito. Blocco49 riguardava automazione. NON patchare privacy/auth. Primo consenso non riverificato end-to-end.",
+    "confirmed_real_ui": ["Sostituzioni25.60/24.00", "Venduto36ordini confrontato:8023.83/846.96/1441.65/10312.44", "Ordini250di4937;ricerca1062", "Sostituzioni150di345;ricerca86", "Ispezioni100di214;risposta7giorniobsoletascartata", "Dashboardrefresh+503preserva5schede+retry", "Rimborsi503cold nofalseempty/nofakezero e retry10righe", "Reclami503+retry", "Profilo3.0.1visibile320"],
+    "isolated_component_ui": "Componente reale InspectionNotesDialog con dati test locali55note; raggiuntaultima,close390,closepending320,no late reopen,errorretry320. API cliente/agente provata separatamente read-only (3note).",
+    "browser_crm_mutation_attempts": 0,
+    "remaining_limits": ["Video esclusi, nessuna modifica", "Nessun TourLive reale néCRUD finale", "NativoGPS/foto/audio/biometria/background da confermare su device", "Concorrenza numerazione e nuove funzioni profilo fuori scope"],
+    "additional_bug_fixed_and_verified": "Footer ordini coperto dalla tabbar: padding corretto; hookaltezzanoncompatibileintermedioRIMOSSO, screenpage250PASSsenzaerroriJS."
+  },
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Privacy gate iniziale",
+        "issue": "Nel runner browser i controlli privacy non espongono sempre testID in fase iniziale (0 elementi trovati), causando blocco dei flussi E2E che dipendono dal login.",
+        "testID": "privacy-read-checkbox / privacy-terms-checkbox / privacy-data-checkbox / privacy-accept",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "E2E F01-F06 in app reale (dashboard/substitutions/orders/inspections/rimborsi/profile)",
+        "issue": "Non completabile in questa run per blocco ricorrente Privacy/Login nel browser automation. Tentativi multipli effettuati, poi interrotti per loop-prevention.",
+        "affected_testIDs": [
+          "login-email",
+          "login-password",
+          "login-submit"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/audit_amounts.test.ts",
+    "/app/frontend/tests/audit_history.test.ts",
+    "/app/test_reports/artifacts_iter49/iter49_preview_smoke.jpeg",
+    "/app/test_reports/artifacts_iter49/iter49_privacy_selector_diag.jpeg",
+    "/app/test_reports/artifacts_iter49/iter49_main_390x844_error.jpeg"
+  ],
+  "action_items": [
+    "Stabilizzare il gate Privacy per E2E web: garantire esposizione coerente dei testID al primo render e click affidabili senza fallback testuale.",
+    "Dopo fix del gate, rieseguire interamente la matrice richiesta iteration49 (F01-F06, fault 503 intercettati, 390x844 + 320x568, profilo versione 3.0.1).",
+    "Mantenere blocco mutazioni CRM nei test browser come da vincolo read-only."
+  ],
+  "critical_code_review_comments": [
+    "File molto grandi confermati: /app/frontend/app/(tabs)/index.tsx (~1000+ linee), /app/frontend/components/aitour/LiveTourView.tsx (~2000+), con rischio regressioni e testabilità ridotta.",
+    "La copertura reale UI richiesta non è dimostrabile finché il gate privacy/login non è deterministicamente automatizzabile in preview web."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_49.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (skip richiesto)",
+    "frontend": "Vedere matrice main; nessuna percentuale globale significativa"
+  },
+  "seed_data_creation": "Nessun seed creato. Nessuna scrittura CRM intenzionale.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Eseguiti con successo: smoke preview e test unitari mirati (22/22 PASS) su importi/fiscalità/paginazione/ricerca/error handling. Blocco principale: automazione Privacy/Login non stabile nel browser run completo. Prima di dichiarare fix F01-F06 su UI reale, sbloccare questo punto e rieseguire i flussi richiesti con account admin in read-only.",
+  "rca_of_issue": "RCA provvisoria: sul primo render della schermata privacy il DOM non espone in modo coerente i data-testid attesi (diagnostica: 0 testID trovati), mentre dopo interazione testuale la schermata login espone testID normalmente. Questo comportamento intermittente nel gate iniziale impedisce una catena E2E robusta senza fallback non-standard."
+}

@@ -16,7 +16,8 @@ import { VerificationRequestModal } from './VerificationRequestModal';
 import { isVerificationPoint, type VerificationSubject } from '../../lib/api/customer-verification';
 import { useAuthStore } from '../../store/authStore';
 import { TourMapView, type TourMapStop } from './TourMapView';
-import { createTourInspection, fetchCustomerInspectionNotes, type InspectionNote } from '../../lib/api/inspections';
+import { createTourInspection } from '../../lib/api/inspections';
+import { InspectionNotesDialog } from './InspectionNotesDialog';
 import { supabase } from '../../lib/supabase';
 import type { LiveState, LiveStop } from '../../lib/aitour/live';
 import {
@@ -63,8 +64,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [skipOpen, setSkipOpen] = useState(false);
   const [verificationTarget, setVerificationTarget] = useState<{ stopId: string; subject: VerificationSubject } | null>(null);
   // Note delle ispezioni già eseguite sul cliente della tappa corrente
-  const [notesTarget, setNotesTarget] = useState<{ name: string; items: InspectionNote[]; error: string } | null>(null);
-  const [notesLoading, setNotesLoading] = useState(false);
+  const [notesTarget, setNotesTarget] = useState<{ name: string; customerId: string } | null>(null);
   const actorId = useAuthStore((s) => s.user?.id);
   const [reassigned, setReassigned] = useState<{ name: string; prevAgent: string } | null>(null);
   const [recapOpen, setRecapOpen] = useState(false);
@@ -472,18 +472,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   };
 
   // Note da Ispezioni: solo le ispezioni dell'agente su quel cliente, in ordine dalla più recente
-  const openInspectionNotes = async (customerId: string | null | undefined, name: string) => {
+  const openInspectionNotes = (customerId: string | null | undefined, name: string) => {
     if (!customerId || !actorId) return;
     hap.light();
-    setNotesLoading(true);
-    try {
-      const items = await fetchCustomerInspectionNotes(customerId, actorId);
-      setNotesTarget({ name, items, error: '' });
-    } catch (e) {
-      setNotesTarget({ name, items: [], error: e instanceof Error ? e.message : 'Errore nel caricamento delle note' });
-    } finally {
-      setNotesLoading(false);
-    }
+    setNotesTarget({ name, customerId });
   };
 
 
@@ -1437,13 +1429,13 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             testID="aitour-live-inspection-notes"
             accessibilityRole="button"
             activeOpacity={0.75}
-            disabled={!next.candidate.customerId || notesLoading}
+            disabled={!next.candidate.customerId}
             style={[styles.verificationButton, !next.candidate.customerId && styles.notesBtnDisabled]}
             onPress={() => openInspectionNotes(next.candidate.customerId, next.candidate.name)}
           >
             <Ionicons name="document-text-outline" size={20} color={AI_PURPLE_TEXT} />
             <Text testID="aitour-live-inspection-notes-label" style={styles.verificationButtonText}>
-              {notesLoading ? 'Carico le note...' : 'Note da Ispezioni'}
+              Note da Ispezioni
             </Text>
           </TouchableOpacity>
           <TouchableOpacity testID="aitour-live-verify" accessibilityRole="button" activeOpacity={0.75} disabled={busy || recalcing || !actorId} style={styles.verificationButton}
@@ -1614,44 +1606,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         onClose={() => setVerificationTarget(null)} onSuccess={(withoutGps) => { setVerificationTarget(null); setMessage(`Segnalazione inviata${withoutGps ? ' senza posizione GPS' : ''}. Lo staff verificherà il punto vendita. La tappa resta nel giro.`); }} />}
 
       {/* Note da Ispezioni: elenco scorrevole con nota e data */}
-      <Modal visible={!!notesTarget} animationType="fade" transparent onRequestClose={() => setNotesTarget(null)}>
-        <View style={styles.centerBackdrop}>
-          <View style={styles.dialog} testID="aitour-inspection-notes-dialog">
-            <Text style={styles.dialogTitle} testID="aitour-inspection-notes-title">Note da Ispezioni</Text>
-            <Text style={styles.notesCustomer} numberOfLines={2}>{notesTarget?.name}</Text>
-            {notesTarget?.error ? (
-              <Text testID="aitour-inspection-notes-error" style={styles.notesError}>{notesTarget.error}</Text>
-            ) : notesTarget && notesTarget.items.length === 0 ? (
-              <Text testID="aitour-inspection-notes-empty" style={styles.notesEmpty}>Nessuna nota registrata nelle ispezioni precedenti di questo cliente.</Text>
-            ) : (
-              <ScrollView testID="aitour-inspection-notes-scroll" style={styles.notesScroll} contentContainerStyle={styles.notesScrollContent} showsVerticalScrollIndicator>
-                {notesTarget?.items.map((n) => {
-                  const d = new Date(n.date);
-                  return (
-                    <View key={n.id} testID={`aitour-inspection-note-${n.id}`} style={styles.noteItem}>
-                      <View style={styles.noteItemTop}>
-                        <Text style={styles.noteDate}>
-                          {d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })} · {d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
-                        {n.photoCount > 0 && (
-                          <View style={styles.notePhotoChip}>
-                            <Ionicons name="images-outline" size={12} color={DS.ink2} />
-                            <Text style={styles.notePhotoText}>{n.photoCount}</Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.noteText}>{n.notes}</Text>
-                    </View>
-                  );
-                })}
-              </ScrollView>
-            )}
-            <TouchableOpacity testID="aitour-inspection-notes-close" style={styles.dialogCancel} onPress={() => setNotesTarget(null)} activeOpacity={0.7}>
-              <Text style={styles.dialogCancelText}>Chiudi</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      {notesTarget && actorId && <InspectionNotesDialog key={`${actorId}:${notesTarget.customerId}`}
+        agentId={actorId} customerId={notesTarget.customerId} name={notesTarget.name} onClose={() => setNotesTarget(null)} />}
 
 
       {/* Dettaglio tappa: informazioni cliente + Fallo Ora */}

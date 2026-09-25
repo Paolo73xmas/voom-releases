@@ -275,7 +275,8 @@ export async function getAgentOrphanClaims(agentId: string): Promise<OrphanClaim
       .eq('requesting_agent_id', agentId)
       .order('created_at', { ascending: false });
 
-    if (error || !claimsData || claimsData.length === 0) return [];
+    if (error) throw error;
+    if (!claimsData || claimsData.length === 0) return [];
 
     const customerIds = [...new Set(claimsData.map(c => c.customer_id))];
     const tabaccheriaIds = [...new Set(claimsData.map(c => c.tabaccheria_id))];
@@ -331,6 +332,6 @@ export async function getAgentOrphanClaims(agentId: string): Promise<OrphanClaim
     });
   } catch (e) {
     console.error('[getAgentOrphanClaims] Exception:', e);
-    return [];
+    throw e;
   }
 }

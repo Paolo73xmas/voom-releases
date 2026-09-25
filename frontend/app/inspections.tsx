@@ -1,12 +1,15 @@
 // Elenco ispezioni eseguite dall'agente (ognuno vede solo le proprie, come il gestionale web):
 // ricerca su cliente/note, filtro per intervallo date, dettaglio con foto.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
-import { fetchAgentInspections, getInspectionStatusLabel, type AgentInspection } from '../lib/api/inspections';
+import { fetchAgentInspectionPage, getInspectionStatusLabel, type AgentInspection } from '../lib/api/inspections';
+import { usePagedHistory } from '../hooks/usePagedHistory';
+import { useDebounce } from '../hooks/useDebounce';
+import { HistoryFooter, ReadErrorNotice } from '../components/HistoryFeedback';
 import { DS, JAKARTA } from '../lib/theme';
 import { hap } from '../lib/haptics';
 
@@ -23,36 +26,14 @@ export default function InspectionsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
-  const [items, setItems] = useState<AgentInspection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [preset, setPreset] = useState<typeof PRESETS[number]['key']>('30');
-
-  const load = useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
-    if (!user) return;
-    mode === 'refresh' ? setRefreshing(true) : setLoading(true);
-    setError('');
-    try {
-      const days = PRESETS.find((p) => p.key === preset)?.days ?? null;
-      const dateFrom = days ? isoDay(new Date(Date.now() - days * 86400000)) : undefined;
-      setItems(await fetchAgentInspections(user.id, { dateFrom, limit: 300 }));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Errore nel caricamento delle ispezioni');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [user, preset]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((i) => i.customerName.toLowerCase().includes(q) || i.customerCity.toLowerCase().includes(q) || (i.notes || '').toLowerCase().includes(q));
-  }, [items, search]);
+  const query = useDebounce(search.trim(), 300);
+  const days = PRESETS.find(p => p.key === preset)?.days ?? null;
+  const dateFrom = days ? isoDay(new Date(Date.now() - days * 86400000)) : undefined;
+  const history = usePagedHistory(user ? `${user.id}:${dateFrom || 'all'}:${query}` : '',
+    offset => fetchAgentInspectionPage(user!.id, { dateFrom, search: query, offset }));
+  const { rows: filtered, loading, refreshing, error, count } = history;
 
   const renderItem = ({ item }: { item: AgentInspection }) => {
     const d = new Date(item.inspection_date);
@@ -69,11 +50,11 @@ export default function InspectionsScreen() {
           </Text>
           <View style={styles.photoChip}>
             <Ionicons name="images-outline" size={13} color={DS.ink2} />
-            <Text style={styles.photoChipText}>{item.photoCount}</Text>
+            <Text testID={`inspection-row-${item.id}-photos`} style={styles.photoChipText}>{item.photoCount}</Text>
           </View>
         </View>
-        <Text style={styles.name} numberOfLines={1}>{item.customerName}</Text>
-        {!!item.customerCity && <Text style={styles.city} numberOfLines={1}>{item.customerCity}</Text>}
+        <Text testID={`inspection-row-${item.id}-customer`} style={styles.name} numberOfLines={1}>{item.customerName}</Text>
+        {!!item.customerCity && <Text testID={`inspection-row-${item.id}-city`} style={styles.city} numberOfLines={1}>{item.customerCity}</Text>}
         {item.notes ? (
           <Text testID={`inspection-row-${item.id}-notes`} style={styles.notes} numberOfLines={3}>{item.notes}</Text>
         ) : (
@@ -132,9 +113,9 @@ export default function InspectionsScreen() {
       </View>
 
       <Text testID="inspections-count" style={styles.count}>
-        {loading ? 'Caricamento...' : `${filtered.length} ${filtered.length === 1 ? 'ispezione' : 'ispezioni'}`}
+        {loading ? 'Caricamento...' : error && !filtered.length ? 'Conteggio non disponibile' : `${count} ${count === 1 ? 'ispezione' : 'ispezioni'}`}
       </Text>
-      {!!error && <Text testID="inspections-error" style={styles.error}>{error}</Text>}
+      <ReadErrorNotice id="inspections" message={error} onRetry={history.retry} busy={refreshing || history.loadingMore} />
 
       {loading ? (
         <ActivityIndicator style={styles.loader} color={DS.brand} />
@@ -145,14 +126,15 @@ export default function InspectionsScreen() {
           keyExtractor={(i) => i.id}
           renderItem={renderItem}
           contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 32 }]}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load('refresh')} tintColor={DS.brand} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={history.refresh} tintColor={DS.brand} />}
+          ListFooterComponent={!error ? <HistoryFooter id="inspections" loaded={filtered.length} count={count} hasMore={history.hasMore} busy={history.loadingMore} onMore={history.loadMore} /> : null}
           ListEmptyComponent={
-            <View style={styles.empty}>
+            !error ? <View style={styles.empty}>
               <Ionicons name="clipboard-outline" size={32} color={DS.borderStrong} />
               <Text testID="inspections-empty" style={styles.emptyText}>
                 {search ? 'Nessuna ispezione trovata con questa ricerca' : 'Nessuna ispezione nel periodo selezionato'}
               </Text>
-            </View>
+            </View> : null
           }
         />
       )}

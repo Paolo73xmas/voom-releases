@@ -102,7 +102,25 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "esegui un audit della applicazione per verificare che tutto funzioni come previsto. Scelta confermata: audit funzionale completo con rapporto dei problemi, senza modificare dati reali."
+user_problem_statement: "Dopo audit: 'procedi con attenzione'. Conferma 'Sì, correggi i problemi confermati e verifica ogni gruppo'. Vincolo aggiuntivo ESPLICITO: 'escludi il discorsso del video'. Correggere F01-F06, nessun dato reale modificato, video esclusi."
+
+audit_fixes_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  report: "test_reports/correzioni_audit_20260925.md"
+  priority: high
+  excluded: [video_tutorial, backend_media, auth_changes, database_writes, new_profile_notification_features]
+  status_history:
+    - agent: main
+      comment: "VERIFICA FINALE PASS perimetroF01-F06:104/104unit13file,TSC/lintPASS,6AI+2verificationPASS. Agent49partial22PASS e harnessgatebloccato: RCA/testsMainloginrealesemprePASS, NOauth/privacybugpatch. MainUI: sub25.60/24.00; dashboard36ordinireali net8023.83 accisa846.96 IVA1441.65 lordomerce10312.44 identicialdettaglio(arrotondaperordine); orders250/4937+searchMilano1062+faultpage2/retryPASS;subs150/345;isp100/214+racepresetobsoletoguardPASS; dashboardrefresh/503preserva5/retryPASS; rimborsierror/ritorna10/no0fakePASS;reclamierrorretryPASS;profilo3.0.1visibile320PASS. PopupcomponenteREale infixtureSOLOTEST55note ultima/close390/pendingclose320/late/retryPASS; APInotescliente3realiPASS. ZeroCRMmutationattempts. Footerorderscoperto scopertoerisolto: nohookbottomheight finale,padding120, riscontrato250pagePASS. VideoNONEtoccati. LimitiCRUD/Liveoperativoreale/native riportati; rapportoautorevoleMD eiteration49.main_agent_validation."
+    - agent: main
+      comment: "F01 dettaglioSostituzioni usa prezzi disponibili sulle righe API e quantitànullish, label listinoattuale; prezzomancante nonspacciatozero. F02 dashboard usaorderBreakdown permercenospedizione+estero/EST/IVA0/accisa, escludeannullati, rangeinteromese paginato, conteggioordinitotaleHEAD nonlistlength. F03 APIPage50+exactcount/stablesortid/searchserver rootORaliasleftcustomers (provatoREAL3tabelle), usePagedHistory reset/raceguard/preserveonerror/appenddedup, footerloadmore, ordinitotalistatidb. F04 refresh+buttondashboard aggiornainspezioni ebadgeTour; F05 erroriinline retry dashboard/rimborsi/sostituzioni/reclami nofalseempty. F06 notecliente/agente fetchallpaginato50+filterwhitespace, nuovoDialogimmediato/loading/retry/closecancelslate. Minori: profileversiondaConstants, reclamoapprovato→ordineconcliente/Step2. Nessuna auth/config/DB/backend/video modifica. Pure22nuoviregressioniPASS;TSClintPASS; suiteesistente82PASS (totaleatteso104)."
+    - agent: main
+      comment: "SELF UI reale admin 20260925_111735: dashboard noconsoleerrors/statserror0, totalesostituzioni345, dettaglioAPI12.8/12x2 oraUI25.60/24.00, ricercaMilano86 PASS, ordinecount4937 PASS. Assert ricercaordini1022 era TESTerrato (probe precedentesolo2campicustomer; appcerca13campi+numordine) UI1062coerente e0pageerrors/0writes. NONpatcharesuconteggio hardcoded; testerconfrontarequeryAPIidentica. Screenshot prima framefinaleAnimatedNumber mostra4898 inanimazione NONbugconteggio. Datarealevariabile traagenti/tempo."
+  test_plan:
+    current_focus: [substitution_detail_values, dashboard_fiscal_counts, paginated_history_server_search, inspection_notes_history_dialog, dashboard_refresh_error_retry, rimborsi_claims_errors, profile_version, regression_checkout]
+    protected_data: "SOLA LETTURA Supabase/storage; bloccarePOST/PATCH/PUT/DELETE eccetto auth token/logout e RPCread-onlywhitelist. NESSUN avvio Live reale/heartbeat/GPS/seed/cleanup/ordine/followup reale. No Live tadini/roberto/Valentina. ScenarioLive evolume SOLO fixture automazione locale o pure test, mai scrittureDB. Non modificare auth/privacy/credenziali/dep/env. ESCLUDERE VIDEO esplicitamente richiesto utente: NONrunbackendtestfailingrange, NONfixbackend."
 
 functional_audit_readonly_current:
   implemented: true
@@ -364,7 +382,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Audit funzionale completo in sola lettura: vedere functional_audit_readonly_current"
+    - "Correzioni audit F01-F06 senza video: vedere audit_fixes_current (prevale sulle vecchie note)"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"

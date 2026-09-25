@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
-import { fetchOrders, getOrderStatusLabel, getOrderStatusColor } from '../../lib/api/orders';
+import { fetchOrdersPage, getOrderStatusLabel, getOrderStatusColor } from '../../lib/api/orders';
 import { Order } from '../../types';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -21,6 +21,8 @@ import { SkeletonList } from '../../components/Skeleton';
 import { EmptyState } from '../../components/EmptyState';
 import { hap } from '../../lib/haptics';
 import { COLORS } from '../../lib/theme';
+import { usePagedHistory } from '../../hooks/usePagedHistory';
+import { HistoryFooter, ReadErrorNotice } from '../../components/HistoryFeedback';
 
 const formatDate = (dateString: string) => {
   try {
@@ -99,54 +101,13 @@ const OrderCard = memo(function OrderCard({
 export default function OrdersScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [searchText, setSearchText] = useState('');
   const debouncedSearch = useDebounce(searchText, 300);
-
-  const loadOrders = useCallback(async (force: boolean = false) => {
-    if (!user) return;
-    try {
-      setErrorMessage('');
-      const data = await fetchOrders(user.id, user.role, user.branchId, { force });
-      setOrders(data);
-    } catch (error) {
-      console.error('Error loading orders:', error);
-      setErrorMessage('Impossibile aggiornare gli ordini. Controlla la connessione e riprova.');
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadOrders(true);
-    setRefreshing(false);
-  }, [loadOrders]);
-
-  // Filter orders by searching across all customer fields (min 3 chars)
-  const filteredOrders = useMemo(() => {
-    const q = debouncedSearch.trim().toLowerCase();
-    if (q.length < 3) return orders;
-
-    return orders.filter(order => {
-      const c = order.customer;
-
-      const fields = [
-        c?.business_name, c?.address, c?.city, c?.province, c?.postal_code,
-        c?.contact_name, c?.contact_surname, c?.contact_phone, c?.contact_email,
-        c?.vat_number, c?.fiscal_code, c?.pec, c?.sdi, order.order_number,
-      ];
-
-      return fields.some(f => f && f.toLowerCase().includes(q));
-    });
-  }, [orders, debouncedSearch]);
+  const query = debouncedSearch.trim().length >= 3 ? debouncedSearch.trim() : '';
+  const history = usePagedHistory(user ? `${user.id}:${user.role}:${user.branchId || ''}:${query}` : '',
+    offset => fetchOrdersPage(user!.id, user!.role, user!.branchId, { offset, search: query }));
+  const { rows: filteredOrders, loading, refreshing, error: errorMessage } = history;
+  const onRefresh = history.refresh;
 
   const handlePressOrder = useCallback((id: string) => {
     hap.light();
@@ -159,25 +120,10 @@ export default function OrdersScreen() {
 
   const keyExtractor = useCallback((item: Order) => item.id, []);
 
-  const stats = useMemo(() => ({
-    total: filteredOrders.length,
-    delivered: filteredOrders.filter(o => o.status === 'delivered').length,
-    inProgress: filteredOrders.filter(o => ['confirmed', 'processing', 'shipped'].includes(o.status)).length,
-  }), [filteredOrders]);
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={18} color="#9CA3AF" />
-            <View style={{ flex: 1, marginLeft: 8, height: 14, backgroundColor: COLORS.border, borderRadius: 4 }} />
-          </View>
-        </View>
-        <SkeletonList count={6} height={130} />
-      </View>
-    );
-  }
+  const unknownCount = loading || (!!errorMessage && filteredOrders.length === 0);
+  const stats = { total: unknownCount ? '—' : history.count,
+    delivered: unknownCount ? '—' : history.totals.delivered ?? 0,
+    inProgress: unknownCount ? '—' : history.totals.inProgress ?? 0 };
 
   return (
     <View style={styles.container}>
@@ -188,7 +134,7 @@ export default function OrdersScreen() {
           <TextInput
             testID="orders-search"
             style={styles.searchInput}
-            placeholder="Cerca per cliente (min. 3 caratteri)..."
+            placeholder="Cliente o ordine (min. 3 caratteri)..."
             placeholderTextColor={COLORS.textLight}
             value={searchText}
             onChangeText={setSearchText}
@@ -205,8 +151,8 @@ export default function OrdersScreen() {
           <Text style={styles.searchHint}>Inserisci almeno 3 caratteri per cercare</Text>
         )}
         {debouncedSearch.length >= 3 && (
-          <Text style={styles.searchResult}>
-            {filteredOrders.length} {filteredOrders.length === 1 ? 'ordine trovato' : 'ordini trovati'} per &quot;{debouncedSearch}&quot;
+          <Text testID="orders-search-count" style={styles.searchResult}>
+            {loading ? 'Ricerca in corso...' : `${stats.total} ordini trovati per "${debouncedSearch}"`}
           </Text>
         )}
       </View>
@@ -214,41 +160,41 @@ export default function OrdersScreen() {
       {/* Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.total}</Text>
+          <Text testID="orders-total-count" style={styles.statNumber}>{stats.total}</Text>
           <Text style={styles.statLabel}>Totali</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.delivered}</Text>
+          <Text testID="orders-delivered-count" style={styles.statNumber}>{stats.delivered}</Text>
           <Text style={styles.statLabel}>Consegnati</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.inProgress}</Text>
+          <Text testID="orders-progress-count" style={styles.statNumber}>{stats.inProgress}</Text>
           <Text style={styles.statLabel}>In Corso</Text>
         </View>
       </View>
 
       {/* Orders List - FlashList */}
-      {!!errorMessage && <View testID="orders-error" style={{ padding: 16 }}>
-        <Text accessibilityRole="alert" style={{ color: COLORS.danger }}>{errorMessage}</Text>
-        <TouchableOpacity testID="orders-retry" onPress={onRefresh} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: COLORS.primary }}>Riprova</Text></TouchableOpacity>
-      </View>}
+      <ReadErrorNotice id="orders" message={errorMessage} onRetry={history.retry} busy={refreshing || history.loadingMore} />
       <FlatList
-        data={filteredOrders}
+        testID="orders-list"
+        data={loading ? [] : filteredOrders}
+        keyboardShouldPersistTaps="handled"
         renderItem={renderOrder}
         keyExtractor={keyExtractor}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, styles.listBottomSpace]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        ListEmptyComponent={
+        ListFooterComponent={!errorMessage && !loading ? <HistoryFooter id="orders" loaded={filteredOrders.length} count={history.count} hasMore={history.hasMore} busy={history.loadingMore} onMore={history.loadMore} /> : null}
+        ListEmptyComponent={loading ? <SkeletonList count={6} height={130} /> : !errorMessage ?
           <EmptyState
             icon="cart-outline"
             title="Nessun ordine trovato"
             message={debouncedSearch ? 'Modifica la ricerca per trovare ordini' : 'Crea il tuo primo ordine dal Dashboard'}
             iconGradient="success"
-          />
+          /> : null
         }
       />
     </View>
@@ -256,6 +202,7 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
+  listBottomSpace: { paddingBottom: 120 },
   container: {
     flex: 1,
     backgroundColor: COLORS.bg,

@@ -19,9 +19,13 @@ import {
 } from '../../lib/theme';
 import { setThemeAndReload } from '../../lib/themeToggle';
 import { LogoutButton } from '../../components/LogoutButton';
+import Constants from 'expo-constants';
+import appConfig from '../../app.json';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  // L'anteprima web può ricevere un manifest generico: usa la stessa configurazione del progetto.
+  const appVersion = Platform.OS === 'web' ? appConfig.expo.version : Constants.expoConfig?.version || appConfig.expo.version;
   const { user, profile } = useAuthStore();
   const [themeMode, setThemeMode] = React.useState<ThemeMode>(currentThemeMode);
 
@@ -143,7 +147,7 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('VOOM Crm', `Versione: 1.0.0\nPiattaforma: ${Platform.OS}\n\nSviluppato da Jivea S.r.l.\n© ${new Date().getFullYear()} Tutti i diritti riservati`)}>
+          <TouchableOpacity testID="profile-app-info" style={styles.menuItem} onPress={() => Alert.alert('VOOM Crm', `Versione: ${appVersion}\nPiattaforma: ${Platform.OS}\n\nSviluppato da Jivea S.r.l.\n© ${new Date().getFullYear()} Tutti i diritti riservati`)}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="information-circle-outline" size={20} color="#6B7280" />
             </View>
@@ -157,7 +161,7 @@ export default function ProfileScreen() {
       <LogoutButton testID="profile-logout" style={styles.logoutButton} textStyle={styles.logoutText} color={COLORS.danger} label="Esci" />
 
       {/* Version */}
-      <Text style={styles.version}>VOOM Crm v1.0.0</Text>
+      <Text testID="profile-app-version" style={styles.version}>VOOM Crm v{appVersion}</Text>
     </ScrollView>
   );
 }
@@ -169,6 +173,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+    paddingBottom: 120,
   },
   header: {
     alignItems: 'center',

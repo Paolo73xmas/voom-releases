@@ -2,6 +2,7 @@ import { supabase } from '../supabase';
 import { Inspection } from '../../types';
 import { uploadSinglePhoto } from './photos';
 import { closeDueFollowUps } from './appointments';
+import { literalSearch, pageRange, readPage, readEveryPage, type ReadPageOptions } from './read-pages';
 
 export async function fetchInspections(userId: string, userRole: string): Promise<Inspection[]> {
   try {
@@ -153,17 +154,30 @@ export interface AgentInspection {
   customerCity: string;
 }
 
-export async function fetchAgentInspections(agentId: string, opts?: { limit?: number; dateFrom?: string; dateTo?: string }): Promise<AgentInspection[]> {  let query = supabase
+type InspectionPageOptions = ReadPageOptions & { dateFrom?: string; dateTo?: string };
+
+export async function fetchAgentInspectionPage(agentId: string, opts: InspectionPageOptions = {}) {
+  if (!agentId) throw new Error('Agente non disponibile');
+  const { offset, end } = pageRange(opts);
+  let query = supabase
     .from('inspections')
-    .select('id, inspection_date, notes, status, customer_id, customers(business_name, city), inspection_photos(id)')
+    .select('id, inspection_date, notes, status, customer_id, customers(business_name, city), inspection_photos(id), matched_customer:customers()', { count: 'exact' })
     .eq('agent_id', agentId)
-    .order('inspection_date', { ascending: false });
-  if (opts?.dateFrom) query = query.gte('inspection_date', `${opts.dateFrom}T00:00:00`);
-  if (opts?.dateTo) query = query.lte('inspection_date', `${opts.dateTo}T23:59:59`);
-  if (opts?.limit) query = query.limit(opts.limit);
-  const { data, error } = await query;
+    .order('inspection_date', { ascending: false }).order('id').range(offset, end);
+  if (opts.dateFrom) query = query.gte('inspection_date', new Date(`${opts.dateFrom}T00:00:00`).toISOString());
+  if (opts.dateTo) {
+    const endDay = new Date(`${opts.dateTo}T00:00:00`);
+    endDay.setDate(endDay.getDate() + 1);
+    query = query.lt('inspection_date', endDay.toISOString());
+  }
+  if (opts.search?.trim()) {
+    const term = literalSearch(opts.search);
+    query = query.or(`business_name.ilike.${term},city.ilike.${term}`, { referencedTable: 'matched_customer' })
+      .or(`notes.ilike.${term},matched_customer.not.is.null`);
+  }
+  const { data, error, count } = await query;
   if (error) throw error;
-  return (data || []).map((row) => {
+  const rows: AgentInspection[] = (data || []).map((row) => {
     const customer = row.customers as { business_name?: string; city?: string } | null;
     return {
       id: row.id,
@@ -176,21 +190,29 @@ export async function fetchAgentInspections(agentId: string, opts?: { limit?: nu
       customerCity: customer?.city || '',
     };
   });
+  return readPage(rows, count, offset);
+}
+
+/** Piccolo riepilogo dashboard; lo storico completo usa fetchAgentInspectionPage. */
+export async function fetchAgentInspections(agentId: string, opts?: { limit?: number; dateFrom?: string; dateTo?: string }): Promise<AgentInspection[]> {
+  return (await fetchAgentInspectionPage(agentId, { ...opts, pageSize: opts?.limit ?? 50 })).rows;
 }
 
 /** Note delle ispezioni già eseguite su un cliente (solo quelle dell'agente): usate in Tour Live. */
 export interface InspectionNote { id: string; date: string; notes: string; photoCount: number }
 
-export async function fetchCustomerInspectionNotes(customerId: string, agentId: string, limit = 30): Promise<InspectionNote[]> {
-  const { data, error } = await supabase
+export async function fetchCustomerInspectionNotes(customerId: string, agentId: string): Promise<InspectionNote[]> {
+  if (!customerId || !agentId) throw new Error('Cliente o agente non disponibile');
+  // Pagina tutte le note di QUESTO cliente/agente: nessun tetto30, nessuno storico globale in memoria.
+  const data = await readEveryPage((from, to) => supabase
     .from('inspections')
     .select('id, inspection_date, notes, inspection_photos(id)')
     .eq('customer_id', customerId)
     .eq('agent_id', agentId)
+    .not('notes', 'is', null).neq('notes', '')
     .order('inspection_date', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data || [])
+    .order('id').range(from, to), 50);
+  return data
     .map((row) => ({
       id: row.id,
       date: row.inspection_date,

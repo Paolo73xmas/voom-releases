@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { getAgentOrphanClaims, OrphanClaimWithDetails } from '../lib/api/orphan-claims';
 import { COLORS } from '../lib/theme';
+import { ReadErrorNotice } from '../components/HistoryFeedback';
+import { customerOrderRoute } from '../lib/customer-order-route';
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; icon: string }> = {
   pending: { label: 'In Attesa', color: '#92400E', bg: '#FEF3C7', icon: 'time-outline' },
@@ -27,14 +29,16 @@ export default function OrphanClaimsScreen() {
   const [claims, setClaims] = useState<OrphanClaimWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   const loadClaims = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
+      setLoadError('');
       const data = await getAgentOrphanClaims(user.id);
       setClaims(data);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setLoadError('Impossibile aggiornare i reclami. Controlla la connessione e riprova.'); }
     finally { setLoading(false); }
   }, [user]);
 
@@ -65,8 +69,9 @@ export default function OrphanClaimsScreen() {
         </View>
         {item.status === 'approved' && item.customer_id && (
           <TouchableOpacity
+            testID={`orphan-claim-order-${item.id}`}
             style={s.orderBtn}
-            onPress={() => router.push('/order-collection-v2')}
+            onPress={() => router.push(customerOrderRoute(item.customer_id!, item.customer_business_name || item.tabaccheria_denominazione || ''))}
           >
             <Ionicons name="cart" size={16} color="#FFF" />
             <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 13 }}>Crea Ordine</Text>
@@ -105,6 +110,7 @@ export default function OrphanClaimsScreen() {
         </View>
       </View>
 
+      <ReadErrorNotice id="orphan-claims" message={loadError} onRetry={onRefresh} busy={refreshing} />
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#7C3AED" />
@@ -116,12 +122,12 @@ export default function OrphanClaimsScreen() {
           keyExtractor={c => c.id}
           contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={
+          ListEmptyComponent={!loadError ?
             <View style={{ alignItems: 'center', marginTop: 60 }}>
               <Ionicons name="flag-outline" size={48} color="#D1D5DB" />
               <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.textMuted, marginTop: 12 }}>Nessun reclamo</Text>
               <Text style={{ fontSize: 13, color: COLORS.textLight, marginTop: 4, textAlign: 'center' }}>Reclama clienti orfani dalla Mappa</Text>
-            </View>
+            </View> : null
           }
         />
       )}

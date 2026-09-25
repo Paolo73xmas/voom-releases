@@ -1,5 +1,12 @@
 # VOOM Sales Mobile App - PRD
 
+## 25/09/2026 — Riaperto blocco build Android: lockfile locale NON nel commit salvato
+- Nuovi logutente Android EASstep10fail“No lockfilefound”, versionCode271→272, **stessoUUID4bb87902-ca82-4a5d-8bbe-92ac439be61b** deiprecedentilogsiOS. Sceltautente: «Verifica direttamente se la build sta usando sorgenti precedenti alla correzione»; questa iterazione SOLOverificanonnuovepatchapp.
+- Main/RCA riscontro: yarn.lock presente452334bytes/SHAf95d...a33a4cd identicoiteration51MA`git ls-files`vuoto/`HEAD:frontend/yarn.lock`assente/nessuncommitnellastoria. HEAD29eda92c contienepackagepinSupabase2.109.0/ignoretestsreport maNONlock. Gitignore root/frontendnegazioni consentonofile. Quindi precedentevalidazionefreshinstall/exportlocale NONbasta perconsegna.
+- **P0APERTO: lockfile nonrisultanelcodicesalvato, buildremota ancoraNONrisolta.** NONdire«bastaselezionareilnuovosnapshot»come certezza: UUID→gitmapping/archivioremotonondisponibili. Due logstessoUUIDèfattocerto; diagnosiRCA«piattaformausaHEAD»NONprovata, rettificata. Possibilestale snapshot/esclusionefile, causaplatformesattadaaccertare.
+- Deploymentagentinvocatoancora: generico--tunnelSupervisorNONcausale, nessunapatchinfra. Supportoconsultato: nessunaproceduradocumentata inclusioneforzatalock néUUIDmapping, raccomandaverificasupportoplatformsalvataggio/esportazione. Rispostasupportoriportataall'utenteintegralmente. NonGITwrites/nonDocker/env/DB/authchanges, nessunanuovabuildremota.
+- Rapportoautorevole piùrecente `test_reports/android_snapshot_verification_20260925.md`. Next: includere realmente frontend/yarn.lock nella snapshotcorrente evederloestratto dalbuilder, poi superarepreflightEAS. Soloallora dichiararebloccobuildrisolto. Conservarepin2.109/4.1.11 evalidazioni116testlocali precedenti, noEAS_SKIP_LOCKFILE/noignoreengines/nohookdiaggiramento.
+
 ## 25/09/2026 — Build iOS: lockfile ripristinato e compatibilità Node20 verificata
 - Utente allega logsEASpreparazioneCLI24.8.0 STEP13 “No lockfile found” e autorizza fixmirato+verificabuild, NO Docker/database/credenziali. Errore PRIMA buildremota, signingPASS; Mongo/Atlas NONimplicato.
 - Riscontroiniziale: frontend/yarn.lock assente siafilesystem siastoricoGit, nonignore esplicito; vecchioreportprovavafilelocale maNONsnapshot. Causaesattaperditaplatformnonprovata. RigeneratoconYarn1.22.22, aggiunteexceptionroot/frontendgitignoreperincluderefile. NONusareEASskiplockfile/ignoreengines.

@@ -102,17 +102,19 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Errore preparazione iOS EAS CLI24.8.0: No lockfile found in the project directory. Utente autorizza correzione mirata e verifica build, senza Docker/database/credenziali."
+user_problem_statement: "Nuovi log Android EAS No lockfilefound, UUID4bb87902 uguale ai precedenti log iOS. Utente sceglie: Verifica direttamente se la build sta usando sorgenti precedenti alla correzione."
 
 ios_lockfile_fix_current:
   implemented: true
-  working: true
-  needs_retesting: false
+  working: false
+  needs_retesting: true
   remote_eas_build_verified: false
-  report: "test_reports/ios_lockfile_fix_20260925.md"
+  report: "test_reports/android_snapshot_verification_20260925.md"
   general_deployment_agent_status: "fail_generico_non_causale: tunnel/ignore. Evidenza main root.gitignore esiste, credenziali escluse e non tracciate; non modificati file protetti. Preparazione EAS specifica PASS verificata; remoto non eseguito."
   priority: high
   status_history:
+    - agent: main
+      comment: "RIAPERTO dopoAndroidfail. Verificadiretta: HEAD29eda92c noncontieneyarn.lock (gitlsfilesvuoto/cat-fileHEADfails/historyempty), malocalefileeSHAesattiiteration51 eSupabasepin2.109committed. Gitignorecorretto. SameUUID4bbnei2logscerto, mappingUUIDgit/remotearchiveUNKNOWN, NONattribuireHEADalla build senzaprova. Localeinstall/export116PASSnonprovasnapshotconsegna. Nessun nuovoappcodechange/Gitwrite/infrastructure/CRM/remoteBuild. DeploymentagentgenericSupervisorirrilevante; supportKBnessunafixproceduradocumentataincludelock raccomandaassistenza perautomaticosave/export. StatoAPERTO bisogna vedere lock nelcodicesalvato earchiviobuilder prima ridichiararefixed."
     - agent: main
       comment: "Iteration51lettoPASS: coldinstallcopiapulitaNode20.19.4+Yarn1.22.22frozenfullenginechecks,116unit,TSC,lint0errors63warnings; exportios--no-bytecodecacheisolata2872mods66assets6.78MBPASS. Lock/manifesthashinvariati; localarchiveincludelock. MAINNode24frozeninTEMPpassstessihash. Unicachangemanifest Supabase^2.101.1→2.109.0, main/Vitestpreservati. NessunEASskipcheck oignoreengines. Reportreadonlylimits: remotaIPA/archivioEmergentnuovo NONverificati, userdeverilanciare. Root/frontendnegationgitignoreregistrata. Docker/env/supervisor/backend/auth/Metro/app.jsoninvariati,0CRMwrites. Ulterioredeploymenthealthcheckrichiestodopofix; generico--tunnelpropostoinprimononcausalenonapplicato."
     - agent: main
@@ -414,7 +416,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Preparazione build iOS: ios_lockfile_fix_current prevale, no deploy remoto né dati reali"
+    - "Build Android/iOS BLOCCO RIAPERTO: lockfile locale manca dal commit29eda92c; verificare inclusione snapshot/remoto, no modificheapp/infra arbitrarie"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"

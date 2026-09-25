@@ -1,5 +1,7 @@
 # Preparazione build iOS — lockfile mancante, 25 settembre 2026
 
+> **Stato aggiornato:** la successiva verifica Android ha riaperto il problema. Il lockfile verificato localmente NON compare nel commit29eda92c. Questo rapporto prova l'installazione/esportazione locale, non la consegna alla build. Vedere `android_snapshot_verification_20260925.md`; non dichiarare il blocco remoto risolto.
+
 ## Errore causale nei log dell'utente
 
 La preparazione si arresta in **STEP13, EAS CLI24.8.0**, prima dell'invio di una build iOS remota:

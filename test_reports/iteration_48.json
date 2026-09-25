@@ -1,0 +1,118 @@
+{
+  "summary": "Rapporto preliminare audit READ-ONLY. Rettifiche e verifiche supplementari nel main_agent_validation e in audit_funzionale_20260925.md; non utilizzare percentuali o gravità preliminari come certificazione complessiva.",
+  "main_agent_validation": {
+    "authoritative_report": "/app/test_reports/audit_funzionale_20260925.md",
+    "audit_only_no_business_fixes": true,
+    "calendar_cancel_issue": "FALSE POSITIVE: chiusura verificata con click normale auto-atteso su 390x844 e 320x568; nessuna patch app.",
+    "legacy_video_suffix_priority": "MEDIUM, non critical globale",
+    "frontend_success_percentage": "Non usare 78%: matrice originale insufficiente a supportarla",
+    "additional_confirmed_high_issue": "Dettaglio Sostituzioni in sessione nuova mostra prezzi/totali0: API12.80x2 e12.00x2; UI0.00. Fonte prezzi nel products state caricato soltanto da wizard.",
+    "additional_verified_flows": ["Checkout reale Italia Step1-5 senza submit:9pagamenti5spedizioni", "Checkout reale Estero Step2-5 senza submit:Contanti2spedizioni", "Scadenziario reale ricerca/settimana/mese", "Rimborsi10righe e filtri", "Prodotti266attivi6categorie", "Bozze stato vuoto", "Profilo e privacy readonly", "Errore503ispezioni SIMULATO solo test riproduce falsoempty; recoveryreale5card e211ispezioni"],
+    "crm_mutation_attempts_in_main_browser_tests": 0,
+    "coverage_limits": ["CRUD e Tour Live reali non eseguiti", "GPS/foto/biometria/microfono nativi non verificati", "Nuovo isolamento cross-agente non verificato: iteration47 resta evidenza storica", "Mappa/anagrafica non riverificate end-to-end", "Scenari volume/race restano analisi codice"],
+    "artifact_note": "Screenshot preliminari realmente .jpeg; link .jpg nel preliminare inesatti. Vedere cartelle e prove nel rapporto autorevole."
+  },
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/video-tutorial/1 (Range: bytes=-2)",
+        "issue": "Range suffix non conforme: restituisce i primi byte (0-2) invece degli ultimi 2 byte richiesti.",
+        "priority": "HIGH/CRITICAL"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Calendar appointment modal",
+        "issue": "Su viewport mobile 390x844 il pulsante annulla/chiudi nel form appuntamento può risultare fuori viewport (click fallito in audit).",
+        "testID": "appointment-cancel",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Dashboard pull-to-refresh",
+        "issue": "onRefresh non richiama ricarico ultime ispezioni; sezione Ispezioni può restare stale dopo refresh.",
+        "affected_testIDs": [
+          "dashboard-inspections-all",
+          "dashboard-inspections-empty"
+        ]
+      },
+      {
+        "flow": "Dashboard Ispezioni empty/error state",
+        "issue": "Errore fetch ultime ispezioni viene loggato ma UI mostra stato vuoto 'Nessuna ispezione' (errore non distinto da empty reale).",
+        "affected_testIDs": [
+          "dashboard-inspections-empty"
+        ]
+      },
+      {
+        "flow": "Ispezioni preset/ricerca su volumi alti",
+        "issue": "Fetch con limit fisso 300 senza paginazione: preset 'Tutte' e ricerca possono risultare incompleti oltre 300 record.",
+        "affected_testIDs": [
+          "inspections-preset-all",
+          "inspections-search",
+          "inspections-list"
+        ]
+      },
+      {
+        "flow": "AI Tour note storiche da Ispezioni",
+        "issue": "limit(30) applicato prima del trim/filter note: note utili più vecchie possono sparire se le più recenti sono vuote.",
+        "affected_testIDs": [
+          "aitour-inspection-notes-scroll"
+        ]
+      },
+      {
+        "flow": "Dashboard mensile vendite",
+        "issue": "Calcolo divergente da order-totals: include ordini annullati/non filtrati per status, usa iva_percentage||22 (scarta 0) e IVA calcolata su line_total senza accisa/estero coerente.",
+        "affected_testIDs": [
+          "dashboard-stat-0-value"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend_readonly_iter48.py",
+    "/app/test_reports/pytest/pytest_iter48_backend.xml",
+    "/app/test_reports/artifacts_iter48/tsc_iter48.log",
+    "/app/test_reports/artifacts_iter48/vitest_iter48.log",
+    "/app/test_reports/artifacts_iter48/aitour_suite_iter48.log",
+    "/app/test_reports/artifacts_iter48/verification_suite_iter48.log",
+    "/app/test_reports/artifacts_iter48/pytest_backend_iter48.log",
+    "/app/test_reports/artifacts_iter48/agent_dashboard_390x844.jpg",
+    "/app/test_reports/artifacts_iter48/agent_aitour_390x844.jpg",
+    "/app/test_reports/artifacts_iter48/inspections_320x568.jpg",
+    "/app/test_reports/artifacts_iter48/aitour_320x568.jpg",
+    "/app/test_reports/artifacts_iter48/roberto_inspection_detail_390x844.jpg"
+  ],
+  "action_items": [
+    "Correggere parser Range suffix in /api/video-tutorial/{num} per supportare bytes=-N conforme RFC.",
+    "In dashboard onRefresh aggiungere refresh delle ultime ispezioni e distinguere errore vs empty state in UI.",
+    "Rimuovere limit hardcoded 300 o introdurre paginazione/cursore in elenco ispezioni e ricerca.",
+    "In fetchCustomerInspectionNotes applicare filtro note non vuote prima del limite (o aumentare finestra).",
+    "Allineare loadMonthlySales a order-totals (status ordine, estero, iva=0 valido, imponibile+accisa per IVA se previsto).",
+    "Verificare layout/modal calendario su 390x844 per garantire tap target visibile (appointment-cancel)."
+  ],
+  "critical_code_review_comments": [
+    "File grandi oltre soglia manutenibilità: LiveTourView.tsx (~2310 righe), order-collection-v2.tsx (~2715), dashboard index.tsx (~1029).",
+    "index.tsx: loadMonthlySales usa iva_percentage || 22 (0 diventa 22) e non filtra status ordini.",
+    "inspections.tsx: richiesta async senza request guard/cancel token; potenziale race tra preset rapidi.",
+    "index.tsx: fallback UI Ispezioni nasconde errori reali presentandoli come assenza dati."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_backend_readonly_iter48.py",
+    "/app/test_reports/iteration_48.json"
+  ],
+  "success_rate": {
+    "backend": "87.5%",
+    "frontend": "78%"
+  },
+  "seed_data_creation": "Nessun seed creato. Audit READ-ONLY.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Eseguiti: tsc --noEmit PASS; vitest 82/82 PASS (11 file); tests/aitour/run_suite.sh PASS (6 file); tests/verification/run_verification_suite.sh PASS (2 file). UI testata reale con login Agent/Admin/Roberto e blocco richieste mutanti non auth (nessuna submit ordine/appuntamento/tour). Non completati per sicurezza: Tour Live operativo reale, invii ordini/rimborsi/sostituzioni/appuntamenti, follow-up close, reclaim e PDF fattura (potenziale write).",
+  "rca_of_issue": "Range suffix bug RCA: in backend/server.py (get_video_tutorial) il parsing Range usa bytes=(\\d*)-(\\d*) con start default 0 quando manca il primo gruppo. Per header bytes=-2 viene interpretato come start=0,end=2 invece di suffix (ultimi 2 byte). Riproduzione: GET /api/video-tutorial/1 con Range: bytes=-2 => payload non coincide con tail file (test_backend_readonly_iter48.py::test_video_tutorial_suffix_range_last_two_bytes). Mitigazione: gestire esplicitamente caso group1 vuoto && group2 valorizzato come suffix-length (start=file_size-N,end=file_size-1)."
+}

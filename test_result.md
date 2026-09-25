@@ -102,7 +102,27 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Order Collection: elenco pagamenti lungo non scorre; filtro Italia/Estero/entrambi. Utente conferma Esteroattivo=Estero+entrambi,disattivo=Italia+entrambi e deselezione pagamento incompatibile. Categorie secondo utente nella tabOrdini>Metodi pagamento del gestionale web."
+user_problem_statement: "esegui un audit della applicazione per verificare che tutto funzioni come previsto. Scelta confermata: audit funzionale completo con rapporto dei problemi, senza modificare dati reali."
+
+functional_audit_readonly_current:
+  implemented: true
+  working: false
+  needs_retesting: false
+  audit_complete: true
+  fixes_applied: false
+  native_device_verified: false
+  report: "test_reports/audit_funzionale_20260925.md"
+  priority: high
+  status_history:
+    - agent: main
+      comment: "Audit concluso con problemi aperti: utente ha scelto rapporto, NON patch. iteration48 letta e integrata:82unit+6suiteAI+2verification+TSClintPASS,7/8backendPASS (suffixrangeFAIL). MAIN real checkoutItalia9PM5shipping/EsteroContanti2shippingStep5PASS senza submit/0mutazioni; CalendarioChiudiPASS390/320: rilievo48 FALSO POSITIVO force duranteanimazione. Prodotti266/scadenziario/bozze/profilo/rimborsi10 letturePASS; dettaglioSostituzioni BUGALTO confermato APIprezzi12.8/12.0×2 maUI0€/pz/totali0. DashboardFiscalitàBUGcodice; caps300/200/100; refreshisp assente; fault503ispezioni soloTEST UIerroneamentempty e recoveryreale5card/211ispezioniPASS; note30prefilter; profilo versioneerrata/incompleto. Nessun CRUDfinale o Live reale. RapportoMD autorevole rettifica severitàrange(noncritico), percentuale78nonfondata e copertura. Nessun codicebusiness modificato. Retestcorrezioni futuro separato."
+    - agent: main
+      comment: "Avviato audit senza patch applicative. Letti PRD, credenziali, iteration47 e codice corrente; lint frontend app e backend PASS. Log storici includono transcribe500: riverificare con audio valido, non dichiarare guasto attuale senza prova. Possibili limiti da verificare: ispezioni limite300 senza paginazione, note limite30 prima del filtro vuote, race cambio preset, refresh dashboard non ricarica ispezioni; aggregazione venduto include ordini annullati e formule IVA divergenti. Non sono ancora tutti riprodotti."
+  test_plan:
+    test_all: true
+    test_priority: high_first
+    current_focus: [inspections_dashboard_list_detail_photos, inspection_agent_isolation, tour_live_notes_readonly, ai_tour_brief_planner, orders_checkout_drafts_totals, appointments_followups, customers_map, products_stock, reimbursements_substitutions, scadenziario_profile, backend_media_transcription]
+    protected_data: "SOLA LETTURA CRM e storage: nessun INSERT/UPDATE/DELETE/RPC mutante, nessun tour reale avviato o aperto senza blocco scritture automatiche/heartbeat. Mai Live reali tadini/roberto/Valentina. Credenziali in memory/test_credentials.md. Consentiti test puri e risposte simulate SOLO nell'automazione isolata, distinte dalle prove reali. Non eseguire vecchi seed/cleanup/E2E con scritture. Non modificare codice applicativo/config/dipendenze/auth/privacy. Restituire rapporto problemi riproducibili e limiti, non correzioni."
 
 order_payment_scroll:
   implemented: true
@@ -344,9 +364,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Map orphan markers visual differentiation"
+    - "Audit funzionale completo in sola lettura: vedere functional_audit_readonly_current"
   stuck_tasks: []
-  test_all: false
+  test_all: true
   test_priority: "high_first"
 
 agent_communication:

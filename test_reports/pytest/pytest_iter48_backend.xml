@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="8" time="12.445" timestamp="2026-09-25T10:25:27.963346+00:00" hostname="agent-env-d869b047-c78d-4df0-840f-fe88cc5b5aa6"><testcase classname="backend.tests.test_backend_readonly_iter48" name="test_root_get_ok" time="0.176" /><testcase classname="backend.tests.test_backend_readonly_iter48" name="test_status_get_ok" time="0.077" /><testcase classname="backend.tests.test_backend_readonly_iter48" name="test_pirone_manual_video_head_supported" time="0.073" /><testcase classname="backend.tests.test_backend_readonly_iter48" name="test_video_tutorial_suffix_range_last_two_bytes" time="0.245"><failure message="AssertionError: assert b'\x00\x00\x00' == b' \x07'&#10;  &#10;  At index 0 diff: b'\x00' != b' '&#10;  &#10;  Full diff:&#10;  - b' \x07'&#10;  + b'\x00\x00\x00'">backend/tests/test_backend_readonly_iter48.py:72: in test_video_tutorial_suffix_range_last_two_bytes
+    assert suffix.content == full_bytes[-2:]
+E   AssertionError: assert b'\x00\x00\x00' == b' \x07'
+E     
+E     At index 0 diff: b'\x00' != b' '
+E     
+E     Full diff:
+E     - b' \x07'
+E     + b'\x00\x00\x00'</failure></testcase><testcase classname="backend.tests.test_backend_readonly_iter48" name="test_parse_brief_empty_400" time="0.077" /><testcase classname="backend.tests.test_backend_readonly_iter48" name="test_parse_brief_valid_request_1" time="4.432" /><testcase classname="backend.tests.test_backend_readonly_iter48" name="test_parse_brief_valid_request_2" time="5.814" /><testcase classname="backend.tests.test_backend_readonly_iter48" name="test_transcribe_valid_italian_audio_sample" time="1.459" /></testsuite></testsuites>

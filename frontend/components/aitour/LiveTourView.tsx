@@ -16,7 +16,7 @@ import { VerificationRequestModal } from './VerificationRequestModal';
 import { isVerificationPoint, type VerificationSubject } from '../../lib/api/customer-verification';
 import { useAuthStore } from '../../store/authStore';
 import { TourMapView, type TourMapStop } from './TourMapView';
-import { createTourInspection } from '../../lib/api/inspections';
+import { createTourInspection, fetchCustomerInspectionNotes, type InspectionNote } from '../../lib/api/inspections';
 import { supabase } from '../../lib/supabase';
 import type { LiveState, LiveStop } from '../../lib/aitour/live';
 import {
@@ -62,6 +62,9 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [esitoOpen, setEsitoOpen] = useState(false);
   const [skipOpen, setSkipOpen] = useState(false);
   const [verificationTarget, setVerificationTarget] = useState<{ stopId: string; subject: VerificationSubject } | null>(null);
+  // Note delle ispezioni già eseguite sul cliente della tappa corrente
+  const [notesTarget, setNotesTarget] = useState<{ name: string; items: InspectionNote[]; error: string } | null>(null);
+  const [notesLoading, setNotesLoading] = useState(false);
   const actorId = useAuthStore((s) => s.user?.id);
   const [reassigned, setReassigned] = useState<{ name: string; prevAgent: string } | null>(null);
   const [recapOpen, setRecapOpen] = useState(false);
@@ -467,6 +470,22 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       setBusy(false);
     }
   };
+
+  // Note da Ispezioni: solo le ispezioni dell'agente su quel cliente, in ordine dalla più recente
+  const openInspectionNotes = async (customerId: string | null | undefined, name: string) => {
+    if (!customerId || !actorId) return;
+    hap.light();
+    setNotesLoading(true);
+    try {
+      const items = await fetchCustomerInspectionNotes(customerId, actorId);
+      setNotesTarget({ name, items, error: '' });
+    } catch (e) {
+      setNotesTarget({ name, items: [], error: e instanceof Error ? e.message : 'Errore nel caricamento delle note' });
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+
 
   const handleArrived = async () => {
     if (!next) return;
@@ -1413,6 +1432,20 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           )}
 
           {/* Azioni */}
+          {/* Storico note delle ispezioni già eseguite su questo cliente */}
+          <TouchableOpacity
+            testID="aitour-live-inspection-notes"
+            accessibilityRole="button"
+            activeOpacity={0.75}
+            disabled={!next.candidate.customerId || notesLoading}
+            style={[styles.verificationButton, !next.candidate.customerId && styles.notesBtnDisabled]}
+            onPress={() => openInspectionNotes(next.candidate.customerId, next.candidate.name)}
+          >
+            <Ionicons name="document-text-outline" size={20} color={AI_PURPLE_TEXT} />
+            <Text testID="aitour-live-inspection-notes-label" style={styles.verificationButtonText}>
+              {notesLoading ? 'Carico le note...' : 'Note da Ispezioni'}
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity testID="aitour-live-verify" accessibilityRole="button" activeOpacity={0.75} disabled={busy || recalcing || !actorId} style={styles.verificationButton}
             onPress={() => {
               const gps = { lat: next.candidate.lat, lng: next.candidate.lng };
@@ -1579,6 +1612,47 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       <EsitoModal visible={esitoOpen} stopName={next?.candidate.name || ''} stopId={next?.id || null} customerId={next?.candidate.customerId || null} saving={busy} uploadPct={uploadPct} onClose={() => setEsitoOpen(false)} onConfirm={handleEsito} />
       {verificationTarget && <VerificationRequestModal key={`${actorId}:${tour.id}:${verificationTarget.stopId}`} agentId={actorId || ''} contextKey={`${tour.id}:${verificationTarget.stopId}`} subject={verificationTarget.subject}
         onClose={() => setVerificationTarget(null)} onSuccess={(withoutGps) => { setVerificationTarget(null); setMessage(`Segnalazione inviata${withoutGps ? ' senza posizione GPS' : ''}. Lo staff verificherà il punto vendita. La tappa resta nel giro.`); }} />}
+
+      {/* Note da Ispezioni: elenco scorrevole con nota e data */}
+      <Modal visible={!!notesTarget} animationType="fade" transparent onRequestClose={() => setNotesTarget(null)}>
+        <View style={styles.centerBackdrop}>
+          <View style={styles.dialog} testID="aitour-inspection-notes-dialog">
+            <Text style={styles.dialogTitle} testID="aitour-inspection-notes-title">Note da Ispezioni</Text>
+            <Text style={styles.notesCustomer} numberOfLines={2}>{notesTarget?.name}</Text>
+            {notesTarget?.error ? (
+              <Text testID="aitour-inspection-notes-error" style={styles.notesError}>{notesTarget.error}</Text>
+            ) : notesTarget && notesTarget.items.length === 0 ? (
+              <Text testID="aitour-inspection-notes-empty" style={styles.notesEmpty}>Nessuna nota registrata nelle ispezioni precedenti di questo cliente.</Text>
+            ) : (
+              <ScrollView testID="aitour-inspection-notes-scroll" style={styles.notesScroll} contentContainerStyle={styles.notesScrollContent} showsVerticalScrollIndicator>
+                {notesTarget?.items.map((n) => {
+                  const d = new Date(n.date);
+                  return (
+                    <View key={n.id} testID={`aitour-inspection-note-${n.id}`} style={styles.noteItem}>
+                      <View style={styles.noteItemTop}>
+                        <Text style={styles.noteDate}>
+                          {d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })} · {d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                        {n.photoCount > 0 && (
+                          <View style={styles.notePhotoChip}>
+                            <Ionicons name="images-outline" size={12} color={DS.ink2} />
+                            <Text style={styles.notePhotoText}>{n.photoCount}</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.noteText}>{n.notes}</Text>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            )}
+            <TouchableOpacity testID="aitour-inspection-notes-close" style={styles.dialogCancel} onPress={() => setNotesTarget(null)} activeOpacity={0.7}>
+              <Text style={styles.dialogCancelText}>Chiudi</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
 
       {/* Dettaglio tappa: informazioni cliente + Fallo Ora */}
       <Modal visible={!!detailStop} animationType="fade" transparent onRequestClose={() => setDetailStop(null)}>
@@ -1918,6 +1992,19 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
 const styles = StyleSheet.create({
   verificationButton: { minHeight: 48, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: AI_PURPLE_BORDER, backgroundColor: AI_PURPLE_SOFT, borderRadius: 12, padding: 12, marginBottom: 14 },
   verificationButtonText: { fontFamily: JAKARTA.semibold, fontSize: 14, color: AI_PURPLE_TEXT },
+  notesBtnDisabled: { opacity: 0.45 },
+  notesCustomer: { fontFamily: JAKARTA.medium, fontSize: 13, color: DS.ink2, marginBottom: 10 },
+  notesScroll: { maxHeight: 340 },
+  notesScrollContent: { gap: 10, paddingBottom: 4 },
+  noteItem: { backgroundColor: DS.surface3, borderRadius: 12, padding: 10, gap: 4 },
+  noteItemTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  noteDate: { fontFamily: JAKARTA.semibold, fontSize: 11.5, color: AI_PURPLE_TEXT },
+  notePhotoChip: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, borderRadius: 8, backgroundColor: DS.surface },
+  notePhotoText: { fontFamily: JAKARTA.semibold, fontSize: 11, color: DS.ink2 },
+  noteText: { fontFamily: JAKARTA.regular, fontSize: 13, color: DS.ink, lineHeight: 19 },
+  notesEmpty: { fontFamily: JAKARTA.regular, fontSize: 13, color: DS.inkMuted, lineHeight: 19, marginBottom: 4 },
+  notesError: { fontFamily: JAKARTA.medium, fontSize: 13, color: '#DC2626', marginBottom: 4 },
+
   content: { padding: 12, paddingBottom: 40 },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   liveBadge: {

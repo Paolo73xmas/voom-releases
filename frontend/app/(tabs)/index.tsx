@@ -23,6 +23,7 @@ import { getDraftCount } from '../../lib/drafts';
 import { getCache, setCache, clearCache } from '../../lib/memory-cache';
 import { fetchScadenziarioCached, ScadenziarioKpi } from '../../lib/api/scadenziario';
 import { fetchOverdueFollowUps, type OverdueFollowUp } from '../../lib/aitour/followups';
+import { fetchAgentInspections, type AgentInspection } from '../../lib/api/inspections';
 import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
 import { Avatar } from '../../components/Avatar';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
@@ -59,6 +60,9 @@ export default function Dashboard() {
   // Follow-up scaduti mai gestiti (ultimi 60 giorni): promemoria in dashboard
   const [overdueFu, setOverdueFu] = useState<OverdueFollowUp[]>([]);
   const [overdueExpanded, setOverdueExpanded] = useState(false);
+  // Ultime ispezioni eseguite dall'agente (ognuno vede solo le proprie)
+  const [lastInspections, setLastInspections] = useState<AgentInspection[]>([]);
+  const [inspLoaded, setInspLoaded] = useState(false);
 
   const loadStats = async (force: boolean = false) => {
     if (!user) return;
@@ -177,6 +181,7 @@ export default function Dashboard() {
       loadUpcomingAppointments();
       loadAiTourBadge();
       loadOverdueFollowUps();
+      loadLastInspections();
       // Stats: respects 60s cache, only refetches if expired
       loadStats(false);
       return () => setStatusBarStyle('light');
@@ -210,6 +215,18 @@ export default function Dashboard() {
       console.warn('[Dashboard] follow-up scaduti:', e);
     }
   };
+
+  const loadLastInspections = async () => {
+    if (!user) return;
+    try {
+      setLastInspections(await fetchAgentInspections(user.id, { limit: 5 }));
+    } catch (e) {
+      console.warn('[Dashboard] ispezioni:', e);
+    } finally {
+      setInspLoaded(true);
+    }
+  };
+
 
   const loadUpcomingAppointments = async () => {
     if (!user) return;
@@ -530,6 +547,58 @@ export default function Dashboard() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={DS.borderStrong} />
         </Pressable>
+      </Animated.View>
+
+      {/* Ispezioni — ultime eseguite dall'agente, con le note */}
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, styles.sectionTitleInline]}>Ispezioni</Text>
+        <TouchableOpacity testID="dashboard-inspections-all" onPress={() => { hap.light(); router.push('/inspections'); }} hitSlop={8}>
+          <Text style={styles.sectionLink}>Vedi tutte</Text>
+        </TouchableOpacity>
+      </View>
+      <Animated.View entering={FadeInDown.delay(245).duration(400)}>
+        {!inspLoaded ? (
+          <Skeleton width="100%" height={80} borderRadius={16} />
+        ) : lastInspections.length === 0 ? (
+          <Pressable
+            testID="dashboard-inspections-empty"
+            style={({ pressed }) => [styles.inspEmpty, pressed && styles.actionPressed]}
+            onPress={() => { hap.light(); router.push('/inspection/new'); }}
+          >
+            <Ionicons name="camera-outline" size={18} color={DS.inkMuted} />
+            <Text style={styles.inspEmptyText}>Nessuna ispezione registrata · tocca per crearne una</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.inspList}>
+            {lastInspections.map((insp) => {
+              const d = new Date(insp.inspection_date);
+              return (
+                <Pressable
+                  key={insp.id}
+                  testID={`dashboard-inspection-${insp.id}`}
+                  style={({ pressed }) => [styles.inspCard, pressed && styles.actionPressed]}
+                  onPress={() => { hap.light(); router.push(`/inspection/${insp.id}`); }}
+                >
+                  <View style={styles.inspTop}>
+                    <Text style={styles.inspDate}>
+                      {d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })} · {d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                    <View style={styles.inspPhotoChip}>
+                      <Ionicons name="images-outline" size={12} color={DS.ink2} />
+                      <Text style={styles.inspPhotoText}>{insp.photoCount}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.inspName} numberOfLines={1}>
+                    {insp.customerName}{insp.customerCity ? ` · ${insp.customerCity}` : ''}
+                  </Text>
+                  <Text style={insp.notes ? styles.inspNotes : styles.inspNotesEmpty} numberOfLines={2}>
+                    {insp.notes || 'Nessuna nota'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
       </Animated.View>
 
       {/* Azioni rapide — griglia 2 colonne per sezione */}
@@ -876,6 +945,18 @@ const styles = StyleSheet.create({
     color: DS.ink,
     letterSpacing: -0.4,
   },
+  inspList: { gap: 10 },
+  inspCard: { backgroundColor: DS.surface, borderRadius: 16, borderWidth: 1, borderColor: DS.border, padding: 12, gap: 3 },
+  inspTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  inspDate: { fontFamily: JAKARTA.semibold, fontSize: 11, color: DS.brand },
+  inspPhotoChip: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 1, borderRadius: 9, backgroundColor: DS.surface2 },
+  inspPhotoText: { fontFamily: JAKARTA.semibold, fontSize: 11, color: DS.ink2 },
+  inspName: { fontFamily: JAKARTA.bold, fontSize: 14, color: DS.ink },
+  inspNotes: { fontFamily: JAKARTA.regular, fontSize: 12.5, color: DS.ink2, lineHeight: 18 },
+  inspNotesEmpty: { fontFamily: JAKARTA.regular, fontSize: 12.5, color: DS.inkMuted, fontStyle: 'italic' },
+  inspEmpty: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 56, paddingHorizontal: 14, borderRadius: 16, backgroundColor: DS.surface, borderWidth: 1, borderColor: DS.border },
+  inspEmptyText: { flex: 1, fontFamily: JAKARTA.medium, fontSize: 12.5, color: DS.inkMuted },
+
   scadSub: {
     fontSize: 11,
     fontFamily: JAKARTA.regular,

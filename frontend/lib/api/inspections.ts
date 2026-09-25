@@ -139,8 +139,99 @@ export async function createTourInspection(args: {
   return { photoFailures };
 }
 
-export function getInspectionStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
+/** Ispezioni del singolo agente (ognuno vede solo le proprie), con cliente e conteggio foto.
+ * Filtri opzionali come nel gestionale web: testo su cliente/note e intervallo date.
+ */
+export interface AgentInspection {
+  id: string;
+  inspection_date: string;
+  notes: string | null;
+  status: string;
+  photoCount: number;
+  customerId: string | null;
+  customerName: string;
+  customerCity: string;
+}
+
+export async function fetchAgentInspections(agentId: string, opts?: { limit?: number; dateFrom?: string; dateTo?: string }): Promise<AgentInspection[]> {  let query = supabase
+    .from('inspections')
+    .select('id, inspection_date, notes, status, customer_id, customers(business_name, city), inspection_photos(id)')
+    .eq('agent_id', agentId)
+    .order('inspection_date', { ascending: false });
+  if (opts?.dateFrom) query = query.gte('inspection_date', `${opts.dateFrom}T00:00:00`);
+  if (opts?.dateTo) query = query.lte('inspection_date', `${opts.dateTo}T23:59:59`);
+  if (opts?.limit) query = query.limit(opts.limit);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map((row) => {
+    const customer = row.customers as { business_name?: string; city?: string } | null;
+    return {
+      id: row.id,
+      inspection_date: row.inspection_date,
+      notes: row.notes || null,
+      status: row.status,
+      photoCount: Array.isArray(row.inspection_photos) ? row.inspection_photos.length : 0,
+      customerId: row.customer_id || null,
+      customerName: customer?.business_name || 'Cliente non collegato',
+      customerCity: customer?.city || '',
+    };
+  });
+}
+
+/** Note delle ispezioni già eseguite su un cliente (solo quelle dell'agente): usate in Tour Live. */
+export interface InspectionNote { id: string; date: string; notes: string; photoCount: number }
+
+export async function fetchCustomerInspectionNotes(customerId: string, agentId: string, limit = 30): Promise<InspectionNote[]> {
+  const { data, error } = await supabase
+    .from('inspections')
+    .select('id, inspection_date, notes, inspection_photos(id)')
+    .eq('customer_id', customerId)
+    .eq('agent_id', agentId)
+    .order('inspection_date', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data || [])
+    .map((row) => ({
+      id: row.id,
+      date: row.inspection_date,
+      notes: (row.notes || '').trim(),
+      photoCount: Array.isArray(row.inspection_photos) ? row.inspection_photos.length : 0,
+    }))
+    .filter((n) => n.notes.length > 0);
+}
+
+export interface InspectionDetail extends AgentInspection {  latitude: number | null;
+  longitude: number | null;
+  photos: { id: string; photo_url: string; photo_order: number }[];
+}
+
+export async function fetchInspectionDetail(inspectionId: string, agentId: string): Promise<InspectionDetail | null> {
+  const { data, error } = await supabase
+    .from('inspections')
+    .select('id, inspection_date, notes, status, customer_id, latitude, longitude, customers(business_name, city), inspection_photos(id, photo_url, photo_order)')
+    .eq('id', inspectionId)
+    .eq('agent_id', agentId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const customer = data.customers as { business_name?: string; city?: string } | null;
+  const photos = (data.inspection_photos as { id: string; photo_url: string; photo_order: number }[] | null) || [];
+  return {
+    id: data.id,
+    inspection_date: data.inspection_date,
+    notes: data.notes || null,
+    status: data.status,
+    photoCount: photos.length,
+    customerId: data.customer_id || null,
+    customerName: customer?.business_name || 'Cliente non collegato',
+    customerCity: customer?.city || '',
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
+    photos: [...photos].sort((a, b) => (a.photo_order || 0) - (b.photo_order || 0)),
+  };
+}
+
+export function getInspectionStatusLabel(status: string): string {  const labels: Record<string, string> = {
     pending: 'In Attesa',
     completed: 'Completata',
     cancelled: 'Annullata',

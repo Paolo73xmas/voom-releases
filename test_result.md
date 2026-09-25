@@ -597,3 +597,11 @@ agent_communication:
 - Verifiche iteration 46: 3 test unitari nuovi, 82 test vitest, suite AI Tour 6/6, tsc OK, E2E live su account di test (follow-up di oggi alle 23:00 → completed; follow-up di domani → scheduled). Fixture di test rimosse, inclusa la tabaccheria residua eliminata da admin.
 - PENDENTE: bonifica dell'appuntamento storico e9c9659c-128b-425b-a1ce-b8da6515f5c2 (in attesa di autorizzazione dell'utente).
 - Bonifica storica autorizzata dall'utente ed eseguita con scripts/close_stale_followups.py: individuati 42 follow-up scaduti 'scheduled', di cui 11 con visita/ispezione dello stesso giorno o successiva (incluso e9c9659c di MARCHESI GABRIELLA) → chiusi. Ricontrollo: 0 casi residui. I 31 rimanenti sono follow-up scaduti senza visita registrata, quindi correttamente ancora aperti.
+
+## Sezione Ispezioni (dashboard + elenco + dettaglio) e "Note da Ispezioni" in Tour Live - iteration 47
+- Analizzata la pagina web src/pages/Inspections.tsx (filtri cliente/note/stato/date, dettaglio con foto) e replicata in chiave mobile, agent-scoped.
+- lib/api/inspections.ts: fetchAgentInspections (con conteggio foto e filtro periodo), fetchInspectionDetail (foto ordinate), fetchCustomerInspectionNotes (note per cliente, esclude le vuote).
+- Nuove schermate: app/inspections.tsx (ricerca cliente/città/note, preset 7/30/90/tutte, pull-to-refresh) e app/inspection/[id].tsx (note, griglia foto, zoom, apri scheda cliente).
+- Dashboard: sezione "Ispezioni" con le ultime 5 e link "Vedi tutte".
+- Tour Live: pulsante "Note da Ispezioni" (disabilitato senza scheda cliente) con modale scrollabile nota + data + conteggio foto.
+- Iteration 47: elenco 187/38/209 per periodo, ricerca e stato vuoto ok, dettaglio con foto e zoom ok, isolamento dati verificato (gdeintinis vede 0; URL cross-agente → errore), query note Tour Live verificata su MARCHESI GABRIELLA (2 note desc). 82 test vitest, tsc 0 errori. Nessuna scrittura sui dati di roberto.beretta.

@@ -1,0 +1,33 @@
+{
+  "summary": "Testato frontend Expo per la nuova sezione Ispezioni (dashboard, elenco, dettaglio con foto/zoom) e per il pulsante 'Note da Ispezioni' in Tour Live (code review + verifica diretta Supabase). Isolamento dati agente confermato: Roberto vede 187 ispezioni (30gg) e apre correttamente il dettaglio di TABACCHERIA DI GATTO CONSOLATO con 2 foto e zoom; gdeintinis vede stato vuoto sia in dashboard sia nell'elenco e riceve 'Ispezione non trovata tra le tue ispezioni.' aprendo l'URL di un'ispezione di Roberto. Preset 7/30/90/all restituiscono conteggi coerenti (38/187/209/209); ricerca+empty state OK. Regressione: vitest 82/82 PASS su 11 file, tsc --noEmit clean. Query fetchCustomerInspectionNotes per MARCHESI GABRIELLA restituisce 2 note non vuote ordinate desc (23/09 e 09/09), empty-filter e ordinamento corretti. Nessun bug rilevato. Warning innocuo (non nuovo): 'shadow*' style props deprecated e props.pointerEvents deprecated (già presenti in iterazioni precedenti, non introdotti da questa modifica).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/test_notes.py",
+    "/app/test_reports/artifacts_iter47/roberto_after_login.jpeg",
+    "/app/test_reports/artifacts_iter47/roberto_list.jpeg",
+    "/app/test_reports/artifacts_iter47/roberto_detail.jpeg",
+    "/app/test_reports/artifacts_iter47/gdeintinis_after_login.jpeg",
+    "/app/test_reports/artifacts_iter47/gdeintinis_cross_tenant.jpeg",
+    "/app/test_reports/artifacts_iter47/gdeintinis_list.jpeg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "LiveTourView.tsx:1440 — Il pulsante 'Note da Ispezioni' è correttamente disabilitato quando next.candidate.customerId è assente o durante il caricamento (notesLoading).",
+    "inspections.ts:200 — fetchCustomerInspectionNotes esclude le note vuote dopo trim() e mantiene l'ordinamento desc del server: comportamento verificato su MARCHESI GABRIELLA (2 note, ordine 23/09 poi 09/09).",
+    "inspection/[id].tsx:28 — Il fetch usa .eq('agent_id', user.id) e maybeSingle(): l'accesso cross-agente restituisce null e mostra 'Ispezione non trovata tra le tue ispezioni.' (verificato su gdeintinis).",
+    "inspections.tsx — la ricerca filtra client-side su customerName/customerCity/notes, i preset ricaricano dal server con dateFrom relativo (7/30/90 gg o Tutte). Nessuna doppia paginazione: limite 300."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "seed_data_creation": "Nessuna. Test read-only con account Roberto (ha 209 ispezioni reali) e gdeintinis (nessuna).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Vitest e tsc passano puliti (82/82). Dashboard sezione Ispezioni carica le ultime 5 (limit=5 in fetchAgentInspections lato dashboard). Schermata /inspections con preset (non due date come nel web). Isolamento agent_id verificato lato UI e lato Supabase (RLS + filtro applicativo). L'account 66a0ebb3-9035-41b7-a679-2a42a39118c3 (roberto.beretta) ha ispezioni recenti su MARCHESI GABRIELLA (46024e11-7406-4c80-b2a5-ba8082069ece).",
+  "rca_of_issue": "N/A: nessun bug rilevato in questa iterazione."
+}

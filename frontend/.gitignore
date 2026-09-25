@@ -37,3 +37,6 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# EAS richiede il lockfile nella directory del progetto: includerlo nei sorgenti.
+!/yarn.lock

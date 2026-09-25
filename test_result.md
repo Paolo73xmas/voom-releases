@@ -102,7 +102,24 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Nel promemoria obbligatorietà ispezione Tour Live aggiungere X che collassa e memorizza la scelta anche dopo chiusura/riapertura app. Solo toccando riquadro si riapre. Scelta esplicita: SEMPRE COLLASSATO come default, riapertura solo temporanea senza cancellare la preferenza."
+user_problem_statement: "Errore preparazione iOS EAS CLI24.8.0: No lockfile found in the project directory. Utente autorizza correzione mirata e verifica build, senza Docker/database/credenziali."
+
+ios_lockfile_fix_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  remote_eas_build_verified: false
+  report: "test_reports/ios_lockfile_fix_20260925.md"
+  general_deployment_agent_status: "fail_generico_non_causale: tunnel/ignore. Evidenza main root.gitignore esiste, credenziali escluse e non tracciate; non modificati file protetti. Preparazione EAS specifica PASS verificata; remoto non eseguito."
+  priority: high
+  status_history:
+    - agent: main
+      comment: "Iteration51lettoPASS: coldinstallcopiapulitaNode20.19.4+Yarn1.22.22frozenfullenginechecks,116unit,TSC,lint0errors63warnings; exportios--no-bytecodecacheisolata2872mods66assets6.78MBPASS. Lock/manifesthashinvariati; localarchiveincludelock. MAINNode24frozeninTEMPpassstessihash. Unicachangemanifest Supabase^2.101.1→2.109.0, main/Vitestpreservati. NessunEASskipcheck oignoreengines. Reportreadonlylimits: remotaIPA/archivioEmergentnuovo NONverificati, userdeverilanciare. Root/frontendnegationgitignoreregistrata. Docker/env/supervisor/backend/auth/Metro/app.jsoninvariati,0CRMwrites. Ulterioredeploymenthealthcheckrichiestodopofix; generico--tunnelpropostoinprimononcausalenonapplicato."
+    - agent: main
+      comment: "Causa log: yarn.lock ASSENTE filesystem e storicoGit, preflightEASferma prima di upload/buildremota. NessunMongoDB/firmabug evidenziato. Deploymentagent ritorna genericotunnelSupervisorNONpertinente e protetto: NONmodificato. RCA ha eseguito installcreandolock e aggiornandotransitive entroexistingranges; lockfresh Supabase2.117.2 richiedeNode>=22. MAIN riprodotto frozeninstall Node20.19.4 in/tmp/voom-ios-lock-repro-d4qfqqug:FAILsupabaseengine>=22. Fixpackage manager consentito yarnexpoinstallSupabase2.109.0 exact (ultimocompatibileNode20), vitest4.1.11preservato. LockgeneratoYarnnonhandwritten; root/frontendgitignoreexceptionperlock. NoDocker/entrypoint/supervisor/env/Mongo/authcode/videochanges. Aggiunti3regressioni metadata lock. TestcleanNode20+exportiosJS necessario prima finish."
+  test_plan:
+    current_focus: [lockfile_source_inclusion, frozen_install_node20_and_node24, typecheck_unit_regressions, ios_javascript_export]
+    protected_data: "Nessuna buildremotaEAS/publish/credentialsoperation o scritturaCRM. NienteGitwrite/Docker/Supervisor/env modifiche. Testinstall nella COPIATEMP nonprodapp, no ignoreengines/noSKIP_LOCKFILE/noHermesconfigpatch. LinuxARM Hermesbinaryx64: solo exportios --no-bytecode pertest, nonprovaIPAfirmata."
 
 inspection_reminder_preference_current:
   implemented: true
@@ -397,7 +414,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Promemoria ispezione collassabile persistente: inspection_reminder_preference_current prevale; test mirati senza Tour Live operativo"
+    - "Preparazione build iOS: ios_lockfile_fix_current prevale, no deploy remoto né dati reali"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"

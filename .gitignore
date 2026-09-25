@@ -86,3 +86,7 @@ memory/test_credentials.md
 .env
 .env.*
 *.env
+
+# Metadati necessari alla build mobile, non una cache di dipendenze.
+!/frontend/yarn.lock
+test_reports/artifacts_iter51/frontend_source_iter51.tgz

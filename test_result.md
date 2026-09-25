@@ -102,7 +102,22 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Dopo audit: 'procedi con attenzione'. Conferma 'Sì, correggi i problemi confermati e verifica ogni gruppo'. Vincolo aggiuntivo ESPLICITO: 'escludi il discorsso del video'. Correggere F01-F06, nessun dato reale modificato, video esclusi."
+user_problem_statement: "Nel promemoria obbligatorietà ispezione Tour Live aggiungere X che collassa e memorizza la scelta anche dopo chiusura/riapertura app. Solo toccando riquadro si riapre. Scelta esplicita: SEMPRE COLLASSATO come default, riapertura solo temporanea senza cancellare la preferenza."
+
+inspection_reminder_preference_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  report: "test_reports/iteration_50.json"
+  priority: high
+  status_history:
+    - agent: main
+      comment: "VERIFICA FINALE iteration50letta:113/113fullvitest (9nuovi),lint/TSCpass, nessunbug. SelfUI/independent: X44x44/reopenNONreset/remount/freshJSsameAsyncStorage/background/agentisolation/readerrorfallback/saveerrorretry/390and320PASS; main0pageerror. Solo testlocali nessunLogin/CRM/TourLive operativo. Preferenza localeperagente/dispositivo confermata, testo eobbligoispezione invariati. Nessunbackend/auth/env/dependency/Metro/app.json change. Report50updatedfiles soloreport, nessunpatchtesterapp. Nativecoldprocess non testato fisicamente, restaconfermautente."
+    - agent: main
+      comment: "Creati InspectionReminder.tsx e lib/aitour/inspection-reminder-preference.ts. X44x44 salvaAsyncStorage vero conchiaveperagentev1 (solo1,mai0alreopen); toccocompatto soloexpandedinstato. Defaultespanso alprimoaccesso; doposaveclosed alnuovocontext/focus/nextstop/foreground. Leggehidrated primadi mostrarecorpo (noflash). Errorileread/savevisibili senza fingere salvataggio; backgroundcallback solo se preferenza true. LiveViewsoloreminder ekeytour/stop/focusepoch; testi/obbligo/tourDBlogica invariati.9nuovipuretestPASS;TSC/lintPASS. Harnessisolato concomponente+AsyncStorageREALI, controlsagentA/Btestonly, SOLO locale. SelfUI20260925_120720:expanded/Xsaved/compact/reopennotreset/remount/freshiframewithsamestorage/background/agentisolation/saveerrorretry/390and320PASS;0pageerror. NessunaauthoCRMscrittura."
+  test_plan:
+    current_focus: [inspection_reminder_collapse_persistence, temporary_expand, restore_after_remount_and_background, account_scope, storage_error_handling, regression_suite]
+    protected_data: "NON avviare Tour Live reali o scrivere CRM. Usare harnessisolato /app/test_reports/artifacts_iter50/reminder-harness.js constorageAsyncStoragereale delbrowser eagentidsisolated-reminder-50-a/b. Test scriptgiàPASS inautomation_output20260925_120720. Noauth/seed/cleanupremote;modificare solo chiavidipreferenzatestlocale. Nessun backend/video/interventoextra."
 
 audit_fixes_current:
   implemented: true
@@ -382,7 +397,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Correzioni audit F01-F06 senza video: vedere audit_fixes_current (prevale sulle vecchie note)"
+    - "Promemoria ispezione collassabile persistente: inspection_reminder_preference_current prevale; test mirati senza Tour Live operativo"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"

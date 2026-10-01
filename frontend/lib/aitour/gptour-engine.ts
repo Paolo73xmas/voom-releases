@@ -2,7 +2,8 @@ import type { GptDay, GptResult } from './gptour-api';
 import type { TourIntent } from './gptour-intent';
 import type { AiTourSettings, GeoPoint, TourCandidate, TourPlan } from './types';
 import { haversineKm, timeToMin } from './types';
-import { candidateMatchesTourIntent, candidateIntentProblems } from './gptour-criteria';
+import { candidateMatchesTourIntent } from './gptour-criteria';
+import { acceptedCandidateProblems, readAcceptedFillKeys } from './gptour-acceptance';
 import { IdentitySet, identityTokensOf } from './gptour-identity';
 import { addDaysIso, isoDow, nextWorkingDay, validDate } from './gptour-dates';
 import { planGptDay, routing, roadKmWithRetry, decideReturnHome, type RoutingDependencies } from './gptour-routing';
@@ -32,7 +33,8 @@ export function assertEventIdentity(intent: TourIntent, pool: TourCandidate[]): 
     }
   }
 }
-export function prepareGptDays(r: GptResult, pool: TourCandidate[], intent: TourIntent, settings: AiTourSettings, date: string): { days: GptDay[]; warnings: string[] } {
+export function prepareGptDays(r: GptResult, pool: TourCandidate[], intent: TourIntent, settings: AiTourSettings, date: string, acceptedFillKeys: readonly string[] = []): { days: GptDay[]; warnings: string[] } {
+  const accepted = readAcceptedFillKeys(acceptedFillKeys);
   assertEventIdentity(intent, pool);
   let days = resultDays(r, date); const warnings: string[] = [];
   if (days.some((d) => !validDate(d.tourDate || ''))) throw new Error('Data del giro non valida.');
@@ -52,10 +54,14 @@ export function prepareGptDays(r: GptResult, pool: TourCandidate[], intent: Tour
   }
   for (const day of days) day.selection = day.selection.filter((s) => {
     const c = byKey.get(s.key);
-    if (!c) { warnings.push(`Chiave non disponibile: ${s.key}`); return false; }
-    const problems = candidateIntentProblems(c, intent);
+    if (!c) {
+      if (accepted.includes(s.key)) throw new Error(`Tappa fill accettata non più disponibile: ${s.key}. Rimuovila esplicitamente o ricarica i dati.`);
+      warnings.push(`Chiave non disponibile: ${s.key}`); return false;
+    }
+    const problems = acceptedCandidateProblems(c, intent, accepted);
     if (excluded.has(s.key)) problems.push('follow-up escluso dal giro');
     if (problems.length) {
+      if (accepted.includes(s.key)) throw new Error(`${c.name}: tappa fill accettata in conflitto (${problems.join(', ')}). Modifica i criteri o rimuovi esplicitamente la tappa.`);
       if (keptKeys.has(s.key) || intent.requiredStops.includes(s.key)) throw new Error(`${c.name}: obbligatorio in conflitto (${problems.join(', ')}). Correggi i criteri o la decisione.`);
       warnings.push(`${c.name}: escluso (${problems.join(', ')})`); return false;
     }
@@ -64,7 +70,7 @@ export function prepareGptDays(r: GptResult, pool: TourCandidate[], intent: Tour
   });
   for (const key of intent.requiredStops) {
     const c = byKey.get(key);
-    if (!c || !candidateMatchesTourIntent(c, intent)) throw new Error(`Tappa obbligatoria non idonea o non disponibile: ${c?.name || key}`);
+    if (!c || acceptedCandidateProblems(c, intent, accepted).length) throw new Error(`Tappa obbligatoria non idonea o non disponibile: ${c?.name || key}`);
     if (!seen.has(c)) { days[0].selection.push({ key, reason: 'Obbligatoria' }); seen.add(c); }
   }
   const average = pool.reduce((s, c) => s + c.visitMinutes, 0) / Math.max(1, pool.length) || 25;
@@ -97,8 +103,8 @@ export function prepareGptDays(r: GptResult, pool: TourCandidate[], intent: Tour
   return { days, warnings };
 }
 export async function buildGptour(r: GptResult, pool: TourCandidate[], intent: TourIntent, settings: AiTourSettings,
-  home: GeoPoint, date: string, deps: RoutingDependencies = routing, calendar: GptEvent[] = []): Promise<GptBuild> {
-  const prepared = prepareGptDays(r, pool, intent, settings, date), ds = prepared.days;
+  home: GeoPoint, date: string, deps: RoutingDependencies = routing, calendar: GptEvent[] = [], acceptedFillKeys: readonly string[] = []): Promise<GptBuild> {
+  const prepared = prepareGptDays(r, pool, intent, settings, date, acceptedFillKeys), ds = prepared.days;
   const required = new Set([...intent.requiredStops, ...intent.followUpDecisions.filter((d) => d.decision !== 'excluded').map((d) => d.key)]);
   const byKey = new Map(pool.map((c) => [c.key, c]));
   let homes = ds.map((_, i) => i === ds.length - 1 || r.lodging !== 'away');

@@ -14,6 +14,14 @@ describe('preparazione build EAS: dipendenze riproducibili', () => {
     expect(lock.length).toBeGreaterThan(1000);
     expect(lock).toContain('integrity sha512-');
   });
+  it('dichiara Yarn Classic 1.22.22 e conserva i profili EAS senza bypass del lockfile', () => {
+    expect(manifest.packageManager).toMatch(/^yarn@1\.22\.22(?:\+sha512\.[a-f0-9]+)?$/);
+    const eas = JSON.parse(readFileSync(resolve(root, 'eas.json'), 'utf8'));
+    expect(eas.build.preview.distribution).toBe('internal');
+    expect(JSON.stringify(eas)).not.toContain('EAS_BUILD_SKIP_LOCKFILE_CHECK');
+    expect(existsSync(resolve(root, 'package-lock.json'))).toBe(false);
+    expect(existsSync(resolve(root, 'pnpm-lock.yaml'))).toBe(false);
+  });
 
   it('mantiene i pin compatibili con il worker iOS Node20 senza saltare i controlli', () => {
     expect(manifest.dependencies['@supabase/supabase-js']).toBe('2.109.0');

@@ -1,0 +1,26 @@
+{
+  "status": "accepted_fill_fix_verified_separate_runtime_and_git_blockers_remain",
+  "mobile_base": "36fdcc7f58b8598332cfc3caaf5bee161f37e43b",
+  "web_semantics_reference": "88bfb440d86ca4103016ed2b5c1ed3416ecf497a",
+  "contract": "gptourContext.acceptedFillKeys?: string[]; optional v1 metadata; explicit accept only; exact keys; all non-type constraints and corridor unchanged",
+  "tests": { "full_passed": 250, "full_total": 250, "suites": 20, "gptour_passed": 133, "lockfile_content_tests_passed": 4, "new_receipt_tests": 33, "typescript": "pass", "targeted_lint": "pass" },
+  "global_lint": { "status": "preexisting_failure_unchanged", "errors": 1, "warnings": 132, "error": "Buffer undefined in scripts/aitour_inspection_rls_probe.mjs" },
+  "browser": {
+    "isolation": "all API calls intercepted in final verification; no operational account or CRM writes",
+    "passed": ["own-orphan-only initial selection", "explicit prospect acceptance keeps second stop", "exact key persisted in local draft", "reorder preserves accepted visit", "draft reopen and rebuild retains visit", "revenue refinement conflict blocks save without silent deletion", "restored valid revenue criterion allows save", "one batch serialized with two stops and unchanged requested/expansion types", "new giro clears acceptance"],
+    "intercepted_api_requests": 76,
+    "simulated_edge_calls": 3,
+    "simulated_batch_calls": 1,
+    "saved_fixture_stops": 2,
+    "real_crm_writes": 0,
+    "evidence": "/root/.emergent/automation_output/20261001_161152/console_20261001_161152.log"
+  },
+  "exports": { "android_javascript": "pass", "ios_javascript": "pass", "native_build": "not executed; previously confirmed ARM64 host / x86_64 hermesc incompatibility", "runtime_engine_changed": false },
+  "runtime_rpc_definition": "still pending user result; no SQL definition attached; previous exec_sql 403 not bypassed",
+  "lockfile": { "present_locally": true, "frozen_install_verified": true, "git_tracked": false, "included_in_head": false, "sha256": "f95d3900bf35adf6bdd9936d931b40cfffc91880c03f5d515600c6624a33a4cd" },
+  "migrations_applied": false,
+  "idempotency_sql_modified": false,
+  "manual_git_writes": false,
+  "publication": false,
+  "details": "test_reports/gptour_accepted_fill_36fdcc7f.md"
+}

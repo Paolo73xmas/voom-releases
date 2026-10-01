@@ -1,19 +1,22 @@
 import type { TourIntent } from './gptour-intent';
 import type { TourCandidate, TourPlan, SavedAreaFilter } from './types';
 import type { GptDayPlan } from './gptour-engine';
-import { candidateIntentProblems } from './gptour-criteria';
+import { acceptedCandidateProblems, readAcceptedFillKeys, retainAcceptedFillKeys } from './gptour-acceptance';
 import { isoDow } from './gptour-dates';
 export interface GptourContext {
   version: 1; source: 'mobile'; webReference: string; groupId: string; dayIndex: number; dayCount: number;
   intent: TourIntent; followUpDecisions: TourIntent['followUpDecisions']; lodgingRule: TourIntent['lodgingRule'];
   routingState: { fallback: boolean; nightDecision: GptDayPlan['nightDecision']; nightKmHome: number | null; startsFrom: GptDayPlan['startsFrom']; returnHome: boolean };
   facts: TourCandidate[]; plannedDate: string; groupDates: string[];
+  acceptedFillKeys?: string[];
 }
-export function attachGptourContext(days: GptDayPlan[], intent: TourIntent, groupId: string): GptDayPlan[] {
+export function attachGptourContext(days: GptDayPlan[], intent: TourIntent, groupId: string, acceptedFillKeys?: readonly string[]): GptDayPlan[] {
+  const accepted = readAcceptedFillKeys(acceptedFillKeys ?? days.flatMap((d) => readAcceptedFillKeys(d.plan.areaFilter?.gptourContext?.acceptedFillKeys)));
   return days.map((day, index) => ({ ...day, plan: { ...day.plan, areaFilter: { ...(day.plan.areaFilter || { mode: 'auto' }),
     finishMin: day.plan.finishMin, returnMin: day.plan.returnMin, routingFallback: day.plan.routingFallback,
     gptourContext: { version: 1, source: 'mobile', webReference: '88bfb440d86ca4103016ed2b5c1ed3416ecf497a', groupId, dayIndex: index, dayCount: days.length,
       intent, followUpDecisions: intent.followUpDecisions, lodgingRule: intent.lodgingRule,
+      acceptedFillKeys: retainAcceptedFillKeys(accepted, day.plan.stops.map((s) => s.candidate.key)),
       routingState: { fallback: day.plan.routingFallback, nightDecision: day.nightDecision, nightKmHome: day.nightKmHome, startsFrom: day.startsFrom, returnHome: day.returnHomeAfterDay },
       facts: day.plan.stops.map((s) => s.candidate), plannedDate: day.plan.tourDate, groupDates: days.map((d) => d.plan.tourDate) },
   } } }));
@@ -22,6 +25,8 @@ export function readGptourContext(area?: SavedAreaFilter | null): GptourContext 
   const ctx = area?.gptourContext;
   if (!ctx) return null;
   if (ctx.version !== 1 || !Array.isArray(ctx.facts) || !ctx.intent || !Array.isArray(ctx.intent.excludedStops)) throw new Error('Contesto GPTour non supportato. Il giro è visibile, ma i criteri non possono essere ricostruiti.');
+  const accepted = readAcceptedFillKeys(ctx.acceptedFillKeys);
+  if (accepted.some((key) => !ctx.facts.some((c) => c.key === key))) throw new Error('Tappe fill accettate non coerenti con il contesto salvato. Verifica il giro GPTour.');
   return ctx;
 }
 export function factForCandidate(c: TourCandidate, ctx: GptourContext): TourCandidate | undefined {
@@ -47,7 +52,7 @@ export function assertGptourPlan(plan: TourPlan): void {
   const errors: string[] = [];
   if (ctx.plannedDate && ctx.plannedDate !== plan.tourDate) errors.push('Data del giro diversa dal contesto GPTour');
   for (const s of plan.stops) {
-    const issues = candidateIntentProblems(s.candidate, ctx.intent);
+    const issues = acceptedCandidateProblems(s.candidate, ctx.intent, readAcceptedFillKeys(ctx.acceptedFillKeys));
     if (issues.length) errors.push(`${s.candidate.name}: ${issues.join(', ')}`);
     if (s.outsideWindow || s.candidate.excludedDays?.includes(isoDow(plan.tourDate))) errors.push(`${s.candidate.name}: fascia/giorno non disponibile`);
   }

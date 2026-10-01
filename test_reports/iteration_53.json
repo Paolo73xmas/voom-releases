@@ -1,0 +1,64 @@
+{
+  "summary": "Frontend-only narrow GPTour patch verification completed. Targeted and full unit suites passed (33 targeted, 104 GPTour+lock, 217 full), TypeScript passed, modified-file lint passed, and lock gate intentionally BLOCKED due untracked/absent-in-HEAD yarn.lock. Acceptance-gap behavior was reproduced in an isolated test.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "GPTour proposal acceptance with orphan-only intent",
+        "issue": "Confirmed gap: accepted fill/corridor prospect can be pruned on rebuild because acceptProposal reuses unchanged intent and prepareGptDays validates with initial semantics.",
+        "affected_testIDs": [
+          "gptour-proposal-accept"
+        ]
+      },
+      {
+        "flow": "Build lockfile preflight",
+        "issue": "scripts/check-build-lockfile.cjs correctly fails this snapshot because frontend/yarn.lock is not git-tracked and not present in HEAD tree.",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/gptour_fill_corridor.test.ts",
+    "/app/frontend/tests/gptour_batch_payload.test.ts",
+    "/app/frontend/tests/build_lockfile.test.ts",
+    "/app/frontend/tests/gptour_acceptance_gap_repro.test.ts",
+    "/app/frontend/scripts/check-build-lockfile.cjs",
+    "/tmp/gptour-review-targeted.log",
+    "/tmp/gptour-review-gptour-tests.log",
+    "/tmp/gptour-review-clean-tests.log",
+    "/tmp/gptour-review-clean-install.log",
+    "/tmp/gptour-review-android-export.log",
+    "/tmp/gptour-review-ios-export.log",
+    "/app/test_reports/gptour_batch_runtime_readonly.sql"
+  ],
+  "action_items": [
+    "Business/technical decision required for acceptance-gap behavior: keep accepted exception keys across rebuild vs broaden criteria/mode usage for initial validation.",
+    "Runtime save_tours_batch(jsonb) remains UNKNOWN in this run: prior read-only exec_sql attempt was 403 (42501); obtain human-provided function definition/metadata before any migration/correction SQL.",
+    "Lockfile gate remains UNRESOLVED operationally (git-tracking/HEAD inclusion). Do not treat as software-fixed until repository state is corrected by authorized git workflow.",
+    "Global lint still fails with pre-existing error in frontend/scripts/aitour_inspection_rls_probe.mjs (`Buffer` undefined); out of patch scope and unchanged."
+  ],
+  "critical_code_review_comments": [
+    "gptour-criteria.ts now correctly implements fill-null progressive behavior and explicit expansion constraints; ownOrphansOnly only blocks foreign orphans.",
+    "useGptour.acceptProposal rebuilds with unchanged intent; prepareGptDays validates day selections via candidateIntentProblems default mode, causing accepted exception candidates to be dropped.",
+    "No PM/version drift detected: packageManager remains Yarn 1.22.22, lock hash matched clean install copy, and no dependency updates were introduced in this verification run."
+  ],
+  "updated_files": [
+    "/app/frontend/tests/gptour_acceptance_gap_repro.test.ts",
+    "/app/test_reports/iteration_53.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (skip requested)",
+    "frontend": "95% (tests/typecheck/exports pass; unresolved lockfile-gate state and acceptance-gap decision pending)"
+  },
+  "seed_data_creation": "None. Unit tests used isolated fixtures; Supabase RPC boundary was MOCKED in test context only.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "No backend/auth/browser runtime writes executed. Public runtime SQL introspection remains blocked by DB permission (403/42501 in prior read-only attempt). Optional corrective SQL was NOT applied.",
+  "rca_of_issue": "Acceptance-gap repro (isolated): orphan-only intent + accepted proposal containing prospect -> prepareGptDays prunes prospect with 'tipologia non autorizzata'. Root cause: accepted key list is rebuilt under unchanged intent/initial validation path. Lock gate RCA: check-build-lockfile.cjs intentionally enforces git-tracked lockfile in HEAD; current repo snapshot violates this, so script exits non-zero by design."
+}

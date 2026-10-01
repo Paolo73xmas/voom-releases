@@ -13,12 +13,14 @@ import { proposeGptour, type GptProposal } from '../lib/aitour/gptour-opportunit
 import { saveGptourBatch, reconcileGptourSave } from '../lib/aitour/gptour-save';
 import { todayRome } from '../lib/aitour/gptour-dates';
 import { candidateMatchesTourIntent } from '../lib/aitour/gptour-criteria';
+import { acceptDisplayedFillKeys, acceptedKeysAfterIntentPatch, readAcceptedFillKeys, retainAcceptedFillKeys } from '../lib/aitour/gptour-acceptance';
 
 export interface GptActor { id: string; role: string }
 export function useGptour(actor: GptActor, agentId: string) {
   const [settings, setSettings] = useState<AiTourSettings>(DEFAULT_SETTINGS);
   const [pool, setPool] = useState<GptPool | null>(null), [home, setHome] = useState<GeoPoint | null>(null);
   const [messages, setMessages] = useState<GptMessage[]>([]), [intent, setIntent] = useState<TourIntent>(DEFAULT_INTENT);
+  const [acceptedFillKeys, setAcceptedFillKeys] = useState<string[]>([]);
   const [result, setResult] = useState<GptResult | null>(null), [days, setDays] = useState<GptDayPlan[]>([]);
   const [events, setEvents] = useState<GptEvent[]>([]), [groupId, setGroupId] = useState(randomUUID);
   const [activeDay, setActiveDay] = useState(0), [proposal, setProposal] = useState<GptProposal | null>(null);
@@ -27,12 +29,15 @@ export function useGptour(actor: GptActor, agentId: string) {
   const [uncertainSave, setUncertainSave] = useState(false), [reschedule, setReschedule] = useState<GptEvent | null>(null);
   const [draftAvailable, setDraftAvailable] = useState(false), [loadKey, setLoadKey] = useState(0);
   const epoch = useRef(0), inFlight = useRef(false), mounted = useRef(true);
+  const loadedDraftKey = useRef<string | null>(null);
   const draftKey = `gptour:draft:v1:${actor.id}:${agentId}`;
   useEffect(() => { const counter = epoch; mounted.current = true; return () => { mounted.current = false; counter.current++; }; }, []);
   useEffect(() => {
     const counter = epoch;
     const token = ++counter.current;
+    loadedDraftKey.current = null;
     setLoading(true); setPool(null); setDays([]); setResult(null); setMessages([]); setIntent(DEFAULT_INTENT); setEvents([]);
+    setAcceptedFillKeys([]);
     setError(''); setHome(null); setProposal(null); setSaved([]); setStale(true); setUncertainSave(false); setGroupId(randomUUID()); setDraftAvailable(false);
     inFlight.current = false; setBusy(false);
     (async () => {
@@ -47,36 +52,39 @@ export function useGptour(actor: GptActor, agentId: string) {
           if (d.version === 1 && d.agentId === agentId && d.actorId === actor.id) {
             setMessages(d.messages || []); setIntent(mergeIntent(DEFAULT_INTENT, d.intent)); setResult(d.result || null);
             setGroupId(d.groupId || randomUUID()); setDraftAvailable(!!d.result); setUncertainSave(!!d.uncertainSave);
+            setAcceptedFillKeys(d.gptourContext?.version === 1 ? readAcceptedFillKeys(d.gptourContext.acceptedFillKeys) : []);
           }
         }
+        loadedDraftKey.current = draftKey;
       } catch (e) { if (token === epoch.current) setError(e instanceof Error ? e.message : 'Caricamento non riuscito.'); }
       finally { if (token === epoch.current) setLoading(false); }
     })();
     return () => { counter.current++; };
   }, [actor.id, agentId, draftKey, loadKey]);
   useEffect(() => {
-    if (loading || !pool) return;
+    if (loading || !pool || loadedDraftKey.current !== draftKey) return;
     const token = epoch.current;
-    AsyncStorage.setItem(draftKey, JSON.stringify({ version: 1, actorId: actor.id, agentId, groupId, messages, intent, result, uncertainSave }))
+    AsyncStorage.setItem(draftKey, JSON.stringify({ version: 1, actorId: actor.id, agentId, groupId, messages, intent, result, uncertainSave, gptourContext: { version: 1, acceptedFillKeys } }))
       .catch(() => { if (token === epoch.current) setError('Bozza locale non salvata: non chiudere la schermata prima di aver verificato il piano.'); });
-  }, [draftKey, actor.id, agentId, groupId, messages, intent, result, uncertainSave, loading, pool]);
+  }, [draftKey, actor.id, agentId, groupId, messages, intent, result, uncertainSave, acceptedFillKeys, loading, pool]);
   const withBusy = async (operation: (token: number) => Promise<void>) => {
     if (inFlight.current) return;
     const token = epoch.current; inFlight.current = true; setBusy(true); setError('');
     try { await operation(token); } catch (e) { if (token === epoch.current) setError(e instanceof Error ? e.message : 'Operazione non riuscita.'); }
     finally { if (token === epoch.current) { inFlight.current = false; setBusy(false); } }
   };
-  const rebuild = async (nextResult: GptResult, nextIntent: TourIntent, token: number, selected = activeDay) => {
+  const rebuild = async (nextResult: GptResult, nextIntent: TourIntent, token: number, selected = activeDay, nextAccepted: readonly string[] = acceptedFillKeys) => {
     if (!pool || !home) throw new Error('Scegli Casa, Sede o posizione GPS prima di costruire il giro.');
     const requiredKeys = new Set(nextIntent.followUpDecisions.filter((d) => d.decision !== 'excluded').map((d) => d.key));
     const available = [...pool.candidates, ...pool.authorizedCandidates.filter((c) => requiredKeys.has(c.key) && !pool.candidates.some((p) => p.key === c.key))];
     setStale(true);
+    const accepted = retainAcceptedFillKeys(nextAccepted, [...resultDays(nextResult, todayRome()).flatMap((d) => d.selection.map((s) => s.key)), ...nextIntent.requiredStops, ...requiredKeys]);
     const initialDates = resultDays(nextResult, todayRome()).map((d) => d.tourDate!);
     let agenda = await loadGptourEvents(agentId, initialDates, pool.authorizedCandidates);
     if (token !== epoch.current) return;
-    setEvents(agenda); setResult(nextResult); setIntent(nextIntent);
+    setEvents(agenda); setResult(nextResult); setIntent(nextIntent); setAcceptedFillKeys(accepted);
     if (pendingGptEvents(agenda, nextIntent).length) { setWarnings(['Decidi quali follow-up mantenere o escludere prima di costruire il giro.']); return; }
-    const prepared = prepareGptDays(nextResult, available, nextIntent, settings, todayRome());
+    const prepared = prepareGptDays(nextResult, available, nextIntent, settings, todayRome(), accepted);
     const dates = prepared.days.map((d) => d.tourDate!);
     if (dates.join() !== initialDates.join()) {
       agenda = await loadGptourEvents(agentId, dates, pool.authorizedCandidates);
@@ -89,9 +97,11 @@ export function useGptour(actor: GptActor, agentId: string) {
     }
     // Appointments remain appointments: don't silently convert them to follow-ups or drop commitments.
     const appointments = agenda.filter((e) => e.type !== 'follow_up' && dates.includes(e.date));
-    const built = await buildGptour(nextResult, available, nextIntent, settings, home, todayRome(), undefined, appointments);
+    const built = await buildGptour(nextResult, available, nextIntent, settings, home, todayRome(), undefined, appointments, accepted);
     if (token !== epoch.current) return;
-    const attached = attachGptourContext(built.days, nextIntent, groupId), index = Math.min(selected, attached.length - 1);
+    const retained = retainAcceptedFillKeys(accepted, built.days.flatMap((d) => d.plan.stops.map((s) => s.candidate.key)));
+    const attached = attachGptourContext(built.days, nextIntent, groupId, retained), index = Math.min(selected, attached.length - 1);
+    setAcceptedFillKeys(retained);
     setDays(attached); setResult(built.result); setWarnings(built.warnings); setActiveDay(index); setProposal(null); setStale(false); setDraftAvailable(false);
     const suggestion = await proposeGptour(attached[index].plan, attached.map((d) => d.plan), pool.candidates, nextIntent, settings, !!nextResult.corridor?.suggest);
     if (token === epoch.current) setProposal(suggestion);
@@ -108,6 +118,7 @@ export function useGptour(actor: GptActor, agentId: string) {
     });
     if (token !== epoch.current) return;
     let nextIntent = mergeIntent(response.intentReset ? DEFAULT_INTENT : intent, response.intent);
+    const nextAccepted = acceptedKeysAfterIntentPatch(acceptedFillKeys, intent, response.intent, response.intentReset);
     const nextEvents = await loadGptourEvents(agentId, resultDays(response, todayRome()).map((d) => d.tourDate!), pool.authorizedCandidates);
     if (token !== epoch.current) return;
     for (const action of response.followUpActions || []) {
@@ -116,13 +127,13 @@ export function useGptour(actor: GptActor, agentId: string) {
       if (action.action === 'reschedule') setReschedule(event); // explicit date/time confirmation, never an AI-triggered write
       else nextIntent = mergeIntent(nextIntent, { followUpDecisions: [eventDecision(event, action.action)] });
     }
-    setMessages([...nextMessages, { role: 'assistant', content: response.reply }]); setIntent(nextIntent);
+    setMessages([...nextMessages, { role: 'assistant', content: response.reply }]); setIntent(nextIntent); setAcceptedFillKeys(nextAccepted);
     if (response.needsInfo) { setStale(true); setEvents(nextEvents); return; }
-    await rebuild(response, nextIntent, token);
+    await rebuild(response, nextIntent, token, activeDay, nextAccepted);
   });
   const decide = (event: GptEvent, action: 'keep' | 'exclude') => withBusy(async (token) => {
     const next = mergeIntent(intent, { followUpDecisions: [eventDecision(event, action)] }); setIntent(next);
-    if (result) await rebuild(result, next, token);
+    if (result) await rebuild(result, next, token, activeDay, action === 'exclude' ? acceptedFillKeys.filter((key) => key !== event.key) : acceptedFillKeys);
   });
   const confirmReschedule = (date: string, time: string) => withBusy(async (token) => {
     if (!reschedule) return;
@@ -148,14 +159,15 @@ export function useGptour(actor: GptActor, agentId: string) {
       if (!c || !candidateMatchesTourIntent(c, intent)) throw new Error('Il candidato non rispetta i criteri attivi.');
       list.push({ key, reason: 'Aggiunto dall’agente' });
     }
-    await rebuild({ ...result, multiDay: ds.length > 1, days: ds, selection: ds.length === 1 ? ds[0].selection : [], orderImposed: operation === 'up' || operation === 'down' || result.orderImposed }, nextIntent, token);
+    await rebuild({ ...result, multiDay: ds.length > 1, days: ds, selection: ds.length === 1 ? ds[0].selection : [], orderImposed: operation === 'up' || operation === 'down' || result.orderImposed }, nextIntent, token, activeDay, operation === 'remove' ? acceptedFillKeys.filter((k) => k !== key) : acceptedFillKeys);
   });
   const acceptProposal = () => withBusy(async (token) => {
-    if (!proposal?.candidates.length || !result) return;
+    if (!proposal?.candidates.length || !result || !pool || stale || saved.length || uncertainSave) return;
+    const accepted = acceptDisplayedFillKeys(acceptedFillKeys, proposal, pool.candidates, intent);
     const ds = days.map((d, i) => ({ day: d.day, tourDate: d.plan.tourDate, area: d.plan.areaLabel, startTime: minToTime(d.plan.startMin), endTime: minToTime(d.plan.endMin), selection: (i === activeDay ? proposal.orderedKeys : d.plan.stops.map((s) => s.candidate.key)).map((key) => ({ key, reason: null })) }));
-    await rebuild({ ...result, multiDay: ds.length > 1, days: ds, selection: ds.length === 1 ? ds[0].selection : [] }, intent, token);
+    await rebuild({ ...result, multiDay: ds.length > 1, days: ds, selection: ds.length === 1 ? ds[0].selection : [] }, intent, token, activeDay, accepted);
   });
-  const rejectProposal = () => { if (busy) return; const next = applyRejection(intent, proposal?.candidates.map((c) => c.key) || []); setIntent(next); setDays((old) => attachGptourContext(old, next, groupId)); setProposal(null); };
+  const rejectProposal = () => { if (busy) return; const next = applyRejection(intent, proposal?.candidates.map((c) => c.key) || []); setIntent(next); setDays((old) => attachGptourContext(old, next, groupId, acceptedFillKeys)); setProposal(null); };
   const chooseDay = (index: number) => withBusy(async (token) => { setActiveDay(index); setProposal(null); if (pool && days[index]) { const p = await proposeGptour(days[index].plan, days.map((d) => d.plan), pool.candidates, intent, settings, !!result?.corridor?.suggest); if (token === epoch.current) setProposal(p); } });
   const save = () => withBusy(async (token) => {
     if (uncertainSave) {
@@ -173,6 +185,7 @@ export function useGptour(actor: GptActor, agentId: string) {
     if (busy || uncertainSave) return;
     epoch.current++; await AsyncStorage.removeItem(draftKey);
     setMessages([]); setIntent(DEFAULT_INTENT); setResult(null); setDays([]); setEvents([]); setSaved([]); setProposal(null); setGroupId(randomUUID()); setWarnings([]); setError(''); setStale(true); setDraftAvailable(false);
+    setAcceptedFillKeys([]);
   };
   const retryLoad = useCallback(() => setLoadKey((k) => k + 1), []);
   return { settings, setSettings, pool, home, setHome, messages, intent, days, events, pending: pendingGptEvents(events, intent), activeDay, proposal,

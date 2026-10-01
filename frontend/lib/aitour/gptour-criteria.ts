@@ -1,16 +1,25 @@
-import type { TourCandidate } from './types';
+import type { EntityType, TourCandidate } from './types';
 import type { TourIntent } from './gptour-intent';
 import { normalizeGptourName as norm } from './gptour-identity';
 import { provinceCode } from './brief-area';
 export type IntentMatchMode = 'initial' | 'fill' | 'corridor';
+export const DEFAULT_FILL_CONTACT_DAYS = 15;
+/** Web 88bfb44: fill without explicit expansions uses the progressive ranking.
+ * Initial AI selections and corridor remain constrained to requested + allowed types. */
+export function allowedTypesFor(intent: TourIntent, mode: IntentMatchMode): Set<EntityType> | null {
+  const requested = intent.requestedEntityTypes, expansion = intent.allowedExpansionTypes;
+  if (requested.length === 0 && expansion.length === 0) return null;
+  if (mode === 'fill' && expansion.length === 0) return null;
+  return new Set<EntityType>([...requested, ...expansion]);
+}
 export function candidateIntentProblems(c: TourCandidate, i: TourIntent, mode: IntentMatchMode = 'initial'): string[] {
   const e: string[] = [];
   if (i.excludedStops.includes(c.key) || i.rejectedOpportunityKeys.includes(c.key)) e.push('escluso');
   if (i.ownOrphansOnly && c.entityType === 'orphan' && c.isOwnOrphan !== true) e.push('orfano non proprio');
-  const types = [...i.requestedEntityTypes, ...i.allowedExpansionTypes];
-  if (types.length && !types.includes(c.entityType)) e.push('tipologia non autorizzata');
+  const types = allowedTypesFor(i, mode);
+  if (types && !types.has(c.entityType)) e.push('tipologia non autorizzata');
   if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng) || Math.abs(c.lat) > 90 || Math.abs(c.lng) > 180) e.push('coordinate mancanti');
-  const contactLimit = i.physicalContactMinDays ?? (mode !== 'initial' && c.entityType === 'prospect' ? 15 : null);
+  const contactLimit = i.physicalContactMinDays ?? (mode !== 'initial' && c.entityType === 'prospect' ? DEFAULT_FILL_CONTACT_DAYS : null);
   if (contactLimit != null) {
     if (c.gptourData?.contactKnown === false) e.push('contatto fisico non verificato');
     else if (c.daysSincePhysicalContact != null && c.daysSincePhysicalContact < contactLimit) e.push('contatto fisico recente');

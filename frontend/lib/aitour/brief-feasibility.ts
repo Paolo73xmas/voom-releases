@@ -1,6 +1,7 @@
 import type { TourPlan, SavedAreaFilter } from './types';
 import { isoWeekday } from '../visit-slots';
 import { journeyPlanProblems } from './brief-journey';
+import { assertGptourPlan } from './gptour-context';
 
 export function mandatoryProblems(plan: TourPlan): string[] {
   if (!plan.requiredStops?.length && !plan.areaFilter?.briefJourney) return [];
@@ -17,6 +18,7 @@ export function mandatoryProblems(plan: TourPlan): string[] {
   return [...new Set(errors)];
 }
 export function assertMandatoryFeasible(plan: TourPlan): void {
+  assertGptourPlan(plan);
   const errors = mandatoryProblems(plan);
   if (errors.length) throw new Error(errors.join('. '));
 }

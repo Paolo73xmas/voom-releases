@@ -102,7 +102,8 @@ export async function getOrphanConfig(): Promise<OrphanConfig> {
  * @returns Map of tabaccheria_id -> orphan status
  */
 export async function fetchOrphanMap(
-  config?: { orphan_a_days: number; orphan_b_days: number }
+  config?: { orphan_a_days: number; orphan_b_days: number },
+  strict = false,
 ): Promise<Map<string, OrphanMapStatus>> {
   const map = new Map<string, OrphanMapStatus>();
   const cfg = config || (await getOrphanConfig());
@@ -124,6 +125,7 @@ export async function fetchOrphanMap(
         })
         .range(from, from + PAGE - 1);
       if (error) {
+        if (strict) throw new Error('Stato orfani CRM non disponibile. Riprova.');
         console.warn('[orphan-map] RPC error, will use client-side fallback:', error.message);
         rpcError = true;
         break;
@@ -145,6 +147,7 @@ export async function fetchOrphanMap(
     }
   } catch (e) {
     console.warn('[orphan-map] RPC threw, using fallback:', e);
+    if (strict) throw e;
   }
 
   // Client-side fallback (web parity, less reliable due to RLS)

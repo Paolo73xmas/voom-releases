@@ -14,7 +14,7 @@ import {
   RefreshControl,
   Modal,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ import * as Location from 'expo-location';
 import { DS, JAKARTA, SHADOWS, COLORS, currentThemeMode } from '../lib/theme';
 import { hap } from '../lib/haptics';
 import { useAuthStore } from '../store/authStore';
+import { canUseGptour } from '../lib/aitour/gptour-auth';
 import { supabase } from '../lib/supabase';
 import { listAllZones, pointInZones, zoneLabel, intersectDrawnWithZones, type TerritoryZone } from '../lib/aitour/territories';
 import { loadCandidates, loadFreeTabaccherie, type CandidatePool } from '../lib/aitour/data';
@@ -203,9 +204,10 @@ export default function AITourScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, isLoading: sessionLoading } = useAuthStore();
-  const agentId = user?.id || '';
+  const { gptourAgentId, tab: requestedTab } = useLocalSearchParams<{ gptourAgentId?: string; tab?: string }>();
+  const agentId = (user?.role === 'admin' || user?.role === 'admincustom') && typeof gptourAgentId === 'string' ? gptourAgentId : user?.id || '';
 
-  const [tab, setTab] = useState<'genera' | 'settimana' | 'mensile' | 'portafoglio' | 'tours'>('genera');
+  const [tab, setTab] = useState<'genera' | 'settimana' | 'mensile' | 'portafoglio' | 'tours'>(requestedTab === 'tours' ? 'tours' : 'genera');
   const [phase, setPhase] = useState<'form' | 'result'>('form');
   const [liveState, setLiveState] = useState<LiveState | null>(null);
   const [activePausedTour, setActivePausedTour] = useState<SavedTour | null>(null);
@@ -1647,6 +1649,11 @@ export default function AITourScreen() {
 
   const renderForm = () => (
     <View>
+      {canUseGptour(user?.role) && <TouchableOpacity testID="aitour-open-gptour" style={styles.briefCard} onPress={() => router.push('/gptour')} activeOpacity={0.85}>
+        <View style={styles.briefIcon}><Ionicons name="chatbubbles-outline" size={20} color={DS.surface} /></View>
+        <View style={{ flex: 1 }}><Text style={styles.briefCardTitle}>GPTour</Text><Text style={styles.briefCardDesc}>Conversazione, criteri persistenti e giri su più giornate</Text></View>
+        <Ionicons name="chevron-forward" size={20} color={AI_PURPLE_TEXT} />
+      </TouchableOpacity>}
       {/* Dillo all'AI: brief in linguaggio naturale (voce o testo) */}
       <TouchableOpacity testID="aitour-open-brief" style={styles.briefCard} onPress={openBrief} activeOpacity={0.85}>
         <View style={styles.briefIcon}>

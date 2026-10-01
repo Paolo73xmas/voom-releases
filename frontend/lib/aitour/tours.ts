@@ -155,6 +155,11 @@ export async function saveToursBatch(agentId: string, plans: TourPlan[], name?: 
  * update dell'header + delete/insert atomici delle tappe (parità web replaceTourPlan).
  */
 export async function replaceTourPlan(tourId: string, plan: TourPlan): Promise<void> {
+  const current = await supabase.from('ai_tours').select('area_filter').eq('id', tourId).single();
+  if (current.error) throw current.error;
+  // Preserve the optional namespace (and other current JSON fields) even when a legacy editor
+  // submits only its own area fields. Date/criteria validation below can then reject stale edits.
+  if (current.data?.area_filter?.gptourContext) plan.areaFilter = { ...current.data.area_filter, ...plan.areaFilter };
   assertMandatoryFeasible(plan);
   const { error: upErr } = await supabase
     .from('ai_tours')

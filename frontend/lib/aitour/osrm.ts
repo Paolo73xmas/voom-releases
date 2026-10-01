@@ -84,13 +84,14 @@ function fallbackMatrix(points: LatLng[]): OsrmMatrix {
   return { durations, distances, fallback: true };
 }
 
-export async function getMatrix(points: LatLng[]): Promise<OsrmMatrix> {
+export async function getMatrix(points: LatLng[], requireRoadDistances = false): Promise<OsrmMatrix> {
   if (points.length < 2) return { durations: [[0]], distances: [[0]], fallback: false };
   try {
     const url = `${OSRM_BASE}/table/v1/driving/${coordStr(points)}?annotations=duration,distance`;
     const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: timeoutSignal(15000) });
     const body = await res.json();
     if (!res.ok || body.code !== 'Ok' || !body.durations) throw new Error(body.message || `HTTP ${res.status}`);
+    if (requireRoadDistances && (!body.distances || body.distances.some((row: unknown[]) => row.some((v) => typeof v !== 'number' || !Number.isFinite(v))))) throw new Error('Distanze stradali incomplete');
     return { durations: body.durations, distances: body.distances || fallbackMatrix(points).distances, fallback: false };
   } catch (err) {
     console.warn('[AITour][osrm] Matrice non disponibile, uso stima haversine:', err);

@@ -33,6 +33,8 @@ import { AddStopModal } from './AddStopModal';
 import { ReorderStopsModal } from './ReorderStopsModal';
 import { OwnStaminaChip } from './OwnStaminaChip';
 import { planTour } from '../../lib/aitour/planner';
+import { gptourMetadataWarning } from '../../lib/aitour/gptour-context';
+import { GptNotice } from './gptour/UI';
 import { buildTourReport, type TourReport } from '../../lib/aitour/report';
 import type { TourCandidate, AiTourSettings, GeoPoint, DayType } from '../../lib/aitour/types';
 import { minToTime, timeToMin, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS, ENTITY_TEXT_COLORS } from '../../lib/aitour/types';
@@ -95,6 +97,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   const [nowTick, setNowTick] = useState(nowMin());
   const [overtimeEnd, setOvertimeEnd] = useState('');
   const tour = initial.tour;
+  const gptourWarning = gptourMetadataWarning(tour.area_filter, tour.name, stops.map((s) => s.candidate), tour.tour_date);
   const stopsRef = useRef(stops);
   stopsRef.current = stops;
   // Cestino sempre disponibile: se un ricalcolo è in corso, la cestinatura viene
@@ -301,6 +304,8 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       recalcingRef.current = true;
       try {
         const pos = (await getCurrentPos()) || fallbackPos();
+        const gptWarning = gptourMetadataWarning(tour.area_filter, tour.name, currentStops.map((s) => s.candidate));
+        if (gptWarning) throw new Error(gptWarning);
         const start: GeoPoint = { ...pos, label: 'Posizione attuale' };
         // Il ricalcolo NON rimuove mai le tappe previste (tutte obbligatorie):
         // alleggerire il giro spetta all'agente col cestino rosso o "Salta".
@@ -800,7 +805,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     if (!suggestion) return;
     setBusy(true);
     try {
-      if (tour.area_filter?.briefJourney || tour.area_filter?.briefRequirements?.length) {
+      if (tour.area_filter?.gptourContext || /gptour/i.test(tour.name || '') || tour.area_filter?.briefJourney || tour.area_filter?.briefRequirements?.length) {
         await insertLiveStop(await buildCtx(), stops.filter((s) => s.status === 'planned'), suggestion.cand, { mode: 'slot' }, { mandatory: false });
         await reloadFromDb(); setSuggestion(null); setMessage('Visita aggiunta rispettando i vincoli del giro'); return;
       }
@@ -867,7 +872,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     if (!proxSuggestion) return;
     setBusy(true);
     try {
-      if (tour.area_filter?.briefJourney || tour.area_filter?.briefRequirements?.length) {
+      if (tour.area_filter?.gptourContext || /gptour/i.test(tour.name || '') || tour.area_filter?.briefJourney || tour.area_filter?.briefRequirements?.length) {
         await insertLiveStop(await buildCtx(), stops.filter((s) => s.status === 'planned'), proxSuggestion, { mode: 'slot' }, { mandatory: false });
         await reloadFromDb(); setProxSuggestion(null); setMessage('Visita aggiunta rispettando i vincoli del giro'); return;
       }
@@ -1111,6 +1116,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           <Text style={styles.finishBtnText}>Termina</Text>
         </TouchableOpacity>
       </View>
+      {!!gptourWarning && <GptNotice id="aitour-live-gptour-context-warning" text={gptourWarning} />}
       <View style={styles.progressRow}>
         <Text style={styles.progressText}>
           {doneCount} fatte · {skipCount} saltate · {pending.length} rimanenti

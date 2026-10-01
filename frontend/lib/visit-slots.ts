@@ -27,20 +27,22 @@ export const DEFAULT_VISIT_SLOTS: VisitSlot[] = [
 
 let cache: VisitSlot[] | null = null;
 
-export async function getVisitSlots(): Promise<VisitSlot[]> {
-  if (cache) return cache;
+export async function getVisitSlots(strict = false): Promise<VisitSlot[]> {
+  if (cache && !strict) return cache;
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('system_settings')
       .select('setting_value')
       .eq('setting_key', 'visit_time_slots')
       .maybeSingle();
+    if (strict && error) throw new Error('Fasce visita non disponibili. Riprova.');
     const arr = data?.setting_value as VisitSlot[] | undefined;
     if (Array.isArray(arr) && arr.length > 0) {
       cache = arr;
       return cache;
     }
-  } catch {
+  } catch (e) {
+    if (strict) throw e;
     // fallback ai default
   }
   cache = DEFAULT_VISIT_SLOTS;

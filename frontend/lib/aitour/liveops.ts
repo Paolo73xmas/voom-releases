@@ -15,6 +15,9 @@ import { isoWeekday } from '../visit-slots';
 import { inBriefArea } from './brief-area';
 import { assignJourneyStages, nearestJourneyStage } from './brief-journey';
 import { assertCompleteReplan, protectLivePlan, restoreBriefCandidate } from './brief-live';
+import { readGptourContext, gptourMetadataWarning } from './gptour-context';
+import { loadGptourPool } from './gptour-data';
+import { candidateMatchesTourIntent } from './gptour-criteria';
 
 export interface LiveStopRef {
   id: string;
@@ -81,7 +84,12 @@ async function persistSequence(
       return { stopId: ref.id, seq: base + i + 1, arrival: minToTime(p.arrivalMin), travelMin: p.travelMinFromPrev, travelKm: p.travelKmFromPrev };
     });
   await updateLiveSequence(ctx.tour.id, updates);
-  await supabase.from('ai_tours').update({ route_geometry: geometry, updated_at: new Date().toISOString() }).eq('id', ctx.tour.id);
+  const gpt = readGptourContext(ctx.tour.area_filter);
+  const mergedArea = gpt ? { ...ctx.tour.area_filter!, gptourContext: { ...gpt,
+    facts: [...gpt.facts.filter((c) => !planned.some((p) => p.candidate.key === c.key)), ...planned.map((p) => p.candidate)] } } : undefined;
+  const { error } = await supabase.from('ai_tours').update({ route_geometry: geometry, updated_at: new Date().toISOString(), ...(mergedArea ? { area_filter: mergedArea } : {}) }).eq('id', ctx.tour.id);
+  if (error) throw error;
+  if (mergedArea) ctx.tour.area_filter = mergedArea;
 }
 
 function aiInput(ctx: ReplanContext, candidates: TourCandidate[], mandatoryKeys: Set<string>, start: GeoPoint, startMin: number) {
@@ -141,7 +149,16 @@ export async function insertLiveStop(
   placement: PlacementChoice,
   opts: InsertOpts,
 ): Promise<LiveOpResult> {
-  if (ctx.tour.area_filter?.briefJourney || ctx.tour.area_filter?.briefRequirements?.length) return insertProtectedStop(ctx, pending, cand, placement, opts);
+  const gptWarning = gptourMetadataWarning(ctx.tour.area_filter, ctx.tour.name, pending.map((s) => s.candidate));
+  if (gptWarning) throw new Error(gptWarning);
+  const gpt = readGptourContext(ctx.tour.area_filter);
+  if (gpt) {
+    const verified = await loadGptourPool(ctx.tour.agent_id, ctx.settings);
+    const current = verified.candidates.find((c) => c.key === cand.key || (!!cand.customerId && c.customerId === cand.customerId));
+    if (!current || !candidateMatchesTourIntent(current, gpt.intent, 'fill')) throw new Error('La nuova tappa non rispetta i criteri GPTour o i dati non sono verificati.');
+    cand = current;
+  }
+  if (gpt || ctx.tour.area_filter?.briefJourney || ctx.tour.area_filter?.briefRequirements?.length) return insertProtectedStop(ctx, pending, cand, placement, opts);
   if (placement.mode === 'slot' && placement.slots && placement.slots.length > 0) {
     cand.preferredSlots = placement.slots;
   }
@@ -250,6 +267,10 @@ type AreaCheck = (c: { lat: number; lng: number; province?: string; city?: strin
 
 export async function areaCheckForTour(tour: SavedTour, pending: Pick<LiveStopRef, 'candidate'>[]): Promise<AreaCheck> {
   const af = tour.area_filter || null;
+  const gpt = readGptourContext(af);
+  if (gpt) return (c) => candidateMatchesTourIntent(c as TourCandidate, gpt.intent, 'fill');
+  const missing = gptourMetadataWarning(af, tour.name);
+  if (missing) throw new Error(missing);
   if (af?.briefJourney || af?.briefAreas?.length) {
     const journey = af.briefJourney;
     const minStage = journey && pending.length ? Math.min(...pending.map((s) => nearestJourneyStage(s.candidate, journey))) : journey ? journey.stages.length - 1 : 0;
@@ -326,16 +347,20 @@ export async function extendTourVisits(
   const agentId = ctx.tour.agent_id;
   const resolved = (ctx.tour.resolved_tour_type || 'mista') as Exclude<DayType, 'ai'>;
 
-  const pool = await loadCandidates(agentId, ctx.settings);
+  const missingContext = gptourMetadataWarning(ctx.tour.area_filter, ctx.tour.name, pending.map((s) => s.candidate));
+  if (missingContext) throw new Error(missingContext);
+  const gpt = readGptourContext(ctx.tour.area_filter);
+  const gptPool = gpt ? await loadGptourPool(agentId, ctx.settings) : null;
+  const pool = gptPool ? { clients: gptPool.candidates.filter((c) => c.entityType === 'client'), prospects: gptPool.candidates.filter((c) => c.entityType === 'prospect'), orphans: gptPool.candidates.filter((c) => c.entityType === 'orphan') } : await loadCandidates(agentId, ctx.settings);
   scoreCandidates([...pool.clients, ...pool.prospects, ...pool.orphans], ctx.settings);
-  let candidates = candidatesForDayType(pool, resolved);
+  let candidates = gptPool ? gptPool.candidates : candidatesForDayType(pool, resolved);
 
   const refs = [{ lat: ctx.startPos.lat, lng: ctx.startPos.lng }, ...pending.map((s) => ({ lat: s.candidate.lat, lng: s.candidate.lng }))];
   const nearRoute = (lat: number, lng: number) => refs.some((r) => haversineKm(r.lat, r.lng, lat, lng) <= EXTEND_NEAR_KM);
   const inArea = await areaCheckForTour(ctx.tour, pending);
   const tourDow = isoWeekday(ctx.tour.tour_date);
   candidates = candidates.filter((c) =>
-    !isRecentlyServed(c, RECENT_CONTACT_DAYS, ctx.tour.tour_date) &&
+    (gpt ? candidateMatchesTourIntent(c, gpt.intent, 'fill') : !isRecentlyServed(c, RECENT_CONTACT_DAYS, ctx.tour.tour_date)) &&
     !(c.customerId && excludeCustomerIds.has(c.customerId)) &&
     !(c.tabaccheriaId && excludeTabIds.has(c.tabaccheriaId)) &&
     !(Array.isArray(c.excludedDays) && c.excludedDays.includes(tourDow)) &&
@@ -344,7 +369,7 @@ export async function extendTourVisits(
   );
 
   // Sviluppo/mista: anche tabaccherie libere / mai visitate vicine al percorso
-  if (resolved === 'sviluppo' || resolved === 'mista') {
+  if (!gpt && (resolved === 'sviluppo' || resolved === 'mista')) {
     let minLat = refs[0].lat, maxLat = refs[0].lat, minLng = refs[0].lng, maxLng = refs[0].lng;
     for (const r of refs) {
       minLat = Math.min(minLat, r.lat); maxLat = Math.max(maxLat, r.lat);

@@ -1,0 +1,48 @@
+{
+  "status": "software_checks_pass_native_verification_pending",
+  "web_reference": "88bfb440d86ca4103016ed2b5c1ed3416ecf497a",
+  "mobile_base_branch": "conflict_170826_1303",
+  "mobile_base_commit": "cddc85274894eed1ebdbef4597ff1c33cb67c1ad",
+  "unit_tests": { "total": 187, "passed": 187, "suites": 17, "gptour_tests": 71, "legacy_tests": 116 },
+  "typescript": "pass",
+  "lint": "pass",
+  "iteration_52_high_issue": {
+    "issue": "Malformed admin agent-list payload crashed agents.find",
+    "resolution": "Validated list shape, optional display-name fallback, recoverable notice and retry",
+    "verification": "Unit regression and isolated browser malformed payload -> notice -> valid response -> picker recovery passed"
+  },
+  "browser_isolated": {
+    "all_auth_crm_edge_osrm_requests_intercepted": true,
+    "real_crm_writes": 0,
+    "passed": [
+      "agentcustom access without agent selector",
+      "five fixture candidates loaded",
+      "two-day generation and initial revenue filter enforcement",
+      "explicit opportunity acceptance and rebuild",
+      "manual reorder",
+      "single save_tours_batch request for two days",
+      "optional versioned gptourContext present in both payload days",
+      "320px phone has no horizontal overflow"
+    ],
+    "visual_verification_only": ["Navigation to ordinary I miei Tour shows both saved fixture tours"],
+    "limitations": [
+      "Final script text locator selected hidden duplicate I miei Tour label and timed out; navigation independently visible in screenshot, not counted as successful assertion",
+      "Map container opened; cartography and native markers not certified",
+      "No actual device voice, GPS, Live-start or real writes tested"
+    ],
+    "last_successful_flow_network_counts": { "edge_calls": 1, "batch_calls": 1, "saved_fixture_days": 2, "blocked_direct_writes": 0 }
+  },
+  "exports": {
+    "android_javascript_no_bytecode": "pass",
+    "ios_javascript_no_bytecode": "pass",
+    "hermes_default_export": "blocked: aarch64 host versus x86_64 hermesc binary",
+    "runtime_engine_changed": false,
+    "native_apk_aab_ipa_build": "not executed",
+    "android_device": "not verified",
+    "iphone_device": "not verified"
+  },
+  "shared_migrations_applied": false,
+  "idempotency_sql": "proposals/gptour_idempotency_v1_NOT_APPLIED.sql - draft only, neither applied nor called",
+  "publication_performed": false,
+  "delivery_details": "memory/GPTOUR_MOBILE_DELIVERY.md"
+}

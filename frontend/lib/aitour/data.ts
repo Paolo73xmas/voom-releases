@@ -36,24 +36,26 @@ interface CustomerRow {
 }
 
 // Progetti Speciali: slug -> nome visualizzato
-async function fetchProjectsMap(): Promise<Map<string, string>> {
+async function fetchProjectsMap(strict = false): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   const { data, error } = await supabase.from('projects').select('slug, name').eq('is_active', true);
   if (error) {
     console.warn('[AITour][data] projects:', error);
+    if (strict) throw new Error('Elenco progetti non verificato. Riprova.');
     return map;
   }
   for (const p of data || []) if (p.slug && p.slug !== 'nessun_progetto') map.set(p.slug, p.name || p.slug);
   return map;
 }
 
-async function fetchOrderStats(customerIds: string[]): Promise<Map<string, OrderStats>> {
+async function fetchOrderStats(customerIds: string[], strict = false): Promise<Map<string, OrderStats>> {
   const map = new Map<string, OrderStats>();
   for (let i = 0; i < customerIds.length; i += 200) {
     const batch = customerIds.slice(i, i + 200);
     const { data, error } = await supabase.rpc('ai_tour_order_stats', { p_customer_ids: batch });
     if (error) {
       console.error('[AITour][data] ai_tour_order_stats:', error);
+      if (strict) throw new Error('Statistiche ordini non verificate. Riprova.');
       continue;
     }
     for (const row of (data || []) as OrderStats[]) map.set(row.customer_id, row);
@@ -204,12 +206,13 @@ export interface NoInterestBlock {
 
 let noInterestCache: { at: number; block: NoInterestBlock } | null = null;
 
-export async function getNoInterestBlock(): Promise<NoInterestBlock> {
+export async function getNoInterestBlock(strict = false): Promise<NoInterestBlock> {
   if (noInterestCache && Date.now() - noInterestCache.at < 300000) return noInterestCache.block;
   const block: NoInterestBlock = { customers: new Map(), tabs: new Map() };
   const { data, error } = await supabase.rpc('ai_tour_no_interest_ids');
   if (error) {
     console.warn('[AITour][data] no-interest block:', error);
+    if (strict) throw new Error('Esclusioni commerciali non verificate. Riprova.');
     return block;
   }
   for (const r of (data || []) as { customer_id: string | null; tabaccheria_id: string | null; last_no_interest: string }[]) {
@@ -239,7 +242,7 @@ export function isNoInterestBlocked(c: TourCandidate, block: NoInterestBlock): b
   return true;
 }
 
-export async function loadCandidates(agentId: string, settings: AiTourSettings): Promise<CandidatePool> {
+export async function loadCandidates(agentId: string, settings: AiTourSettings, strict = false): Promise<CandidatePool> {
   if (!agentId) throw new Error('Sessione agente non disponibile');
   const customers: CustomerRow[] = [];
   for (let offset = 0; ; offset += 500) {
@@ -262,16 +265,17 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
   const prospectRows = rows.filter((r) => r.category === 'prospect' || r.category === 'lead');
 
   const [stats, appointments, orphanConfig, projects, remoteOrders, learnedDurations, slotDefs, noBlock] = await Promise.all([
-    fetchOrderStats(clientRows.map((r) => r.id)),
+    fetchOrderStats(clientRows.map((r) => r.id), strict),
     fetchUpcomingAppointments(agentId),
     getOrphanConfig(),
-    fetchProjectsMap(),
+    fetchProjectsMap(strict),
     fetchLastRemoteOrders(agentId),
     fetchLearnedDurations(agentId),
-    getVisitSlots(),
-    getNoInterestBlock(),
+    getVisitSlots(strict),
+    getNoInterestBlock(strict),
   ]);
-  const orphanMap = await fetchOrphanMap(orphanConfig);
+  if (strict && !orphanConfig.id) throw new Error('Configurazione orfani non verificata. Nessuna regola CRM è stata sostituita.');
+  const orphanMap = await fetchOrphanMap(orphanConfig, strict);
 
   // Orfani propri (schede dell'agente — clienti E prospect — con tabaccheria diventata orfana):
   // una sola voce candidato (dati CRM completi + badge orfano), MAI doppione dal registro tabaccherie
@@ -280,7 +284,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
   for (const r of [...clientRows, ...prospectRows]) {
     const status = r.tabaccheria_id ? orphanMap.get(r.tabaccheria_id) : undefined;
     if (status) {
-      orphans.push(toCandidate(r, 'orphan', stats.get(r.id), appointments.get(r.id) || null, settings, status, projects, remoteOrders.get(r.id), learnedDurations.get(r.id), slotDefs));
+      orphans.push({ ...toCandidate(r, 'orphan', stats.get(r.id), appointments.get(r.id) || null, settings, status, projects, remoteOrders.get(r.id), learnedDurations.get(r.id), slotDefs), isOwnOrphan: true });
       if (r.tabaccheria_id) ownOrphanKeys.add(r.tabaccheria_id);
     }
   }
@@ -298,6 +302,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
       .not('gps_lng', 'is', null);
     if (tabErr) {
       console.warn('[AITour][data] tabaccherie orfane:', tabErr);
+      if (strict) throw new Error('Registro orfani incompleto. Riprova.');
       continue;
     }
     // Nome commerciale della scheda CRM collegata (se leggibile: RLS puo' filtrare i clienti altrui)
@@ -325,6 +330,7 @@ export async function loadCandidates(agentId: string, settings: AiTourSettings):
       if (linkedCustomerId && disabledCustomers.has(linkedCustomerId)) continue;
       orphans.push({
         key: `orphan:${t.id}`,
+        isOwnOrphan: false,
         entityType: 'orphan',
         customerId: linkedCustomerId,
         // Cliente di altro agente (invisibile via RLS): id usato SOLO per lo

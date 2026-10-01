@@ -38,6 +38,12 @@ export interface TourCandidate {
   lat: number;
   lng: number;
   lastVisitDate: string | null;
+  lastInspectionDate?: string | null;
+  lastPhysicalContactDate?: string | null;
+  daysSincePhysicalContact?: number | null;
+  isOwnOrphan?: boolean;
+  /** Unknown is different from a verified absence of contacts/orders. GPTour only. */
+  gptourData?: { contactKnown: boolean; orderKnown: boolean; revenueKnown: boolean; zoneNames?: string[] };
   lastOrderDate: string | null;
   orderCount: number;
   totalRevenue: number;
@@ -73,6 +79,7 @@ export interface TourCandidate {
 
 /** Area scelta alla creazione del giro: le operazioni live (es. "Più Visite") la rispettano */
 export interface SavedAreaFilter {
+  gptourContext?: import('./gptour-context').GptourContext;
   briefJourney?: import('./brief-journey').BriefJourney | null;
   journeyStageCounts?: { index: number; label: string; eligible: number }[];
   briefRequirements?: { customerId: string | null; key: string; name: string; priority: number; excludedDays?: number[] | null }[];
@@ -150,6 +157,7 @@ export interface AiTourSettings {
   buffer_pct_sviluppo: number;
   buffer_pct_mista: number;
   buffer_max_min: number;
+  max_daily_buffer_minutes?: number;
   cadence_weeks_active: number;
   cadence_weeks_low: number;
   lunch_break_minutes: number;

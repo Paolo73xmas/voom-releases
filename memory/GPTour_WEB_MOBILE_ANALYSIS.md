@@ -1,5 +1,7 @@
 # GPTour web → mobile — analisi e piano, nessuna implementazione
 
+> **Aggiornamento incrementale successivo:** `memory/GPTour_DELTA_7ac978d_88bfb44.md` analizza l'unico nuovo commit `88bfb44` (01/10/2026 13:23 UTC). Supera il punto **A/admin-only**: GPTour web ammette ora `agent`/`agentcustom` esclusivamente per il proprio giro. Gli altri rilievi non sono modificati dal delta. Il testo sotto resta la fotografia storica al commit `7ac978d`, non va letto come stato aggiornato dei ruoli.
+
 ## 1. Perimetro ed evidenze
 
 Richiesta: usare l'ultimo `main` della web app come riferimento, comprendere il nuovo sistema di generazione AI Tour e proporre un porting mobile completo nelle regole, non soltanto nell'interfaccia. Autorizzazione corrente: **sola analisi**.

@@ -1,5 +1,12 @@
 # VOOM Sales Mobile App - PRD
 
+## GPTour — aggiornamento incrementale 7ac978d → 88bfb44 (SOLA ANALISI)
+- Dopo «riesegui l'analisi», l'utente sceglie esplicitamente **solo modifiche successive a 7ac978d**, non un nuovo audit completo. Consultati tutti i 6 file del solo nuovo commit `88bfb440d86ca4103016ed2b5c1ed3416ecf497a` (01/10/2026 13:23:26 UTC), main ricontrollato invariato. Nessuna modifica frontend/backend o dati; solo documentazione.
+- Nuovo riferimento incrementale: `memory/GPTour_DELTA_7ac978d_88bfb44.md`; integra, non sostituisce, il rapporto precedente. **SUPERATO il precedente limite admin-only nei sorgenti**: `agent`/`agentcustom` possono pianificare solo su auth.uid(); ID altrui →403, admin/admincustom conservano agente selezionato, supervisor/branch_admin esclusi. UI coerente e `effectiveAgentId` nella risposta con controllo client.
+- Futuro porting: inviare agentInfo.agentId e gestire matrice ruoli/403/ID effettivo. `agentcustom` assente dalla union UserRole mobile, da allineare in fase implementativa (non login failure provato). Il controllo del soggetto NON aggiunge verifica server-side di ogni candidato del payload. Nessuna nuova migrazione; motore, Intent, follow-up, OSRM e persistenza invariati.
+- Punto A del vecchio rapporto superato; B–L restano non affrontati dal delta. Priorità persistenza Intent e integrità end-to-end invariate. Aggiunta nel web una suite pura authz (14 file gptour unit totali), letta NON eseguita; nessuna verifica runtime del servizio o RLS e nessuna chiamata AI/CRM.
+- **Attendere approvazione esplicita per implementare.** Piano precedente conservato, fase0 aggiornata per recepire permessi già presenti nel main. Clone temporaneo consultato via origin/main/oggetti Git; checkout su disco ancora al riferimento precedente.
+
 ## Analisi GPTour web/main — riferimento 01/10/2026, SOLA ANALISI
 - Utente conferma «procedi con la sola analisi»: confronto aggiornato web→mobile e piano, nessuna patch applicativa o modifica dati autorizzata.
 - Accesso Git autorizzato disponibile in questo ambiente. Letto clone separato `/tmp/voom-web-analysis`; `main` verificato due volte a **7ac978d7608bf71817b6adc0674cba38b28848ba** (01/10/2026 11:32:06 UTC), mobile **c06ef1c1**. Il precedente 404 pubblico NON è più un blocco di accesso ai sorgenti.

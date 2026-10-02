@@ -1,0 +1,14 @@
+{
+  "base_sha256": "f95d3900bf35adf6bdd9936d931b40cfffc91880c03f5d515600c6624a33a4cd",
+  "current_sha256": "04b388c592f1a1e98c83ef99a5ea19585585908cd1ef56ca0ff8f7cf9f9225fd",
+  "line_count_base": 9833,
+  "line_count_current": 9833,
+  "line_count_equal": true,
+  "base_resolved_yarnpkg_count": 1213,
+  "current_resolved_npmjs_count": 1213,
+  "differing_line_pairs": 1213,
+  "non_host_differing_pairs": 0,
+  "resolved_fragment_mismatch": 0,
+  "equal_after_host_swap_base_to_current": true,
+  "equal_after_reverse_current_to_base": true
+}

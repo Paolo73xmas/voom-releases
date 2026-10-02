@@ -102,7 +102,25 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Nuovi log Android EAS No lockfilefound, UUID4bb87902 uguale ai precedenti log iOS. Utente sceglie: Verifica direttamente se la build sta usando sorgenti precedenti alla correzione."
+user_problem_statement: "Build Android EAS bloccata da HTTP 502 scaricando ansi-styles-5.2.0 da registry.yarnpkg.com. Correzione mirata autorizzata: registro e soli URL yarn.lock, versioni/integrità invariate. No Docker, database o funzionalità app."
+
+android_registry_502_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  remote_apk_build_verified: false
+  source_delivery_pending: "Nuovo frontend/.yarnrc non ignorato ma non ancora tracciato al momento del test; includere insieme a yarn.lock nella versione consegnata. Nessun Git write o push effettuato."
+  report: "test_reports/iteration_57.json"
+  priority: high
+  files: [frontend/.yarnrc, frontend/yarn.lock]
+  status_history:
+    - agent: main
+      comment: "Iteration57 letto con artifact: coldinstall in copia e cache nuova Node24.19.0/Yarn1.22.22frozenPASS, fetch npmjs e ansi-stylesSHA512PASS,267unit/23suite+TSC+AndroidJSexportPASS. Lock inversionehost ricostruisceoriginalebyteperbyte; manifest/env/Metro/eas/backend/Docker/app invariati. Nessunbugruntime; rischio inclusione nuovo.yarnrc nello snapshot remoto dichiarato. NoAPK/remotebuild/CRMwrites."
+    - agent: main
+      comment: "Log mostra yarn1.22.22 Fetching packages HTTP502 prima di compilazione, non MongoDB/Atlas/health. RCA conferma configurare registry.npmjs.org e sostituire SOLO prefisso resolved URL in lock:1213voci. Manifest invariato, hash originalef95d3900bf35adf6bdd9936d931b40cfffc91880c03f5d515600c6624a33a4cd. Controllo deployment generico suggerisce esporre.env e cambiareSupervisor: NON causali, NON applicati."
+  test_plan:
+    current_focus: [registry_config, url_only_lockfile_change, cold_frozen_install, locked_tarball_integrity, typescript_and_unit_regressions, android_js_export]
+    protected_data: "Installare in copia temporanea senza node_modules/cache esistenti. No CRM/login/AI calls/build remota/DBwrites/auth/env/Docker/Metro/Supervisor modifications. Usare cache nuova e --frozen-lockfile --production=false; NON ignore-engines/NON skip lockfile. Confrontare ogni campo lock con git40e5283c, salvo SOLOhostname. Android export --no-bytecode se hostARM, non prova APK."
 
 ios_lockfile_fix_current:
   implemented: true

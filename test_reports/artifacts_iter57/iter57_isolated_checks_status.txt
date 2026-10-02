@@ -1,0 +1,3 @@
+vitest=pass
+tsc=pass
+export_android_no_bytecode=pass

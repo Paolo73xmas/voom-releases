@@ -1,0 +1,10 @@
+{
+  "frontend/.env": "UNCHANGED",
+  "frontend/metro.config.js": "UNCHANGED",
+  "frontend/package.json": "UNCHANGED",
+  "frontend/eas.json": "UNCHANGED",
+  "scope:backend": [],
+  "scope:frontend/app": [],
+  "scope:Dockerfile": [],
+  "scope:docker-compose.yml": []
+}

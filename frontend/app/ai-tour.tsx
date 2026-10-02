@@ -63,6 +63,7 @@ import { AI_PURPLE, AI_PURPLE_SOFT, AI_PURPLE_TEXT, AI_PURPLE_BORDER, openNaviga
 import type { TourPlan, GeoPoint, AiTourSettings, DayType, EntityType, PriorityClass, TourCandidate } from '../lib/aitour/types';
 import { DEFAULT_SETTINGS, timeToMin, minToTime, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS } from '../lib/aitour/types';
 import type { WeekDayPlan } from '../lib/aitour/week';
+import { setGpsSimulationAllowed, simulatedPosition, useGpsSimulation } from '../lib/aitour/gps-simulation';
 
 const PRIORITY_COLORS: Record<PriorityClass, string> =
   currentThemeMode === 'dark'
@@ -206,6 +207,9 @@ export default function AITourScreen() {
   const { user, isLoading: sessionLoading } = useAuthStore();
   const { gptourAgentId, tab: requestedTab } = useLocalSearchParams<{ gptourAgentId?: string; tab?: string }>();
   const agentId = (user?.role === 'admin' || user?.role === 'admincustom') && typeof gptourAgentId === 'string' ? gptourAgentId : user?.id || '';
+  // Simulazione GPS: disponibile solo agli admin per i test; per gli agenti i controlli restano reali
+  useEffect(() => { setGpsSimulationAllowed(user?.role); }, [user?.role]);
+  const gpsSim = useGpsSimulation();
 
   const [tab, setTab] = useState<'genera' | 'settimana' | 'mensile' | 'portafoglio' | 'tours'>(requestedTab === 'tours' ? 'tours' : 'genera');
   const [phase, setPhase] = useState<'form' | 'result'>('form');
@@ -477,6 +481,9 @@ export default function AITourScreen() {
       if (mode === 'none') return null;
       if (mode === 'start') return start;
       if (mode === 'current') {
+        // Simulazione GPS admin: "posizione corrente" = Sede o Casa configurate, senza interrogare il GPS
+        const simulated = simulatedPosition(settings.office_lat ? { lat: settings.office_lat, lng: settings.office_lng as number } : settings.home_lat ? { lat: settings.home_lat, lng: settings.home_lng as number } : null);
+        if (simulated) return { ...simulated, label: 'Posizione simulata (test admin)' };
         const p = await getCurrentPositionMobile(onPhase);
         return p ? { ...p, label: 'Posizione corrente' } : null;
       }
@@ -2399,6 +2406,13 @@ export default function AITourScreen() {
           </View>
           <Text style={styles.subtitle}>Pianificazione AI dei giri visita</Text>
         </View>
+        {gpsSim.allowed && !liveState && (
+          <TouchableOpacity testID="aitour-gps-simulation" accessibilityRole="switch" accessibilityState={{ checked: gpsSim.enabled }} accessibilityLabel="Simulazione GPS per i test"
+            onPress={gpsSim.toggle} activeOpacity={0.8} style={[styles.simChip, gpsSim.enabled && styles.simChipOn]}>
+            <Ionicons name="flask-outline" size={13} color={gpsSim.enabled ? '#FFF' : AI_PURPLE_TEXT} />
+            <Text style={[styles.simChipText, gpsSim.enabled && { color: '#FFF' }]}>{gpsSim.enabled ? 'GPS simulato' : 'Simula GPS'}</Text>
+          </TouchableOpacity>
+        )}
         {!liveState && tab === 'genera' && phase === 'result' && plan && (
           <TouchableOpacity
             style={styles.headerStartBtn}
@@ -2854,6 +2868,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   headerStartText: { fontFamily: JAKARTA.bold, fontSize: 12.5, color: '#FFF' },
+  simChip: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 36, paddingHorizontal: 10, borderRadius: 10, borderWidth: 1, borderColor: AI_PURPLE_BORDER, backgroundColor: AI_PURPLE_SOFT, marginRight: 6 },
+  simChipOn: { backgroundColor: AI_PURPLE, borderColor: AI_PURPLE },
+  simChipText: { fontFamily: JAKARTA.semibold, fontSize: 11.5, color: AI_PURPLE_TEXT },
   resultMeta: { fontFamily: JAKARTA.medium, fontSize: 12, color: DS.inkMuted, marginTop: 12 },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   kpiChip: {

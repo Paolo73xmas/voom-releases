@@ -2,6 +2,7 @@
 // integrazione con visite/appuntamenti CRM, suggerimenti di recupero tempo.
 import { supabase } from '../supabase';
 import * as Location from 'expo-location';
+import { simulatedPosition } from './gps-simulation';
 import type { TourCandidate, GeoPoint, AiTourSettings, EntityType, PriorityClass } from './types';
 import { timeToMin, haversineKm } from './types';
 import type { SavedTour, SavedStop } from './tours';
@@ -42,7 +43,10 @@ export function nowMin(): number {
   return d.getHours() * 60 + d.getMinutes();
 }
 
-export async function getCurrentPos(): Promise<{ lat: number; lng: number } | null> {
+/** Posizione corrente. `near` = punto atteso: con la simulazione GPS admin attiva viene restituito al posto del GPS reale. */
+export async function getCurrentPos(near?: { lat: number; lng: number } | null): Promise<{ lat: number; lng: number } | null> {
+  const simulated = simulatedPosition(near);
+  if (simulated) return { lat: simulated.lat, lng: simulated.lng };
   try {
     let perm = await Location.getForegroundPermissionsAsync();
     if (perm.status !== 'granted') {

@@ -15,6 +15,7 @@ import { SkipModal } from './SkipModal';
 import { VerificationRequestModal } from './VerificationRequestModal';
 import { isVerificationPoint, type VerificationSubject } from '../../lib/api/customer-verification';
 import { useAuthStore } from '../../store/authStore';
+import { isGpsSimulated, useGpsSimulation } from '../../lib/aitour/gps-simulation';
 import { TourMapView, type TourMapStop } from './TourMapView';
 import { createTourInspection } from '../../lib/api/inspections';
 import { InspectionNotesDialog } from './InspectionNotesDialog';
@@ -203,10 +204,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   useEffect(() => {
     let stopped = false;
     const beat = async () => {
-      const pos = await getCurrentPos();
+      const pos = await getCurrentPos(simTargetRef.current);
       if (stopped) return;
       setGpsOk(!!pos);
-      if (pos) {
+      if (pos && !isGpsSimulated()) {
         updateTourPosition(tour.id, pos.lat, pos.lng).catch(() => {});
         recordTrackPoint(tour.agent_id, pos.lat, pos.lng).catch(() => {});
         checkProximityRef.current(pos).catch(() => {});
@@ -284,6 +285,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     return next ? { lat: next.candidate.lat, lng: next.candidate.lng } : { lat: 45.46, lng: 9.19 };
   }, [stops, tour, next]);
 
+  // Simulazione GPS (solo admin): ogni controllo di posizione riceve il punto atteso (prossima tappa o posizione di riferimento)
+  const simTargetRef = useRef<{ lat: number; lng: number }>(fallbackPos());
+  simTargetRef.current = next ? { lat: next.candidate.lat, lng: next.candidate.lng } : fallbackPos();
+  const gpsSim = useGpsSimulation();
   const delayMin = next?.plannedArrival && next.status === 'planned' ? nowMin() - timeToMin(next.plannedArrival) : 0;
 
   const runRecalc = useCallback(
@@ -303,7 +308,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
       setRecalcing(true);
       recalcingRef.current = true;
       try {
-        const pos = (await getCurrentPos()) || fallbackPos();
+        const pos = (await getCurrentPos(simTargetRef.current)) || fallbackPos();
         const gptWarning = gptourMetadataWarning(tour.area_filter, tour.name, currentStops.map((s) => s.candidate));
         if (gptWarning) throw new Error(gptWarning);
         const start: GeoPoint = { ...pos, label: 'Posizione attuale' };
@@ -536,7 +541,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
     if (!next || !acquireKind || !next.candidate.tabaccheriaId) return;
     setBusy(true);
     try {
-      const pos = await getCurrentPos();
+      const pos = await getCurrentPos(simTargetRef.current);
       if (!pos) {
         setMessage("GPS non disponibile: l'acquisizione è consentita solo di persona sul posto");
         setAcquireKind(null);
@@ -685,7 +690,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         //    (dopo la riassegnazione le RLS permettono di scrivere contatti/ispezione)
         if (next.candidate.entityType === 'orphan') {
           try {
-            const pos = await getCurrentPos();
+            const pos = await getCurrentPos(simTargetRef.current);
             const distM = pos ? Math.round(haversineKm(pos.lat, pos.lng, next.candidate.lat, next.candidate.lng) * 1000) : null;
             if (distM !== null && distM <= ACQUIRE_MAX_M) {
               const { data: rr, error: rrErr } = await supabase.rpc('ai_tour_reassign_orphan', { p_stop_id: next.id });
@@ -715,7 +720,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
         if (extras.photos.length > 0) {
           try {
             setUploadPct(5);
-            const pos = await getCurrentPos();
+            const pos = await getCurrentPos(simTargetRef.current);
             const gps = pos ? { lat: pos.lat, lon: pos.lng } : { lat: next.candidate.lat, lon: next.candidate.lng };
             const insp = await withRetry(() => createTourInspection({
               customer_id: customerId,
@@ -969,7 +974,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
   // Contesto di ripianificazione per le operazioni live (aggiunta tappa / riordino)
   const buildCtx = async (): Promise<ReplanContext> => ({
     tour,
-    startPos: (await getCurrentPos()) || fallbackPos(),
+    startPos: (await getCurrentPos(simTargetRef.current)) || fallbackPos(),
     endPoint: initial.endPoint,
     startMin: nowMin(),
     endMin,
@@ -1122,15 +1127,17 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
           {doneCount} fatte · {skipCount} saltate · {pending.length} rimanenti
         </Text>
         <OwnStaminaChip />
-        <View
-          style={[styles.gpsChip, { backgroundColor: gpsOk === false ? '#FEE2E2' : gpsOk ? '#D1FAE5' : DS.surface2 }]}
-          testID="aitour-live-gps-chip"
+        <TouchableOpacity
+          style={[styles.gpsChip, { backgroundColor: gpsSim.enabled ? '#EDE9FE' : gpsOk === false ? '#FEE2E2' : gpsOk ? '#D1FAE5' : DS.surface2 }]}
+          testID="aitour-live-gps-chip" accessibilityRole="button" disabled={!gpsSim.allowed} activeOpacity={0.7}
+          accessibilityLabel={gpsSim.allowed ? (gpsSim.enabled ? 'Disattiva simulazione GPS' : 'Attiva simulazione GPS (test admin)') : 'Stato GPS'}
+          onPress={() => { gpsSim.toggle(); setMessage(gpsSim.enabled ? 'Simulazione GPS disattivata: tornano i controlli reali di posizione.' : 'Simulazione GPS attiva (test admin): ogni controllo di posizione ti considera sul posto.'); }}
         >
-          <Ionicons name="location" size={10} color={gpsOk === false ? '#991B1B' : gpsOk ? '#047857' : DS.inkMuted} />
-          <Text style={[styles.gpsChipText, { color: gpsOk === false ? '#991B1B' : gpsOk ? '#047857' : DS.inkMuted }]}>
-            {gpsOk === false ? 'GPS assente' : gpsOk ? 'GPS OK' : 'GPS...'}
+          <Ionicons name={gpsSim.enabled ? 'flask' : 'location'} size={10} color={gpsSim.enabled ? '#6D28D9' : gpsOk === false ? '#991B1B' : gpsOk ? '#047857' : DS.inkMuted} />
+          <Text style={[styles.gpsChipText, { color: gpsSim.enabled ? '#6D28D9' : gpsOk === false ? '#991B1B' : gpsOk ? '#047857' : DS.inkMuted }]}>
+            {gpsSim.enabled ? 'GPS simulato' : gpsOk === false ? 'GPS assente' : gpsOk ? 'GPS OK' : 'GPS...'}{gpsSim.allowed && !gpsSim.enabled ? ' · test' : ''}
           </Text>
-        </View>
+        </TouchableOpacity>
         {next && Math.abs(delayMin) > 5 && (
           <View style={[styles.delayBadge, { backgroundColor: delayMin > 0 ? '#FEE2E2' : '#D1FAE5' }]}>
             <Text style={[styles.delayText, { color: delayMin > 0 ? '#991B1B' : '#047857' }]}>

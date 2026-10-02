@@ -35,7 +35,7 @@ export function useVerificationRequest(agentId: string, contextKey: string, subj
     try {
       if (!draft.current) {
         setPhase('gps');
-        const agentGps = await getVerificationPosition();
+        const agentGps = await getVerificationPosition(subject.gps);
         if (!active.current) return;
         draft.current = { id: randomUUID(), input: { subject, anomalyType, notes, agentGps } };
       }

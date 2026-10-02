@@ -33,6 +33,15 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 
+# Health check for the deployment probe (Kubernetes calls GET /health without the /api prefix).
+# Must not depend on the database: the probe only needs to know the process is serving requests.
+@app.get("/health")
+@app.head("/health")
+@api_router.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 # Define Models
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

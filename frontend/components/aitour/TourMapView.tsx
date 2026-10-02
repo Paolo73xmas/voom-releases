@@ -73,6 +73,8 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
   .pp-line { font-size:11px; color:#334155; margin-top:3px; }
   .pp-reason { font-size:11px; font-style:italic; color:#6D28D9; border-left:2px solid #C4B5FD; padding-left:6px; margin-top:5px; }
   .pp-nav { display:inline-block; margin-top:7px; background:#7C3AED; color:#fff; font-size:11px; font-weight:600; border-radius:7px; padding:5px 12px; text-decoration:none; }
+  /* Leaflet applica .leaflet-container a { color:#0078A8 } con specificità maggiore: testo blu su viola illeggibile */
+  .leaflet-container a.pp-nav, .leaflet-container a.pp-nav:visited, .leaflet-container a.pp-nav:hover { color:#fff !important; }
 </style>
 </head>
 <body>

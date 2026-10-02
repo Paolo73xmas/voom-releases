@@ -34,13 +34,13 @@ export function criteriaChips(intent: TourIntent): string[] {
     intent.lodgingRule && `casa se < ${intent.lodgingRule.maxKmHome} km`, intent.allowLargeBuffer && 'fine anticipata accettata',
     ...intent.allowedExpansionTypes.map((t) => `integrazioni: ${ENTITY_LABELS[t]}`)].filter((s): s is string => typeof s === 'string' && !!s);
 }
-/** Criteri attivi: una sola riga scorrevole, niente card. */
+/** Criteri attivi: chip che vanno a capo (le righe scorrevoli orizzontali non sono affidabili su iPhone web). */
 export function GptCriteria({ intent }: { intent: TourIntent }) {
   const chips = criteriaChips(intent);
   if (!chips.length) return null;
-  return <ScrollView testID="gptour-criteria" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={ui.chipRow}>
+  return <View testID="gptour-criteria" style={ui.wrap}>
     {chips.map((text, i) => <View testID={`gptour-criterion-${i}`} key={`${text}-${i}`} style={ui.chip}><Text style={ui.chipText}>{text}</Text></View>)}
-  </ScrollView>;
+  </View>;
 }
 export const ui = StyleSheet.create({
   screen: { flex: 1, backgroundColor: DS.surface2 }, content: { paddingHorizontal: 14, gap: 12 },

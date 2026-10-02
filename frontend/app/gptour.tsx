@@ -75,7 +75,7 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
         <GptThread messages={g.messages} busy={g.busy} onSuggest={setDraft} />
         <GptFollowUps pending={g.pending} busy={g.busy} decide={(e, a) => track(g.decide)(e, a)} decideAll={(a) => track(g.decideAll)(a)} onReschedule={g.setReschedule} />
         {(g.draftAvailable || (g.stale && !!g.days.length)) && <GptNotice id="gptour-stale" text="Piano precedente o bozza: ricostruisci con i dati aggiornati prima di salvare." />}
-        {(g.draftAvailable || g.stale) && !!g.messages.length && !g.pending.length && <GptButton id="gptour-rebuild" label="Ricostruisci piano / riprendi bozza" small icon="construct-outline" disabled={g.busy || !g.home} onPress={() => track(g.rebuild)()} />}
+        {(g.draftAvailable || (g.stale && !!g.days.length)) && !g.pending.length && <GptButton id="gptour-rebuild" label="Ricostruisci piano / riprendi bozza" small icon="construct-outline" disabled={g.busy || !g.home} onPress={() => track(g.rebuild)()} />}
         <GptPlan days={g.days} selected={g.activeDay} busy={g.busy} locked={g.stale || !!g.saved.length || g.uncertainSave} proposal={g.proposal} addable={addable} choose={g.chooseDay} edit={g.edit} accept={() => track(g.acceptProposal)()} reject={g.rejectProposal} />
         {!!g.saved.length && <View style={ui.card}><GptNotice id="gptour-save-success" text={`${g.saved.length === 1 ? 'Giro salvato' : `${g.saved.length} giornate salvate`} in I miei Tour: avvialo dal normale Tour Live.`} /><GptButton id="gptour-open-saved" label="Apri I miei Tour" primary onPress={() => router.replace({ pathname: '/ai-tour', params: { gptourAgentId: agentId, tab: 'tours' } })} /></View>}
       </>}
@@ -93,9 +93,9 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
           <View style={ui.row}><Text style={[ui.heading, ui.flex]}>Base e orari</Text><GptIcon id="gptour-settings-close" icon="close" label="Chiudi" onPress={() => setSettingsOpen(false)} /></View>
           {isAdmin && <View style={{ gap: 6 }}><Text style={ui.muted}>Agente</Text>
             {!!agentError && <><GptNotice id="gptour-agent-error" text={agentError} error /><GptButton id="gptour-agents-retry" label="Ricarica elenco agenti" small onPress={() => setAgentRefresh((n) => n + 1)} disabled={g.busy} /></>}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={ui.chipRow}>
+            <View style={ui.wrap}>
               {[{ id: actor.id, full_name: 'Il mio account' }, ...agents].map((a) => <Pressable key={a.id} testID={`gptour-agent-${a.id}`} accessibilityRole="button" disabled={g.busy || g.uncertainSave} onPress={() => setAgentId(a.id)} style={[ui.chip, a.id === agentId && { backgroundColor: DS.brand }]}><Text style={[ui.chipText, a.id === agentId && { color: DS.surface }]}>{a.full_name || a.id}</Text></Pressable>)}
-            </ScrollView>
+            </View>
           </View>}
           <Text testID="gptour-base" style={ui.small}>Partenza: {g.home?.label || 'nessuna base scelta (nessuna posizione viene inventata)'}</Text>
           <View style={ui.wrap}>

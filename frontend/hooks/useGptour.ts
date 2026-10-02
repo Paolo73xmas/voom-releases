@@ -165,10 +165,11 @@ export function useGptour(actor: GptActor, agentId: string, agentName?: string) 
     }
     const hasPlan = !response.needsInfo && (response.selection.length > 0 || response.days.length > 0);
     const base: GptMessage[] = [...nextMessages, { role: 'assistant', content: response.reply }, ...notes.map((content) => ({ role: 'assistant' as const, content }))];
-    setMessages(base); setIntent(nextIntent); setAcceptedFillKeys(nextAccepted); setEvents(nextEvents);
+    setMessages(base); setIntent(nextIntent); setAcceptedFillKeys(nextAccepted);
     // Chiarimento senza decisioni: il giro mostrato resta invariato e salvabile (parità web).
     const planResult = hasPlan ? response : decided && result ? result : null;
     if (!planResult) return;
+    setEvents(nextEvents);
     const out = await rebuild(planResult, nextIntent, token, activeDay, nextAccepted, !proposalKeys.length);
     if (token !== epoch.current) return;
     // Bloccato dai follow-up: la domanda sostituisce la risposta AI, come nel web.

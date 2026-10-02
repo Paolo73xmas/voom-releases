@@ -36,11 +36,11 @@ export function GptPlan({ days, selected, busy, locked, proposal, addable, choos
       </View>
       <GptIcon id="gptour-toggle-map" icon={map ? 'map' : 'map-outline'} label={map ? 'Nascondi mappa' : 'Mostra mappa'} onPress={() => setMap(!map)} />
     </View>
-    {days.length > 1 && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={ui.chipRow}>
+    {days.length > 1 && <View style={ui.wrap}>
       {days.map((d, i) => <Pressable key={i} testID={`gptour-day-${i}`} accessibilityRole="button" disabled={busy} onPress={() => choose(i)} style={[ui.chip, i === selected && { backgroundColor: DS.brand }]}>
         <Text style={[ui.chipText, i === selected && { color: DS.surface }]}>G{i + 1} · {dm(d.plan.tourDate)} · {d.plan.stops.length}</Text>
       </Pressable>)}
-    </ScrollView>}
+    </View>}
     <View style={[ui.card, { padding: 0, overflow: 'hidden' }]}>
       {map && <View testID="gptour-map"><TourMapView height={220} start={plan.start} end={plan.end} geometry={plan.geometry} stops={plan.stops.map((s) => ({ key: s.candidate.key, name: s.candidate.name, lat: s.candidate.lat, lng: s.candidate.lng, color: ENTITY_COLORS[s.candidate.entityType], label: String(s.sequence), mandatory: s.mandatory, entity: ENTITY_LABELS[s.candidate.entityType], line1: `${minToTime(s.arrivalMin)} · ${s.candidate.visitMinutes} min` }))} /></View>}
       <View style={{ padding: 12, gap: 4 }}>

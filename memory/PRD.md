@@ -646,3 +646,8 @@ Richiesta utente: in zone con rete dati scarsa gran parte dei processi AI Tour f
 - **Testing note:** Modifica usa `aitour-edit-btn`, non inventare `aitour-edit-open`. Attendere fine slide del modal prima delle azioni; non correggere layout per screenshot durante animazione. Per simulare OSRM in Python usare urlsplit (urlparse tronca coordinate dopo ';'); i clienti fixture devono avere categoryclient.
 - **Report:** `memory/EDIT_TOUR_FIX_20260912.md`, `test_reports/iteration_28.json`; suite `tests/aitour/run_suite.sh`.
 - **Stato:** fix agent-tested in preview/test isolati, NON ancora user-confirmed sul dispositivo/giro specifico. Nessuna modifica a dati reali, credenziali o tour dell'utente. **P0:** nessun blocco noto residuo nel flusso verificato. **P1:** validazione utente e precedenti verifiche native. **P2:** backlog preesistente invariato.
+
+## Lockfile tracciato su GitHub (giugno 2026)
+- Commit dedicato `7470a143` ("Aggiunto frontend/yarn.lock al tracciamento Git") pushato fast-forward (no force) su `origin/conflict_170826_1303` (`Paolo73xmas/voom-releases`), da `03cf14fd` a `7470a143`.
+- Verificato sul remoto: `frontend/yarn.lock` presente, SHA256 `f95d3900…` invariato, 0 file `.log`.
+- Remote `origin` aggiunto localmente (HTTPS). Nessuna modifica a codice GPTour, lockfile, migration.

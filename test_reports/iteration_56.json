@@ -1,0 +1,48 @@
+{
+  "summary": "GPTour frontend-only acceptance on preview https://voom-ios.preview.emergentagent.com at 390x844 as roberto.beretta@voomweb.it: 7/7 focused flows PASS. (A) Header compact: gptour-back/title/pool-count/settings/reset all present, bottom bar persistent with gptour-voice-button/message-input/send, suggestion cards gptour-example-0..2 render and tapping example-0 fills composer (len=37). (B) Settings sheet: gptour-settings opens gptour-settings-sheet with gptour-base/home/office/gps/daily-buffer/settings-close; closes via close button. (C) Flow 1: 'voglio fare un giro di sviluppo tra Liscate e Paullo' -> in chat the deterministic Italian question 'Prima di preparare il giro ti segnalo che hai anche 6 follow-up arretrati...' is posted (NOT 'Ho preparato un giro...'), gptour-followups card lists 6 rows; input is cleared after send. gptour-exclude-all built plan in ~2s: gptour-plan-metrics='6 tappe · 41 km · 08:00 -> 11:32' with gptour-map default visible. No gptour-error. (D) Stop actions: tapping gptour-stop-1 opens gptour-stop-actions with gptour-action-move/remove/close present; gptour-action-next correctly absent (single-day). gptour-action-move shows gptour-move-cancel banner; tapping gptour-stop-4 recalculates (stop-1 'Tabaccheria di PEDONE GRAZIA' moved to position 4). (E) Remove stop-2: stops 6->5, metrics '5 tappe · 56 km · 08:00 -> 11:14'. (F) Add stop: gptour-add-stop opens gptour-add-modal; 'tabac' -> gptour-add-count='101 idonei ai criteri · mostro i primi 40, raffina la ricerca'; tapping first gptour-add-prospect:* increases stops 5->6, metrics '6 tappe · 62 km · 08:00 -> 11:45'. (G) Clarification 'quanto dura in tutto il giro?' leaves gptour-plan unchanged (same metrics), no gptour-stale, gptour-save stays enabled (aria-disabled=null). (H) /ai-tour regression navigates and renders normally, no gptour-error. CONSTRAINTS RESPECTED: no gptour-save tap, no gptour-reschedule-confirm, no reschedule chat message. NOTE: gptour-proposal card did NOT appear in this run after the adds (the daily buffer was within the configured 120 min threshold once edits were applied) - the proposal/reject sub-flow could not be exercised end-to-end today; code review of rejectProposal in useGptour.ts shows it clears proposal, applies rejection to intent and appends 'Va bene, il giro resta cosi: finisci prima.' as expected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "FollowUps/exclude-all action", "issue": "React hydration/validateDOMNesting console error on exclude-all tap: 'In HTML, <button> cannot be a descendant of <button>' (nested <button> inside another <button>). Points to a Pressable rendering a child Pressable in gptour-followups or in GptButton inside the follow-ups card. Does not block the flow but produces hydration warnings and can break accessibility.", "testID": "gptour-followups / gptour-keep-all/exclude-all", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "GPTour at 390x844", "issues": ["Header (back/title/pool-count/settings/reset) + bottom bar (save + composer) correctly fixed; subtitle 'gptour-pool-count' truncates to '276 clienti - copertura parziale - VIA S...' with numberOfLines=1 (acceptable). Stop rows render in a single line as required (number + name + comune/orario/tipo + handle). Map ~220px visible by default; toggle label 'Nascondi/Mostra mappa' present via gptour-toggle-map. No elements overflow at 390x844 in captured screenshots."]}
+    ],
+    "react_native_issues": [
+      {"component": "RNW deprecations (global)", "issue": "Console repeatedly logs '\"shadow*\" style props are deprecated. Use \"boxShadow\"' and 'props.pointerEvents is deprecated. Use style.pointerEvents'. These are not GPTour-specific but surface in this run."}
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts_iter56/03_gptour.jpeg",
+    "/app/test_reports/artifacts_iter56/04_settings.jpeg",
+    "/app/test_reports/artifacts_iter56/05_after_send.jpeg",
+    "/app/test_reports/artifacts_iter56/06_plan.jpeg",
+    "/app/test_reports/artifacts_iter56/07_actions.jpeg",
+    "/app/test_reports/artifacts_iter56/08_move_banner.jpeg",
+    "/app/test_reports/artifacts_iter56/09_after_move.jpeg",
+    "/app/test_reports/artifacts_iter56/10_after_remove.jpeg",
+    "/app/test_reports/artifacts_iter56/11_after_add.jpeg",
+    "/app/test_reports/artifacts_iter56/13_after_clarify.jpeg",
+    "/app/test_reports/artifacts_iter56/14_ai_tour.jpeg"
+  ],
+  "action_items": [
+    "Investigate React Native Web hydration warning triggered on gptour-exclude-all: '<button> cannot contain a nested <button>'. Likely a Pressable-in-Pressable (or GptButton nested inside a touchable row) inside components/aitour/gptour/FollowUps.tsx or UI.tsx. Not blocking, but should be cleaned up to avoid a11y issues.",
+    "Flow 'rifiuto proposta' (gptour-proposal + gptour-reject-proposal + criteria chip 'fine anticipata accettata') could NOT be exercised: the proposal card never appeared in this run after the add/remove edits. Confirm whether the engine should surface the proposal when bufferMin > max_daily_buffer_minutes or if the test needs a scenario that overshoots the daily buffer. Consider adding a deterministic path to trigger a proposal in acceptance tests.",
+    "Nice-to-have: suppress RNW deprecated-style console warnings (shadow* and pointerEvents) in the app shell."
+  ],
+  "critical_code_review_comments": [
+    "gptour.tsx composerDisabled = !home || saved.length || uncertainSave || loading || !pool - after clarify, none of these flip, confirming save stays enabled; chat-only clarifications correctly do NOT invalidate the plan (useGptour.send guards planResult = hasPlan ? response : decided && result ? result : null; when response has no plan and no decisions, early-returns without setting stale).",
+    "Plan.tsx handles move via onRow(s, index): if moving set and tapped another row, invokes edit('move', moving, index) then clears moving. The 'tocca maniglia poi tocca destinazione' pattern works both via gptour-handle-i and via gptour-action-move -> gptour-stop-N.",
+    "Plan.tsx action sheet correctly hides gptour-action-next on single-day plans and disables action-remove/action-next if actionFor.mandatory. Confirmed empirically on roberto's single-day plan.",
+    "useGptour.ts edit('add', key): candidate must satisfy candidateMatchesTourIntent(c, intent); add-modal passes addable which already filters pool via same predicate at the screen level - alignment is correct, no risk of 'Il candidato non rispetta i criteri attivi.' on normal tap.",
+    "useGptour.ts rebuild() after remove/add passes suggest=false (operation path), which is why no gptour-proposal was shown after the edits even if buffer eventually exceeded threshold - this is intentional per the pattern; the proposal is produced only by the initial send/decideMany path, or chooseDay."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% on executed GPTour flows (settings, flow 1 with deterministic follow-up question, exclude-all plan, stop-actions move, remove, add tabac, clarification keeps plan + save enabled, /ai-tour regression)"},
+  "seed_data_creation": "None. Read-only: no gptour-save, no gptour-reschedule-confirm, no 'Sposta nel CRM', only local-state edits (exclude-all, move, remove, add from pool, clarification).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Login flow needs: (1) handle the 'Informativa Privacy e Termini di Utilizzo' screen by checking the three Dichiaro checkboxes and tapping 'Accetta e Continua' (clickable by text, not testID); (2) login form has no testID - use input[type=email]/input[type=password] and tap the SECOND 'Accedi' text (first match is heading, last match is button) or press Enter. roberto.beretta portfolio has 276 clients (partial coverage) and 6 pending follow-ups. On preview, the Edge Function + OSRM round-trip for the Liscate/Paullo request is now very fast (<20s initial, ~2s rebuild). Proposal card does not reliably trigger with the test prompt after edits - needs a stronger scenario (e.g. a short request that leaves buffer > 120 min) to exercise gptour-reject-proposal. React hydration warning 'nested button' appears on exclude-all tap - track it down in FollowUps.tsx / UI.tsx.",
+  "rca_of_issue": "N/A - no blocking issues found. The nested-button console warning is cosmetic for now but should be fixed. The proposal/reject path requires scenario tweaking to be exercised deterministically."
+}

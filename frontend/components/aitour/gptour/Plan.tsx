@@ -11,7 +11,7 @@ export function GptPlan({ days, selected, busy, locked, proposal, addable, choos
   days: GptDayPlan[]; selected: number; busy: boolean; locked: boolean; proposal: GptProposal | null; addable: TourCandidate[];
   choose: (n: number) => void; edit: (op: 'remove' | 'up' | 'down' | 'next' | 'add', key: string) => void; accept: () => void; reject: () => void;
 }) {
-  const [map, setMap] = useState(false), [addOpen, setAddOpen] = useState(false), [search, setSearch] = useState('');
+  const [map, setMap] = useState(true), [addOpen, setAddOpen] = useState(false), [search, setSearch] = useState('');
   const day = days[selected]; if (!day) return null;
   const plan = day.plan, disabled = busy || locked;
   const matches = addable.filter((c) => `${c.name} ${c.city}`.toLowerCase().includes(search.toLowerCase()));

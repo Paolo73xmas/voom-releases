@@ -651,3 +651,8 @@ Richiesta utente: in zone con rete dati scarsa gran parte dei processi AI Tour f
 - Commit dedicato `7470a143` ("Aggiunto frontend/yarn.lock al tracciamento Git") pushato fast-forward (no force) su `origin/conflict_170826_1303` (`Paolo73xmas/voom-releases`), da `03cf14fd` a `7470a143`.
 - Verificato sul remoto: `frontend/yarn.lock` presente, SHA256 `f95d3900…` invariato, 0 file `.log`.
 - Remote `origin` aggiunto localmente (HTTPS). Nessuna modifica a codice GPTour, lockfile, migration.
+
+## GPTour — prove su device con roberto.beretta (giugno 2026)
+- Fix UI: input conversazione svuotato all'invio; avviso in chat quando ci sono follow-up da decidere; auto-scroll alla sezione follow-up/piano dopo invio o decisione; mappa del piano visibile di default; pulsanti "Mantieni tutti"/"Escludi tutti dal giro" (un solo ricalcolo, `decideMany` in useGptour).
+- Blocker aperto (decisione utente pendente "preferred vs strict area"): l'Edge Function restituisce `requestedArea.zona` come testo libero ("tra Liscate e Paullo", "dintorni"); il filtro mobile tratta `zona` come nome esatto di zona agente → nessun candidato idoneo → "Nessun candidato rispetta i criteri". Il web non filtra su comune/zona (solo ranking). Nessuna modifica applicata alla logica area.
+- DECISIONE UTENTE (giugno 2026): area = **parità web**. `candidateIntentProblems` non scarta più per comune/zona (solo provincia rigida); le scelte AI fuori comune restano con avviso "fuori dal comune richiesto … mantenuto come scelto"; `wantAll` completa solo entro il comune richiesto. Test: `tests/gptour_area_parity.test.ts` (252 test totali passati).

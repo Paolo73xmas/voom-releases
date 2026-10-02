@@ -87,8 +87,8 @@ describe('GPTour accepted fill keys — explicit, exact and local to context', (
   });
   it.each([
     ['fatturato', { minRevenue: 700 }], ['ordine', { orderMinDays: 30 }], ['contatto', { physicalContactMinDays: 30 }],
-    ['progetto', { project: 'FED' }], ['comune', { requestedArea: { comune: 'Milano' } }],
-    ['provincia', { requestedArea: { provincia: 'TO' } }], ['zona', { requestedArea: { zona: 'Nord' } }],
+    ['progetto', { project: 'FED' }],
+    ['provincia', { requestedArea: { provincia: 'TO' } }],
     ['esclusione', { excludedStops: ['prospect'] }], ['rifiuto', { rejectedOpportunityKeys: ['prospect'] }],
   ] as [string, Partial<TourIntent>][])('accepted key never bypasses %s and produces conflict, not silent removal', (_, patch) => {
     const current = { ...prospect, daysSincePhysicalContact: 20, daysSinceOrder: 20 };

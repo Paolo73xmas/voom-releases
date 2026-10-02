@@ -2,7 +2,7 @@ import type { GptDay, GptResult } from './gptour-api';
 import type { TourIntent } from './gptour-intent';
 import type { AiTourSettings, GeoPoint, TourCandidate, TourPlan } from './types';
 import { haversineKm, timeToMin } from './types';
-import { candidateMatchesTourIntent } from './gptour-criteria';
+import { candidateMatchesTourIntent, outsideRequestedComune } from './gptour-criteria';
 import { acceptedCandidateProblems, readAcceptedFillKeys } from './gptour-acceptance';
 import { IdentitySet, identityTokensOf } from './gptour-identity';
 import { addDaysIso, isoDow, nextWorkingDay, validDate } from './gptour-dates';
@@ -66,6 +66,7 @@ export function prepareGptDays(r: GptResult, pool: TourCandidate[], intent: Tour
       warnings.push(`${c.name}: escluso (${problems.join(', ')})`); return false;
     }
     if (seen.has(c)) { warnings.push(`${c.name}: duplicato accorpato`); return false; }
+    if (outsideRequestedComune(c, intent)) warnings.push(`${c.name}: fuori dal comune richiesto (${c.city}), mantenuto come scelto`);
     seen.add(c); return true;
   });
   for (const key of intent.requiredStops) {
@@ -75,7 +76,8 @@ export function prepareGptDays(r: GptResult, pool: TourCandidate[], intent: Tour
   }
   const average = pool.reduce((s, c) => s + c.visitMinutes, 0) / Math.max(1, pool.length) || 25;
   const capacity = Math.max(1, Math.floor((timeToMin(settings.work_end) - timeToMin(settings.work_start) - settings.lunch_break_minutes) / (average + 12)));
-  if (intent.wantAll) for (const c of pool.filter((x) => candidateMatchesTourIntent(x, intent) && !excluded.has(x.key))) {
+  // "Tutti" completa solo entro il comune richiesto: fuori comune resta una scelta esplicita (AI o agente), non automatica.
+  if (intent.wantAll) for (const c of pool.filter((x) => candidateMatchesTourIntent(x, intent) && !outsideRequestedComune(x, intent) && !excluded.has(x.key))) {
     if (seen.has(c)) continue;
     const center = (d: GptDay) => { const cs = d.selection.map((s) => byKey.get(s.key)!); return cs.length ? { lat: cs.reduce((a, x) => a + x.lat, 0) / cs.length, lng: cs.reduce((a, x) => a + x.lng, 0) / cs.length } : c; };
     const ranked = [...days].sort((a, b) => { const x = center(a), y = center(b); return haversineKm(c.lat, c.lng, x.lat, x.lng) - haversineKm(c.lat, c.lng, y.lat, y.lng); });

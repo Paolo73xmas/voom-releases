@@ -66,10 +66,12 @@ describe('GPTour fill/corridor — parity with web 88bfb44', () => {
     expect(candidateMatchesTourIntent(p, { ...ownIntent, physicalContactMinDays: 0 }, 'fill')).toBe(true);
     expect(candidateMatchesTourIntent({ ...p, daysSincePhysicalContact: null, gptourData: { contactKnown: false, orderKnown: true, revenueKnown: true } }, ownIntent, 'fill')).toBe(false);
   });
-  it('progressive types never bypass exclusions, revenue or strict area', () => {
+  it('progressive types never bypass exclusions, revenue or strict province; comune/zona are hints', () => {
     const p = pool[2];
-    for (const patch of [{ excludedStops: [p.key] }, { rejectedOpportunityKeys: [p.key] }, { minRevenue: 700 }, { requestedArea: { comune: 'Milano' } }, { requestedArea: { provincia: 'TO' } }, { requestedArea: { zona: 'Nord' } }])
+    for (const patch of [{ excludedStops: [p.key] }, { rejectedOpportunityKeys: [p.key] }, { minRevenue: 700 }, { requestedArea: { provincia: 'TO' } }])
       expect(candidateMatchesTourIntent(p, { ...ownIntent, ...patch }, 'fill')).toBe(false);
+    for (const patch of [{ requestedArea: { comune: 'Milano' } }, { requestedArea: { zona: 'Nord' } }])
+      expect(candidateMatchesTourIntent(p, { ...ownIntent, ...patch }, 'fill')).toBe(true);
   });
   it('actual proposal uses progressive fill order and strict corridor; does not mutate Intent or insert automatically', async () => {
     const start = { lat: 45.39, lng: 9.1, label: 'Casa' }, end = { lat: 45.41, lng: 9.1, label: 'Fine' };

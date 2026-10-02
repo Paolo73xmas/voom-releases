@@ -677,3 +677,9 @@ agent_communication:
 - Dashboard: sezione "Ispezioni" con le ultime 5 e link "Vedi tutte".
 - Tour Live: pulsante "Note da Ispezioni" (disabilitato senza scheda cliente) con modale scrollabile nota + data + conteggio foto.
 - Iteration 47: elenco 187/38/209 per periodo, ricerca e stato vuoto ok, dettaglio con foto e zoom ok, isolamento dati verificato (gdeintinis vede 0; URL cross-agente → errore), query note Tour Live verificata su MARCHESI GABRIELLA (2 note desc). 82 test vitest, tsc 0 errori. Nessuna scrittura sui dati di roberto.beretta.
+
+## GPTour: prove utente con roberto.beretta → fix UX + parità web area - iteration 55
+- Riprodotti i due problemi segnalati: input non svuotato dopo l'invio; "non appare la mappa" perché il giro non veniva costruito (6 follow-up arretrati da decidere, scheda fuori schermo) e la mappa era dietro il toggle.
+- Fix UI: Conversation.tsx svuota l'input all'invio e mostra avviso "Prima di costruire il giro decidi i N follow-up"; gptour.tsx auto-scroll a follow-up/piano dopo invio o decisione; FollowUps.tsx pulsanti "Mantieni tutti"/"Escludi tutti dal giro" (useGptour.decideMany, un solo ricalcolo); Plan.tsx mappa visibile di default.
+- Causa radice del piano vuoto: Edge Function restituisce requestedArea.zona in testo libero ("tra Liscate e Paullo") e il filtro mobile lo trattava come zona esatta → "Nessun candidato rispetta i criteri". Decisione utente: parità web → gptour-criteria.ts non scarta più per comune/zona (solo provincia rigida); gptour-engine.ts avvisa "fuori dal comune richiesto … mantenuto come scelto" e wantAll completa solo entro il comune.
+- Verifiche main: vitest 21 file/252 test PASS (nuovo tests/gptour_area_parity.test.ts), tsc OK, lint OK. NESSUN salvataggio tour: il testing agent NON deve premere "Salva tutte le giornate" né "Conferma modifica nel CRM".

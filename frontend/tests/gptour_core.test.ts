@@ -68,8 +68,10 @@ describe('GPTour intent and deterministic criteria', () => {
     expect(candidateMatchesTourIntent(candidate(1, { entityType: 'prospect' }), intent)).toBe(true);
     expect(candidateMatchesTourIntent(candidate(1), intent)).toBe(false);
   });
-  it('hard city, province alias, zone and revenue', () => {
-    expect(candidateMatchesTourIntent(candidate(1), { ...DEFAULT_INTENT, requestedArea: { comune: 'Milano' } })).toBe(false);
+  it('web parity: city and zone are hints, province alias strict, revenue strict', () => {
+    expect(candidateMatchesTourIntent(candidate(1), { ...DEFAULT_INTENT, requestedArea: { comune: 'Milano' } })).toBe(true);
+    expect(candidateMatchesTourIntent(candidate(1), { ...DEFAULT_INTENT, requestedArea: { zona: 'tra Liscate e Paullo' } })).toBe(true);
+    expect(candidateMatchesTourIntent(candidate(1), { ...DEFAULT_INTENT, requestedArea: { provincia: 'TO' } })).toBe(false);
     expect(candidateMatchesTourIntent(candidate(1), { ...DEFAULT_INTENT, requestedArea: { provincia: 'Milano', zona: 'Sud' }, minRevenue: 500 })).toBe(true);
     expect(candidateMatchesTourIntent(candidate(1), { ...DEFAULT_INTENT, minRevenue: 700 })).toBe(false);
     expect(candidateMatchesTourIntent(candidate(1), { ...DEFAULT_INTENT, project: 'FED' })).toBe(false);

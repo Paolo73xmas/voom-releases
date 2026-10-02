@@ -36,11 +36,15 @@ export function candidateIntentProblems(c: TourCandidate, i: TourIntent, mode: I
     const s = norm(p), wanted = norm(i.project); return s && s !== 'nessun progetto' && (s === wanted || s.includes(wanted) || wanted.includes(s));
   })) e.push('progetto diverso');
   const a = i.requestedArea;
-  if (a?.comune && norm(c.city) !== norm(a.comune)) e.push('comune diverso');
-  // Fail closed on non comparable province strings; caller resolves aliases from its authorized pool.
+  // Web parity (W gptour-criteria.ts:31-54): comune e zona guidano ranking/selezione AI, non sono confini obbligatori.
+  // Solo la provincia resta rigida; fail closed on non comparable province strings.
   if (a?.provincia && norm(provinceCode(c.province) || c.province) !== norm(provinceCode(a.provincia) || a.provincia)) e.push('provincia diversa o non verificata');
-  if (a?.zona && !c.gptourData?.zoneNames?.some((z) => norm(z) === norm(a.zona))) e.push('fuori dalla zona richiesta');
   return e;
+}
+/** Candidato fuori dal comune richiesto: segnalato, mai scartato. */
+export function outsideRequestedComune(c: TourCandidate, i: TourIntent): boolean {
+  const comune = i.requestedArea?.comune;
+  return !!comune && norm(c.city) !== norm(comune);
 }
 export function candidateMatchesTourIntent(c: TourCandidate, i: TourIntent, mode: IntentMatchMode = 'initial', blocked?: Set<string>): boolean {
   return !blocked?.has(c.key) && candidateIntentProblems(c, i, mode).length === 0;

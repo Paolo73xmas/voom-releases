@@ -131,9 +131,10 @@ export function useGptour(actor: GptActor, agentId: string) {
     if (response.needsInfo) { setStale(true); setEvents(nextEvents); return; }
     await rebuild(response, nextIntent, token, activeDay, nextAccepted);
   });
-  const decide = (event: GptEvent, action: 'keep' | 'exclude') => withBusy(async (token) => {
-    const next = mergeIntent(intent, { followUpDecisions: [eventDecision(event, action)] }); setIntent(next);
-    if (result) await rebuild(result, next, token, activeDay, action === 'exclude' ? acceptedFillKeys.filter((key) => key !== event.key) : acceptedFillKeys);
+  const decide = (event: GptEvent, action: 'keep' | 'exclude') => decideMany([event], action);
+  const decideMany = (list: GptEvent[], action: 'keep' | 'exclude') => withBusy(async (token) => {
+    const next = mergeIntent(intent, { followUpDecisions: list.map((e) => eventDecision(e, action)) }); setIntent(next);
+    if (result) await rebuild(result, next, token, activeDay, action === 'exclude' ? acceptedFillKeys.filter((key) => !list.some((e) => e.key === key)) : acceptedFillKeys);
   });
   const confirmReschedule = (date: string, time: string) => withBusy(async (token) => {
     if (!reschedule) return;
@@ -189,7 +190,7 @@ export function useGptour(actor: GptActor, agentId: string) {
   };
   const retryLoad = useCallback(() => setLoadKey((k) => k + 1), []);
   return { settings, setSettings, pool, home, setHome, messages, intent, days, events, pending: pendingGptEvents(events, intent), activeDay, proposal,
-    loading, busy, error, warnings, stale, saved, uncertainSave, reschedule, setReschedule, draftAvailable, send, decide, confirmReschedule, edit,
+    loading, busy, error, warnings, stale, saved, uncertainSave, reschedule, setReschedule, draftAvailable, send, decide, decideAll: (action: 'keep' | 'exclude') => decideMany(pendingGptEvents(events, intent), action), confirmReschedule, edit,
     acceptProposal, rejectProposal, chooseDay, save, reset, retryLoad,
     rebuild: () => withBusy(async (token) => { if (result) await rebuild(result, intent, token); }),
   };

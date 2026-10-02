@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +28,15 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string } }) {
   const [agentError, setAgentError] = useState(''), [agentRefresh, setAgentRefresh] = useState(0);
   const router = useRouter(), insets = useSafeAreaInsets(), isAdmin = actor.role === 'admin' || actor.role === 'admincustom';
   const g = useGptour(actor, isAdmin ? agentId : actor.id);
+  // Dopo una richiesta, porta in vista la sezione da guardare (follow-up da decidere o piano): sono sotto la conversazione.
+  const scrollRef = useRef<ScrollView>(null), sectionY = useRef({ followups: 0, plan: 0 }), [scrollAfterSend, setScrollAfterSend] = useState(false);
+  useEffect(() => {
+    if (g.busy || !scrollAfterSend) return;
+    setScrollAfterSend(false);
+    const y = g.pending.length ? sectionY.current.followups : g.days.length ? sectionY.current.plan : 0;
+    if (y) scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+  }, [g.busy, scrollAfterSend, g.pending.length, g.days.length]);
+  const sendAndReveal = (text: string) => { setScrollAfterSend(true); return g.send(text); };
   useEffect(() => { if (!isAdmin) return; let active = true;
     supabase.from('profiles').select('id,full_name').in('role', ['agent', 'agentcustom']).order('full_name').then(({ data, error }) => {
       if (!active) return;
@@ -45,7 +54,7 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string } }) {
     } catch (e) { setLocalError(e instanceof Error ? e.message : 'GPS non disponibile.'); } finally { setGpsBusy(false); }
   };
   return <KeyboardAvoidingView style={ui.screen} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-    <ScrollView testID="gptour-screen" keyboardShouldPersistTaps="handled" contentContainerStyle={[ui.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 }]}>
+    <ScrollView ref={scrollRef} testID="gptour-screen" keyboardShouldPersistTaps="handled" contentContainerStyle={[ui.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 }]}>
       <View style={ui.row}><GptButton id="gptour-back" label="AI Tour" icon="chevron-back" onPress={() => router.back()} /><View style={ui.flex} /><GptButton id="gptour-reset" label="Nuovo giro" disabled={g.busy || g.uncertainSave || g.loading} onPress={() => { void g.reset(); }} /></View>
       <View><Text testID="gptour-title" style={ui.title}>GPTour</Text><Text style={ui.muted}>Parliamo del giro. Alle tappe e ai vincoli pensa il motore.</Text></View>
       {isAdmin && <View style={ui.card}><GptButton id="gptour-agent-picker" label={`Agente: ${agents.find((a) => a.id === agentId)?.full_name || 'Il mio account'}`} disabled={g.busy || g.uncertainSave} onPress={() => setAgentMenu(!agentMenu)} />
@@ -67,12 +76,12 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string } }) {
           <TextInput testID="gptour-daily-buffer" accessibilityLabel="Tempo libero massimo in minuti" keyboardType="number-pad" value={String(g.settings.max_daily_buffer_minutes ?? 120)} editable={!g.busy && !g.days.length} onChangeText={(t) => { if (/^\d{0,3}$/.test(t)) g.setSettings({ ...g.settings, max_daily_buffer_minutes: Number(t) }); }} style={ui.input} />
         </View>
         <GptCriteria intent={g.intent} />
-        <GptConversation messages={g.messages} candidates={g.pool.candidates} busy={g.busy} disabled={!g.home || !!g.saved.length || g.uncertainSave} onSend={g.send} />
-        <GptFollowUps pending={g.pending} busy={g.busy} decide={g.decide} onReschedule={g.setReschedule} />
+        <GptConversation messages={g.messages} candidates={g.pool.candidates} busy={g.busy} disabled={!g.home || !!g.saved.length || g.uncertainSave} pendingCount={g.pending.length} onSend={sendAndReveal} />
         {g.warnings.map((w, i) => <GptNotice id={`gptour-warning-${i}`} key={i} text={w} />)}
+        <View onLayout={(e) => { sectionY.current.followups = e.nativeEvent.layout.y; }}><GptFollowUps pending={g.pending} busy={g.busy} decide={(e, a) => { setScrollAfterSend(true); g.decide(e, a); }} decideAll={(a) => { setScrollAfterSend(true); g.decideAll(a); }} onReschedule={g.setReschedule} /></View>
         {(g.draftAvailable || (g.stale && !!g.days.length)) && <GptNotice id="gptour-stale" text="Piano precedente o bozza: ricostruisci con i dati aggiornati prima di salvare." />}
         {(g.draftAvailable || g.stale) && <GptButton id="gptour-rebuild" label="Ricostruisci piano / riprendi bozza" disabled={g.busy || !g.home} onPress={g.rebuild} />}
-        <GptPlan days={g.days} selected={g.activeDay} busy={g.busy} locked={g.stale || !!g.saved.length || g.uncertainSave} proposal={g.proposal} addable={addable} choose={g.chooseDay} edit={g.edit} accept={g.acceptProposal} reject={g.rejectProposal} />
+        <View onLayout={(e) => { sectionY.current.plan = e.nativeEvent.layout.y; }}><GptPlan days={g.days} selected={g.activeDay} busy={g.busy} locked={g.stale || !!g.saved.length || g.uncertainSave} proposal={g.proposal} addable={addable} choose={g.chooseDay} edit={g.edit} accept={g.acceptProposal} reject={g.rejectProposal} /></View>
         {(!!g.days.length || g.uncertainSave) && !g.saved.length && <GptButton id="gptour-save" label={g.uncertainSave ? 'Verifica salvataggio' : `Salva tutte le ${g.days.length} giornate`} primary disabled={g.busy || (g.stale && !g.uncertainSave)} onPress={g.save} />}
         {!!g.saved.length && <View style={ui.card}><GptNotice id="gptour-save-success" text={`${g.saved.length} giornate salvate. Aprile in I miei Tour e avviale nel normale Tour Live.`} /><GptButton id="gptour-open-saved" label="Apri I miei Tour" primary onPress={() => router.replace({ pathname: '/ai-tour', params: { gptourAgentId: agentId, tab: 'tours' } })} /></View>}
       </>}

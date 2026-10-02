@@ -4,9 +4,13 @@ import type { GptEvent } from '../../../lib/aitour/gptour-followups';
 import { todayRome } from '../../../lib/aitour/gptour-dates';
 import { DS } from '../../../lib/theme';
 import { GptButton, GptNotice, ui } from './UI';
-export function GptFollowUps({ pending, busy, decide, onReschedule }: { pending: GptEvent[]; busy: boolean; decide: (e: GptEvent, a: 'keep' | 'exclude') => void; onReschedule: (e: GptEvent) => void }) {
+export function GptFollowUps({ pending, busy, decide, decideAll, onReschedule }: { pending: GptEvent[]; busy: boolean; decide: (e: GptEvent, a: 'keep' | 'exclude') => void; decideAll: (a: 'keep' | 'exclude') => void; onReschedule: (e: GptEvent) => void }) {
   if (!pending.length) return null;
   return <View testID="gptour-followups" style={ui.card}><Text style={ui.heading}>Follow-up da decidere</Text><Text style={ui.muted}>Ogni riga è un evento CRM. Escluderlo dal giro non lo cancella.</Text>
+    {pending.length > 1 && <View style={ui.wrap}>
+      <GptButton id="gptour-keep-all" label="Mantieni tutti" onPress={() => decideAll('keep')} disabled={busy} />
+      <GptButton id="gptour-exclude-all" label="Escludi tutti dal giro" onPress={() => decideAll('exclude')} disabled={busy} />
+    </View>}
     {pending.map((e) => <View testID={`gptour-followup-${e.id}`} key={e.id} style={ui.bubble}><Text style={ui.body}>{e.name}</Text><Text style={ui.muted}>{e.date} · {e.time}{e.date < todayRome() ? ' · arretrato' : ''}</Text><View style={ui.wrap}>
       <GptButton id={`gptour-keep-${e.id}`} label="Mantieni" onPress={() => decide(e, 'keep')} disabled={busy} />
       <GptButton id={`gptour-exclude-${e.id}`} label="Escludi dal giro" onPress={() => decide(e, 'exclude')} disabled={busy} />

@@ -1,0 +1,38 @@
+{
+  "summary": "GPTour acceptance E2E (frontend-only, real Supabase roberto.beretta) PASSED. Verified: (1) input cleared immediately after tap and after response; (2) pending-hint shown with 6 follow-up count; (3) auto-scroll to follow-ups section (scrollTop 473 -> 1189); (4) gptour-keep-all and gptour-exclude-all present; (5) after exclude-all the follow-ups card disappears and a 13-stop plan appears (gptour-plan-metrics='13 tappe · 53.4 km') with gptour-map visible by default and gptour-toggle-map labeled 'Nascondi mappa'; (6) NO 'Nessun candidato rispetta i criteri' error; (7) criteria chips include area text 'tra Liscate e Paullo' and all 13 stops are in province MI (Liscate, Paullo, Melegnano, Mediglia, Pantigliate, Segrate - limitrofi MI); (8) 'Nuovo giro' resets plan, follow-ups and conversation; (9) /ai-tour regression loads normally. No gptour-warning-* or gptour-plan-warning-* produced. Constraints respected: no gptour-save, no gptour-reschedule-confirm, no 'Sposta nel CRM'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/artifacts_iter55/10_login_screen.jpeg",
+    "/app/test_reports/artifacts_iter55/11_after_login.jpeg",
+    "/app/test_reports/artifacts_iter55/14_pool_ready.jpeg",
+    "/app/test_reports/artifacts_iter55/20_after_send.jpeg",
+    "/app/test_reports/artifacts_iter55/21_after_response.jpeg",
+    "/app/test_reports/artifacts_iter55/22_after_exclude_all.jpeg",
+    "/app/test_reports/artifacts_iter55/23_plan_final.jpeg",
+    "/app/test_reports/artifacts_iter55/24_after_reset.jpeg",
+    "/app/test_reports/artifacts_iter55/25_ai_tour.jpeg"
+  ],
+  "action_items": [
+    "Optional (not blocking): the criteria chip row surfaces only the area text ('tra Liscate e Paullo') and intent tags ('Da acquisire', 'Mai visitata'); no explicit province 'MI' chip is shown because the AI engine encoded the territory as free-form area rather than intent.requestedArea.provincia. Province is still correctly enforced server-side (all 13 stops are in MI). Consider surfacing the derived province code as an extra chip for transparency if the UX wants it visible.",
+    "Observed many deprecated-style console warnings from RN Web ('shadow* style props are deprecated. Use boxShadow', 'props.pointerEvents is deprecated. Use style.pointerEvents'). Not blocking GPTour, but worth cleaning up globally."
+  ],
+  "critical_code_review_comments": [
+    "gptour.tsx: scroll-after-send logic (useEffect on g.busy/scrollAfterSend) correctly targets follow-ups section when g.pending.length>0 else plan, with Math.max(0, y-12) margin. Autoscroll measured at scrollTop 1189 is consistent with the follow-ups section onLayout.",
+    "sendAndReveal wrapper sets scrollAfterSend before calling g.send - the TextInput value is cleared by useGptour.send before the API round-trip, confirmed empirically (empty immediately after tap and after response).",
+    "GptPlan default map visibility and 'Nascondi mappa' toggle label observed as expected; gptour-plan-metrics presents '13 tappe · 53.4 km' with no gptour-error.",
+    "Area parity: with the request 'tra Liscate e Paullo' (comune/zona soft, provincia rigid) the engine returned a plan with 13 MI stops and no 'Nessun candidato rispetta i criteri', confirming the fix."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped by request)", "frontend": "100% on required GPTour acceptance checks"},
+  "seed_data_creation": "None. Flow stayed read-only: no gptour-save, no reschedule-confirm, no 'Sposta nel CRM'. Only local state actions used (exclude-all, Nuovo giro, navigation).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The real Supabase + Edge Function flow for roberto.beretta works end-to-end on preview https://voom-ios.preview.emergentagent.com with viewport 390x844. Pool shows 276 candidates (partial coverage); base auto-populates from settings (Casa). The GPTour Edge Function response arrived in ~34s for the first turn. Followups are 6 and both keep-all/exclude-all buttons appear only when >1 follow-up. Clicking exclude-all built the plan quickly (OSRM was effectively cached in this run: ~0s). Province MI chip is not currently displayed when the user types a free-form area; only the area string chip is shown.",
+  "rca_of_issue": "N/A - all previously reported bugs are confirmed fixed: (a) input clears immediately on send and stays empty after response, (b) a chat hint announces pending follow-ups to decide before building the plan, (c) auto-scroll brings the follow-ups/plan section into view, (d) Mantieni tutti / Escludi tutti dal giro buttons are present, (e) map is visible by default with toggle label 'Nascondi mappa', (f) soft area parity: comune/zona in requestedArea no longer discard candidates, only province remains hard, so 'tra Liscate e Paullo' now yields a valid 13-stop MI plan instead of the previous 'Nessun candidato rispetta i criteri' error."
+}

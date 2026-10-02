@@ -672,3 +672,4 @@ Layout smartphone (`app/gptour.tsx`, `components/aitour/gptour/*`): header compa
 Rimosso dal hook: stato `warnings` (tutto in chat); `edit('up'|'down')` sostituito da `edit('move', key, toIndex)`.
 Test: `tests/gptour_followup_chat.test.ts` (nuovo); 264 test totali passati; tsc/lint ok.
 - Push (giugno 2026): `origin/conflict_170826_1303` da `3f39b4d1` a `4b5d69dc` (fast-forward, no force): include `ed44bc57` (fix UX + parità area, auto-commit piattaforma) e `4b5d69dc` "GPTour: parità funzionale con la web app e layout smartphone" (12 file, 0 .log). Lockfile presente sul remoto.
+- Fix crash mappa (iPhone web/Expo): `TourMapView` cleanup `subscription.remove()` di expo-location lanciava "LocationEventEmitter.removeSubscription is not a function" allo smontaggio (GPTour mostra/nasconde mappa, cambio giornata, I miei Tour). Ora `safeRemove` con try/catch. Non committato/pushato.

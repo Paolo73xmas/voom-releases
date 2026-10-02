@@ -305,6 +305,9 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
   useEffect(() => {
     let alive = true;
     let sub: Location.LocationSubscription | null = null;
+    // expo-location web (SDK 54): subscription.remove() può lanciare "LocationEventEmitter.removeSubscription is not a function"
+    // allo smontaggio della mappa; non deve far cadere la schermata.
+    const safeRemove = (s: Location.LocationSubscription | null) => { try { s?.remove(); } catch { /* emitter già rilasciato */ } };
     (async () => {
       try {
         // Timeout: getForegroundPermissionsAsync può non risolversi mai su iOS/Expo Go
@@ -320,12 +323,12 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
             pushUserPos();
           },
         );
-        if (!alive) { sub.remove(); sub = null; }
+        if (!alive) { safeRemove(sub); sub = null; }
       } catch { /* GPS non disponibile: la mappa resta usabile senza pallino */ }
     })();
     return () => {
       alive = false;
-      sub?.remove();
+      safeRemove(sub);
     };
   }, [pushUserPos]);
 

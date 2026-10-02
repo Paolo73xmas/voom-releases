@@ -212,6 +212,8 @@ export default function AITourScreen() {
   const gpsSim = useGpsSimulation();
 
   const [tab, setTab] = useState<'genera' | 'settimana' | 'mensile' | 'portafoglio' | 'tours'>(requestedTab === 'tours' ? 'tours' : 'genera');
+  // Ritorno da GPTour con router.navigate: la schermata è già nello stack, quindi il parametro cambia senza rimontare
+  useEffect(() => { if (requestedTab === 'tours') setTab('tours'); }, [requestedTab]);
   const [phase, setPhase] = useState<'form' | 'result'>('form');
   const [liveState, setLiveState] = useState<LiveState | null>(null);
   const [activePausedTour, setActivePausedTour] = useState<SavedTour | null>(null);
@@ -393,6 +395,8 @@ export default function AITourScreen() {
   useEffect(() => {
     if (tab === 'tours') loadSavedTours();
   }, [tab, loadSavedTours]);
+  // Rientro da GPTour (giro appena salvato): la lista va riletta anche se la scheda era già "I miei Tour"
+  useFocusEffect(useCallback(() => { if (tab === 'tours') loadSavedTours(); }, [tab, loadSavedTours]));
 
   const set = <K extends keyof FormValues>(k: K, val: FormValues[K]) => setForm((old) => ({ ...old, [k]: val }));
 

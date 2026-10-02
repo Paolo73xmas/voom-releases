@@ -90,7 +90,7 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
         {(g.draftAvailable || (g.stale && !!g.days.length)) && <GptNotice id="gptour-stale" text="Piano precedente o bozza: ricostruisci con i dati aggiornati prima di salvare." />}
         {(g.draftAvailable || (g.stale && !!g.days.length)) && !g.pending.length && <GptButton id="gptour-rebuild" label="Ricostruisci piano / riprendi bozza" small icon="construct-outline" disabled={g.busy || !g.home} onPress={() => track(g.rebuild)()} />}
         <GptPlan days={g.days} selected={g.activeDay} busy={g.busy} locked={g.stale || !!g.saved.length || g.uncertainSave} proposal={g.proposal} addable={addable} choose={g.chooseDay} edit={g.edit} accept={() => track(g.acceptProposal)()} reject={g.rejectProposal} />
-        {!!g.saved.length && <View style={ui.card}><GptNotice id="gptour-save-success" text={`${g.saved.length === 1 ? 'Giro salvato' : `${g.saved.length} giornate salvate`} in I miei Tour: avvialo dal normale Tour Live.`} /><GptButton id="gptour-open-saved" label="Apri I miei Tour" primary onPress={() => router.replace({ pathname: '/ai-tour', params: { gptourAgentId: agentId, tab: 'tours' } })} /></View>}
+        {!!g.saved.length && <View style={ui.card}><GptNotice id="gptour-save-success" text={`${g.saved.length === 1 ? 'Giro salvato' : `${g.saved.length} giornate salvate`} in I miei Tour: avvialo dal normale Tour Live.`} /><GptButton id="gptour-open-saved" label="Apri I miei Tour" primary onPress={() => router.navigate({ pathname: '/ai-tour', params: { gptourAgentId: agentId, tab: 'tours' } })} /></View>}
       </>}
     </ScrollView>
     {/* Barra fissa in basso: salvataggio + scrittura */}

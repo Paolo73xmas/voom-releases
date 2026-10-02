@@ -55,6 +55,11 @@ export async function runGptour(input: GptRequest, client = supabase): Promise<G
     const status = error.context?.status;
     if (status === 403) throw new Error('Non sei autorizzato a creare questo giro (403). Il piano precedente è rimasto invariato.');
     if (status === 401) throw new Error('Sessione scaduta. Accedi nuovamente.');
+    // La Edge Function inoltra l'errore del provider AI: il credito esaurito va detto chiaramente, non come guasto generico.
+    let detail = '';
+    try { detail = typeof error.context?.text === 'function' ? await error.context.text() : ''; } catch { detail = ''; }
+    if (/insufficient_quota|credit_balance_exhausted|no credits remaining/i.test(detail)) throw new Error('GPTour è fermo: il credito OpenAI dell’assistente è esaurito. Ricarica il credito su platform.openai.com (billing) e riprova: conversazione e piano restano invariati.');
+    if (/AI API error 429|rate limit/i.test(detail)) throw new Error('L’assistente AI è momentaneamente saturo (429). Riprova tra qualche istante: conversazione e piano restano invariati.');
     throw new Error('GPTour non è temporaneamente disponibile. Riprova: conversazione e piano restano invariati.');
   }
   assertEffectiveAgent(agentId, data?.effectiveAgentId);

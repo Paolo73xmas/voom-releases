@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, TextInput, Modal, Pressable } from 'react-native';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, TextInput, Modal, Pressable, Keyboard } from 'react-native';
+import { KeyboardAvoidingView as KeyboardShift } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,7 +12,7 @@ import { canUseGptour, normalizeGptourAgents } from '../lib/aitour/gptour-auth';
 import { useGptour } from '../hooks/useGptour';
 import { candidateMatchesTourIntent } from '../lib/aitour/gptour-criteria';
 import { IdentitySet } from '../lib/aitour/gptour-identity';
-import { GptButton, GptIcon, GptNotice, GptCriteria, ui } from '../components/aitour/gptour/UI';
+import { GptButton, GptIcon, GptNotice, GptCriteria, GptToast, ui } from '../components/aitour/gptour/UI';
 import { GptThread, GptComposer } from '../components/aitour/gptour/Conversation';
 import { GptFollowUps, GptRescheduleModal } from '../components/aitour/gptour/FollowUps';
 import { GptPlan } from '../components/aitour/gptour/Plan';
@@ -31,10 +32,16 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
   const router = useRouter(), insets = useSafeAreaInsets(), isAdmin = actor.role === 'admin' || actor.role === 'admincustom';
   const agentName = isAdmin ? agents.find((a) => a.id === agentId)?.full_name || actor.name : actor.name;
   const g = useGptour(actor, isAdmin ? agentId : actor.id, agentName);
+  // Errori e allarmi del motore come toast temporaneo sopra la barra inferiore (non più riquadro fisso sopra la chat)
+  const [toast, setToast] = useState(''), [barHeight, setBarHeight] = useState(0);
+  useEffect(() => { const msg = g.error || localError; if (msg) setToast(msg); }, [g.error, localError]);
+  const hideToast = useCallback(() => setToast(''), []);
   // La chat cresce verso il basso: dopo ogni risposta o ricostruzione si va in fondo (come il web).
   const scrollRef = useRef<ScrollView>(null), [follow, setFollow] = useState(false);
   useEffect(() => { if (!g.busy && follow) { setFollow(false); scrollRef.current?.scrollToEnd({ animated: true }); } }, [g.busy, follow]);
   useEffect(() => { if (g.messages.length) scrollRef.current?.scrollToEnd({ animated: true }); }, [g.messages.length]);
+  // Tastiera aperta: la chat scorre in fondo così l'ultimo messaggio resta visibile sopra il campo di scrittura
+  useEffect(() => { const sub = Keyboard.addListener('keyboardDidShow', () => scrollRef.current?.scrollToEnd({ animated: true })); return () => sub.remove(); }, []);
   const track = <T,>(fn: T): T => { setFollow(true); return fn; };
   useEffect(() => { if (!isAdmin) return; let active = true;
     supabase.from('profiles').select('id,full_name').in('role', ['agent', 'agentcustom']).order('full_name').then(({ data, error }) => {
@@ -67,7 +74,7 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
     setDraft(text); setLocalError('Scegli la base di partenza (Casa, Sede o GPS) per costruire il giro.'); setSettingsOpen(true);
     return Promise.resolve();
   };
-  return <KeyboardAvoidingView style={ui.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+  return <KeyboardShift style={ui.screen} behavior="translate-with-padding" keyboardVerticalOffset={0}>
     {/* Intestazione compatta */}
     <View style={[ui.row, { paddingTop: insets.top + 6, paddingHorizontal: 8, paddingBottom: 6, backgroundColor: DS.surface, borderBottomWidth: 1, borderBottomColor: DS.border }]}>
       <GptIcon id="gptour-back" icon="chevron-back" label="Torna ad AI Tour" onPress={() => router.back()} />
@@ -79,7 +86,6 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
       <GptIcon id="gptour-reset" icon="refresh-outline" label="Nuovo giro" onPress={() => { void g.reset(); }} disabled={g.busy || g.uncertainSave || g.loading} />
     </View>
     <ScrollView ref={scrollRef} testID="gptour-screen" keyboardShouldPersistTaps="handled" contentContainerStyle={[ui.content, { paddingTop: 12, paddingBottom: 16 }]}>
-      {!!(g.error || localError) && <GptNotice id="gptour-error" text={g.error || localError} error />}
       {g.loading ? <View testID="gptour-pool-loading" style={[ui.card, ui.row]}><ActivityIndicator color={DS.brand} /><Text style={ui.small}>Carico portafoglio, territorio e statistiche…</Text></View>
         : !g.pool ? <GptButton id="gptour-retry-load" label="Riprova caricamento" onPress={g.retryLoad} /> : <>
         {!g.pool.complete && <GptNotice id="gptour-pool-partial" text={`Pool parziale: “tutti” significa tutti gli idonei disponibili, non l’intero CRM. ${g.pool.warnings.join(' ')}`} />}
@@ -94,7 +100,7 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
       </>}
     </ScrollView>
     {/* Barra fissa in basso: salvataggio + scrittura */}
-    <View style={{ paddingHorizontal: 10, paddingTop: 8, paddingBottom: Math.max(insets.bottom, 10), gap: 8, backgroundColor: DS.surface, borderTopWidth: 1, borderTopColor: DS.border }}>
+    <View onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)} style={{ paddingHorizontal: 10, paddingTop: 8, paddingBottom: Math.max(insets.bottom, 10), gap: 8, backgroundColor: DS.surface, borderTopWidth: 1, borderTopColor: DS.border }}>
       {(!!g.days.length || g.uncertainSave) && !g.saved.length && <GptButton id="gptour-save" label={g.uncertainSave ? 'Verifica salvataggio' : g.days.length > 1 ? `Salva ${g.days.length} giornate` : 'Salva giro'} icon="save-outline" primary disabled={g.busy || (g.stale && !g.uncertainSave)} onPress={() => track(g.save)()} />}
       {!g.home && !!g.pool && !g.loading && !settingsOpen && <View style={ui.row}><Ionicons name="navigate-circle-outline" size={18} color={DS.warning} /><Text style={[ui.muted, ui.flex]}>Base di partenza mancante:</Text>{baseButtons}</View>}
       <GptComposer candidates={g.pool?.candidates || []} busy={g.busy} disabled={composerDisabled} draft={draft} onDraftUsed={draftUsed} onSend={sendOrAskBase} />
@@ -132,5 +138,6 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
       </KeyboardAvoidingView>
     </Modal>
     <GptRescheduleModal event={g.reschedule} busy={g.busy} error={g.error} onClose={() => g.setReschedule(null)} onConfirm={(d, t) => track(g.confirmReschedule)(d, t)} />
-  </KeyboardAvoidingView>;
+    <GptToast text={toast} bottom={barHeight + 8} onHide={hideToast} />
+  </KeyboardShift>;
 }

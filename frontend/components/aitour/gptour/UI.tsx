@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, Text, StyleSheet, View, ScrollView } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Pressable, Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA } from '../../../lib/theme';
 import type { TourIntent } from '../../../lib/aitour/gptour-intent';
@@ -24,6 +24,23 @@ export function GptIcon({ id, icon, label, onPress, disabled = false, primary = 
 }
 export function GptNotice({ id, text, error = false }: { id: string; text: string; error?: boolean }) {
   return <View testID={id} accessibilityRole="alert" style={[ui.notice, error && ui.errorNotice]}><Ionicons name={error ? 'alert-circle-outline' : 'information-circle-outline'} size={18} color={error ? DS.error : DS.brand} /><Text style={[ui.small, ui.flex, error && { color: DS.error }]}>{text}</Text></View>;
+}
+/** Toast: avviso temporaneo (4,5 s) sopra la barra inferiore; non occupa spazio nel flusso della chat. */
+export function GptToast({ text, bottom, onHide }: { text: string; bottom: number; onHide: () => void }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!text) return;
+    opacity.setValue(0);
+    Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    const timer = setTimeout(() => Animated.timing(opacity, { toValue: 0, duration: 260, useNativeDriver: true }).start(({ finished }) => { if (finished) onHide(); }), 4500);
+    return () => clearTimeout(timer);
+  }, [text, opacity, onHide]);
+  if (!text) return null;
+  return <Animated.View testID="gptour-toast" accessibilityRole="alert" accessibilityLiveRegion="polite" pointerEvents="box-none" style={[ui.toast, { bottom, opacity }]}>
+    <Pressable onPress={onHide} style={ui.toastInner} accessibilityLabel="Chiudi avviso">
+      <Ionicons name="alert-circle" size={18} color={DS.surface} /><Text style={[ui.small, ui.flex, { color: DS.surface }]}>{text}</Text>
+    </Pressable>
+  </Animated.View>;
 }
 export function criteriaChips(intent: TourIntent): string[] {
   return [...intent.requestedEntityTypes.map((t) => ENTITY_LABELS[t]),
@@ -63,4 +80,6 @@ export const ui = StyleSheet.create({
   sheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: DS.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 18, gap: 12, maxHeight: '88%' },
   grabber: { width: 40, height: 4, borderRadius: 2, backgroundColor: DS.borderStrong, alignSelf: 'center', marginBottom: 4 },
+  toast: { position: 'absolute', left: 14, right: 14, zIndex: 20, elevation: 8 },
+  toastInner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: DS.ink, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, shadowColor: DS.ink, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
 });

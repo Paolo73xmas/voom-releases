@@ -109,11 +109,15 @@ android_registry_502_current:
   working: true
   needs_retesting: false
   remote_apk_build_verified: false
-  source_delivery_pending: "Nuovo frontend/.yarnrc non ignorato ma non ancora tracciato al momento del test; includere insieme a yarn.lock nella versione consegnata. Nessun Git write o push effettuato."
-  report: "test_reports/iteration_57.json"
+  source_delivery_pending: "RIVERIFICA: HEADfd28d813 include .yarnrc corretto, MA yarn.lock salvato è ancora f95d...Yarn, worktree04b388...npm. Non confondere nuovo file incluso con intera correzione salvata. Mapping UUID->SHA sconosciuto; nessun Git write/push."
+  report: "test_reports/iteration_58.json"
   priority: high
   files: [frontend/.yarnrc, frontend/yarn.lock]
   status_history:
+    - agent: main
+      comment: "Iteration58letto:12guard/275fullPASS,lint/TSCpass,frozenfreshinstallnpm-onlyPASS,previewPASS. Guard exit1atteso perlockHEADobsoleto, NONbug. Consegna sorgente corretta restaP0aperta, noAPKremote néUUID->SHAverificato. Scriptmanuale noninseritoautomaticamentenellapipeline. NoGitwrite/DBwrite/infrachange."
+    - agent: main
+      comment: "Utente ripropone stesso errore502 e stesso codeversion daf9d00d-c2f9-4c52-b209-112c26a24a26. HEADfd28d813 include.yarnrc ma lockvecchio1213Yarn; locale1213npm verificato. Nuovo fix check-build-lockfile.cjs impedisce PASS se manifest/config/lockHEAD differiscono dal workspace, controlla npm senza Gitwrite. 8nuovi casi di regressione; testare. Deploymentagent resta genericofailfuoricause(nonapplicato). Supportoprocedurasalvataggio inviata, non claim UUIDmapping né EAS usa necessariamente HEAD."
     - agent: main
       comment: "Iteration57 letto con artifact: coldinstall in copia e cache nuova Node24.19.0/Yarn1.22.22frozenPASS, fetch npmjs e ansi-stylesSHA512PASS,267unit/23suite+TSC+AndroidJSexportPASS. Lock inversionehost ricostruisceoriginalebyteperbyte; manifest/env/Metro/eas/backend/Docker/app invariati. Nessunbugruntime; rischio inclusione nuovo.yarnrc nello snapshot remoto dichiarato. NoAPK/remotebuild/CRMwrites."
     - agent: main

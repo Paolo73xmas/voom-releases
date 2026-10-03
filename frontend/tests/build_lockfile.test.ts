@@ -1,9 +1,11 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(__dirname, '..');
 const manifest = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+const { assertBuildSnapshot } = createRequire(import.meta.url)('../scripts/check-build-lockfile.cjs');
 
 describe('preparazione build EAS: dipendenze riproducibili', () => {
   it('include un lockfile Yarn reale nella stessa directory del progetto', () => {
@@ -36,5 +38,33 @@ describe('preparazione build EAS: dipendenze riproducibili', () => {
   it('non esclude il lockfile dai sorgenti del progetto', () => {
     const ignore = readFileSync(resolve(root, '.gitignore'), 'utf8');
     expect(ignore.trimEnd().endsWith('!/yarn.lock')).toBe(true);
+  });
+});
+
+describe('pre-build: contenuto salvato, non solo esistenza del lockfile', () => {
+  const files = Object.fromEntries(['package.json', '.yarnrc', 'yarn.lock'].map((name) => [name, readFileSync(resolve(root, name), 'utf8')]));
+
+  it('accetta file salvati identici e registro npm, senza scrivere Git', () => {
+    expect(() => assertBuildSnapshot(files, { ...files })).not.toThrow();
+  });
+  it('blocca il caso reale: HEAD ha ancora URL Yarn e locale ha URL npm', () => {
+    const oldLock = files['yarn.lock'].replaceAll('https://registry.npmjs.org/', 'https://registry.yarnpkg.com/');
+    expect(() => assertBuildSnapshot(files, { ...files, 'yarn.lock': oldLock })).toThrow('yarn.lock nel commit HEAD non coincide');
+  });
+  it('blocca un file di configurazione mancante nel commit', () => {
+    const { '.yarnrc': omitted, ...saved } = files;
+    expect(omitted).toBeTruthy();
+    expect(() => assertBuildSnapshot(files, saved)).toThrow('.yarnrc manca nel commit HEAD');
+  });
+  it.each(['package.json', '.yarnrc', 'yarn.lock'])('blocca qualsiasi differenza salvata in %s', (name) => {
+    expect(() => assertBuildSnapshot(files, { ...files, [name]: files[name] + '\n' })).toThrow(`${name} nel commit HEAD non coincide`);
+  });
+  it('non basta salvare lo stesso lockfile se usa ancora il vecchio registro', () => {
+    const old = { ...files, 'yarn.lock': files['yarn.lock'].replaceAll('https://registry.npmjs.org/', 'https://registry.yarnpkg.com/') };
+    expect(() => assertBuildSnapshot(old, old)).toThrow('vecchio registro Yarn');
+  });
+  it('richiede il registro npm anche quando tutti i file sono salvati', () => {
+    const wrong = { ...files, '.yarnrc': 'registry "https://registry.yarnpkg.com"\n' };
+    expect(() => assertBuildSnapshot(wrong, wrong)).toThrow('Registro npm mancante');
   });
 });

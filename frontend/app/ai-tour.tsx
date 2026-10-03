@@ -2400,7 +2400,7 @@ export default function AITourScreen() {
     <View testID="aitour-session-ready" style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+        <TouchableOpacity testID="aitour-back" accessibilityRole="button" accessibilityLabel="Torna indietro" onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={DS.ink} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>

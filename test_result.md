@@ -102,7 +102,27 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Build Android EAS bloccata da HTTP 502 scaricando ansi-styles-5.2.0 da registry.yarnpkg.com. Correzione mirata autorizzata: registro e soli URL yarn.lock, versioni/integrità invariate. No Docker, database o funzionalità app."
+user_problem_statement: "Android: AI Tour -> GPTour -> freccia in alto a sinistra causa schermo bianco. Utente chiede verifica tutti i casi: subito, dopo conversazione, con piano generato. Nessun salvataggio CRM operativo autorizzato."
+
+gptour_android_back_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  native_android_confirmation: pending
+  reports: [test_reports/iteration_59.json, test_reports/iteration_60.json]
+  files: [frontend/hooks/useGptourVoice.ts, frontend/lib/aitour/gptour-voice-lifecycle.ts]
+  findings:
+    - "Freccia usa già router.back; NON cambiata navigazione né remount AI Tour/stato/piano."
+    - "Difetto concreto cleanup: recorder.isRecording nativo letto dopo useAudioRecorder/useReleasingSharedObject.release può lanciare sincrono, fuori da.catch(stop). Anche senza usare il microfono. SDK installato Android AudioRecorder.sharedObjectDidRelease->reset->MediaRecorder.release già gestisce risorsa."
+    - "Fix evita TUTTI accessi/metodi recorder nativo in cleanup; stop esplicito protetto resta SOLOweb. Reset audioMode protetto; AbortController + controlli dopoawait evitano tocchi nativi/upload/callback tardivi su schermata chiusa. Non adottare suggerimentoRCA di mettere recording in dipendenzeeffect: fermerebbe microfono a ogni cambio stato."
+    - "Main lint/TSC/275test preesistenti PASS. Nessunadbwrite/AIcall/Gitwrite/dependencychange. RootprobabileAndroid da verificare suldevice; browser nonprova native crash."
+    - "Iteration59:12regressioni aggiunte; mainriviste pernegativocontrolloesattosinc e await effettivi raggiunti (vi.waitFor) primadiunmount, abortsignalasserito, mockhelperisolato. TSC/lintPASS. Blocco initialsessionfixture risolto SOLOharnesstest:preinitflagmigrazionesupabase=1, profilo/sessione completi. Nessunbugauthapp/modificaauth."
+    - "Iteration60:browser3casiPASS immediato3cicli+focusinput, conversazione+restore, piano/mappa+back+riaperturabo zza.287/287unitPASS25suite. Nessuna reteCRMreale durantefixture. Nessuna confermaAndroidnative; testIDaitour-back aggiunto perrilievolowpriority, refactor3000righe fuoriambito."
+    - "Main replay dopo Expo restart:3casiPASS+aitour-back identificabile. Screenshot/console automation_output/20261003_134121; pageerrors0, unknownAPI0. Dati testisolati; restituisce AI Tour visibile non soloURL. Androiduserconfirmationancorapending."
+  test_plan:
+    - "Aggiungere test regressione helper/hook: registratore con getter/metodi che lanciano SharedObjectreleased incleanupAndroid/iOS nonviene letto; webstop corretto; errorisincroni easyncreset catturati."
+    - "Aggiungere test lifecycle hook con ritorno durante richiesta permesso, setAudioMode, prepare, stop e trascrizione: dopo smontaggio nessunrecord/upload/onText/stateUpdate; normale dettatura start/stop resta valida. Usare fixture isolate, non veri servizi."
+    - "Browser AI Tour->GPTour->gptour-back nei3casi, ripetizione e riapertura/draft; fixture isolate complete Supabase/Edge/OSRM esistenti, nessuna reteCRMreale per dati. Non mockare navi per iltestbrowser. Nessuna generazione reale AIquota esaurita."
 
 android_registry_502_current:
   implemented: true

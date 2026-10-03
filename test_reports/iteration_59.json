@@ -1,0 +1,53 @@
+{
+  "summary": "Frontend-only run completed. Added deterministic regression tests for GPTour voice cleanup + hook lifecycle; all unit checks, full Vitest suite, and TSC passed. External preview browser verification for AI Tour -> GPTour -> back-route scenarios is blocked by session gate when using fixture-only credentials/harness constraints, so requested three navigation cases could not be fully executed on preview.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "External preview route regression (AI Tour -> GPTour -> gptour-back)",
+        "issue": "Preview remained on ai-tour session gate (`aitour-session-ready` absent) with unauthenticated state; fixture-only browser credentials did not establish a runnable app session in this environment, so immediate/conversation/generated-plan back-navigation cases were blocked.",
+        "affected_testIDs": [
+          "aitour-session-gate",
+          "aitour-open-gptour",
+          "gptour-back"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/gptour_voice_lifecycle.test.ts",
+    "/app/frontend/tests/use_gptour_voice_lifecycle.test.ts",
+    "/app/test_reports/artifacts_iter59/01_ai_tour_entry.jpeg",
+    "/root/.emergent/automation_output/20261003_132914/console_20261003_132914.log"
+  ],
+  "action_items": [
+    "Provide/restore the existing isolated browser fixture harness (auth + Supabase/Edge/OSRM intercept map) for preview route tests so `aitour-session-ready` and `aitour-open-gptour` are reachable without real-account login.",
+    "After harness availability, rerun required route regression cases: immediate back, post-conversation back, and post-generated-plan/map back, with repeated cycles and focused-input exit checks.",
+    "Validate on real Android device separately: browser cannot prove/disprove native SharedObject release crash root cause."
+  ],
+  "critical_code_review_comments": [
+    "Regression guard now explicitly protects against legacy cleanup behavior (40e5283c pattern) where disposed native getter access (`isRecording`) could throw `SharedObjectreleased`.",
+    "Hook lifecycle tests now assert cancellation across permission/audio-mode/prepare/stop/transcription boundaries and confirm cleanup is not triggered by recording-state changes.",
+    "`ai-tour.tsx` remains very large (>700 lines), which raises maintainability and regression-risk; split-by-feature refactor is advisable outside this testing task."
+  ],
+  "updated_files": [
+    "/app/frontend/tests/gptour_voice_lifecycle.test.ts",
+    "/app/frontend/tests/use_gptour_voice_lifecycle.test.ts",
+    "/app/test_reports/iteration_59.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (skipped by request)",
+    "frontend": "88% (unit/lifecycle regressions + full suite + TSC pass; preview route E2E cases blocked by fixture session availability)"
+  },
+  "seed_data_creation": "None. No CRM/Supabase writes executed. Unit tests use MOCKED doubles only.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All pure tests are green: Vitest 287/287 PASS and TSC PASS after adding two new regression files. Browser check at 390x844 hit unauthenticated gate (`Accedi per pianificare...`) with INITIAL_SESSION/SIGNED_OUT logs; no live auth used per constraints. Resume from fixture-enabled preview harness and re-run required route cycles.",
+  "rca_of_issue": "The original native white-screen report is consistent with recorder lifecycle timing hazards on Android; this run validated JS-side mitigations via deterministic tests but could not reproduce/clear the exact Android-native symptom in browser. Browser route verification was blocked at session gating due missing runnable isolated fixture auth context on external preview."
+}

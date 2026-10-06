@@ -102,7 +102,29 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Android: AI Tour -> GPTour -> freccia in alto a sinistra causa schermo bianco. Utente chiede verifica tutti i casi: subito, dopo conversazione, con piano generato. Nessun salvataggio CRM operativo autorizzato."
+user_problem_statement: "Fix multi-comune GPTour mobile voom-releases: patch precisa fornita dall'utente su intent, criteria e UI. Magenta -> aggiungi Sedriano e Bareggio: accumulo lista comuni, wantAll completamento solo nell'insieme, chip tutti3. Edge condivisa giàaggiornata NONtoccare; engine NONmodificare. Utente approva testautomatici+previewfixture, noCRMwrites."
+
+gptour_multicomune_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  report: "test_reports/iteration_61.json"
+  native_build_verified: false
+  verification:
+    - "Iteration61:308testPASSunit+preview3turnirealhookenginefixture, exact2->5keys,3chips,bozzaretained;0CRMwrites."
+    - "Mainlettoalltest/fixturefiles;fix2warningnuovi+testnonarraycomuni,309test26suitePASS,TSC/lintPASS,engineSHAunchanged. MainpostrestartpreviewPASSconsole20261006_060228."
+    - "Native installedapp richiedenuovabuildEAS nonavviata. WarningperexplicitAIoutsidechoiceècontrattoesistente preservato, non bugnuovo nédichiarare filtroglobale."
+  files: [frontend/lib/aitour/gptour-intent.ts, frontend/lib/aitour/gptour-criteria.ts, frontend/components/aitour/gptour/UI.tsx]
+  constraints:
+    - "Applicata patch utente esatta: TourIntentArea.comuni opzionale, sanitize strings+legacy+trim+dedup, mergeArea unionprevpatch, requestedArea:null reset, outsideRequestedComune listfallbacknorm, chipspreadlista."
+    - "EngineSHA256prima64cdba94991f1598fd04a362cc39778bf5b3b7ae72aa896ba4c95bc132c78c1e. NONmodificareengine/Edge/backend/auth/acceptedFillKeys. Gitbaseline5f7dea49. No nuoveeuristiche o cambiosemantica oltrepatch."
+    - "Il limitecomuni esiste sul completamento automatico wantAll. ScelteAIesplicitefuoricomune rimangonoconwarning comecontrattoesistente, non presentarepatchcomehardfilterglobale. UserassumeEdgegiàcorretta."
+  test_plan:
+    - "Aggiungere testsanitizearray+legacy+null+invalidvalues+deduptrim, merge3turni+dedup+no-mutation+prevlegacy+altrefields+nullreset/newarea."
+    - "outsideRequestedComune listvslegacy precedence/empty/noarea/normcasingaccents; preservecandidateIntentProblems ordinaryAIguidance/provinciarigida."
+    - "EnginewantAll Magenta then+Sedriano+Bareggio su poolconMilano/Rho e seededAIin-area: solo3comuni, nofirst-only/allterritory; nullreset allows wholepool; testexistingnonwantAll unchanged."
+    - "criteriaChips contiene3comuni nell'ordine, legacyfallback; TSC+fullsuite. NONampliaretestacceptedFillKeys."
+    - "Preview390x844confixture iter60 riusabile e sessionemigrationflag preinit: le2frasiintentoEdgefixture, realhookmerge+engine+chips e tappe controllate. Assert pool includesoutoftowns excluded, outgoingsecondintentMagenta, reopenrestorelist. Nessuna reteCRMreale/AIcall/savetour."
 
 gptour_android_back_current:
   implemented: true

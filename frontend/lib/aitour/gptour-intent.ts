@@ -1,7 +1,7 @@
 // Contract ported from voom/main 88bfb44. No second natural-language interpreter.
 import type { EntityType } from './types';
 
-export interface TourIntentArea { comune?: string | null; zona?: string | null; provincia?: string | null }
+export interface TourIntentArea { comune?: string | null; comuni?: string[] | null; zona?: string | null; provincia?: string | null }
 export interface FollowUpDecision {
   followUpId: string; key: string; customerName: string; originalDate: string;
   currentDate: string; currentTime: string | null;
@@ -47,6 +47,9 @@ export function sanitizeIntentPatch(raw: unknown): Partial<TourIntent> {
     const a = r.requestedArea as Record<string, unknown>;
     for (const k of ['comune', 'provincia', 'zona'] as const)
       if (k in a && (a[k] === null || typeof a[k] === 'string')) p.requestedArea[k] = a[k] as string | null;
+    const legacy = typeof a.comune === 'string' && a.comune.trim() ? [a.comune] : [];
+    const comuni = [...new Set([...strings(a.comuni), ...legacy].map((s) => s.trim()).filter(Boolean))];
+    if (comuni.length) { p.requestedArea.comuni = comuni; p.requestedArea.comune = comuni[0]; }
   }
   if ('lodgingRule' in r) {
     const v = r.lodgingRule as Record<string, unknown> | null;
@@ -61,11 +64,17 @@ export function mergeFollowUpDecisions(prev: FollowUpDecision[], add: FollowUpDe
   const m = new Map(prev.map((d) => [d.followUpId, d]));
   add.forEach((d) => m.set(d.followUpId, d)); return [...m.values()];
 }
+function mergeArea(prev: TourIntentArea | null, patch: TourIntentArea): TourIntentArea {
+  const prevComuni = prev?.comuni?.length ? prev.comuni : (prev?.comune ? [prev.comune] : []);
+  const patchComuni = patch.comuni?.length ? patch.comuni : (patch.comune ? [patch.comune] : []);
+  const comuni = [...new Set([...prevComuni, ...patchComuni])];
+  return { ...prev, ...patch, comuni, comune: comuni[0] ?? patch.comune ?? prev?.comune ?? null };
+}
 export function mergeIntent(prev: TourIntent, patch?: Partial<TourIntent> | null): TourIntent {
   if (!patch) return prev;
   const defined = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
   return { ...prev, ...defined,
-    requestedArea: patch.requestedArea === null ? null : patch.requestedArea ? { ...prev.requestedArea, ...patch.requestedArea } : prev.requestedArea,
+    requestedArea: patch.requestedArea === null ? null : patch.requestedArea ? mergeArea(prev.requestedArea, patch.requestedArea) : prev.requestedArea,
     rejectedOpportunityKeys: [...new Set([...prev.rejectedOpportunityKeys, ...(patch.rejectedOpportunityKeys || [])])],
     allowLargeBuffer: prev.allowLargeBuffer || !!patch.allowLargeBuffer,
     followUpDecisions: mergeFollowUpDecisions(prev.followUpDecisions, patch.followUpDecisions || []),

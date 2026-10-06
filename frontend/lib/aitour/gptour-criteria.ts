@@ -41,10 +41,13 @@ export function candidateIntentProblems(c: TourCandidate, i: TourIntent, mode: I
   if (a?.provincia && norm(provinceCode(c.province) || c.province) !== norm(provinceCode(a.provincia) || a.provincia)) e.push('provincia diversa o non verificata');
   return e;
 }
-/** Candidato fuori dal comune richiesto: segnalato, mai scartato. */
+/** Fuori dai comuni richiesti: warning sulle scelte AI, confine del completamento wantAll. */
 export function outsideRequestedComune(c: TourCandidate, i: TourIntent): boolean {
-  const comune = i.requestedArea?.comune;
-  return !!comune && norm(c.city) !== norm(comune);
+  const area = i.requestedArea;
+  const list = area?.comuni?.length ? area.comuni : (area?.comune ? [area.comune] : []);
+  if (!list.length) return false;
+  const have = norm(c.city);
+  return !list.some((m) => norm(m) === have);
 }
 export function candidateMatchesTourIntent(c: TourCandidate, i: TourIntent, mode: IntentMatchMode = 'initial', blocked?: Set<string>): boolean {
   return !blocked?.has(c.key) && candidateIntentProblems(c, i, mode).length === 0;

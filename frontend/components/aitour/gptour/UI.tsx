@@ -44,7 +44,8 @@ export function GptToast({ text, bottom, onHide }: { text: string; bottom: numbe
 }
 export function criteriaChips(intent: TourIntent): string[] {
   return [...intent.requestedEntityTypes.map((t) => ENTITY_LABELS[t]),
-    intent.requestedArea?.comune, intent.requestedArea?.provincia, intent.requestedArea?.zona,
+    ...(intent.requestedArea?.comuni?.length ? intent.requestedArea.comuni : (intent.requestedArea?.comune ? [intent.requestedArea.comune] : [])),
+    intent.requestedArea?.provincia, intent.requestedArea?.zona,
     intent.project, intent.minRevenue != null && `≥ €${intent.minRevenue} / 6 mesi`, intent.maxRevenue != null && `≤ €${intent.maxRevenue} / 6 mesi`,
     intent.physicalContactMinDays != null && `non visitati ≥ ${intent.physicalContactMinDays} gg`, intent.orderMinDays != null && `non ordinano ≥ ${intent.orderMinDays} gg`,
     intent.ownOrphansOnly && 'solo miei orfani', intent.wantAll && 'tutti gli idonei', intent.maxDays && `max ${intent.maxDays} giorni`,

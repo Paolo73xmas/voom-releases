@@ -1,0 +1,89 @@
+{
+  "timestamp": "2026-10-07T15:42:58.708Z",
+  "target": "DELLA VOLPE VINCENZO",
+  "pages": [
+    {
+      "offset": 0,
+      "limit": 1000,
+      "rows": 1000,
+      "bacoli": 4,
+      "monte": 2,
+      "assignedFieldPresent": true,
+      "free": 1000,
+      "never": 0,
+      "uniqueIds": 1000
+    },
+    {
+      "offset": 1000,
+      "limit": 1000,
+      "rows": 1000,
+      "bacoli": 6,
+      "monte": 1,
+      "assignedFieldPresent": true,
+      "free": 1000,
+      "never": 0,
+      "uniqueIds": 1000
+    },
+    {
+      "offset": 2000,
+      "limit": 500,
+      "rows": 500,
+      "bacoli": 2,
+      "monte": 0,
+      "assignedFieldPresent": true,
+      "free": 500,
+      "never": 0,
+      "uniqueIds": 500
+    }
+  ],
+  "before": {
+    "total": 865,
+    "complete": false,
+    "warnings": [
+      "Alcuni soggetti hanno storico non verificato: non vengono trattati come mai contattati."
+    ],
+    "types": {
+      "orphan": 69,
+      "free": 796
+    },
+    "bacoli": 6,
+    "monte": 2,
+    "authorized": 2068,
+    "zones": 1
+  },
+  "after": {
+    "total": 2060,
+    "complete": false,
+    "warnings": [
+      "Registro limitato ai primi 2500 risultati: il pool non rappresenta l’intero territorio.",
+      "Alcuni soggetti hanno storico non verificato: non vengono trattati come mai contattati."
+    ],
+    "types": {
+      "orphan": 69,
+      "free": 1991
+    },
+    "bacoli": 14,
+    "monte": 3,
+    "authorized": 2068,
+    "zones": 1
+  },
+  "ai": {
+    "attempted": true,
+    "success": true,
+    "needsInfo": false,
+    "originalSelection": 15,
+    "fallback": false,
+    "completedSelection": 20,
+    "added": 5,
+    "comuniAdded": [
+      "BACOLI",
+      "POZZUOLI"
+    ],
+    "followUpActions": 0,
+    "tourDate": "2026-10-08",
+    "routingAndSaveExecuted": false
+  },
+  "denied": [],
+  "crmWrites": 0,
+  "aiCalls": 1
+}

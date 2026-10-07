@@ -1,0 +1,76 @@
+{
+  "auth_ok": true,
+  "target_profile": {
+    "id": "52bb1c82-d695-4afd-99f0-307b3c39feee",
+    "full_name": "DELLA VOLPE VINCENZO",
+    "role": "agent",
+    "agent_id": null
+  },
+  "settings_found": true,
+  "settings_summary": {
+    "work_start": "08:00",
+    "work_end": "21:00",
+    "home_lat": 40.966512,
+    "home_lng": 14.268029
+  },
+  "bounds_used": {
+    "min_lat": 40.464275,
+    "max_lat": 41.209872,
+    "min_lng": 13.712207,
+    "max_lng": 14.79914,
+    "points_source": "agent_zones",
+    "points_count": 11,
+    "zones_for_agent": 1
+  },
+  "zone_fetch_error": null,
+  "pagination_pages": [
+    {
+      "range": [
+        0,
+        999
+      ],
+      "rows": 1000,
+      "bacoli": 4,
+      "monte_di_procida": 2,
+      "free": 1000,
+      "never": 0
+    },
+    {
+      "range": [
+        1000,
+        1999
+      ],
+      "rows": 1000,
+      "bacoli": 6,
+      "monte_di_procida": 1,
+      "free": 1000,
+      "never": 0
+    },
+    {
+      "range": [
+        2000,
+        2499
+      ],
+      "rows": 500,
+      "bacoli": 2,
+      "monte_di_procida": 0,
+      "free": 500,
+      "never": 0
+    }
+  ],
+  "rpc_error": null,
+  "aggregate": {
+    "raw_total_rows": 2500,
+    "effective_total_rows": 2500,
+    "raw_bacoli": 12,
+    "effective_bacoli": 12,
+    "raw_monte_di_procida": 3,
+    "effective_monte_di_procida": 3,
+    "effective_free": 2500,
+    "effective_never": 0
+  },
+  "base_customers_count": 0,
+  "excluded_tabaccherie_count": 0,
+  "no_interest_tabaccherie_count": 52,
+  "estimated_candidate_total": 2500
+}

@@ -413,25 +413,35 @@ export async function loadFreeTabaccherie(
   filters: FreeTabFilters = {},
   limit = 60,
   throwOnError = false,
+  options: { allowLimit?: boolean; onLimitReached?: () => void } = {},
 ): Promise<TourCandidate[]> {
-  const { data, error } = await supabase.rpc('ai_tour_free_tabaccherie', {
-    p_min_lat: bounds.minLat,
-    p_max_lat: bounds.maxLat,
-    p_min_lng: bounds.minLng,
-    p_max_lng: bounds.maxLng,
-    p_limit: limit,
-    p_provincia: filters.provincia || null,
-    p_comune: filters.comune || null,
-    p_ref_lat: filters.refLat ?? null,
-    p_ref_lng: filters.refLng ?? null,
-    p_agent_id: filters.agentId || null,
-  });
+  // Web a57b8e3e: PostgREST limita ogni risposta a 1000, anche con p_limit maggiore.
+  const PAGE = 1000, data: unknown[] = [];
+  let error: unknown = null;
+  for (let from = 0; from < limit; from += PAGE) {
+    const to = Math.min(from + PAGE, limit) - 1;
+    const page = await supabase.rpc('ai_tour_free_tabaccherie', {
+      p_min_lat: bounds.minLat, p_max_lat: bounds.maxLat,
+      p_min_lng: bounds.minLng, p_max_lng: bounds.maxLng,
+      p_limit: limit,
+      p_provincia: filters.provincia || null, p_comune: filters.comune || null,
+      p_ref_lat: filters.refLat ?? null, p_ref_lng: filters.refLng ?? null,
+      p_agent_id: filters.agentId || null,
+    }).range(from, to);
+    if (page.error) { error = page.error; break; }
+    const rows = (page.data || []) as unknown[];
+    data.push(...rows);
+    if (rows.length < to - from + 1) break;
+  }
   if (error) {
     console.warn('[AITour][data] ai_tour_free_tabaccherie:', error);
     if (throwOnError) throw new Error('Ricerca nel registro tabaccherie non disponibile: riprova. Non è un risultato senza soggetti.');
     return [];
   }
-  if (throwOnError && data && data.length >= limit) throw new Error('Area di sviluppo troppo ampia per una ricerca completa: riduci raggio o corridoio e riprova');
+  if (data.length >= limit) {
+    options.onLimitReached?.();
+    if (throwOnError && !options.allowLimit) throw new Error('Area di sviluppo troppo ampia per una ricerca completa: riduci raggio o corridoio e riprova');
+  }
   const noBlock = await getNoInterestBlock();
   const out: TourCandidate[] = [];
   for (const t of (data || []) as { id: string; denominazione: string | null; codice_rivendita: string | null; indirizzo: string | null; comune: string | null; provincia: string | null; lat: number; lng: number; assigned: boolean | null }[]) {

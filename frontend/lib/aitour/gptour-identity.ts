@@ -14,6 +14,11 @@ export class IdentitySet {
   has(c: TourCandidate): boolean { return identityTokensOf(c).some((t) => this.seen.has(t)); }
   add(c: TourCandidate): void { identityTokensOf(c).forEach((t) => this.seen.add(t)); }
   static from(list: TourCandidate[]): IdentitySet { const s = new IdentitySet(); list.forEach((c) => s.add(c)); return s; }
+  static fromKeys(pool: TourCandidate[], keys: Iterable<string>): IdentitySet {
+    const byKey = new Map(pool.map((c) => [c.key, c])), s = new IdentitySet();
+    for (const k of keys) { const c = byKey.get(k); if (c) s.add(c); }
+    return s;
+  }
 }
 export function dedupeGptour(list: TourCandidate[]): TourCandidate[] {
   const set = new IdentitySet(); return list.filter((c) => { if (set.has(c)) return false; set.add(c); return true; });

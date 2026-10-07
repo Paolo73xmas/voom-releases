@@ -102,7 +102,35 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Alcuni agenti lamentano scomparsa sconto25%Benvenuto inOrderCollection perclientiprimoordine. Utente chiede verificare opzione+totale, senza modificare ordini o clienti reali."
+user_problem_statement: "Parità GPTour sviluppo web7bd72c4c+a57b8e3e Paolo73xmas/voom main: RPC free/never paginata1000fino2500, sviluppo deterministico e fallbackneedsInfo,36assertoriginali. Target DELLA VOLPE VINCENZO Bacoli/Monte diProcida. Edgegiàaggiornata NONtoccare. Nessuna migration/RLS/forcepush/salvataggioCRM. Utente AUTORIZZA test+preview+letturaPOOLREALE, provaAIse disponibile."
+
+gptour_development_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  final_report: "test_reports/gptour_development_final_verification.md"
+  native_user_confirmation: pending
+  final_verification:
+    - "341/341unit31suite incl36webassertions+7pagination PASS,TSC/lintPASS. Previewfinalepostrestart20261007_154530:19->remove18->fallback17domani->orphonly2ownOrphansOnly->followupactionsnoguess->pendingblocks;0pageerrors/unknownAPI/CRMwrites."
+    - "Report64propagazioneagente SMENTITO: richiesta catturataagentInfo.agentId corretto; toastPercorsoincompleto daOSRMfixture1leg. FixfixtureN-1legs+RPCbbox; nessunapp/authpatchnecessario."
+    - "REAL actualgetSettings/loadGptourPool:1000+1000+500RPC; pool2060(69orphan+1991free),Bacoli14Monte3; baselinecachedidenticosnapshot865/Bacoli6Monte2. Nonclaim2495/15; cap2500 e storicoparziale espliciti."
+    - "UnicaREAL AIcall success,15selection->20complete+5BacoliPozzuoli,08/10/2026;no429inquesta prova. No routingfinale né save. Finalactual_client_pool_verified.json corregge2cachemiss temporali preliminari; actual_client_pool.json resta evidenzaAI."
+  baseline_mobile_commit: a84d8419
+  web_source: "/tmp/voom-web-reference.jMoYxa"
+  web_commits: [7bd72c4c3fc2cff84584add5bc4e2e2b0e97fa30, a57b8e3e19e301eee38273fb646da8cbb32bcc96]
+  notes:
+    - "Ripresa autorizzata: report63 letto integralmente. RCA conferma ultimo blocco SOLO fixture: assert body.agentId errato, contratto corretto agentInfo.agentId. Corretto il test, nessuna modifica auth/app. Verificare ora E2E isolato, pool live readonly e massimo1AIcall solo se necessaria; non eseguire testbackend/video fuoriambito. Nessun tour salvato."
+    - "gitlsremoteautenticatoFUNZIONA.Curlraw404nonauth. Usatocloneautorizzatoisolatoin/tmpviaGitreadtransport, NESSUNAmodifica/appGitremotebranch népush. SORGENTI+SUITEORIGINALE oraDISPONIBILI: nonpiùtestequivalenti, portare36assertwebfedeli."
+    - "loadFreeTabaccherie .range(0,999),(1000,1999),(2000,2499); p_limit+altriparaminvariati; errore nonritorna prefisso parziale. OpzioneallowLimit SOLOGPTour evita scartareinteropoolquandoarriva2500: webGPTourpassafalse(ancheerrorisilenziosi), mobilesceglietrue+allowLimit e warningcap intenzionale. Briefguarddefaultinvariata."
+    - "Modulo development puro speculareweb: solo importstipi e capacity estrattain filepiccolo. Aggiunti requestedComuniNorm/IdentitySet.fromKeys esatticomeweb. EnginefileINVARIATO; allcompleteequivèprepareGptDays nelrebuildhook."
+    - "HookapplyDevelopmentIntentdopomerge; fallbackpreload/processfollowups solo!hasPlan+devintent+nofollowUpActions; usadomani/dopodomaniRome. DopoprepareGptDays completadev suAI plan/dopofollowupdecisi. Defaultfalse nelleazionimanuali(movenextremoveaccept) pernonriempirerighe tolte. Preservawarningprimoprepare."
+    - "MainTSC+333preexistingtestsPASS primaaggiuntanuovitest. Nessunaleitura/scritturaCRMancoraeseguita da main."
+  test_plan:
+    - "PORTARE36assertdellafileweb tests/aitour/gptour_development.unit.ts aVitest conimportlocali e stessaassertionlogic; non inventareasserzionisostitutive. Additionaltestsbordermulti/identity/exclusions/ordercapacityfuturedate okay NOampliaacceptedFillKeys."
+    - "Paginationsupabasemockrange exactp_limit2500 allparamsconstant full/short/zero/500lastpage/secondpageerror/limit<1000/allowLimitGPTourvsstrictBrief cap."
+    - "Hook/browserisolatoRPCrows>1000conBacoli13nellaterzapagina; adminselectDELLAVOLPEfixture; literalrequestgiornatasviluppodomani; AI2orphans+intentonlyorphan=>addfree/never, needsInfofallbackdate; followUpActionsnoguess/newplan, pendingfollowupblocks; orph-onlynegativefromreset. manualremove noauto-refill."
+    - "LETTURA REALE consentita: testadmincreds memoryfile, profileselecttargetnamed, getSettingsread-only, loadGptourPoolREADRPCallowlist(no completedautoclosefollowup functions!). Confronto1000prima/pagednow conteggi: expected~2495/Bacoli15vs2, se differisce riportareexactactual senzaalteraredati. Non salvare nomiclienti/secret/token inreport/screenshot."
+    - "ProvaAIreale al massimo1 sefacile, userautorizzata; se429credito oaltrorispostaservizio noninsistere. BloccareogniRPCmutation/toursave/reschedule. NessunCRMordiniappuntamentiispezionitracking scritture. BrowserappAITourpuòchiamarecloseDueFollowUpsautomatica: BLOCCAREquesti endpoint inreallivebrowser; meglioread-onlydatarunner epreviewfixture."
 
 welcome_discount_current:
   implemented: true

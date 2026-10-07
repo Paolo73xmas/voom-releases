@@ -49,7 +49,9 @@ export async function loadGptourPool(agentId: string, settings: AiTourSettings):
     const bounds = { minLat: Math.min(...points.map((p) => p.lat)) - .1, maxLat: Math.max(...points.map((p) => p.lat)) + .1,
       minLng: Math.min(...points.map((p) => p.lng)) - .1, maxLng: Math.max(...points.map((p) => p.lng)) + .1 };
     try {
-      free = await loadFreeTabaccherie(bounds, new Set(base.map((c) => c.tabaccheriaId).filter((s): s is string => !!s)), settings, { agentId }, 2500, true);
+      // Il pool GPTour è intenzionalmente limitato (come il web); un errore RPC resta invece visibile.
+      free = await loadFreeTabaccherie(bounds, new Set(base.map((c) => c.tabaccheriaId).filter((s): s is string => !!s)), settings, { agentId }, 2500, true,
+        { allowLimit: true, onLimitReached: () => warnings.push('Registro limitato ai primi 2500 risultati: il pool non rappresenta l’intero territorio.') });
     } catch (e) { warnings.push(e instanceof Error ? e.message : 'Registro parziale.'); }
   } else warnings.push('Area operativa non disponibile: registro non caricato.');
   free.forEach((c) => { c.daysSincePhysicalContact = null; c.lastInspectionDate = null; c.lastPhysicalContactDate = null;

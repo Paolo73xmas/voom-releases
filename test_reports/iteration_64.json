@@ -1,0 +1,61 @@
+{
+  "summary": "Executed focused GPTour continuation checks: reproduced iter63 fixture blocker around target-agent propagation and completed authorized real Supabase readonly pool probe with paginated RPC aggregates. Preview loads correctly; no CRM writes executed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "GPTour fixture development prompt -> plan generation",
+        "issue": "After selecting DELLA VOLPE VINCENZO in UI (header shows target), Edge call path still fails fixture contract on body.agentInfo.agentId mismatch; gptour-plan-metrics never appears.",
+        "affected_testIDs": [
+          "gptour-pool-count",
+          "gptour-message-input",
+          "gptour-send",
+          "gptour-plan-metrics",
+          "gptour-toast"
+        ]
+      },
+      {
+        "flow": "Readonly real pool verification (authorized admin)",
+        "issue": "Real paginated RPC probe succeeded (1000/1000/500 rows) and returned concrete aggregates, but values differ from prior assumptions (actual Bacoli/Monte counts are lower in this snapshot).",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/e2e/iter63_gptour_development_fixture.py",
+    "/app/tests/e2e/iter64_readonly_gptour_pool_probe.py",
+    "/app/test_reports/artifacts_iter64/iter64_real_pool_probe.json",
+    "/root/.emergent/automation_output/20261007_153419/console_20261007_153419.log",
+    "/root/.emergent/automation_output/20261007_153516/console_20261007_153516.log"
+  ],
+  "action_items": [
+    "Investigate admin target-agent propagation in GPTour request builder: UI header selection and outgoing body.agentInfo.agentId are diverging under fixture run.",
+    "Once propagation is fixed, re-run iter63 end-to-end assertions (19 -> remove18 -> fallback17 -> orphan2 -> followup blocks) and capture gptour-toast if any transient engine error remains.",
+    "Validate whether current real pool aggregates (2500 free, Bacoli 12, Monte di Procida 3, never 0) are expected for this exact profile/settings snapshot or indicate RPC/filter parity drift."
+  ],
+  "critical_code_review_comments": [
+    "iter63 fixture had timing sensitivity opening settings during initial loading; updated fixture now waits for pool load before agent selection to avoid false negatives.",
+    "gptour-development completeDevelopmentDay still filters coordinates with truthy checks (c.lat && c.lng), which can incorrectly drop valid 0-valued coordinates."
+  ],
+  "updated_files": [
+    "/app/tests/e2e/iter63_gptour_development_fixture.py",
+    "/app/tests/e2e/run_iter63_fixture.py",
+    "/app/tests/e2e/iter64_readonly_gptour_pool_probe.py",
+    "/app/test_reports/iteration_64.json"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "70%"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Preview smoke PASS. Iter63 fixture still blocks before plan due agentInfo.agentId mismatch despite correct target in header. Do not spend cycles on selector retries; focus on request payload propagation. Real readonly probe artifacts saved at artifacts_iter64 JSON with sanitized aggregates only.",
+  "rca_of_issue": "Reproduction: run iter63 fixture and send 'Domani voglio fare una giornata di sviluppo a Bacoli e comuni limitrofi'. Observed: header shows DELLA VOLPE VINCENZO · 2502, but GPTour request path still triggers target-agent mismatch and plan metrics never render. Mitigation: inspect where selected agentId is read when composing runGptour input for admin context (before Edge invoke), then re-run fixture to confirm body.agentInfo.agentId equals selected target."
+}

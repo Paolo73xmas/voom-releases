@@ -1,9 +1,15 @@
 import type { EntityType, TourCandidate } from './types';
-import type { TourIntent } from './gptour-intent';
+import type { TourIntent, TourIntentArea } from './gptour-intent';
+import { normalizeComune } from './comuni-adjacency';
 import { normalizeGptourName as norm } from './gptour-identity';
 import { provinceCode } from './brief-area';
 export type IntentMatchMode = 'initial' | 'fill' | 'corridor';
 export const DEFAULT_FILL_CONTACT_DAYS = 15;
+/** Stessa normalizzazione ISTAT del web per comuni richiesti e confinanti. */
+export function requestedComuniNorm(area: TourIntentArea | null | undefined): Set<string> {
+  const list = area?.comuni?.length ? area.comuni : (area?.comune ? [area.comune] : []);
+  return new Set(list.map(normalizeComune).filter(Boolean));
+}
 /** Web 88bfb44: fill without explicit expansions uses the progressive ranking.
  * Initial AI selections and corridor remain constrained to requested + allowed types. */
 export function allowedTypesFor(intent: TourIntent, mode: IntentMatchMode): Set<EntityType> | null {

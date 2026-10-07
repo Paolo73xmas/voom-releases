@@ -162,8 +162,15 @@ async def get_video_tutorial(num: str, request: Request):
         # es. "bytes=0-1023" oppure "bytes=1024-" — richiesto da Safari/iOS per i video
         m = re.match(r"bytes=(\d*)-(\d*)", range_header)
         if m:
-            start = int(m.group(1)) if m.group(1) else 0
-            end = int(m.group(2)) if m.group(2) else file_size - 1
+            if not m.group(1):
+                # bytes=-N indica gli ULTIMI N byte, non l'intervallo iniziale 0-N.
+                suffix = int(m.group(2) or 0)
+                if suffix <= 0:
+                    return Response(status_code=416, headers={"Content-Range": f"bytes */{file_size}"})
+                start, end = max(0, file_size - suffix), file_size - 1
+            else:
+                start = int(m.group(1))
+                end = int(m.group(2)) if m.group(2) else file_size - 1
             end = min(end, file_size - 1)
             if start > end or start >= file_size:
                 return Response(

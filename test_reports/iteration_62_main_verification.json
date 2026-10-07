@@ -1,0 +1,18 @@
+{
+  "scope": "Order Collection welcome25: follow-up verification by main agent, after reviewing iteration62",
+  "status": "pass_with_native_and_live_case_not_verified",
+  "unit_tests": {"passed": 333, "files": 29},
+  "typescript": "pass",
+  "lint": "New production and test files clean; wizard has 13 pre-existing warnings, no errors",
+  "browser": {
+    "artifacts": "automation_output/20261007_125820",
+    "viewport": "390x844",
+    "passed": ["first-order25checkbox", "grand198.86->168.36", "net125/excise3/VAT28.16/shipping12.20", "cartbar uses same final prices", "foreign clears selected discount", "customerchange clears discount", "existingcustomer ineligible explanation", "HEADerror visible+retry", "missingcount failclosed", "draft selected25 blocks submit/PDF during pendingHEAD then preserves25"],
+    "page_errors": 0,
+    "unknown_requests": 0,
+    "write_attempts": 0,
+    "real_crm_writes": 0
+  },
+  "resolved_testing_issues": ["Only fixture now exposes content-range response header; production CORS unchanged", "Fixture cashback single query returns balance_after object", "Browser waits use actual state locators", "Checkbox and quote button accessibility semantics corrected"],
+  "limitations": ["No affected agent/customer supplied; cannot identify all real reported cases", "No native device or remote build executed", "No actual order submission, stock reservation, or PDF share invoked", "Business eligibility status policy and Supabase RLS remain unchanged"]
+}

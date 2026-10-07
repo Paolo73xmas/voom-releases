@@ -102,7 +102,29 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Fix multi-comune GPTour mobile voom-releases: patch precisa fornita dall'utente su intent, criteria e UI. Magenta -> aggiungi Sedriano e Bareggio: accumulo lista comuni, wantAll completamento solo nell'insieme, chip tutti3. Edge condivisa giàaggiornata NONtoccare; engine NONmodificare. Utente approva testautomatici+previewfixture, noCRMwrites."
+user_problem_statement: "Alcuni agenti lamentano scomparsa sconto25%Benvenuto inOrderCollection perclientiprimoordine. Utente chiede verificare opzione+totale, senza modificare ordini o clienti reali."
+
+welcome_discount_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  reports: [test_reports/iteration_62.json, test_reports/iteration_62_main_verification.json]
+  verified_scope: "333unit/TSC/lintnuovifile PASS; browserisolato fullflowinclbozzapending PASS. Nessunordinesalvato/PDFsharevero/devicebuild; affectedagentexactcaseunknown."
+  files: [frontend/app/order-collection-v2.tsx, frontend/hooks/useFirstOrder.ts, frontend/lib/api/first-order.ts, frontend/lib/order-discounts.ts, frontend/components/order-collection/WelcomeDiscountStatus.tsx]
+  findings:
+    - "Sconto NONrimosso: UIgatedfirstorder/domestic/nootherdiscounts. CheckvecchioignoravaerrorSupabase senzaindicazione, defaultfalse nascondeopzione; countnull||0 potevaconcedereerroneamente; statocondivisotrapreviouscustomer/race, missingautoqueryonallentry."
+    - "TotaleUI/barra/righeriepilogo usavaprezzipresconto; payloadPDFgiànettocorretto(discount_percent0). MainNONadottatoRCAsemplicesottrazionescontodalgrandTotal (sarebbeIVAerrata)."
+    - "Fixhookkeyedcustomer+sequenza+abort+15stimeout+loading/error/retry/ineligible; querycustomerhistorytuttistatipreservata, nullaotherrorfailclosed. Noauth/RLSmodifiche. No specific agent/caseidentified, defectsverifiedcode/notclaimedexactuserroot."
+    - "SceltaBenvenuto resetoncambio/foreign/ineligible, draftretainsintentwhilepending; welcomeActiveonlydomestic/eligible/noother. PDFsubmitblockedifselecteddiscountpending/error(not silentlysubmitfullprice)."
+    - "Existingdistributealgorithmextractedunchangedintoorder-discounts.ts; welcomehelperpreserveseligibilityrottamazione_no!==true and25%net, discount_percent0. SummaryandcartbaruseSAMEfinalItems/payloadgrand; fiscalbreakdownexistinghelper withVATexcise, shippingbasispre-scontopreserved. PDFunchangedcalculation."
+    - "Iteration62letto:326unitPASS/browserblocked testfixtureCORSHEADcontent-range nonesposto. Maincorrectfixtureonly, noSupabaseCORSproductionchanges. Mainalsofixeda11ycheckboxaria-checked/quoteRolebutton, added7cases=333PASS."
+    - "Mainafterrestartbrowser20261007_125820:welcomevisible198.86->168.36,net125/IVA28.16/excise3/shipping12.20,cartbaragrees;existinghide+explanation,errorretryrecovers,nullfailclosed,customerclear/foreignclear;draft25persistedcontrolsblockedwhilependingthenrestored. ZeroCRMwrites/unknownAPIs/pageerrors."
+  test_plan:
+    - "ADD pure/hooktests fetchfirstordercount0positiveerrornullinvalid; abort/timer/retryoutoforderlatestclientonly; stateeligible neverleaksclient, draftentrysafe. Negativebaseline repro oldsilenterror/display mismatch ifpossiblewithreadonlysourcecopy."
+    - "ADD pricingtests25netonly/eligibleexcludedmixed/IVA22andIVA0/accisaunchanged/shippingtax/noDoubleDiscount_percent0/roundingmatchesoriginal. Existingrotta/cashbackdistributeunchanged comparebaseline5fec64b4 algorithm."
+    - "Browser390x844FULLYISOLATEDfixtures reuseiter60bootstrapONLY(noactualiter31credentials/livewrites). Firstordercustomergo5steps25checkbox+totalupdates, existingcustomerinfo/nocheckbox, failedHEADhistoryvisibleerror+retrygrantonlyonconfirmedzero, nullcountdoesnotgrant."
+    - "Customer switch reversequeriesdelay, directlinkproducts, draftrestorewelcome truependingblocksPDFsubmituntilcheck, foreigntoggleclearsdiscount, rotta/cashbacknonstack. Capture PDF via test-print intercept and optionalpayloadONLYALLCRMrequestsintercepted failclosed; no realorder/stock/customerwrites. Preferpurepayloadtests+browsernosubmit."
+    - "TSC/fullpure suite/lints. Reportnativebehaviorunverifiedbutlogicplatformindependent. No backend/Edge/schema/dependencies/env/Metro/Gitwrites."
 
 gptour_multicomune_current:
   implemented: true

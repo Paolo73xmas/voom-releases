@@ -31,6 +31,10 @@ import { RequireSession } from '../components/RequireSession';
 import { PaymentMethodStep } from '../components/orders/PaymentMethodStep';
 import { ShippingMethodStep } from '../components/orders/ShippingMethodStep';
 import { getShippingBaseCost, isPaymentAllowed, isShippingAllowed } from '../lib/order-checkout';
+import { useFirstOrder } from '../hooks/useFirstOrder';
+import { WelcomeDiscountStatus } from '../components/order-collection/WelcomeDiscountStatus';
+import { orderBreakdown } from '../lib/order-totals';
+import { distributeDiscountToItems, welcomeDiscountItems } from '../lib/order-discounts';
 
 // ═══════════════════════════════════════════════════════
 // TYPES
@@ -140,51 +144,6 @@ const isCartonDiscountActive = (item: CartItem): boolean =>
   !!item.product.sconto_cartone && item.product.sconto_cartone > 0 &&
   item.quantity >= item.product.pezzi_cartone;
 
-/** Distribute discount proportionally across items — matches web app */
-function distributeDiscountToItems(
-  items: Array<{ product_id: string; quantity: number; unit_price: number }>,
-  discountAmount: number
-): Array<{ product_id: string; quantity: number; unit_price: number; original_unit_price: number }> {
-  const itemsTotal = items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
-  if (itemsTotal <= 0 || discountAmount <= 0) {
-    return items.map(i => ({ ...i, original_unit_price: i.unit_price }));
-  }
-
-  const rawDiscounts = items.map(item => {
-    const lineValue = item.unit_price * item.quantity;
-    const proportion = lineValue / itemsTotal;
-    return Math.round(discountAmount * proportion * 100) / 100;
-  });
-
-  const totalDistributed = rawDiscounts.reduce((sum, d) => sum + d, 0);
-  let roundingRemainder = Math.round((discountAmount - totalDistributed) * 100) / 100;
-
-  if (roundingRemainder !== 0) {
-    for (let i = items.length - 1; i >= 0 && Math.abs(roundingRemainder) > 0.001; i--) {
-      const lineValue = items[i].unit_price * items[i].quantity;
-      const maxAbsorbable = lineValue - rawDiscounts[i];
-      if (roundingRemainder > 0 && maxAbsorbable > 0) {
-        const toAdd = Math.min(roundingRemainder, maxAbsorbable);
-        rawDiscounts[i] = Math.round((rawDiscounts[i] + toAdd) * 100) / 100;
-        roundingRemainder = Math.round((roundingRemainder - toAdd) * 100) / 100;
-      } else if (roundingRemainder < 0) {
-        rawDiscounts[i] = Math.round((rawDiscounts[i] + roundingRemainder) * 100) / 100;
-        roundingRemainder = 0;
-      }
-    }
-  }
-
-  return items.map((item, index) => {
-    const lineValue = item.unit_price * item.quantity;
-    const itemDiscount = rawDiscounts[index];
-    const newLineValue = Math.max(0, lineValue - itemDiscount);
-    const newUnitPrice = item.quantity > 0
-      ? Math.max(0, Math.round((newLineValue / item.quantity) * 100) / 100)
-      : 0;
-    return { ...item, original_unit_price: item.unit_price, unit_price: newUnitPrice };
-  });
-}
-
 const formatCurrency = (v: number) => `€${v.toFixed(2)}`;
 
 const DEFAULT_ROTTAMAZIONE_LOTS = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
@@ -278,7 +237,13 @@ function OrderCollectionV2() {
   const [cashBackMaxPercentage, setCashBackMaxPercentage] = useState(100);
   const [cashBackMinThreshold, setCashBackMinThreshold] = useState(0);
   const [scontoBenvenuto, setScontoBenvenuto] = useState(false);
-  const [isFirstOrder, setIsFirstOrder] = useState(false);
+  const firstOrder = useFirstOrder(selectedCustomer?.id);
+  const { isFirstOrder } = firstOrder;
+  const welcomeDiscountActive = scontoBenvenuto && isFirstOrder && !isForeignOrder && rottamazioneAmount === 0 && cashBackToUse === 0;
+  const welcomeCheckPending = scontoBenvenuto && !isForeignOrder && (firstOrder.status === 'loading' || firstOrder.status === 'error');
+  useEffect(() => {
+    if (isForeignOrder || firstOrder.status === 'ineligible') setScontoBenvenuto(false);
+  }, [isForeignOrder, firstOrder.status]);
 
   // Rottamazione config
   const [rottamazioneLots, setRottamazioneLots] = useState<number[]>(DEFAULT_ROTTAMAZIONE_LOTS);
@@ -356,8 +321,9 @@ function OrderCollectionV2() {
         if (cancelled) return;
         if (!customer) throw new Error('Cliente non disponibile o non accessibile. Riprova oppure seleziona un cliente.');
         setSelectedCustomer(customer);
+        setScontoBenvenuto(false);
         if (params.startStep === 'products') {
-          await Promise.all([loadCashBackBalance(customer.id), loadPackages(), checkFirstOrder(customer.id)]);
+          await Promise.all([loadCashBackBalance(customer.id), loadPackages()]);
           if (cancelled) return;
           setCurrentStep(1);
         }
@@ -387,6 +353,7 @@ function OrderCollectionV2() {
       const customer = customers.find(c => c.id === src.customer_id);
       if (customer) {
         setSelectedCustomer(customer);
+        setScontoBenvenuto(false);
       } else {
         setDuplicateMessage('Il cliente dell’ordine originale non è disponibile. Seleziona un cliente autorizzato prima di proseguire.');
       }
@@ -463,7 +430,6 @@ function OrderCollectionV2() {
       if (draft.cashBackToUse) setCashBackToUse(draft.cashBackToUse);
       setScontoBenvenuto(draft.scontoBenvenuto ?? false);
       if (draft.orderChannel) setOrderChannel(draft.orderChannel);
-      if (customer) await checkFirstOrder(customer.id);
 
       // Use the same draft ID for updates
       setDraftId(incomingDraftId);
@@ -1114,23 +1080,8 @@ function OrderCollectionV2() {
       } else {
         finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
       }
-    } else if (scontoBenvenuto && isFirstOrder) {
-      // Sconto Benvenuto: 25% on rottamazione-eligible products
-      const eligible = cart.filter(c => c.product.rottamazione_no !== true);
-      const excluded = cart.filter(c => c.product.rottamazione_no === true);
-      const discountAmount = eligible.reduce((s, c) => s + c.unit_price * c.quantity, 0) * 0.25;
-      if (eligible.length > 0 && discountAmount > 0) {
-        const eligibleMapped = eligible.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price }));
-        const distributed = distributeDiscountToItems(eligibleMapped, discountAmount);
-        // ✅ Parità web: il prezzo unitario è GIÀ scontato (spalmato), quindi discount_percent
-        // resta 0 — altrimenti il ricalcolo del totale lato server applica il 25% due volte.
-        finalItems = [
-          ...distributed.map(d => ({ product_id: d.product_id, quantity: d.quantity, unit_price: d.unit_price, discount_percent: 0, original_unit_price: d.original_unit_price })),
-          ...excluded.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 })),
-        ];
-      } else {
-        finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
-      }
+    } else if (welcomeDiscountActive) {
+      finalItems = welcomeDiscountItems(cart);
     } else {
       finalItems = cart.map(c => ({ product_id: c.product.id, quantity: c.quantity, unit_price: c.unit_price, discount_percent: 0 }));
     }
@@ -1152,7 +1103,14 @@ function OrderCollectionV2() {
     return { finalItems, isRottamazione, isUsingCashBack, itemsTotal, shippingMethod, shippingBase, shippingWithVAT, finalTotalAmount };
   };
 
-  const draftTotal = computeFinalItemsAndTotal().finalTotalAmount;
+  const finalPricing = computeFinalItemsAndTotal();
+  // Riepilogo e barra carrello mostrano gli stessi prezzi netti del payload e del PDF.
+  // La spedizione conserva la base pre-sconto prevista dalle regole web.
+  const displayTotals = orderBreakdown({
+    order_items: finalPricing.finalItems.map(item => ({ ...item, product: cart.find(c => c.product.id === item.product_id)?.product })),
+    is_foreign: isForeignOrder, shipping_cost: finalPricing.shippingBase,
+  });
+  const draftTotal = finalPricing.finalTotalAmount;
   const autoSaveDraft = useCallback(async () => {
     if (!selectedCustomer || cart.length === 0 || orderCompletedRef.current) return;
     const draft: OrderDraft = {
@@ -1179,7 +1137,7 @@ function OrderCollectionV2() {
    * consegnare il preventivo al cliente e creare l'ordine in un secondo momento.
    */
   const handleGenerateQuotePdf = async () => {
-    if (!selectedCustomer || cart.length === 0) return;
+    if (!selectedCustomer || cart.length === 0 || welcomeCheckPending) return;
     setIsGeneratingPdf(true);
     try {
       const { finalItems, shippingMethod, shippingWithVAT, finalTotalAmount } = computeFinalItemsAndTotal();
@@ -1233,7 +1191,7 @@ function OrderCollectionV2() {
             ? { gross: rottamazioneAmount, net: getRottamazioneNetAmount(rottamazioneAmount), description: rottamazioneDescription }
             : null,
           cashBack: rottamazioneAmount === 0 && cashBackToUse > 0 ? cashBackToUse : null,
-          scontoBenvenuto: scontoBenvenuto && isFirstOrder,
+          scontoBenvenuto: welcomeDiscountActive,
         },
         paymentLabel: paymentMethod?.name || null,
         shippingLabel: shippingMethod?.name || null,
@@ -1248,7 +1206,7 @@ function OrderCollectionV2() {
   };
 
   const handleSubmitOrder = async () => {
-    if (!selectedCustomer || !user || cart.length === 0) return;
+    if (!selectedCustomer || !user || cart.length === 0 || welcomeCheckPending) return;
     if (!paymentIsValid) { setCurrentStep(2); Alert.alert('Errore', 'Seleziona un pagamento valido per questo ordine'); return; }
     if (!shippingIsValid) { setCurrentStep(3); Alert.alert('Errore', 'Seleziona una spedizione valida per questo ordine'); return; }
     if (rottamazioneAmount > 0 && !rottamazioneDescription.trim()) {
@@ -1278,7 +1236,7 @@ function OrderCollectionV2() {
         notesParts.push(`[Rottamazione €${rottamazioneAmount.toFixed(2)} (lordo IVA incl.) - netto spalmato: €${netAmt.toFixed(2)} - ${rottamazioneDescription}${priceDetails ? ` - dettaglio: ${priceDetails}` : ''}]`);
       } else if (isUsingCashBack) {
         notesParts.push(`[CashBack €${cashBackToUse.toFixed(2)} utilizzato]`);
-      } else if (scontoBenvenuto && isFirstOrder) {
+      } else if (welcomeDiscountActive) {
         const eligibleItems = cart.filter(c => c.product.rottamazione_no !== true);
         const eligibleSubt = eligibleItems.reduce((s, c) => s + c.unit_price * c.quantity, 0);
         const discountAmt = Math.round(eligibleSubt * 0.25 * 100) / 100;
@@ -1473,26 +1431,9 @@ function OrderCollectionV2() {
       if (currentStep === 0 && selectedCustomer) {
         loadCashBackBalance(selectedCustomer.id);
         loadPackages();
-        checkFirstOrder(selectedCustomer.id);
       }
       setCurrentStep(currentStep + 1);
       // La bozza viene salvata dall'effect dopo il cambio passo, non con lo stato precedente.
-    }
-  };
-
-  const checkFirstOrder = async (customerId: string) => {
-    try {
-      const { count, error } = await supabase
-        .from('orders')
-        .select('id', { count: 'exact', head: true })
-        .eq('customer_id', customerId);
-      if (!error) {
-        const first = (count || 0) === 0;
-        setIsFirstOrder(first);
-        console.log(`[V2] First order check for customer: ${first ? 'YES (primo ordine)' : `NO (${count} ordini esistenti)`}`);
-      }
-    } catch {
-      setIsFirstOrder(false);
     }
   };
 
@@ -1552,6 +1493,7 @@ function OrderCollectionV2() {
             onPress={() => {
               // Parità web: al cambio cliente si azzerano rottamazione e CashBack
               setSelectedCustomer(item);
+              setScontoBenvenuto(false);
               setRottamazioneAmount(0);
               setRottamazioneDescription('');
               setCashBackToUse(0);
@@ -1810,8 +1752,8 @@ function OrderCollectionV2() {
         <View style={s.cartBar}>
           <Text style={s.cartBarText}>{cartTotals.totalProducts} prodotti</Text>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={s.cartBarTotal}>{formatCurrency(cartTotals.grandTotal)}</Text>
-            <Text style={s.cartBarDetail}>Imp: {formatCurrency(cartTotals.imponibile)} + Acc: {formatCurrency(cartTotals.accisaTotal)} + IVA: {formatCurrency(cartTotals.ivaTotal)}</Text>
+            <Text testID="order-cart-grand-total" style={s.cartBarTotal}>{formatCurrency(finalPricing.finalTotalAmount)}</Text>
+            <Text testID="order-cart-tax-breakdown" style={s.cartBarDetail}>Imp: {formatCurrency(displayTotals.net)} + Acc: {formatCurrency(displayTotals.excise)} + IVA: {formatCurrency(displayTotals.vat)}</Text>
           </View>
         </View>
       )}
@@ -1931,20 +1873,20 @@ function OrderCollectionV2() {
                 )}
               </View>
               <Text style={s.summaryItemQty}>x{c.quantity}</Text>
-              <Text style={s.summaryItemPrice}>{formatCurrency(c.unit_price * c.quantity)}</Text>
+              <Text testID={`order-summary-line-${c.product.id}`} style={s.summaryItemPrice}>{formatCurrency((finalPricing.finalItems.find(item => item.product_id === c.product.id)?.unit_price ?? c.unit_price) * c.quantity)}</Text>
             </View>
           ))}
         </View>
 
         {/* Totals */}
         <View style={s.summaryCard}>
-          <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>Imponibile</Text><Text style={s.summaryValue}>{formatCurrency(cartTotals.imponibile)}</Text></View>
-          <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>Accisa</Text><Text style={s.summaryValue}>{formatCurrency(cartTotals.accisaTotal)}</Text></View>
-          {!isForeignOrder && <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>IVA</Text><Text style={s.summaryValue}>{formatCurrency(cartTotals.ivaTotal)}</Text></View>}
+          <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>Imponibile</Text><Text testID="order-summary-net" style={s.summaryValue}>{formatCurrency(displayTotals.net)}</Text></View>
+          <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>Accisa</Text><Text testID="order-summary-excise" style={s.summaryValue}>{formatCurrency(displayTotals.excise)}</Text></View>
+          {!isForeignOrder && <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>IVA</Text><Text testID="order-summary-vat" style={s.summaryValue}>{formatCurrency(displayTotals.vat)}</Text></View>}
           <View style={s.summaryTotalRow}><Text style={s.summaryLabel}>Spedizione {!isForeignOrder && '(IVA incl.)'}</Text><Text testID="order-summary-shipping-cost" style={s.summaryValue}>{formatCurrency(cartTotals.shippingWithVAT)}</Text></View>
           <View style={[s.summaryTotalRow, s.summaryGrandTotal]}>
             <Text style={s.summaryGrandLabel}>TOTALE</Text>
-            <Text testID="order-summary-grand-total" style={s.summaryGrandValue}>{formatCurrency(cartTotals.grandTotal)}</Text>
+            <Text testID="order-summary-grand-total" style={s.summaryGrandValue}>{formatCurrency(finalPricing.finalTotalAmount)}</Text>
           </View>
         </View>
 
@@ -2162,11 +2104,14 @@ function OrderCollectionV2() {
         )}
 
         {/* ═══ Sconto Benvenuto Section — only for first order, Italian, no other discounts ═══ */}
+        {!isForeignOrder && rottamazioneAmount === 0 && cashBackToUse === 0 && (
+          <WelcomeDiscountStatus status={firstOrder.status} retry={firstOrder.retry} />
+        )}
         {!isForeignOrder && isFirstOrder && rottamazioneAmount === 0 && cashBackToUse === 0 && (
-          <View style={{ marginBottom: 10 }}>
+          <View testID="order-welcome-section" style={{ marginBottom: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
               <Ionicons name="star" size={18} color="#D97706" />
-              <Text style={{ fontSize: 15, fontWeight: '700', color: '#92400E' }}>Sconto Benvenuto (25%)</Text>
+              <Text testID="order-welcome-title" style={{ fontSize: 15, fontWeight: '700', color: '#92400E' }}>Sconto Benvenuto (25%)</Text>
               <View style={{ backgroundColor: '#FEF3C7', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 'auto' }}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: '#92400E' }}>Primo Ordine</Text>
               </View>
@@ -2180,12 +2125,15 @@ function OrderCollectionV2() {
                   <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 4 }}>
                     Prodotti eligible: {rottamazioneEligibleItems.length}/{cart.length} · Imponibile: {formatCurrency(rottamazioneEligibleSubtotal)}
                   </Text>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#D97706', marginBottom: 8 }}>
+                  <Text testID="order-welcome-discount-amount" style={{ fontSize: 14, fontWeight: '700', color: '#D97706', marginBottom: 8 }}>
                     Sconto: -{formatCurrency(rottamazioneEligibleSubtotal * 0.25)}
                   </Text>
 
                   <TouchableOpacity
                     testID="order-welcome-discount"
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: scontoBenvenuto }}
+                    aria-checked={scontoBenvenuto}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: scontoBenvenuto ? '#FEF3C7' : '#F9FAFB', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: scontoBenvenuto ? '#F59E0B' : '#E5E7EB' }}
                     onPress={() => setScontoBenvenuto(!scontoBenvenuto)}
                   >
@@ -2206,7 +2154,7 @@ function OrderCollectionV2() {
                   )}
                 </>
               ) : (
-                <Text style={{ fontSize: 12, color: '#DC2626' }}>Nessun prodotto eligible per lo Sconto Benvenuto</Text>
+                <Text testID="order-welcome-no-eligible-products" style={{ fontSize: 12, color: '#DC2626' }}>Nessun prodotto eligible per lo Sconto Benvenuto</Text>
               )}
             </View>
           </View>
@@ -2228,9 +2176,12 @@ function OrderCollectionV2() {
             Genera un PDF con questo riepilogo da consegnare al cliente. Potrai poi creare l&apos;ordine subito oppure salvarlo in bozza (pulsante “Bozza” in alto) e confermarlo in un secondo momento.
           </Text>
           <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#7C3AED', borderRadius: 10, paddingVertical: 13, opacity: isGeneratingPdf ? 0.7 : 1 }}
+            testID="order-generate-quote"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isGeneratingPdf || welcomeCheckPending }}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#7C3AED', borderRadius: 10, minHeight: 44, paddingVertical: 13, opacity: isGeneratingPdf || welcomeCheckPending ? 0.7 : 1 }}
             onPress={handleGenerateQuotePdf}
-            disabled={isGeneratingPdf}
+            disabled={isGeneratingPdf || welcomeCheckPending}
           >
             {isGeneratingPdf ? (
               <ActivityIndicator color="#FFF" size="small" />
@@ -2532,7 +2483,7 @@ function OrderCollectionV2() {
               <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity testID="order-submit" accessibilityRole="button" accessibilityState={{ disabled: isSubmitting || !!orderCreated || !paymentIsValid || !shippingIsValid }} style={[s.submitBtn, (isSubmitting || !!orderCreated || !paymentIsValid || !shippingIsValid) && s.nextBtnDisabled]} onPress={handleSubmitOrder} disabled={isSubmitting || !!orderCreated || !paymentIsValid || !shippingIsValid}>
+            <TouchableOpacity testID="order-submit" accessibilityRole="button" accessibilityState={{ disabled: isSubmitting || !!orderCreated || !paymentIsValid || !shippingIsValid || welcomeCheckPending }} style={[s.submitBtn, (isSubmitting || !!orderCreated || !paymentIsValid || !shippingIsValid || welcomeCheckPending) && s.nextBtnDisabled]} onPress={handleSubmitOrder} disabled={isSubmitting || !!orderCreated || !paymentIsValid || !shippingIsValid || welcomeCheckPending}>
               {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : (
                 <>
                   <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />

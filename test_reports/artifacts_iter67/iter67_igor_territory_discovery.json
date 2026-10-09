@@ -1,0 +1,281 @@
+{
+  "timestamp": "2026-10-09T15:51:36.357Z",
+  "selected_agent_id": "9185b892-e6b9-4c2e-88cd-7051046ca71b",
+  "territory_aggregates": {
+    "pooltotal": 2237,
+    "zonecount": 1,
+    "comuni_idonei30gg": [
+      {
+        "comune": "TREVISO",
+        "idonei30gg": 8,
+        "clienti": 7,
+        "orfani": 1
+      },
+      {
+        "comune": "VENEZIA",
+        "idonei30gg": 6,
+        "clienti": 3,
+        "orfani": 3
+      },
+      {
+        "comune": "Cavallino-Treporti",
+        "idonei30gg": 3,
+        "clienti": 2,
+        "orfani": 1
+      },
+      {
+        "comune": "Susegana",
+        "idonei30gg": 3,
+        "clienti": 2,
+        "orfani": 1
+      },
+      {
+        "comune": "Abano Terme",
+        "idonei30gg": 2,
+        "clienti": 0,
+        "orfani": 2
+      },
+      {
+        "comune": "Castelfranco Veneto",
+        "idonei30gg": 2,
+        "clienti": 0,
+        "orfani": 2
+      },
+      {
+        "comune": "IESOLO",
+        "idonei30gg": 2,
+        "clienti": 0,
+        "orfani": 2
+      },
+      {
+        "comune": "PADOVA",
+        "idonei30gg": 2,
+        "clienti": 1,
+        "orfani": 1
+      },
+      {
+        "comune": "PAESE",
+        "idonei30gg": 2,
+        "clienti": 2,
+        "orfani": 0
+      },
+      {
+        "comune": "Riese Pio X",
+        "idonei30gg": 2,
+        "clienti": 2,
+        "orfani": 0
+      },
+      {
+        "comune": "SELVAZZANO DENTRO",
+        "idonei30gg": 2,
+        "clienti": 1,
+        "orfani": 1
+      },
+      {
+        "comune": "Bibione",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "BORSO DEL GRAPPA",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Caerano di san marco",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Campagnalta San Martino Di Lupari",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      },
+      {
+        "comune": "CAMPO SAN MARTINO",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Camponogara",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Casier",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Cervarese s.croce",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      },
+      {
+        "comune": "CERVARESE SANTA CROCE",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "CESSALTO",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "CITTADELLA",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "DOLO",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Galliera Veneta",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Gorgo al monticano",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "MASSANZAGO",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      },
+      {
+        "comune": "MESTRE",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "MIRA",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Montebelluna",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      },
+      {
+        "comune": "MONTECCHIO MAGGIORE",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      },
+      {
+        "comune": "MUSILE DI PIAVE",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Ormelle",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "Parè di Conegliano",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "PERGINE VALSUGANA",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "San Donà di Piave",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "san miche al tagliamento",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "san michele al tagliamento",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      },
+      {
+        "comune": "SAN PIETRO DI FELETTO",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "SAN VENDEMIANO",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      },
+      {
+        "comune": "SPRESIANO",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "TEOLO",
+        "idonei30gg": 1,
+        "clienti": 0,
+        "orfani": 1
+      },
+      {
+        "comune": "VEDELAGO",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      },
+      {
+        "comune": "Villorba",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      },
+      {
+        "comune": "VOLPAGO DEL MONTELLO",
+        "idonei30gg": 1,
+        "clienti": 1,
+        "orfani": 0
+      }
+    ],
+    "warnings": [
+      "Registro limitato ai primi 2500 risultati: il pool non rappresenta l’intero territorio.",
+      "Alcuni soggetti hanno storico non verificato: non vengono trattati come mai contattati."
+    ]
+  },
+  "chosen_comune_verificato": "TREVISO",
+  "limit_declared_if_zero": false,
+  "denied_requests": []
+}

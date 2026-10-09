@@ -1,0 +1,132 @@
+{
+  "timestamp": "2026-10-09T15:55:29.723605Z",
+  "selected_agent": {
+    "id": "9185b892-e6b9-4c2e-88cd-7051046ca71b",
+    "name": "Igor Cinquegrani",
+    "selector_testid": null
+  },
+  "verified_comune": "TREVISO",
+  "turn_prompts": [
+    "Prossimo giorno lavorativo: giro breve in una sola giornata nel comune di TREVISO, solo clienti e orfani con ultimo acquisto almeno 30 giorni fa, niente follow-up, non rinviare appuntamenti locali.",
+    "Parti alle 09:00"
+  ],
+  "edge_calls": [
+    {
+      "timestamp": "2026-10-09T15:54:05.596484Z",
+      "status": 200,
+      "ultimoUSERprompt": "Prossimo giorno lavorativo: giro breve in una sola giornata nel comune di TREVISO, solo clienti e orfani con ultimo acquisto almeno 30 giorni fa, niente follow-up, non rinviare appuntamenti locali.",
+      "agentInfo.agentId_matches_selected": true,
+      "effectiveAgentId_matches_selected": true,
+      "intentorderMinDays": null,
+      "requestedArea": null,
+      "nPool": 2237,
+      "nSelection": 8,
+      "needsInfo": false
+    },
+    {
+      "timestamp": "2026-10-09T15:54:31.708136Z",
+      "status": 200,
+      "ultimoUSERprompt": "Parti alle 09:00",
+      "agentInfo.agentId_matches_selected": true,
+      "effectiveAgentId_matches_selected": true,
+      "intentorderMinDays": 30,
+      "requestedArea": {
+        "comune": "TREVISO",
+        "provincia": null,
+        "zona": null,
+        "comuni": [
+          "TREVISO"
+        ]
+      },
+      "nPool": 2237,
+      "nSelection": 3,
+      "needsInfo": false
+    }
+  ],
+  "edge_calls_count": 2,
+  "ai_calls_before_reopen": 2,
+  "ai_calls_after_reopen": 2,
+  "blocked": {
+    "count": 11,
+    "items": [
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      },
+      {
+        "method": "POST",
+        "path": "/rest/v1/rpc/tabaccherie_points_in_bbox",
+        "reason": "rpc_not_allowlisted"
+      }
+    ],
+    "crm_writes_forwarded": 0
+  },
+  "load_timings": {
+    "admin_default_pool_loaded_sec": 22.96,
+    "admin_default_pool_text": "Admin Test 1 · 4581 clienti · copertura parziale · milano",
+    "igor_pool_loaded_sec": 10.826,
+    "igor_pool_text": "Igor Cinquegrani · 2237 clienti · copertura parziale · via mazzini 9d trevignano (TV)",
+    "reopen_default_pool_loaded_sec": 23.036,
+    "reopen_default_pool_text": "Admin Test 1 · 4581 clienti · copertura parziale · milano",
+    "reopen_igor_pool_loaded_sec": 10.598,
+    "reopen_igor_pool_text": "Igor Cinquegrani · 2237 clienti · copertura parziale · via mazzini 9d trevignano (TV)"
+  },
+  "network_state": {
+    "pending_requests_at_end": 0
+  },
+  "ui_checks": {
+    "purchase_filter_text": "",
+    "plan_metrics": "3 tappe · 36 km · 09:00 → 11:22",
+    "plan_times": "Guida 52m · visite 1h 30m · libero 8h 38m",
+    "stop_count": 3,
+    "all_stops_in_verified_comune": true,
+    "last_order_sample": "Ultimo ordine: 08/09/2026 (31 giorni fa)\n\nOrdine ORD-20260908-143845-IBXD71"
+  },
+  "stop_due_to_quota_429": false
+}

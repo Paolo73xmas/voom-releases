@@ -1,0 +1,128 @@
+{
+  "timestamp": "2026-10-09T16:00:15.261017+00:00",
+  "selected_agent": {
+    "id": "9185b892-e6b9-4c2e-88cd-7051046ca71b",
+    "name": "Igor Cinquegrani",
+    "selector_testid": "gptour-agent-9185b892-e6b9-4c2e-88cd-7051046ca71b"
+  },
+  "verified_comune": "TREVISO",
+  "turn_prompts": [
+    "Tabaccherie di TREVISO che non comprano da 30 giorni. Per il prossimo lunedì, una sola giornata, massimo 5 tappe. Niente follow-up, nessuna modifica agli appuntamenti.",
+    "Parti alle 09:00"
+  ],
+  "edge_calls": [
+    {
+      "timestamp": "2026-10-09T15:58:49.706557+00:00",
+      "status": 200,
+      "ultimoUSERprompt": "Tabaccherie di TREVISO che non comprano da 30 giorni. Per il prossimo lunedì, una sola giornata, massimo 5 tappe. Niente follow-up, nessuna modifica agli appuntamenti.",
+      "agentInfo.agentId_matches_selected": true,
+      "effectiveAgentId_matches_selected": true,
+      "intentorderMinDays": null,
+      "requireOrderHistory": null,
+      "requestedArea": null,
+      "nPool": 2237,
+      "nSelection": 5,
+      "needsInfo": false
+    },
+    {
+      "timestamp": "2026-10-09T15:59:10.467805+00:00",
+      "status": 200,
+      "ultimoUSERprompt": "Tabaccherie di TREVISO che non comprano da 30 giorni. Per il prossimo lunedì, una sola giornata, massimo 5 tappe. Niente follow-up, nessuna modifica agli appuntamenti.",
+      "agentInfo.agentId_matches_selected": true,
+      "effectiveAgentId_matches_selected": true,
+      "intentorderMinDays": 30,
+      "requireOrderHistory": true,
+      "requestedArea": {
+        "comuni": [
+          "TREVISO"
+        ],
+        "comune": "TREVISO",
+        "provincia": null,
+        "zona": null
+      },
+      "nPool": 8,
+      "nSelection": 5,
+      "needsInfo": false
+    },
+    {
+      "timestamp": "2026-10-09T15:59:25.597084+00:00",
+      "status": 200,
+      "ultimoUSERprompt": "Parti alle 09:00",
+      "agentInfo.agentId_matches_selected": true,
+      "effectiveAgentId_matches_selected": true,
+      "intentorderMinDays": 30,
+      "requireOrderHistory": true,
+      "requestedArea": {
+        "comuni": [
+          "TREVISO"
+        ],
+        "comune": "TREVISO",
+        "provincia": null,
+        "zona": null
+      },
+      "nPool": 2237,
+      "nSelection": 5,
+      "needsInfo": false
+    },
+    {
+      "timestamp": "2026-10-09T15:59:33.125712+00:00",
+      "status": 200,
+      "ultimoUSERprompt": "Parti alle 09:00",
+      "agentInfo.agentId_matches_selected": true,
+      "effectiveAgentId_matches_selected": true,
+      "intentorderMinDays": 30,
+      "requireOrderHistory": true,
+      "requestedArea": {
+        "comuni": [
+          "TREVISO"
+        ],
+        "comune": "TREVISO",
+        "provincia": null,
+        "zona": null
+      },
+      "nPool": 5,
+      "nSelection": 5,
+      "needsInfo": false
+    }
+  ],
+  "edge_calls_count": 4,
+  "ai_calls_before_reopen": 4,
+  "ai_calls_after_reopen": 4,
+  "blocked": {
+    "count": 0,
+    "items": [],
+    "crm_writes_forwarded": 0
+  },
+  "load_timings": {
+    "admin_default_pool_loaded_sec": 23.535,
+    "admin_default_pool_text": "Admin Test 1 · 4581 clienti · copertura parziale · milano",
+    "igor_pool_loaded_sec": 10.565,
+    "igor_pool_text": "Igor Cinquegrani · 2237 clienti · copertura parziale · via mazzini 9d trevignano (TV)",
+    "reopen_default_pool_loaded_sec": 22.203,
+    "reopen_default_pool_text": "Admin Test 1 · 4581 clienti · copertura parziale · milano",
+    "reopen_igor_pool_loaded_sec": 10.634,
+    "reopen_igor_pool_text": "Igor Cinquegrani · 2237 clienti · copertura parziale · via mazzini 9d trevignano (TV)"
+  },
+  "network_state": {
+    "pending_requests_at_end": 0
+  },
+  "ui_checks": {
+    "first_filter": "Ultimo acquisto da almeno 30 giorni · Clienti e orfani con storico acquisti · TREVISO",
+    "first_metrics": "5 tappe · 37 km · 07:00 → 10:29",
+    "ready_last_orders": [
+      "Ultimo ordine: 14/07/2026 (87 giorni fa)",
+      "Ultimo ordine: 23/02/2026 (228 giorni fa)",
+      "Ultimo ordine: 27/08/2026 (43 giorni fa)",
+      "Ultimo ordine: 08/09/2026 (31 giorni fa)",
+      "Ultimo ordine: 08/09/2026 (31 giorni fa)"
+    ],
+    "reopen_purchase_filter_restored": true,
+    "purchase_filter_text": "Ultimo acquisto da almeno 30 giorni · Clienti e orfani con storico acquisti · TREVISO",
+    "plan_metrics": "5 tappe · 37 km · 09:00 → 12:29",
+    "plan_times": "Guida 59m · visite 2h 30m · libero 7h 31m",
+    "stop_count": 5,
+    "all_stops_in_verified_comune": true,
+    "last_order_sample": "Ultimo ordine: 14/07/2026 (87 giorni fa)\n\nOrdine ORD-20260714-093543-HRC8Q9"
+  },
+  "stop_due_to_quota_429": false
+}

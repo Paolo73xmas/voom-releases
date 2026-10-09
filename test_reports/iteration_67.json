@@ -1,0 +1,77 @@
+{
+  "summary": "Smoke GPTour territoriale (Igor) eseguito in preview mobile reale 390x844, con discovery preventiva del territorio via Admin e selezione comune verificato TREVISO (no fallback Bacoli). Eseguiti 2 turni chat, nessun Salva/Start Tour, evidenze persistite in JSON sanitizzati.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Banner filtro acquisti GPTour",
+        "issue": "Dopo i 2 turni il banner testID gptour-purchase-filter non era visibile/non valorizzato nell'artefatto, pur con piano prodotto e chip criterio presenti.",
+        "testID": "gptour-purchase-filter",
+        "priority": "medium"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Budget Edge call scenario turni GPTour",
+        "issue": "Nuove chiamate Edge effettive registrate: 2 (non 4 attese dal requisito 2-passaggi x 2 turni). Entrambe status 200 e agent binding corretto.",
+        "affected_testIDs": [
+          "gptour-message-input",
+          "gptour-send"
+        ]
+      },
+      {
+        "flow": "Mappa/overlay tabaccherie durante GPTour",
+        "issue": "Il guard fail-closed ha bloccato RPC POST /rest/v1/rpc/tabaccherie_points_in_bbox (11 volte), causando warning fetch in console durante il run.",
+        "affected_testIDs": [
+          "gptour-plan",
+          "gptour-toggle-map"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Sessione Expo Web/Metro",
+        "issue": "Warning runtime ricorrente: 'Disconnected from Metro (1006)' durante run lunga; flusso completato ma stabilità da monitorare."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/tests/e2e/iter67_igor_discovery.cjs",
+    "/app/tests/e2e/iter67_gptour_igor_territory.py",
+    "/app/test_reports/artifacts_iter67/iter67_preview_load_390x844.jpeg",
+    "/app/test_reports/artifacts_iter67/iter67_igor_territory_discovery.json",
+    "/app/test_reports/artifacts_iter67/iter67_gptour_igor_run.json",
+    "/app/test_reports/artifacts_iter67/iter67_gptour_igor_smoke.jpeg",
+    "/root/.emergent/automation_output/20261009_155318/console_20261009_155318.log"
+  ],
+  "action_items": [
+    "Allineare aspettativa call budget: verificare perché lo scenario 2 turni con filtro positivo ha prodotto 2 Edge call invece di 4.",
+    "Valutare se includere tabaccherie_points_in_bbox in allowlist readonly del guard test (o separare guard mappa) per evitare warning fetch non business-critical.",
+    "Confermare visibilità/consistenza di gptour-purchase-filter nel risultato finale quando il criterio 30gg resta attivo."
+  ],
+  "critical_code_review_comments": [
+    "Discovery territoriale reale eseguita prima dell'AI: Igor individuato via Admin, zone=1, pool=2237; comune verificato TREVISO con idonei30gg=8 (clienti=7, orfani=1).",
+    "Nessuna mutazione CRM inoltrata: crm_writes_forwarded=0; non cliccati Salva giro/Avvia Tour/azioni CRM write.",
+    "Binding agente corretto nelle chiamate Edge: agentInfo.agentId_matches_selected=true ed effectiveAgentId_matches_selected=true in tutte le call registrate.",
+    "Piano finale coerente col comune richiesto: stop_count=3, all_stops_in_verified_comune=true, metriche e ultimo ordine presenti (data/giorni/numero)."
+  ],
+  "updated_files": [
+    "/app/tests/e2e/iter67_igor_discovery.cjs",
+    "/app/tests/e2e/iter67_gptour_igor_territory.py",
+    "/app/test_reports/iteration_67.json",
+    "/app/test_reports/iteration_67.md"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "78%"
+  },
+  "seed_data_creation": "Nessuna creazione seed/dati; sola lettura e chiamate AI autorizzate.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Nuovi artifact persistiti e sanitizzati in /app/test_reports/artifacts_iter67. Le nuove Edge call tracciate in array sono 2 (status 200), separate dalle 4 dichiarate in iteration_66. Se si vuole forzare copertura 4-call, ripetere scenario con due prompt che inneschino chiaramente doppio passaggio verified su entrambi i turni.",
+  "rca_of_issue": "RCA principale: nel run reale il motore ha soddisfatto il requisito di piano su comune verificato senza innescare doppio passaggio Edge su entrambi i turni; quindi call count totale=2. Parallelamente, il guard readonly ha bloccato RPC mappa tabaccherie_points_in_bbox (non in allowlist), generando warning fetch ma senza fermare GPTour. Mitigazione: definire policy guard distinta per endpoint readonly non-CRM (es. mappa) e aggiungere assertion esplicita sul numero minimo atteso di call Edge quando il test richiede 4 call."
+}

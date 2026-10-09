@@ -102,7 +102,27 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Parità GPTour sviluppo web7bd72c4c+a57b8e3e Paolo73xmas/voom main: RPC free/never paginata1000fino2500, sviluppo deterministico e fallbackneedsInfo,36assertoriginali. Target DELLA VOLPE VINCENZO Bacoli/Monte diProcida. Edgegiàaggiornata NONtoccare. Nessuna migration/RLS/forcepush/salvataggioCRM. Utente AUTORIZZA test+preview+letturaPOOLREALE, provaAIse disponibile."
+user_problem_statement: "Smoke test GPTour con agente Igor Cinquegrani sul suo territorio. Utente conferma test reali in sola lettura, selezione tramite Admin esistente, generazione GPTour, filtro acquisti e turni successivi. Nessun salvataggio o avvio tour; nessuna scrittura CRM."
+
+gptour_igor_smoke_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  report: "test_reports/gptour_igor_smoke_final.md"
+  verified_scope: "Frase esplicita non comprano da30giorni aTreviso,2turni+bozzalocale; alternativa ultimoacquistoalmeno30giornifa resta rilievo separato. Nessuna modifica app."
+  priority: high
+  status_history:
+    - agent: main
+      comment: "Richiesta smoke reali autorizzata. Nessun codice applicativo cambiato. Login Admin da memory/test_credentials.md e selezione reale Igor: NON impersonare né dedurre credenziali. Scoprire territorio da zone/settings e vero loadGptourPool, non assumere comuni da altri agenti. Installare guard fail-closed contro scritture automatiche e RPC mutanti."
+    - agent: main
+      comment: "Report66 letto: poolIgor2237/baseTrevignanoTV confermati screenshot, ma test30giorni usaBacoli fuori territorio e non conserva payload/esiti, quindi non soddisfa smoke territoriale. RCA readonly: nessuna evidenza temporale di loading bloccato; NON patchare app sulla sola screenshot. RCA chiama erroneamente Trevignano Romano: ignorare, TV nonRM. Nuovo scenario67: prima loaderREALE+zone+loadLatestPurchases, scegliere comuneIgor conidonei30gg; poi2turni browserreali conguard massimo4Edgecalls(2passaggiperturno) e JSONsanitizzato persistito. Distinguere nuovechiamate dalle4dichiarateiter66. Rimonta contempi e attesapoolnonloading, nienteAIperreopen. Nessunwatchdog/config/authchange."
+    - agent: main
+      comment: "FINALE main selftestfraseletteralePASS: Treviso8idonei(7clienti1orfano) discoveryzonevera1/pool2237parziale; giro5tappe37km07:00-10:29; turnoPartialle09 mantiene30gg/comune e09:00-12:29. 5/5dateultimiordini>=30(87/228/43/31/31gg),4Edge200bindingIgortrue,bozzareopenfiltropreservato/noaltreAI; loadingIgor10.6s termina,admin22-24s. 0CRMwrites/0guardblocked dopoallowreadonlybbox verificata. TestPythonlint+2suiteparità+TSCPASS. FonteJSONigor_literal_purchase_verification. Report67dueAI nonbugconteggio: MAX4nonobbligo; variantefraseultimoacquistoalmeno30giornifanongenerabanner/requireHistory,rilievoP1noncorretto incaricotest. Nessunappcodechange; scriptmiglioratoassert/nohardcodedcreds."
+  test_plan:
+    - "Preview 390x844, login e selezione Igor; verificare effectiveAgentId/agentInfo.agentId, territorio/base/pool e eventuali warning parzialità."
+    - "Richiesta breve reale su comune nel territorio, filtro ultimo acquisto30giorni, secondo turno che mantiene filtro e perimetro; massimo4chiamateAI sensate, fermarsi a credito429 senza retry. Mappa/lista e ultimo ordine ove disponibili."
+    - "Nessun save/start/reschedule/closeDueFollowUps/heartbeat/GPS/CRMwrite. GET/HEAD e sole RPC di lettura già accertate, auth login e EdgeGPTour autorizzati. Nessun mocking dei dati Igor oAI."
+    - "Report evidenze reali, conteggi tappe/territorio/filtri, screenshot senza credenziali; distinguere fallimenti app/servizi/test e limiti nativi. Nessuna modifica app/config/deps/Edge/RLS."
 
 gptour_development_current:
   implemented: true

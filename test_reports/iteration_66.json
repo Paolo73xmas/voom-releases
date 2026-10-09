@@ -1,0 +1,69 @@
+{
+  "summary": "Smoke GPTour reale in sola lettura eseguito su preview mobile (390x844) con login Admin e selezione effettiva di Igor Cinquegrani. Guard fail-closed attivo: nessuna scrittura CRM inoltrata (0 write POST/PATCH/PUT/DELETE non autorizzate), 4/4 chiamate AI consumate, nessun click su Salva/Avvia tour. Backend smoke pubblico: 3/3 endpoint passati.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "GPTour header/pool state dopo remount",
+        "issue": "Dopo back->riapertura GPTour in sessione lunga, il banner è rimasto su 'Carico portafoglio e territorio…' nello snapshot finale invece di mostrare subito il riepilogo agente; non schermo bianco ma stato loading persistente/intermittente da verificare.",
+        "testID": "gptour-pool-count",
+        "priority": "medium"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Generazione GPTour + filtro acquisti 30gg + secondo turno",
+        "issue": "Con Igor selezionato, call AI reali eseguite e filtro 30gg persistito al turno successivo. Su richiesta 'Bacoli 30gg' la risposta è stata onesta (zero candidati idonei), ma in questa run non sono emerse tappe con ultimo ordine scaricabile perché il set filtrato risultava vuoto.",
+        "affected_testIDs": [
+          "gptour-message-input",
+          "gptour-send",
+          "gptour-purchase-filter",
+          "gptour-pool-count"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Expo/Metro session",
+        "issue": "Durante run lunga è apparso warning runtime 'Disconnected from Metro (1006)' in console; il flusso è proseguito ma va monitorato per stabilità smoke estesi."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_gptour_readonly_smoke_iter66.py",
+    "/app/test_reports/pytest/pytest_results_iteration_66.xml",
+    "/app/test_reports/artifacts_iter66/iter66_preview_load_390x844.jpeg",
+    "/app/test_reports/artifacts_iter66/iter66_gptour_igor_smoke.jpeg",
+    "/app/test_reports/artifacts_iter66/iter66_igor_chip_lookup.jpeg",
+    "/app/test_reports/artifacts_iter66/iter66_igor_pool_loaded.jpeg",
+    "/app/test_reports/artifacts_iter66/iter66_guard_diag.jpeg"
+  ],
+  "action_items": [
+    "Verificare e stabilizzare il reload di pool dopo back/riapertura GPTour (gptour-pool-count non deve restare in loading oltre timeout ragionevole).",
+    "Confermare in log applicativo la mappatura completa ID Igor (non troncata in output tooling) e tenerla confrontabile con effectiveAgentId server-side.",
+    "Rieseguire smoke con comune reale del territorio Igor che produca almeno 1 candidato idoneo al filtro 30gg per validare visualizzazione completa ultimo ordine (data/giorni/numero)."
+  ],
+  "critical_code_review_comments": [
+    "Guard readonly rispettata: consentiti solo GET/HEAD, POST /auth/v1/token, RPC allowlist read-only e POST /functions/v1/ai-tour-gptour (max 4). Nessuna mutazione CRM inoltrata.",
+    "Verificato contratto agente corretto: richieste AI usano agentInfo.agentId dell'agente selezionato (Igor) e risposta contiene effectiveAgentId coerente (mascherato dal tool ma diverso dall'admin in chip selection).",
+    "Pool reale Igor caricato: 'Igor Cinquegrani · 2237 clienti · copertura parziale' con base reale 'via mazzini 9d trevignano (TV)' (Casa disponibile; Sede non mostrata in quel profilo).",
+    "Filtro acquisti persistente confermato: dopo richiesta 30gg e turno successivo senza ripetere filtro, banner gptour-purchase-filter è rimasto su 'Ultimo acquisto da almeno 30 giorni ... Bacoli'."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_gptour_readonly_smoke_iter66.py",
+    "/app/test_reports/iteration_66.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "85%"
+  },
+  "seed_data_creation": "Nessuna creazione seed/dati. Test reali read-only.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Credenziali admin lette da /app/memory/test_credentials.md. In lookup agenti GPTour: chip Igor visibile e selezionabile con testID prefisso gptour-agent-9185b892... (output tool parzialmente mascherato). Guard fail-closed ha bloccato solo POST Cloudflare telemetry (/cdn-cgi/*), non scritture CRM. AI calls consumate tutte e 4 in questa run; pianificare prossima run con budget AI rinnovato se necessario.",
+  "rca_of_issue": "RCA sintetica: lo stato loading persistente visto in alcuni snapshot è correlato a tempi lunghi di fetch pool/read RPC (più remount schermata) e a un evento console di disconnessione Metro (1006) durante una run lunga. Riproduzione: login admin -> ai-tour -> gptour -> selezione agente -> attesa pool -> back -> reopen. Mitigazione proposta: aggiungere watchdog UI su load timeout con retry esplicito e log diagnostico (timestamp ultimo fetch completato) senza alterare logica business."
+}

@@ -6,6 +6,9 @@ import type { GptProposal } from '../../../lib/aitour/gptour-opportunities';
 import type { TourCandidate, PlannedStop as TourStop } from '../../../lib/aitour/types';
 import { ENTITY_COLORS, ENTITY_LABELS, minToTime, fmtDur } from '../../../lib/aitour/types';
 import { formatDateIt } from '../../../lib/aitour/gptour-followups';
+import { lastOrdersByKey } from '../../../lib/aitour/last-order-label';
+import { useOrderDownload, useTourLastOrders } from '../../../hooks/useTourLastOrders';
+import { LastOrderInfo } from '../LastOrderInfo';
 import { TourMapView } from '../TourMapView';
 import { DS } from '../../../lib/theme';
 import { GptButton, GptIcon, GptNotice, ui } from './UI';
@@ -19,10 +22,18 @@ export function GptPlan({ days, selected, busy, locked, proposal, addable, choos
 }) {
   const [map, setMap] = useState(true), [addOpen, setAddOpen] = useState(false), [search, setSearch] = useState('');
   const [actionFor, setActionFor] = useState<TourStop | null>(null), [moving, setMoving] = useState<string | null>(null);
+  // Ultimo acquisto delle tappe della giornata (web 2eea993): una richiesta condivisa tra elenco, mappa e foglio azioni.
+  const orders = useTourLastOrders(days[selected]?.plan.stops.map((s) => s.candidate) || []);
+  const mapOrder = useOrderDownload();
   const day = days[selected]; if (!day) return null;
   const plan = day.plan, disabled = busy || locked, total = days.reduce((n, d) => n + d.plan.stops.length, 0);
   const matches = addable.filter((c) => `${c.name} ${c.city}`.toLowerCase().includes(search.toLowerCase()));
   const movingStop = moving ? plan.stops.find((s) => s.candidate.key === moving) : null;
+  const downloadFromMap = (key: string) => {
+    const c = plan.stops.find((s) => s.candidate.key === key)?.candidate;
+    const row = c?.customerId ? orders.data?.get(c.customerId) : null;
+    if (row) void mapOrder.download(row);
+  };
   const onRow = (s: TourStop, index: number) => {
     if (disabled) return;
     if (moving) { if (moving !== s.candidate.key) edit('move', moving, index); setMoving(null); return; }
@@ -42,7 +53,9 @@ export function GptPlan({ days, selected, busy, locked, proposal, addable, choos
       </Pressable>)}
     </View>}
     <View style={[ui.card, { padding: 0, overflow: 'hidden' }]}>
-      {map && <View testID="gptour-map"><TourMapView height={220} start={plan.start} end={plan.end} geometry={plan.geometry} stops={plan.stops.map((s) => ({ key: s.candidate.key, name: s.candidate.name, lat: s.candidate.lat, lng: s.candidate.lng, color: ENTITY_COLORS[s.candidate.entityType], label: String(s.sequence), mandatory: s.mandatory, entity: ENTITY_LABELS[s.candidate.entityType], line1: `${minToTime(s.arrivalMin)} · ${s.candidate.visitMinutes} min` }))} /></View>}
+      {map && <View testID="gptour-map"><TourMapView height={220} start={plan.start} end={plan.end} geometry={plan.geometry} stops={plan.stops.map((s) => ({ key: s.candidate.key, name: s.candidate.name, lat: s.candidate.lat, lng: s.candidate.lng, color: ENTITY_COLORS[s.candidate.entityType], label: String(s.sequence), mandatory: s.mandatory, entity: ENTITY_LABELS[s.candidate.entityType], line1: `${minToTime(s.arrivalMin)} · ${s.candidate.visitMinutes} min` }))}
+        lastOrders={lastOrdersByKey(plan.stops.map((s) => ({ key: s.candidate.key, customerId: s.candidate.customerId })), orders, mapOrder.busyId)} onOrderDownload={downloadFromMap} onOrderRetry={orders.refetch} /></View>}
+      {!!mapOrder.error && <View style={{ paddingHorizontal: 12, paddingTop: 8 }}><GptNotice id="gptour-map-order-error" text={mapOrder.error} error /></View>}
       <View style={{ padding: 12, gap: 4 }}>
         <Text testID="gptour-plan-metrics" style={ui.small}>{plan.stops.length} tappe · {plan.totalKm.toFixed(0)} km · {minToTime(plan.startMin)} → {minToTime(plan.finishMin)}</Text>
         <Text testID="gptour-plan-times" style={ui.muted}>Guida {fmtDur(plan.driveMin)} · visite {fmtDur(plan.visitMin)} · <Text testID="gptour-plan-buffer">libero {fmtDur(plan.bufferMin)}</Text></Text>
@@ -54,14 +67,20 @@ export function GptPlan({ days, selected, busy, locked, proposal, addable, choos
     {movingStop && <View style={[ui.notice, ui.row]}><Ionicons name="swap-vertical" size={18} color={DS.brand} /><Text style={[ui.small, ui.flex, { color: DS.brand }]}>Sposto «{movingStop.candidate.name}»: tocca la tappa nella cui posizione inserirla.</Text><GptButton id="gptour-move-cancel" label="Annulla" small onPress={() => setMoving(null)} /></View>}
     <View style={[ui.card, { padding: 4, gap: 0 }]}>
       {plan.stops.map((s, i) => <View key={s.candidate.key} style={[ui.row, { paddingVertical: 2, paddingRight: 4, borderRadius: 10, backgroundColor: moving === s.candidate.key ? DS.brandSoft : 'transparent' }, i > 0 && { borderTopWidth: 1, borderTopColor: DS.border }]}>
-        <Pressable testID={`gptour-stop-${i}`} accessibilityRole="button" accessibilityLabel={`${i + 1}. ${s.candidate.name}`} onPress={() => onRow(s, i)} disabled={disabled}
-          style={({ pressed }) => [ui.row, ui.flex, { paddingVertical: 6, paddingHorizontal: 8, borderRadius: 10, backgroundColor: pressed ? DS.surface2 : 'transparent' }]}>
-          <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: ENTITY_COLORS[s.candidate.entityType], alignItems: 'center', justifyContent: 'center' }}><Text style={[ui.chipText, { color: DS.surface }]}>{i + 1}</Text></View>
-          <View style={ui.flex}>
-            <Text style={ui.small} numberOfLines={1}>{s.candidate.name}{s.mandatory ? '  🔒' : ''}</Text>
-            <Text style={ui.muted} numberOfLines={1}>{s.candidate.city} · {minToTime(s.arrivalMin)}–{minToTime(s.departureMin)} · {ENTITY_LABELS[s.candidate.entityType]}</Text>
+        {/* Ultimo ordine fuori dal Pressable della riga: il link "Ordine N" è un bottone a sé (niente bottoni annidati su web). */}
+        <View style={[ui.flex, { paddingVertical: 6, paddingHorizontal: 8 }]}>
+          <Pressable testID={`gptour-stop-${i}`} accessibilityRole="button" accessibilityLabel={`${i + 1}. ${s.candidate.name}`} onPress={() => onRow(s, i)} disabled={disabled}
+            style={({ pressed }) => [ui.row, { borderRadius: 10, backgroundColor: pressed ? DS.surface2 : 'transparent' }]}>
+            <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: ENTITY_COLORS[s.candidate.entityType], alignItems: 'center', justifyContent: 'center' }}><Text style={[ui.chipText, { color: DS.surface }]}>{i + 1}</Text></View>
+            <View style={ui.flex}>
+              <Text style={ui.small} numberOfLines={1}>{s.candidate.name}{s.mandatory ? '  🔒' : ''}</Text>
+              <Text style={ui.muted} numberOfLines={1}>{s.candidate.city} · {minToTime(s.arrivalMin)}–{minToTime(s.departureMin)} · {ENTITY_LABELS[s.candidate.entityType]}</Text>
+            </View>
+          </Pressable>
+          <View style={{ paddingLeft: 34 }}>
+            <LastOrderInfo candidate={s.candidate} orders={orders} testID={`gptour-last-order-${day.day}-${s.candidate.key}`} />
           </View>
-        </Pressable>
+        </View>
         <GptIcon id={`gptour-handle-${i}`} icon="reorder-three-outline" label={`Sposta ${s.candidate.name}`} onPress={() => setMoving(moving === s.candidate.key ? null : s.candidate.key)} disabled={disabled} color={DS.inkMuted} />
       </View>)}
       <GptButton id="gptour-add-stop" label="Aggiungi tappa dai miei clienti" small icon="add" disabled={disabled} onPress={() => setAddOpen(true)} />
@@ -83,6 +102,7 @@ export function GptPlan({ days, selected, busy, locked, proposal, addable, choos
         <View style={ui.sheet}><View style={ui.grabber} />
           <Text style={ui.heading} numberOfLines={2}>{actionFor?.candidate.name}</Text>
           <Text style={ui.muted}>{actionFor?.candidate.city} · {actionFor ? ENTITY_LABELS[actionFor.candidate.entityType] : ''}{actionFor?.candidate.reason ? ` · ${actionFor.candidate.reason}` : ''}</Text>
+          {actionFor && <LastOrderInfo candidate={actionFor.candidate} orders={orders} testID={`gptour-action-last-order-${actionFor.candidate.key}`} />}
           {actionFor?.mandatory && <GptNotice id="gptour-stop-mandatory" text="Tappa obbligatoria (follow-up o richiesta esplicita): non si può rimuovere da qui." />}
           <GptButton id="gptour-action-move" label="Sposta in un'altra posizione" icon="swap-vertical-outline" onPress={() => { setMoving(actionFor!.candidate.key); setActionFor(null); }} />
           {days.length > 1 && <GptButton id="gptour-action-next" label="Sposta nella giornata successiva" icon="arrow-forward-outline" disabled={!!actionFor?.mandatory} onPress={() => { edit('next', actionFor!.candidate.key); setActionFor(null); }} />}

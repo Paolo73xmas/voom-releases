@@ -17,6 +17,11 @@ export function isDevelopmentRequest(text: string): boolean {
 }
 export function applyDevelopmentIntent(intent: TourIntent, userText: string): TourIntent {
   if (!isDevelopmentRequest(userText)) return intent;
+  // Web 874ba31: "nuovi punti vendita" senza altre tipologie = SOLO free+never, nessuna espansione.
+  if (/nuovi punti vendita|tabaccherie nuove|nuove tabaccherie/i.test(userText)
+    && !/\borfan\w*|\bprospect\b|clienti attivi|tutt[ei] (?:le )?tipologie/i.test(userText)) {
+    return { ...intent, requestedEntityTypes: [...DEVELOPMENT_TYPES], allowedExpansionTypes: [] };
+  }
   if (DEVELOPMENT_TYPES.every((t) => intent.requestedEntityTypes.includes(t))) return intent;
   return { ...intent, requestedEntityTypes: [...new Set([...intent.requestedEntityTypes, ...DEVELOPMENT_TYPES])] };
 }
@@ -40,6 +45,8 @@ const hav = (aLat: number, aLng: number, bLat: number, bLng: number): number => 
 };
 export async function developmentBorders(intent: TourIntent): Promise<Set<string>> {
   const out = new Set<string>();
+  // Web 30b163a: perimetro comune-only (strictGeography) o confinanti negati → nessun comune limitrofo.
+  if (intent.strictGeography || intent.allowNearby === false) return out;
   for (const c of intent.requestedArea?.comuni ?? []) {
     try { for (const b of await bordersOf(c)) out.add(b); } catch { /* solo comuni richiesti se adiacenze indisponibili */ }
   }
@@ -61,8 +68,8 @@ export function completeDevelopmentDay(
   const comuni = requestedComuniNorm(intent.requestedArea);
   const tierOf = (c: TourCandidate): number => {
     if (comuni.size === 0) return 0;
-    const n = normalizeComune(c.city);
-    return comuni.has(n) ? 0 : borderSet.has(n) ? 1 : 2;
+    const names = [c.city, ...(c.matchedLocalities || [])].map((n) => normalizeComune(n || ''));
+    return names.some((n) => comuni.has(n)) ? 0 : names.some((n) => borderSet.has(n)) ? 1 : 2;
   };
   const eligible = filterPoolByIntent(pool, intent, 'corridor', new Set(selectedKeys))
     .filter((c) => DEVELOPMENT_TYPES.includes(c.entityType) && c.lat && c.lng && !present.has(c))
@@ -89,6 +96,6 @@ export function completeDevelopmentDay(
     n++;
   }
   if (added.length === 0) return { result, added: 0, comuni: [] };
-  const comuniAdded = [...new Set(added.map((a) => byKey.get(a.key)?.city || '').filter(Boolean))];
+  const comuniAdded = [...new Set(added.map((a) => byKey.get(a.key)?.matchedLocalities?.[0] || byKey.get(a.key)?.city || '').filter(Boolean))];
   return { result: { ...result, needsInfo: false, selection: [...result.selection, ...added] }, added: added.length, comuni: comuniAdded };
 }

@@ -9,7 +9,7 @@ import { GptIcon, GptNotice, ui } from './UI';
 const EXAMPLES = ['Tutti i miei orfani, massimo 3 giorni', 'Prospect a Rozzano non visitati da 30 giorni', 'Domani 10 tabaccherie a Pavia, prima i clienti fermi da più tempo'];
 
 /** Thread della conversazione: bolle compatte, suggerimenti all'avvio, stato "sto pensando". */
-export function GptThread({ messages, busy, onSuggest }: { messages: GptMessage[]; busy: boolean; onSuggest: (text: string) => void }) {
+export function GptThread({ messages, busy, stage, onSuggest }: { messages: GptMessage[]; busy: boolean; stage?: string; onSuggest: (text: string) => void }) {
   return <View testID="gptour-conversation" style={{ gap: 8 }}>
     {!messages.length && <View style={ui.card}>
       <Text style={ui.heading}>Dimmi che giro vuoi</Text>
@@ -19,7 +19,7 @@ export function GptThread({ messages, busy, onSuggest }: { messages: GptMessage[
     {messages.map((m, i) => <View testID={`gptour-message-${i}`} key={i} style={[ui.bubble, m.role === 'user' && ui.ownBubble]}>
       <Text style={[ui.small, m.role === 'user' && { color: DS.surface }]}>{m.content}</Text>
     </View>)}
-    {busy && <View testID="gptour-loading" style={[ui.row, { paddingVertical: 4 }]}><ActivityIndicator color={DS.brand} /><Text style={ui.muted}>GPTour sta costruendo il giro…</Text></View>}
+    {busy && <View testID="gptour-loading" style={[ui.row, { paddingVertical: 4 }]}><ActivityIndicator color={DS.brand} /><Text testID="gptour-thinking-stage" style={ui.muted}>{stage || 'GPTour sta costruendo il giro…'}</Text></View>}
   </View>;
 }
 

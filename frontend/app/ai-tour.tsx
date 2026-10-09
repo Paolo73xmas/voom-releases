@@ -37,6 +37,9 @@ import { freeAppointmentCandidate } from '../lib/aitour/agenda-candidate';
 import { geocodeAddress } from '../lib/aitour/osrm';
 import { LiveTourView } from '../components/aitour/LiveTourView';
 import { TourMapView, type TourMapStop } from '../components/aitour/TourMapView';
+import { LastOrderInfo } from '../components/aitour/LastOrderInfo';
+import { useOrderDownload, useTourLastOrders } from '../hooks/useTourLastOrders';
+import { lastOrdersByKey } from '../lib/aitour/last-order-label';
 import { PortfolioTab } from '../components/aitour/PortfolioTab';
 import { TourEditModal } from '../components/aitour/TourEditModal';
 import { DrawAreasMap } from '../components/aitour/DrawAreasMap';
@@ -1641,6 +1644,9 @@ export default function AITourScreen() {
 
   // ---------- RENDER ----------
 
+  // Ultimo acquisto delle tappe del piano (elenco, mappa, tour salvati riaperti): fonte unica = tabella ordini (web 2eea993).
+  const lastOrders = useTourLastOrders(plan?.stops.map((s) => s.candidate) || [], phase === 'result' && tab === 'genera' && !liveState);
+  const mapOrder = useOrderDownload();
   const renderChip = (label: string, active: boolean, onPress: () => void, disabled = false, key?: string) => (
     <TouchableOpacity
       key={key || label}
@@ -2226,6 +2232,13 @@ export default function AITourScreen() {
             start={plan.start}
             end={plan.end}
             height={440}
+            lastOrders={lastOrdersByKey(plan.stops.map((s) => ({ key: s.candidate.key, customerId: s.candidate.customerId })), lastOrders, mapOrder.busyId)}
+            onOrderDownload={(key) => {
+              const c = plan.stops.find((s) => s.candidate.key === key)?.candidate;
+              const row = c?.customerId ? lastOrders.data?.get(c.customerId) : null;
+              if (row) void mapOrder.download(row);
+            }}
+            onOrderRetry={lastOrders.refetch}
           />
         ) : (
           <>
@@ -2260,6 +2273,7 @@ export default function AITourScreen() {
                 <Text style={styles.stopAddress} numberOfLines={1}>
                   {[s.candidate.address, s.candidate.city].filter(Boolean).join(', ')}
                 </Text>
+                <LastOrderInfo candidate={s.candidate} orders={lastOrders} testID={`aitour-agenda-last-order-${s.candidate.key}`} />
               </View>
               <View style={styles.stopTimeBox}>
                 <Text style={styles.stopArrival}>{minToTime(s.arrivalMin)}</Text>
@@ -2315,6 +2329,12 @@ export default function AITourScreen() {
           </View>
         )}
           </>
+        )}
+        {resultView === 'map' && !!mapOrder.error && (
+          <View style={[styles.alertBox, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
+            <Ionicons name="warning" size={14} color="#DC2626" />
+            <Text testID="aitour-map-order-error" style={[styles.alertText, { color: '#991B1B' }]}>{mapOrder.error}</Text>
+          </View>
         )}
 
         {/* Escluse */}

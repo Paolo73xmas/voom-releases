@@ -15,6 +15,18 @@ export interface TourIntent {
   tourDates: string[]; followUpDecisions: FollowUpDecision[];
   lodgingRule: { mode: 'conditional'; maxKmHome: number } | null;
   wantAll: boolean; maxDays: number | null; ownOrphansOnly: boolean;
+  // Web 874ba31/30b163a — vincoli deterministici del client (regole conversazionali), MAI accettati dal modello:
+  /** "Non comprano da N giorni": serve un ordine reale, mai visite o nuovi punti al posto degli acquisti. */
+  requireOrderHistory?: boolean;
+  allTobacconists?: boolean;
+  acceptedPartialAreas?: string[];
+  singleDayRequested?: boolean;
+  extraDaysApproved?: boolean;
+  requestedStartTime?: string;
+  requestedEndTime?: string;
+  strictGeography?: boolean;
+  allowNearby?: boolean;
+  skipFollowUps?: boolean;
 }
 export const DEFAULT_INTENT: TourIntent = {
   requestedEntityTypes: [], physicalContactMinDays: null, orderMinDays: null,

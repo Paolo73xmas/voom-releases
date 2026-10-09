@@ -1,0 +1,41 @@
+{
+  "summary": "Frontend-only verification (A/B/D/E) of 'Ultimo acquisto' states in AI Tour Live and GPTour as roberto.beretta. Live Tour: next-visit shows aitour-next-last-order with -empty; pending list has 25 base rows (18 -empty + 7 ready triplets date/download/number + 0 loading + 0 error); first-pending detail shows aitour-detail-last-order with -empty. Click on one -download triggered window.print() exactly 1 time and no -download-error nor console errors. GPTour: single chat turn 'Tabaccherie di Segrate che non comprano da 30 giorni' produced thinking stages ('Interpreto la richiesta…' -> 'Preparo il giro con i punti verificati…'), gptour-purchase-filter text exactly 'Ultimo acquisto da almeno 30 giorni · Clienti e orfani con storico acquisti · Segrate', plan with 1 tappa (Bar Tabacchi di Rausa Giuseppe, Segrate), gptour-last-order-* present with 'Ultimo ordine: 10/07/2026 (91 giorni fa)' and 'Ordine ORD-20260710-123409-R8SXMB', assistant line exactly 'Ho proposto 1 tappa tra 1 clienti e orfani idonei nel comune di Segrate, con ultimo acquisto risalente ad almeno 30 giorni.'. Scope C (saved tours tab) skipped by design because Live Tour is active. No white screens, no Metro red box. Zero CRM writes performed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "GPTour Plan — nested Pressable",
+        "issue": "React Native Web hydration warning: <button> cannot be a descendant of <button>. gptour-last-order-* Pressable is nested inside gptour-stop-0 Pressable, so on web both become <button role=\"button\">, which is invalid HTML and raises a hydration warning in console. Functionality works but should be restructured (make the inner element a non-focusable View with onPress on an inner Pressable sibling, or stop rendering the outer stop as Pressable when a nested Pressable is present). Reference: GPTour plan rendering of gptour-stop-0 / gptour-last-order-* (see components/aitour/gptour/Plan.tsx)."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/tests/e2e/iter65_aitour_last_order.py",
+    "/app/test_reports/artifacts_iter65/A1_live_tour.jpeg",
+    "/app/test_reports/artifacts_iter65/A2_detail.jpeg",
+    "/app/test_reports/artifacts_iter65/B1_after_download.jpeg",
+    "/app/test_reports/artifacts_iter65/D2_gptour_result.jpeg"
+  ],
+  "action_items": [
+    "Resolve nested Pressable in GPTour Plan: gptour-last-order-* currently renders as a <button> inside the gptour-stop-* <button>, producing a React Native Web hydration warning. Suggested fix: do not wrap the whole stop row in Pressable, or move the last-order button outside the row Pressable, so the <button> nesting disappears on web.",
+    "Optional: confirm whether the GPTour thinking-stage pipeline is expected to show the 'Verifico gli ultimi acquisti…' intermediate label; in this run only two stages appeared ('Interpreto la richiesta…' -> 'Preparo il giro con i punti verificati…'), likely because the 30g filter path collapses the two stages when the cached pool is already loaded."
+  ],
+  "critical_code_review_comments": [
+    "Live Tour parity: aitour-next-last-order / aitour-live-last-order-<id> / aitour-detail-last-order render correct state suffixes (-empty, -date, -download, -number) and no stop remained in -loading / -error on this account.",
+    "window.print integration from Pressable (-download) works via expo-print on web preview; no -download-error triggered, no exceptions.",
+    "GPTour purchase-filter and plan message strings exactly match the web-repo parity spec (singular/plural respected: '1 tappa tra 1 clienti e orfani idonei nel comune di Segrate')."
+  ],
+  "updated_files": [
+    "/app/tests/e2e/iter65_aitour_last_order.py",
+    "/app/test_reports/iteration_65.json"
+  ],
+  "success_rate": {"backend": "N/A", "frontend": "98%"},
+  "seed_data_creation": "None (read-only; no CRM writes performed)",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Account roberto.beretta@voomweb.it has active Live Tour (25 stops: 12 fatte + 13 rimanenti) with 7 ready stops showing '-download'/'-number' and 18 '-empty' stops. GPTour returns 1-tappa plan for 'Segrate 30 giorni' (Bar Tabacchi di Rausa Giuseppe) — ready for regression. Scope C (saved tours tab) was intentionally skipped because Live Tour is active and the request explicitly instructed to skip in that case. Browser automation starts a fresh context per invocation: do ALL login+privacy+navigation+assertions inside a single mcp_browser_automation call. The privacy-terms gate writes only AsyncStorage/localStorage (confirmed by inspecting /app/frontend/app/privacy-terms.tsx), so accepting it is safe and does NOT create a CRM write.",
+  "rca_of_issue": "Nested Pressable warning RCA: on web, Pressable renders as HTML <button role=button>. In GPTour Plan each stop row is itself a Pressable (gptour-stop-N), and inside that row the LastOrderInfo renders a second Pressable for the order link (gptour-last-order-*-...), producing <button> inside <button>. React logs an HTML spec violation (hydration warning). Reproduction: open /gptour, send 'Tabaccherie di Segrate che non comprano da 30 giorni', wait for plan render, observe console. Mitigation: either remove the outer stop Pressable (expose onPress at a leaf child) or render the last-order action as a plain View+onClick/handler that does not emit a <button>."
+}

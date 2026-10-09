@@ -51,8 +51,9 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
     }); return () => { active = false; };
   }, [isAdmin, agentRefresh]);
   const addable = useMemo(() => { const present = IdentitySet.from(g.days.flatMap((d) => d.plan.stops.map((s) => s.candidate)));
-    return g.pool?.candidates.filter((c) => !present.has(c) && candidateMatchesTourIntent(c, g.intent)) || [];
-  }, [g.pool, g.days, g.intent]);
+    // Perimetro verificato della conversazione (provincia/comuni/acquisti): fuori da esso non si aggiunge nulla a mano.
+    return g.planningPool.filter((c) => !present.has(c) && candidateMatchesTourIntent(c, g.intent));
+  }, [g.planningPool, g.days, g.intent]);
   const locate = async () => { setGpsBusy(true); setLocalError('');
     try { const p = await Location.requestForegroundPermissionsAsync(); if (!p.granted) throw new Error('Permesso GPS negato. Scegli Casa o Sede.');
       const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
@@ -91,7 +92,11 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
         {!g.pool.complete && <GptNotice id="gptour-pool-partial" text={`Pool parziale: “tutti” significa tutti gli idonei disponibili, non l’intero CRM. ${g.pool.warnings.join(' ')}`} />}
         {!g.home && <GptNotice id="gptour-base-missing" text="Scegli la base di partenza (Casa, Sede o GPS) dalle impostazioni in alto a destra prima di chiedere il giro." />}
         <GptCriteria intent={g.intent} />
-        <GptThread messages={g.messages} busy={g.busy} onSuggest={setDraft} />
+        {g.intent.requireOrderHistory && <Text testID="gptour-purchase-filter" style={ui.muted}>
+          Ultimo acquisto da almeno {g.intent.orderMinDays} giorni · Clienti e orfani con storico acquisti
+          {g.intent.requestedArea?.provincia ? ` · Provincia ${g.intent.requestedArea.provincia}` : g.intent.requestedArea?.comuni?.length ? ` · ${g.intent.requestedArea.comuni.join(', ')}` : ''}
+        </Text>}
+        <GptThread messages={g.messages} busy={g.busy} stage={g.stage} onSuggest={setDraft} />
         <GptFollowUps pending={g.pending} busy={g.busy} decide={(e, a) => track(g.decide)(e, a)} decideAll={(a) => track(g.decideAll)(a)} onReschedule={g.setReschedule} />
         {(g.draftAvailable || (g.stale && !!g.days.length)) && <GptNotice id="gptour-stale" text="Piano precedente o bozza: ricostruisci con i dati aggiornati prima di salvare." />}
         {(g.draftAvailable || (g.stale && !!g.days.length)) && !g.pending.length && <GptButton id="gptour-rebuild" label="Ricostruisci piano / riprendi bozza" small icon="construct-outline" disabled={g.busy || !g.home} onPress={() => track(g.rebuild)()} />}

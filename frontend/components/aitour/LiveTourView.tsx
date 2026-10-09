@@ -36,6 +36,8 @@ import { OwnStaminaChip } from './OwnStaminaChip';
 import { planTour } from '../../lib/aitour/planner';
 import { gptourMetadataWarning } from '../../lib/aitour/gptour-context';
 import { GptNotice } from './gptour/UI';
+import { LastOrderInfo } from './LastOrderInfo';
+import { useTourLastOrders } from '../../hooks/useTourLastOrders';
 import { buildTourReport, type TourReport } from '../../lib/aitour/report';
 import type { TourCandidate, AiTourSettings, GeoPoint, DayType } from '../../lib/aitour/types';
 import { minToTime, timeToMin, fmtDur, fmtEur, haversineKm, ENTITY_LABELS, ENTITY_COLORS, ENTITY_TEXT_COLORS } from '../../lib/aitour/types';
@@ -62,6 +64,8 @@ interface Props {
 export function LiveTourView({ initial, settings, onExit }: Props) {
   const router = useRouter();
   const [stops, setStops] = useState<LiveStop[]>(initial.stops);
+  // Ultimo acquisto delle tappe (prossima visita, elenco, dettaglio): fonte unica tabella ordini (web LiveTour @ 2eea993).
+  const orders = useTourLastOrders(stops.map((s) => s.candidate));
   const [message, setMessage] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<{ cand: TourCandidate; slack: number } | null>(null);
   const [esitoOpen, setEsitoOpen] = useState(false);
@@ -1401,6 +1405,7 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
             </View>
           </View>
           <Text style={styles.nextName}>{next.candidate.name}</Text>
+          <LastOrderInfo candidate={next.candidate} orders={orders} testID="aitour-next-last-order" />
           {next.candidate.crmName && next.candidate.crmName !== next.candidate.name ? (
             <Text style={styles.nextCrmName}>
               Scheda CRM: <Text style={{ fontFamily: JAKARTA.bold }}>{next.candidate.crmName}</Text>
@@ -1541,17 +1546,20 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
               <View style={[styles.listSeq, { backgroundColor: s.addedByAdmin ? '#EA580C' : ENTITY_COLORS[s.candidate.entityType] }]}>
                 <Text style={styles.listSeqText}>{stopNumbers.get(s.id)}</Text>
               </View>
-              <TouchableOpacity
-                style={{ flex: 1 }}
-                onPress={() => setDetailStop(s)}
-                disabled={busy || recalcing}
-                activeOpacity={0.6}
-                testID={`aitour-live-pending-name-${i + 1}`}
-              >
-                <Text style={[styles.listName, styles.listNameLink]} numberOfLines={1}>
-                  {s.candidate.name}
-                </Text>
-              </TouchableOpacity>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <TouchableOpacity
+                  onPress={() => setDetailStop(s)}
+                  disabled={busy || recalcing}
+                  activeOpacity={0.6}
+                  testID={`aitour-live-pending-name-${i + 1}`}
+                >
+                  <Text style={[styles.listName, styles.listNameLink, { flex: 0 }]} numberOfLines={1}>
+                    {s.candidate.name}
+                  </Text>
+                </TouchableOpacity>
+                {/* Fuori dal TouchableOpacity del nome: il link "Ordine N" è un bottone a sé (niente bottoni annidati su web). */}
+                <LastOrderInfo candidate={s.candidate} orders={orders} testID={`aitour-live-last-order-${s.id}`} />
+              </View>
               {s.addedByAdmin && (
                 <View style={[styles.tinyBadge, { backgroundColor: '#EA580C' }]}>
                   <Text style={styles.tinyBadgeText}>admin</Text>
@@ -1595,9 +1603,12 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
                 size={15}
                 color={s.status === 'completed' ? '#059669' : s.skipReason === TRASH_REASON ? '#F87171' : DS.inkMuted}
               />
-              <Text style={[styles.listName, styles.listNameDone]} numberOfLines={1}>
-                {s.candidate.name}
-              </Text>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.listName, styles.listNameDone, { flex: 0 }]} numberOfLines={1}>
+                  {s.candidate.name}
+                </Text>
+                <LastOrderInfo candidate={s.candidate} orders={orders} testID={`aitour-live-last-order-${s.id}`} />
+              </View>
               <Text style={styles.listOutcome}>
                 {s.status === 'completed'
                   ? s.outcome || 'fatta'
@@ -1651,10 +1662,10 @@ export function LiveTourView({ initial, settings, onExit }: Props) {
                 </View>
                 <View style={styles.detailGrid}>
                   <Text style={styles.detailGridItem}>Ultima visita: <Text style={styles.detailGridBold}>{detailStop.candidate.lastVisitDate ? new Date(detailStop.candidate.lastVisitDate).toLocaleDateString('it-IT') : 'mai'}</Text></Text>
-                  <Text style={styles.detailGridItem}>Ultimo ordine: <Text style={styles.detailGridBold}>{detailStop.candidate.lastOrderDate ? new Date(detailStop.candidate.lastOrderDate).toLocaleDateString('it-IT') : 'mai'}</Text></Text>
                   <Text style={styles.detailGridItem}>Ordini totali: <Text style={styles.detailGridBold}>{detailStop.candidate.orderCount || 0}</Text></Text>
                   <Text style={styles.detailGridItem}>Fatturato 6 mesi: <Text style={styles.detailGridBold}>€ {Math.round(detailStop.candidate.revenue6m || 0)}</Text></Text>
                 </View>
+                <LastOrderInfo candidate={detailStop.candidate} orders={orders} testID="aitour-detail-last-order" />
                 {!detailStop.candidate.customerId && (
                   <Text style={styles.detailProspect}>Nessuna scheda cliente: da acquisire come prospect.</Text>
                 )}

@@ -23,6 +23,8 @@ export interface TourCandidate {
   key: string;
   entityType: EntityType;
   customerId: string | null;
+  /** Località verificate per questa conversazione GPTour, senza alterare il comune nel CRM (web 874ba31). */
+  matchedLocalities?: string[];
   // Solo mobile: customer id di un orfano di altro agente, usato esclusivamente
   // per il modale storico ordini del badge Orfano (non abilita visite/appuntamenti CRM)
   historyCustomerId?: string | null;

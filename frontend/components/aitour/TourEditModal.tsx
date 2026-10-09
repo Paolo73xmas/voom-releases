@@ -11,6 +11,8 @@ import type { TourPlan, TourCandidate } from '../../lib/aitour/types';
 import { ENTITY_LABELS, ENTITY_COLORS } from '../../lib/aitour/types';
 import { editOutsideReason, editAreaConsentKey, sameEditSubject, type EditAreaConsents } from '../../lib/aitour/edit-plan';
 import { AI_PURPLE, AI_PURPLE_SOFT, AI_PURPLE_TEXT } from './shared';
+import { LastOrderInfo } from './LastOrderInfo';
+import { useTourLastOrders } from '../../hooks/useTourLastOrders';
 
 interface Props {
   visible: boolean;
@@ -48,6 +50,8 @@ export function TourEditModal({ visible, onClose, plan, allCandidates, onRecalc,
     for (const s of plan.stops) m.set(s.candidate.key, s.candidate);
     return m;
   }, [allCandidates, plan.stops]);
+  // Ultimo acquisto delle visite nel giro (web TourEditPanel @ 2eea993): caricato solo a pannello aperto.
+  const orders = useTourLastOrders(keys.flatMap((key) => (byKey.has(key) ? [byKey.get(key)!] : [])), visible);
 
   const available = useMemo(() => {
     const inTour = new Set(keys);
@@ -141,6 +145,7 @@ export function TourEditModal({ visible, onClose, plan, allCandidates, onRecalc,
                   <Text testID={`aitour-edit-details-${i + 1}`} style={styles.stopSub} numberOfLines={2}>
                     {ENTITY_LABELS[c.entityType]} · {c.score}/100 · {c.city}
                   </Text>
+                  <LastOrderInfo candidate={c} orders={orders} testID={`aitour-edit-last-order-${c.key}`} />
                   </View>
                 </View>
                 <View style={styles.stopActions}>

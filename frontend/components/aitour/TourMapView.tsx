@@ -9,6 +9,7 @@ import * as Location from 'expo-location';
 import { openNavigation } from './shared';
 import { COLORS } from '../../lib/theme';
 import { tabaccheriePointsInBounds, type TabPoint } from '../../lib/api/tabaccherie';
+import type { LastOrderPopup } from '../../lib/aitour/last-order-label';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let WebView: any = null;
@@ -44,6 +45,10 @@ interface Props {
   height?: number;
   /** Tap sul segnaposto: apre il dettaglio tappa (usato dal Live Tour al posto del popup) */
   onStopSelect?: (key: string) => void;
+  /** Ultimo acquisto per chiave tappa nel popup (web TourMap @ 2eea993): aggiornato senza ricaricare la mappa */
+  lastOrders?: Record<string, LastOrderPopup>;
+  onOrderDownload?: (key: string) => void;
+  onOrderRetry?: () => void;
 }
 
 function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Props['start'], end: Props['end'], dots: TabPoint[], selectable: boolean, regions?: Props['regions']): string {
@@ -73,6 +78,8 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
   .pp-line { font-size:11px; color:#334155; margin-top:3px; }
   .pp-reason { font-size:11px; font-style:italic; color:#6D28D9; border-left:2px solid #C4B5FD; padding-left:6px; margin-top:5px; }
   .pp-nav { display:inline-block; margin-top:7px; background:#7C3AED; color:#fff; font-size:11px; font-weight:600; border-radius:7px; padding:5px 12px; text-decoration:none; }
+  .pp-order { font-size:11px; color:#475569; margin-top:4px; }
+  .pp-order a.pp-link, .leaflet-container .pp-order a.pp-link { color:#1d4ed8 !important; font-weight:600; text-decoration:underline; margin-left:4px; display:inline-block; padding:4px 0; }
   /* Leaflet applica .leaflet-container a { color:#0078A8 } con specificità maggiore: testo blu su viola illeggibile */
   .leaflet-container a.pp-nav, .leaflet-container a.pp-nav:visited, .leaflet-container a.pp-nav:hover { color:#fff !important; }
 </style>
@@ -161,21 +168,48 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
   }
 
   // Fermate: con selectable il tap apre il dettaglio tappa nell'app (niente popup)
-  DATA.stops.forEach(function(s) {
-    var m = L.marker([s.lat, s.lng], { icon: numberedIcon(s.label, s.color, s.mandatory, s.status) }).addTo(map);
-    if (DATA.selectable) {
-      m.on('click', function() { sendMessage({ type: 'stopSelect', key: s.key }); });
-      return;
-    }
-    var html = '<div class="pp-name">' + s.name + '</div>' +
+  // Ultimo acquisto: stato per chiave aggiornato dall'app (window.updateLastOrders), popup ricostruito all'apertura.
+  var LAST_ORDERS = {};
+  var stopMarkers = [];
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function orderDownload(el) { sendMessage({ type: 'orderDownload', key: el.getAttribute('data-key') }); }
+  function orderRetry() { sendMessage({ type: 'orderRetry' }); }
+  function orderHtml(s) {
+    var o = LAST_ORDERS[s.key];
+    if (!o) return '';
+    var h = '<div class="pp-order" data-testid="aitour-popup-last-order-' + esc(s.key) + '">' + esc(o.text);
+    if (o.state === 'ready') h += '<a class="pp-link" href="#" data-key="' + esc(s.key) + '" onclick="orderDownload(this);return false;">' + (o.busy ? 'Download…' : esc(o.number ? 'Ordine ' + o.number : 'Numero non disponibile · Scarica PDF')) + '</a>';
+    if (o.state === 'error') h += '<a class="pp-link" href="#" onclick="orderRetry();return false;">Riprova</a>';
+    return h + '</div>';
+  }
+  function popupHtml(s) {
+    return '<div class="pp-name">' + s.name + '</div>' +
       (s.crmName && s.crmName !== s.name ? '<div class="pp-line" style="color:#2563eb">Scheda CRM: <b>' + s.crmName + '</b></div>' : '') +
       '<span class="pp-badge" style="border-color:' + s.color + ';color:' + s.color + '">' + s.entity + '</span>' +
       (s.mandatory ? '<span class="pp-badge" style="border-color:#dc2626;color:#fff;background:#dc2626">Obbligatoria</span>' : '') +
       '<div class="pp-line">' + s.line1 + '</div>' +
       (s.line2 ? '<div class="pp-line">' + s.line2 + '</div>' : '') +
       (s.reason ? '<div class="pp-reason">' + s.reason + '</div>' : '') +
+      orderHtml(s) +
       '<a class="pp-nav" href="#" onclick="sendMessage({type:\\'navigate\\',lat:' + s.lat + ',lng:' + s.lng + '});return false;">\\u27A4 Naviga</a>';
-    m.bindPopup(html, { maxWidth: 260 });
+  }
+  window.updateLastOrders = function(orders) {
+    try {
+      LAST_ORDERS = orders || {};
+      for (var i = 0; i < stopMarkers.length; i++) {
+        var pm = stopMarkers[i];
+        if (pm.marker.isPopupOpen && pm.marker.isPopupOpen()) pm.marker.getPopup().setContent(popupHtml(pm.stop));
+      }
+    } catch (e) {}
+  };
+  DATA.stops.forEach(function(s) {
+    var m = L.marker([s.lat, s.lng], { icon: numberedIcon(s.label, s.color, s.mandatory, s.status) }).addTo(map);
+    if (DATA.selectable) {
+      m.on('click', function() { sendMessage({ type: 'stopSelect', key: s.key }); });
+      return;
+    }
+    stopMarkers.push({ stop: s, marker: m });
+    m.bindPopup(function() { return popupHtml(s); }, { maxWidth: 260 });
   });
 
   // Fit bounds — robusto anche a schermo intero: il contenitore può cambiare
@@ -219,11 +253,12 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
       }
     } catch (e) {}
   };
-  // Web (iframe): riceve la posizione via postMessage
+  // Web (iframe): riceve la posizione e gli ultimi acquisti via postMessage
   window.addEventListener('message', function(e) {
     try {
       var m = typeof e.data === 'string' ? JSON.parse(e.data) : null;
       if (m && m.type === 'userpos') window.updateUserPos(m.lat, m.lng, m.acc);
+      if (m && m.type === 'lastorders') window.updateLastOrders(m.orders);
     } catch (err) {}
   });
 </script>
@@ -231,7 +266,7 @@ function buildHtml(stops: TourMapStop[], geometry: [number, number][], start: Pr
 </html>`;
 }
 
-export function TourMapView({ stops, geometry, start, end, height = 420, onStopSelect, regions, onReadyChange }: Props) {
+export function TourMapView({ stops, geometry, start, end, height = 420, onStopSelect, regions, onReadyChange, lastOrders, onOrderDownload, onOrderRetry }: Props) {
   // Puntini neri: tabaccherie del registro nel riquadro del percorso + ~10 km di margine.
   // Caricati una volta per composizione del giro ed embedded nell'HTML della mappa.
   const [dots, setDots] = useState<TabPoint[]>([]);
@@ -334,8 +369,33 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
     };
   }, [pushUserPos]);
 
+  // Ultimi acquisti nel popup: push dentro WebView/iframe senza rigenerare l'HTML (nessun reload della mappa).
+  const lastOrdersRef = useRef(lastOrders);
+  lastOrdersRef.current = lastOrders;
+  // Confronto per contenuto: i genitori ricreano l'oggetto a ogni render, il push serve solo se cambia qualcosa.
+  const lastOrdersJson = useMemo(() => (lastOrders ? JSON.stringify(lastOrders) : ''), [lastOrders]);
+  const pushLastOrders = useCallback(() => {
+    const orders = lastOrdersRef.current;
+    if (!orders) return;
+    if (Platform.OS === 'web') {
+      const msg = JSON.stringify({ type: 'lastorders', orders });
+      try { iframeRef.current?.contentWindow?.postMessage(msg, '*'); } catch { /* iframe non pronto */ }
+      try { iframeRefFull.current?.contentWindow?.postMessage(msg, '*'); } catch { /* iframe non pronto */ }
+    } else {
+      const js = `window.updateLastOrders && window.updateLastOrders(${JSON.stringify(orders)}); true;`;
+      try { webRef.current?.injectJavaScript(js); } catch { /* webview non pronta */ }
+      try { webRefFull.current?.injectJavaScript(js); } catch { /* webview non pronta */ }
+    }
+  }, []);
+  useEffect(() => { pushLastOrders(); }, [lastOrdersJson, pushLastOrders]);
+  const onLoaded = useCallback(() => { pushUserPos(); pushLastOrders(); }, [pushUserPos, pushLastOrders]);
+
   const onStopSelectRef = React.useRef(onStopSelect);
   onStopSelectRef.current = onStopSelect;
+  const onOrderDownloadRef = useRef(onOrderDownload);
+  onOrderDownloadRef.current = onOrderDownload;
+  const onOrderRetryRef = useRef(onOrderRetry);
+  onOrderRetryRef.current = onOrderRetry;
   const onReadyRef = useRef(onReadyChange);
   onReadyRef.current = onReadyChange;
   const handleMessage = useCallback((raw: string) => {
@@ -344,6 +404,8 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
       if (msg.type === 'map-ready') onReadyRef.current?.(true);
       if (msg.type === 'navigate') openNavigation(msg.lat, msg.lng);
       else if (msg.type === 'stopSelect' && msg.key && onStopSelectRef.current) onStopSelectRef.current(String(msg.key));
+      else if (msg.type === 'orderDownload' && msg.key) onOrderDownloadRef.current?.(String(msg.key));
+      else if (msg.type === 'orderRetry') onOrderRetryRef.current?.();
     } catch {
       // ignora messaggi non validi
     }
@@ -367,7 +429,7 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
         srcDoc: html,
         style: { width: '100%', height: '100%', border: 'none' },
         title: 'Mappa del tour',
-        onLoad: pushUserPos,
+        onLoad: onLoaded,
       });
     }
     if (!WebView) return null;
@@ -377,7 +439,7 @@ export function TourMapView({ stops, geometry, start, end, height = 420, onStopS
         source={{ html }}
         style={{ flex: 1 }}
         onMessage={(e: { nativeEvent: { data: string } }) => handleMessage(e.nativeEvent.data)}
-        onLoadEnd={pushUserPos}
+        onLoadEnd={onLoaded}
         javaScriptEnabled
         domStorageEnabled
         originWhitelist={['*']}

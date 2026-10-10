@@ -1,4 +1,4 @@
-// Porting del modulo web @ a57b8e3e: cambiano solo i percorsi/tipi degli import.
+// Base web @ a57b8e3e; commercial mixed groups also participate in verified completion.
 import type { TourCandidate, AiTourSettings, EntityType } from './types';
 import type { TourIntent } from './gptour-intent';
 import type { GptResult } from './gptour-api';
@@ -16,6 +16,7 @@ export function isDevelopmentRequest(text: string): boolean {
   return DEV_RE.test(norm(text || ''));
 }
 export function applyDevelopmentIntent(intent: TourIntent, userText: string): TourIntent {
+  if (intent.commercialGroups) return intent; // Commercial rules own mixed groups, not the generic development heuristic.
   if (!isDevelopmentRequest(userText)) return intent;
   // Web 874ba31: "nuovi punti vendita" senza altre tipologie = SOLO free+never, nessuna espansione.
   if (/nuovi punti vendita|tabaccherie nuove|nuove tabaccherie/i.test(userText)
@@ -26,7 +27,7 @@ export function applyDevelopmentIntent(intent: TourIntent, userText: string): To
   return { ...intent, requestedEntityTypes: [...new Set([...intent.requestedEntityTypes, ...DEVELOPMENT_TYPES])] };
 }
 export const isDevelopmentIntent = (intent: TourIntent): boolean =>
-  DEVELOPMENT_TYPES.every((t) => intent.requestedEntityTypes.includes(t));
+  intent.commercialGroups ? intent.commercialGroups.newPoints : DEVELOPMENT_TYPES.every((t) => intent.requestedEntityTypes.includes(t));
 
 export function inferTourDate(text: string, today: string): string {
   const t = norm(text || '');
@@ -72,7 +73,7 @@ export function completeDevelopmentDay(
     return names.some((n) => comuni.has(n)) ? 0 : names.some((n) => borderSet.has(n)) ? 1 : 2;
   };
   const eligible = filterPoolByIntent(pool, intent, 'corridor', new Set(selectedKeys))
-    .filter((c) => DEVELOPMENT_TYPES.includes(c.entityType) && c.lat && c.lng && !present.has(c))
+    .filter((c) => (intent.commercialGroups?.existing || DEVELOPMENT_TYPES.includes(c.entityType)) && c.lat && c.lng && !present.has(c))
     .map((c) => ({ c, tier: tierOf(c) }))
     .filter((x) => x.tier <= 1);
   if (eligible.length === 0) return { result, added: 0, comuni: [] };
@@ -91,7 +92,9 @@ export function completeDevelopmentDay(
     const pick = remaining.shift()!;
     if (present.has(pick.c)) continue;
     present.add(pick.c);
-    added.push({ key: pick.c.key, reason: 'Nuovo punto vendita (sviluppo, completamento deterministico)' });
+    added.push({ key: pick.c.key, reason: pick.c.gptourData?.commercial?.relationship === 'own' || pick.c.gptourData?.commercial?.relationship === 'other'
+      ? 'Cliente idoneo ai criteri commerciali (completamento deterministico)'
+      : 'Nuovo punto vendita (sviluppo, completamento deterministico)' });
     center = { lat: (center.lat * n + pick.c.lat) / (n + 1), lng: (center.lng * n + pick.c.lng) / (n + 1) };
     n++;
   }

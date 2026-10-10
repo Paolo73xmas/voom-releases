@@ -45,7 +45,8 @@ export interface TourCandidate {
   daysSincePhysicalContact?: number | null;
   isOwnOrphan?: boolean;
   /** Unknown is different from a verified absence of contacts/orders. GPTour only. */
-  gptourData?: { contactKnown: boolean; orderKnown: boolean; revenueKnown: boolean; zoneNames?: string[] };
+  gptourData?: { contactKnown: boolean; orderKnown: boolean; revenueKnown: boolean; zoneNames?: string[];
+    commercial?: { authorized: boolean; relationship: 'own' | 'other' | 'none' | 'unknown'; newPointVerified: boolean; purchasesVerified?: boolean } };
   lastOrderDate: string | null;
   orderCount: number;
   totalRevenue: number;

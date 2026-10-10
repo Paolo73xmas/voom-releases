@@ -102,7 +102,19 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Smoke test GPTour con agente Igor Cinquegrani sul suo territorio. Utente conferma test reali in sola lettura, selezione tramite Admin esistente, generazione GPTour, filtro acquisti e turni successivi. Nessun salvataggio o avvio tour; nessuna scrittura CRM."
+user_problem_statement: "Correzione mirata GPTour Android/iOS commerciale: categorie mai ampliate senza consenso, clienti/nuovi/inattivi verificati, gruppi misti con filtri scoped, persistenza conversazione. User approva codice e SOLO test isolati; NO CRM reale/AI reale/Edge/database/auth/deps."
+
+commercial_rules_current:
+  initial_mobile_sha: edb2852fcbaac9467cb6cb81f13c69b349adda62
+  requested_mobile_branch: conflict_170826_1303
+  workspace_branch: main
+  web_sha: 21b17f6496ed5af748c8e4da62bb2abc8e0c3c4d
+  source_verified: "ls-remote + shallow clones delle duebranche /tmp/voom-commercial-mobile e web. LocalHEAD coincide conmobile remoto."
+  changes: "CommercialGroupsv1 facoltativo persistito client-only, scope acquisti solo existing, mapping provenienza nelveroGPTourloader, positive registro stato_visita/nonlinked/chiusa read-only per new,unknownfailclosed. NessunmoduloCRMgenerico cambiato salvo tipoopzionaleGPTour."
+  testing: "FINALE10ott2026: TypeScript/lintPASS,35suite368testappPASS(esclude SOLO build_lockfile.test.ts);suiteINTEGRALE374PASS6FAIL su380totali. SeierrorilockfileidenticiabaselinePRIMAmodifiche(337PASS6FAIL343totali);lockfile/deps/confignonmodificati. Hookreale6casiPASS:motore/scope/acquisti/proposterealiconsoleIOfixture. Loadernew7testPASS. Browserrealapp390x8448EdgeFIXTURE,0APIbusinessforwarded,0unknownblocked:mix3tappeRozzano->9->Opera4->removenew2->bozzaripristinata/noAIextra. Gruppi,datacomunipersistiti;flagGLOBALrequireHistoryFALSE/orderDaysNULLnelmisto,20soloingruppo;tornaTRUEdoporemovenew. NuovoerrorecompatEdgeomettenewrecuperatoconcompletamentoscope-onlyetestato."
+  next: "Nessunulteriorecodiceautomatico. Reportautorevole test_reports/GPTour_COMMERCIAL_RULES_FINAL.md;report68/69intermedisuperatidaverificamainfinale. QAAndroid/iOSreale e integrazioneinstallatadasvolgeresoloautorizzati.6faillockfilepreesistentifuoriscopeaperti. NoCRM/AIlive/DB/Edgechanges."
+  code_snapshot_sha256: 414e1f7c519ee5347555de9f4918dd1e7de0e4a1af3c5b69a0abf7f74289ee64
+  sha_note: "GitHEADiniziale/finaleedb2852f;modificheworkingtree,nessuncommit/pushmanuale. SHA256sopradescrive26filecodice/testNONunoSHAcommit. Remotiri-verificatiimmutati13:48UTC."
 
 gptour_igor_smoke_current:
   implemented: true

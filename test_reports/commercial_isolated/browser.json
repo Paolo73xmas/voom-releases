@@ -1,0 +1,583 @@
+{
+  "edge_calls": [
+    {
+      "intent": {
+        "requestedEntityTypes": [
+          "client",
+          "prospect",
+          "orphan",
+          "free",
+          "never"
+        ],
+        "physicalContactMinDays": null,
+        "orderMinDays": null,
+        "minRevenue": null,
+        "maxRevenue": null,
+        "project": null,
+        "requestedArea": {
+          "comuni": [
+            "Rozzano"
+          ],
+          "comune": "Rozzano",
+          "provincia": null,
+          "zona": null
+        },
+        "requiredStops": [],
+        "excludedStops": [],
+        "allowedExpansionTypes": [],
+        "allowLargeBuffer": false,
+        "rejectedOpportunityKeys": [],
+        "tourDates": [
+          "2026-10-11"
+        ],
+        "followUpDecisions": [],
+        "lodgingRule": null,
+        "wantAll": false,
+        "maxDays": 1,
+        "ownOrphansOnly": false,
+        "allowNearby": false,
+        "strictGeography": true,
+        "skipFollowUps": true,
+        "allTobacconists": false,
+        "commercialGroups": {
+          "version": 1,
+          "existing": true,
+          "newPoints": true,
+          "ownOnly": false,
+          "inactiveDays": 20,
+          "needsDays": false
+        },
+        "requireOrderHistory": false,
+        "extraDaysApproved": false,
+        "singleDayRequested": true
+      },
+      "keys": [
+        "client:old",
+        "client:edge",
+        "client:recent",
+        "client:never-bought",
+        "never:new",
+        "never:opera"
+      ],
+      "request_fields": [
+        "messages",
+        "candidatesText",
+        "count",
+        "agentInfo",
+        "intent",
+        "currentTour",
+        "followUps",
+        "corridorProposal"
+      ],
+      "count": 6,
+      "agent_matches": true
+    },
+    {
+      "intent": {
+        "requestedEntityTypes": [
+          "client",
+          "prospect",
+          "orphan",
+          "free",
+          "never"
+        ],
+        "physicalContactMinDays": null,
+        "orderMinDays": null,
+        "minRevenue": null,
+        "maxRevenue": null,
+        "project": null,
+        "requestedArea": {
+          "comuni": [
+            "Rozzano"
+          ],
+          "comune": "Rozzano",
+          "provincia": null,
+          "zona": null
+        },
+        "requiredStops": [],
+        "excludedStops": [],
+        "allowedExpansionTypes": [],
+        "allowLargeBuffer": false,
+        "rejectedOpportunityKeys": [],
+        "tourDates": [
+          "2026-10-11"
+        ],
+        "followUpDecisions": [],
+        "lodgingRule": null,
+        "wantAll": false,
+        "maxDays": 1,
+        "ownOrphansOnly": false,
+        "allowNearby": false,
+        "strictGeography": true,
+        "skipFollowUps": true,
+        "allTobacconists": false,
+        "commercialGroups": {
+          "version": 1,
+          "existing": true,
+          "newPoints": true,
+          "ownOnly": false,
+          "inactiveDays": 20,
+          "needsDays": false
+        },
+        "requireOrderHistory": false,
+        "extraDaysApproved": false,
+        "singleDayRequested": true
+      },
+      "keys": [
+        "client:old",
+        "client:edge",
+        "never:new"
+      ],
+      "request_fields": [
+        "messages",
+        "candidatesText",
+        "count",
+        "agentInfo",
+        "intent",
+        "currentTour",
+        "followUps",
+        "corridorProposal"
+      ],
+      "count": 3,
+      "agent_matches": true
+    },
+    {
+      "intent": {
+        "requestedEntityTypes": [
+          "client",
+          "prospect",
+          "orphan",
+          "free",
+          "never"
+        ],
+        "physicalContactMinDays": null,
+        "orderMinDays": null,
+        "minRevenue": null,
+        "maxRevenue": null,
+        "project": null,
+        "requestedArea": {
+          "comuni": [
+            "Rozzano"
+          ],
+          "comune": "Rozzano",
+          "provincia": null,
+          "zona": null
+        },
+        "requiredStops": [],
+        "excludedStops": [],
+        "allowedExpansionTypes": [],
+        "allowLargeBuffer": false,
+        "rejectedOpportunityKeys": [],
+        "tourDates": [
+          "2026-10-11"
+        ],
+        "followUpDecisions": [],
+        "lodgingRule": null,
+        "wantAll": false,
+        "maxDays": 1,
+        "ownOrphansOnly": false,
+        "allowNearby": false,
+        "strictGeography": true,
+        "skipFollowUps": true,
+        "allTobacconists": false,
+        "commercialGroups": {
+          "version": 1,
+          "existing": true,
+          "newPoints": true,
+          "ownOnly": false,
+          "inactiveDays": 20,
+          "needsDays": false
+        },
+        "requireOrderHistory": false,
+        "extraDaysApproved": false,
+        "singleDayRequested": true,
+        "requestedStartTime": "09:00"
+      },
+      "keys": [
+        "client:old",
+        "client:edge",
+        "client:recent",
+        "client:never-bought",
+        "never:new",
+        "never:opera"
+      ],
+      "request_fields": [
+        "messages",
+        "candidatesText",
+        "count",
+        "agentInfo",
+        "intent",
+        "currentTour",
+        "followUps",
+        "corridorProposal"
+      ],
+      "count": 6,
+      "agent_matches": true
+    },
+    {
+      "intent": {
+        "requestedEntityTypes": [
+          "client",
+          "prospect",
+          "orphan",
+          "free",
+          "never"
+        ],
+        "physicalContactMinDays": null,
+        "orderMinDays": null,
+        "minRevenue": null,
+        "maxRevenue": null,
+        "project": null,
+        "requestedArea": {
+          "comuni": [
+            "Rozzano"
+          ],
+          "comune": "Rozzano",
+          "provincia": null,
+          "zona": null
+        },
+        "requiredStops": [],
+        "excludedStops": [],
+        "allowedExpansionTypes": [],
+        "allowLargeBuffer": false,
+        "rejectedOpportunityKeys": [],
+        "tourDates": [
+          "2026-10-11"
+        ],
+        "followUpDecisions": [],
+        "lodgingRule": null,
+        "wantAll": false,
+        "maxDays": 1,
+        "ownOrphansOnly": false,
+        "allowNearby": false,
+        "strictGeography": true,
+        "skipFollowUps": true,
+        "allTobacconists": false,
+        "commercialGroups": {
+          "version": 1,
+          "existing": true,
+          "newPoints": true,
+          "ownOnly": false,
+          "inactiveDays": 20,
+          "needsDays": false
+        },
+        "requireOrderHistory": false,
+        "extraDaysApproved": false,
+        "singleDayRequested": true,
+        "requestedStartTime": "09:00"
+      },
+      "keys": [
+        "client:old",
+        "client:edge",
+        "never:new"
+      ],
+      "request_fields": [
+        "messages",
+        "candidatesText",
+        "count",
+        "agentInfo",
+        "intent",
+        "currentTour",
+        "followUps",
+        "corridorProposal"
+      ],
+      "count": 3,
+      "agent_matches": true
+    },
+    {
+      "intent": {
+        "requestedEntityTypes": [
+          "client",
+          "prospect",
+          "orphan",
+          "free",
+          "never"
+        ],
+        "physicalContactMinDays": null,
+        "orderMinDays": null,
+        "minRevenue": null,
+        "maxRevenue": null,
+        "project": null,
+        "requestedArea": {
+          "comuni": [
+            "Rozzano",
+            "Opera"
+          ],
+          "comune": "Rozzano",
+          "provincia": null,
+          "zona": null
+        },
+        "requiredStops": [],
+        "excludedStops": [],
+        "allowedExpansionTypes": [],
+        "allowLargeBuffer": false,
+        "rejectedOpportunityKeys": [],
+        "tourDates": [
+          "2026-10-11"
+        ],
+        "followUpDecisions": [],
+        "lodgingRule": null,
+        "wantAll": false,
+        "maxDays": 1,
+        "ownOrphansOnly": false,
+        "allowNearby": false,
+        "strictGeography": true,
+        "skipFollowUps": true,
+        "allTobacconists": false,
+        "commercialGroups": {
+          "version": 1,
+          "existing": true,
+          "newPoints": true,
+          "ownOnly": false,
+          "inactiveDays": 20,
+          "needsDays": false
+        },
+        "requireOrderHistory": false,
+        "extraDaysApproved": false,
+        "singleDayRequested": true,
+        "requestedStartTime": "09:00"
+      },
+      "keys": [
+        "client:old",
+        "client:edge",
+        "client:recent",
+        "client:never-bought",
+        "never:new",
+        "never:opera"
+      ],
+      "request_fields": [
+        "messages",
+        "candidatesText",
+        "count",
+        "agentInfo",
+        "intent",
+        "currentTour",
+        "followUps",
+        "corridorProposal"
+      ],
+      "count": 6,
+      "agent_matches": true
+    },
+    {
+      "intent": {
+        "requestedEntityTypes": [
+          "client",
+          "prospect",
+          "orphan",
+          "free",
+          "never"
+        ],
+        "physicalContactMinDays": null,
+        "orderMinDays": null,
+        "minRevenue": null,
+        "maxRevenue": null,
+        "project": null,
+        "requestedArea": {
+          "comuni": [
+            "Rozzano",
+            "Opera"
+          ],
+          "comune": "Rozzano",
+          "provincia": null,
+          "zona": null
+        },
+        "requiredStops": [],
+        "excludedStops": [],
+        "allowedExpansionTypes": [],
+        "allowLargeBuffer": false,
+        "rejectedOpportunityKeys": [],
+        "tourDates": [
+          "2026-10-11"
+        ],
+        "followUpDecisions": [],
+        "lodgingRule": null,
+        "wantAll": false,
+        "maxDays": 1,
+        "ownOrphansOnly": false,
+        "allowNearby": false,
+        "strictGeography": true,
+        "skipFollowUps": true,
+        "allTobacconists": false,
+        "commercialGroups": {
+          "version": 1,
+          "existing": true,
+          "newPoints": true,
+          "ownOnly": false,
+          "inactiveDays": 20,
+          "needsDays": false
+        },
+        "requireOrderHistory": false,
+        "extraDaysApproved": false,
+        "singleDayRequested": true,
+        "requestedStartTime": "09:00"
+      },
+      "keys": [
+        "client:old",
+        "client:edge",
+        "never:new",
+        "never:opera"
+      ],
+      "request_fields": [
+        "messages",
+        "candidatesText",
+        "count",
+        "agentInfo",
+        "intent",
+        "currentTour",
+        "followUps",
+        "corridorProposal"
+      ],
+      "count": 4,
+      "agent_matches": true
+    },
+    {
+      "intent": {
+        "requestedEntityTypes": [
+          "client",
+          "prospect",
+          "orphan"
+        ],
+        "physicalContactMinDays": null,
+        "orderMinDays": 20,
+        "minRevenue": null,
+        "maxRevenue": null,
+        "project": null,
+        "requestedArea": {
+          "comuni": [
+            "Rozzano",
+            "Opera"
+          ],
+          "comune": "Rozzano",
+          "provincia": null,
+          "zona": null
+        },
+        "requiredStops": [],
+        "excludedStops": [],
+        "allowedExpansionTypes": [],
+        "allowLargeBuffer": false,
+        "rejectedOpportunityKeys": [],
+        "tourDates": [
+          "2026-10-11"
+        ],
+        "followUpDecisions": [],
+        "lodgingRule": null,
+        "wantAll": false,
+        "maxDays": 1,
+        "ownOrphansOnly": false,
+        "allowNearby": false,
+        "strictGeography": true,
+        "skipFollowUps": true,
+        "allTobacconists": false,
+        "commercialGroups": {
+          "version": 1,
+          "existing": true,
+          "newPoints": false,
+          "ownOnly": false,
+          "inactiveDays": 20,
+          "needsDays": false
+        },
+        "requireOrderHistory": true,
+        "extraDaysApproved": false,
+        "singleDayRequested": true,
+        "requestedStartTime": "09:00"
+      },
+      "keys": [
+        "client:old",
+        "client:edge",
+        "client:recent",
+        "client:never-bought",
+        "never:new",
+        "never:opera"
+      ],
+      "request_fields": [
+        "messages",
+        "candidatesText",
+        "count",
+        "agentInfo",
+        "intent",
+        "currentTour",
+        "followUps",
+        "corridorProposal"
+      ],
+      "count": 6,
+      "agent_matches": true
+    },
+    {
+      "intent": {
+        "requestedEntityTypes": [
+          "client",
+          "prospect",
+          "orphan"
+        ],
+        "physicalContactMinDays": null,
+        "orderMinDays": 20,
+        "minRevenue": null,
+        "maxRevenue": null,
+        "project": null,
+        "requestedArea": {
+          "comuni": [
+            "Rozzano",
+            "Opera"
+          ],
+          "comune": "Rozzano",
+          "provincia": null,
+          "zona": null
+        },
+        "requiredStops": [],
+        "excludedStops": [],
+        "allowedExpansionTypes": [],
+        "allowLargeBuffer": false,
+        "rejectedOpportunityKeys": [],
+        "tourDates": [
+          "2026-10-11"
+        ],
+        "followUpDecisions": [],
+        "lodgingRule": null,
+        "wantAll": false,
+        "maxDays": 1,
+        "ownOrphansOnly": false,
+        "allowNearby": false,
+        "strictGeography": true,
+        "skipFollowUps": true,
+        "allTobacconists": false,
+        "commercialGroups": {
+          "version": 1,
+          "existing": true,
+          "newPoints": false,
+          "ownOnly": false,
+          "inactiveDays": 20,
+          "needsDays": false
+        },
+        "requireOrderHistory": true,
+        "extraDaysApproved": false,
+        "singleDayRequested": true,
+        "requestedStartTime": "09:00"
+      },
+      "keys": [
+        "client:old",
+        "client:edge"
+      ],
+      "request_fields": [
+        "messages",
+        "candidatesText",
+        "count",
+        "agentInfo",
+        "intent",
+        "currentTour",
+        "followUps",
+        "corridorProposal"
+      ],
+      "count": 2,
+      "agent_matches": true
+    }
+  ],
+  "unknown_blocked": [],
+  "live_api_forwards": 0,
+  "checks": [
+    "mixed: two verified buyers + one new; recent and never-buyer excluded",
+    "time and area preserved; explicit removal leaves only inactive buyers",
+    "mixed payload has NO global purchase flags; threshold belongs only to existing group; date unchanged",
+    "draft reopened without extra AI; scoped purchase filter retained"
+  ],
+  "pass": true
+}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 import { getSettings } from '../lib/aitour/tours';
-import { DEFAULT_SETTINGS, minToTime, type AiTourSettings, type GeoPoint, type TourPlan } from '../lib/aitour/types';
+import { DEFAULT_SETTINGS, minToTime, type AiTourSettings, type GeoPoint, type TourPlan, type TourCandidate } from '../lib/aitour/types';
 import { loadGptourPool, type GptPool } from '../lib/aitour/gptour-data';
 import { runGptour, type GptMessage, type GptResult } from '../lib/aitour/gptour-api';
 import { DEFAULT_INTENT, mergeIntent, applyRejection, type TourIntent } from '../lib/aitour/gptour-intent';
@@ -12,23 +12,22 @@ import { attachGptourContext } from '../lib/aitour/gptour-context';
 import { proposeGptour, type GptProposal } from '../lib/aitour/gptour-opportunities';
 import { saveGptourBatch, reconcileGptourSave } from '../lib/aitour/gptour-save';
 import { todayRome } from '../lib/aitour/gptour-dates';
-import { candidateMatchesTourIntent } from '../lib/aitour/gptour-criteria';
+import { candidateMatchesTourIntent, filterPoolByIntent } from '../lib/aitour/gptour-criteria';
 import { acceptDisplayedFillKeys, acceptedKeysAfterIntentPatch, readAcceptedFillKeys, retainAcceptedFillKeys } from '../lib/aitour/gptour-acceptance';
 import { applyDevelopmentIntent, completeDevelopmentDay, developmentBorders, isDevelopmentIntent, inferTourDate, emptyDevelopmentResult } from '../lib/aitour/gptour-development';
 // Web 874ba31/30b163a/2eea993: regole conversazionali deterministiche, perimetro verificato (provincia/comuni) e acquisti riletti dalla tabella ordini.
 import { applyConversationRules } from '../lib/aitour/gptour-registry';
 import { explicitRequestArea } from '../lib/aitour/gptour-request-area';
-import { filterPoolByIntent } from '../lib/aitour/gptour-criteria';
 import { resolvePlanningScope, scopeSignature, needsVerifiedPass, verifiedAgentInfo, emptyScopeMessage, type PlanningScope } from '../lib/aitour/gptour-planning-pool';
 import { enforceDayConsent, singleDayCapacityMessage } from '../lib/aitour/gptour-day-consent';
 import { withVerifiedPurchaseReply } from '../lib/aitour/gptour-purchase-summary';
-import type { TourCandidate } from '../lib/aitour/types';
+import { validateCommercialGroups, verifiedPurchaseDays, missingRequestedGroup } from '../lib/aitour/gptour-commercial';
 
 /** Follow-up nel perimetro della richiesta (web GPTourForm/processFollowUpTurn @ 2eea993): "niente follow-up" li esclude
  * soltanto dal giro (nessuna modifica CRM); con "tutte le tabaccherie"/filtro acquisti contano solo i soggetti ammessi, senza arretrati. */
 export function scopeGptourEvents(events: GptEvent[], intent: TourIntent, pool: TourCandidate[], today: string): GptEvent[] {
   if (intent.skipFollowUps) return events.filter((e) => e.type !== 'follow_up');
-  if (!intent.allTobacconists && !intent.requireOrderHistory) return events;
+  if (!intent.commercialGroups && !intent.allTobacconists && !intent.requireOrderHistory) return events;
   const ids = new Set(pool.map((c) => c.customerId).filter((v): v is string => !!v));
   return events.filter((e) => e.type !== 'follow_up' || (!!e.customerId && ids.has(e.customerId) && e.date >= today));
 }
@@ -71,7 +70,9 @@ export function useGptour(actor: GptActor, agentId: string, agentName?: string) 
         if (draft) {
           const d = JSON.parse(draft);
           if (d.version === 1 && d.agentId === agentId && d.actorId === actor.id) {
-            setMessages(d.messages || []); setIntent(mergeIntent(DEFAULT_INTENT, d.intent)); setResult(d.result || null);
+            const restored = mergeIntent(DEFAULT_INTENT, d.intent);
+            restored.commercialGroups = validateCommercialGroups(restored.commercialGroups);
+            setMessages(d.messages || []); setIntent(restored); setResult(d.result || null);
             setGroupId(d.groupId || randomUUID()); setDraftAvailable(!!d.result); setUncertainSave(!!d.uncertainSave);
             setAcceptedFillKeys(d.gptourContext?.version === 1 ? readAcceptedFillKeys(d.gptourContext.acceptedFillKeys) : []);
           }
@@ -98,7 +99,7 @@ export function useGptour(actor: GptActor, agentId: string, agentName?: string) 
   /** Perimetro coerente con l'intent: ricalcolato se la firma cambia (bozza ripresa, decisioni follow-up, nuovi criteri). */
   const ensureScope = async (nextIntent: TourIntent, candidate: PlanningScope | null): Promise<PlanningScope> => {
     if (candidate && candidate.signature === scopeSignature(nextIntent)) return candidate;
-    if (nextIntent.requireOrderHistory) setStage('Verifico gli ultimi acquisti dei clienti nell’area richiesta…');
+    if (verifiedPurchaseDays(nextIntent) != null) setStage('Verifico gli ultimi acquisti dei clienti nell’area richiesta…');
     return resolvePlanningScope(pool!.candidates, nextIntent);
   };
   const rebuild = async (nextResult: GptResult, nextIntent: TourIntent, token: number, selected = activeDay, nextAccepted: readonly string[] = acceptedFillKeys, suggest = true, completeDevelopment = false, nextScope: PlanningScope | null = scope): Promise<{ blocked: boolean; notes: string[] }> => {
@@ -160,6 +161,9 @@ export function useGptour(actor: GptActor, agentId: string, agentName?: string) 
     const suggestion = await proposeGptour(attached[index].plan, attached.map((d) => d.plan), basePool, nextIntent, settings, !!nextResult.corridor?.suggest);
     if (token !== epoch.current) return { blocked: false, notes };
     setProposal(suggestion);
+    if (!suggestion.candidates.length && attached[index].plan.bufferMin > (settings.max_daily_buffer_minutes ?? 120)
+      && nextIntent.requestedEntityTypes.length && !nextIntent.allowLargeBuffer)
+      notes.push(`Ho mantenuto solo le tappe che rispettano i criteri. Rimane tempo disponibile: per ampliare il giro indica esplicitamente quali altre categorie autorizzi. Nessuna categoria aggiunta.`);
     if (suggestion.candidates.length) notes.push(proposalMessage(suggestion, attached[index].plan, settings.max_daily_buffer_minutes ?? 120, !!nextResult.corridor?.suggest, nextResult.corridor?.destinationLabel || attached[index].plan.areaLabel));
     return { blocked: false, notes };
   };
@@ -177,6 +181,13 @@ export function useGptour(actor: GptActor, agentId: string, agentName?: string) 
     const msg = text.trim();
     const nextMessages: GptMessage[] = [...messages, { role: 'user', content: msg }];
     setMessages(nextMessages);
+    let userIntent = applyConversationRules(applyDevelopmentIntent(intent, msg), msg, intent);
+    if (/\b(domani|dopodomani|oggi)\b/i.test(msg)) userIntent = { ...userIntent, tourDates: [inferTourDate(msg, todayRome())] };
+    if (userIntent.commercialGroups?.needsDays) {
+      setIntent(userIntent); setDays([]); setResult(null); setScope(null); setProposal(null); setStale(true); setAcceptedFillKeys([]);
+      setMessages([...nextMessages, { role: 'assistant', content: 'Da quanti giorni senza acquisti vuoi considerare inattivi i clienti? Indica il numero di giorni; non scelgo una soglia al posto tuo.' }]);
+      return;
+    }
     const proposalKeys = proposal?.candidates.map((c) => c.key) || [];
     const currentTour = days.map((d) => ({ day: d.day, total: d.total, tourDate: d.plan.tourDate, area: d.plan.areaLabel, startTime: minToTime(d.plan.startMin), endTime: minToTime(d.plan.endMin), stops: d.plan.stops.map((s) => ({ key: s.candidate.key, nome: s.candidate.name, comune: s.candidate.city, tipo: s.candidate.entityType })) }));
     const corridorProposal = proposal?.candidates.map((c) => ({ key: c.key, nome: c.name, comune: c.city, tipo: c.entityType, fat6m: c.revenue6m }));
@@ -184,23 +195,24 @@ export function useGptour(actor: GptActor, agentId: string, agentName?: string) 
     const interpretationArea = explicitRequestArea(msg, intent.requestedArea) || intent.requestedArea;
     const interpretationPool = interpretationArea ? filterPoolByIntent(pool.candidates, { ...DEFAULT_INTENT, wantAll: true, requestedArea: interpretationArea }, 'corridor') : pool.candidates;
     setStage('Interpreto la richiesta…');
-    let response = await runGptour({ agentId, role: actor.role, pool: interpretationPool, messages: nextMessages, intent,
+    let response = await runGptour({ agentId, role: actor.role, pool: interpretationPool, messages: nextMessages, intent: userIntent,
       agentInfo: { ...agentInfo(), ricercaRegistro: 'Da verificare per la località richiesta; non dedurre assenza dal solo elenco iniziale.' },
       currentTour, followUps: followUpContext(events, intent, days.map((d) => d.plan.tourDate)), corridorProposal });
     if (token !== epoch.current) return;
-    const previousIntent = response.intentReset ? DEFAULT_INTENT : intent;
+    // Reset is a user action (Nuovo giro), never an LLM permission to erase commercial constraints.
+    const previousIntent = userIntent;
     let nextIntent = mergeIntent(previousIntent, response.intent);
     // Regole deterministiche del client (acquisti, provincia/comuni, refusi, follow-up, giornata): il modello non le modifica.
     nextIntent = applyConversationRules(applyDevelopmentIntent(nextIntent, msg), msg, previousIntent);
     if (/\b(domani|dopodomani|oggi)\b/i.test(msg)) nextIntent = { ...nextIntent, tourDates: [inferTourDate(msg, todayRome())] };
-    const nextAccepted = acceptedKeysAfterIntentPatch(acceptedFillKeys, intent, response.intent, response.intentReset);
+    const nextAccepted = acceptedKeysAfterIntentPatch(acceptedFillKeys, intent, nextIntent);
     // Rifiuto della proposta: nessuna key proposta è finita nel giro -> memorizza il "no" (parità web).
     if (proposalKeys.length) {
       const resultKeys = new Set([...response.selection.map((s) => s.key), ...response.days.flatMap((d) => d.selection.map((s) => s.key))]);
       if (!proposalKeys.some((k) => resultKeys.has(k))) nextIntent = applyRejection(nextIntent, proposalKeys);
     }
     // Perimetro verificato PRIMA di dichiarare assenze o costruire: provincia/comuni dal testo, acquisti riletti dalla tabella ordini.
-    setStage(nextIntent.requireOrderHistory ? 'Verifico gli ultimi acquisti dei clienti nell’area richiesta…' : 'Verifico il perimetro richiesto…');
+    setStage(verifiedPurchaseDays(nextIntent) != null ? 'Verifico gli ultimi acquisti dei clienti nell’area richiesta…' : 'Verifico il perimetro richiesto…');
     const nextScope = await resolvePlanningScope(pool.candidates, nextIntent);
     if (token !== epoch.current) return;
     const activePool = nextScope.pool ?? pool.candidates, activeKeys = new Set(activePool.map((c) => c.key));
@@ -239,8 +251,14 @@ export function useGptour(actor: GptActor, agentId: string, agentName?: string) 
       const dev = completeDevelopmentDay(emptyDevelopmentResult(response, inferTourDate(msg, todayRome())), activePool, nextIntent, settings, borders, home);
       if (dev.added > 0) {
         response = dev.result;
-        notes.push(`Giornata di sviluppo: nel registro ci sono nuovi punti vendita (mai acquistanti) ${dev.comuni.length ? `a ${dev.comuni.join(', ')}` : 'nella zona'}: ho costruito la giornata con ${dev.added} tapp${dev.added === 1 ? 'a' : 'e'}.`);
+        notes.push(`${nextIntent.commercialGroups?.existing ? 'Giro misto: clienti e nuovi punti verificati' : 'Giornata di sviluppo: nuovi punti verificati nel registro'} ${dev.comuni.length ? `a ${dev.comuni.join(', ')}` : 'nella zona'}: ho costruito la giornata con ${dev.added} tapp${dev.added === 1 ? 'a' : 'e'}.`);
       }
+    } else if (!response.needsInfo && !response.multiDay && !response.followUpActions?.length && home
+      && missingRequestedGroup(response.selection.map(s => s.key), activePool, nextIntent)) {
+      // A legacy AI response cannot silently drop one explicitly requested commercial group.
+      const completed = completeDevelopmentDay(response, activePool, nextIntent, settings, new Set(nextScope.nearby), home);
+      response = withVerifiedPurchaseReply(completed.result, nextIntent, activePool.length);
+      if (completed.added) notes.push('Ho completato il giro con i gruppi commerciali già richiesti, senza aggiungere altre categorie o altre zone.');
     }
     const loaded = await loadGptourEvents(agentId, resultDays(response, todayRome()).map((d) => d.tourDate!), pool.authorizedCandidates);
     if (token !== epoch.current) return;

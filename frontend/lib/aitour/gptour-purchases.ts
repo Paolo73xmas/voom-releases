@@ -64,6 +64,7 @@ export async function refreshPurchaseHistory(pool: TourCandidate[], loader: Purc
   return pool.map(c => {
     const date = c.customerId ? latest.get(c.customerId)?.order_date || null : null;
     // La tabella ordini è la fonte unica: lo stato "storico non verificato" delle statistiche RPC decade.
-    return { ...c, lastOrderDate: date, daysSinceOrder: daysSince(date), ...(c.gptourData ? { gptourData: { ...c.gptourData, orderKnown: true } } : {}) };
+    return { ...c, lastOrderDate: date, daysSinceOrder: daysSince(date), ...(c.gptourData ? { gptourData: { ...c.gptourData, orderKnown: true,
+      ...(c.gptourData.commercial ? { commercial: { ...c.gptourData.commercial, purchasesVerified: true } } : {}) } } : {}) };
   });
 }

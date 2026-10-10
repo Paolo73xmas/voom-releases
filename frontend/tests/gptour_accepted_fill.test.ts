@@ -15,7 +15,10 @@ vi.mock('../lib/theme', () => ({ currentThemeMode: 'light' }));
 vi.mock('../lib/supabase', () => ({ supabase: { rpc } }));
 const home = { lat: 45.4, lng: 9.1, label: 'Casa' }, date = '2099-10-05';
 const settings = { ...DEFAULT_SETTINGS, work_start: '09:00', work_end: '18:00', lunch_break_minutes: 0 };
-const intent: TourIntent = { ...DEFAULT_INTENT, requestedEntityTypes: ['orphan'], ownOrphansOnly: true };
+// Cross-category proposals now require PRIOR explicit category authorization.
+// The exact-key receipt still controls which displayed additions were actually accepted.
+const intent: TourIntent = { ...DEFAULT_INTENT, requestedEntityTypes: ['orphan'], ownOrphansOnly: true, allowedExpansionTypes: ['prospect', 'free', 'never'] };
+const strictIntent: TourIntent = { ...intent, allowedExpansionTypes: [] };
 function candidate(type: EntityType, key: string, patch: Partial<TourCandidate> = {}): TourCandidate {
   return { key, customerId: key, tabaccheriaId: null, entityType: type, name: key, lat: 45.41, lng: 9.11,
     city: 'Rozzano', province: 'MI', address: '', lastVisitDate: null, lastOrderDate: null,
@@ -49,14 +52,14 @@ describe('GPTour accepted fill keys — explicit, exact and local to context', (
     const previous = JSON.stringify(intent), keys = accept(prospect);
     expect(keys).toEqual(['prospect']); expect(JSON.stringify(intent)).toBe(previous);
     expect(acceptedCandidateProblems(prospect, intent, keys)).toEqual([]);
-    expect(acceptedCandidateProblems(otherProspect, intent, keys)).toContain('tipologia non autorizzata');
-    expect(candidateMatchesTourIntent(prospect, intent, 'corridor')).toBe(false);
-    expect(candidateMatchesTourIntent(prospect, intent, 'initial')).toBe(false);
+    expect(acceptedCandidateProblems(otherProspect, strictIntent, keys)).toContain('tipologia non autorizzata');
+    expect(candidateMatchesTourIntent(prospect, intent, 'corridor')).toBe(true);
+    expect(candidateMatchesTourIntent(prospect, intent, 'initial')).toBe(true);
   });
-  it('accepting only prospect does not admit free/never or another key of same type', () => {
-    const prepared = prepareGptDays(result(['own', 'prospect', 'other-prospect', 'free', 'never']), pool, intent, settings, date, accept(prospect));
-    expect(prepared.days[0].selection.map((s) => s.key)).toEqual(['own', 'prospect']);
-    expect(prepared.warnings).toHaveLength(3);
+  it('category authorization permits prospects but receipt never grants free/never', () => {
+    const prepared = prepareGptDays(result(['own', 'prospect', 'other-prospect', 'free', 'never']), pool, { ...intent, allowedExpansionTypes: ['prospect'] }, settings, date, accept(prospect));
+    expect(prepared.days[0].selection.map((s) => s.key)).toEqual(['own', 'prospect', 'other-prospect']);
+    expect(prepared.warnings).toHaveLength(2);
   });
   it('multiple offered free/never/prospect remain after actual deterministic rebuild', async () => {
     const keys = accept(prospect, free, never);
@@ -67,7 +70,7 @@ describe('GPTour accepted fill keys — explicit, exact and local to context', (
   it('LLM fields cannot manufacture acceptance', () => {
     const malicious = { ...result(['own', 'prospect']), acceptedFillKeys: ['prospect'], gptourContext: { version: 1, acceptedFillKeys: ['prospect'] } };
     expect(sanitizeIntentPatch({ acceptedFillKeys: ['prospect'] })).toEqual({});
-    expect(prepareGptDays(malicious, pool, intent, settings, date).days[0].selection.map((s) => s.key)).toEqual(['own']);
+    expect(prepareGptDays(malicious, pool, strictIntent, settings, date).days[0].selection.map((s) => s.key)).toEqual(['own']);
   });
   it('rejects an unknown proposal key or key absent from insertion order', () => {
     expect(() => acceptDisplayedFillKeys([], proposed([candidate('prospect', 'unknown')]), pool, intent)).toThrow('non è più disponibile');
@@ -105,7 +108,7 @@ describe('GPTour accepted fill keys — explicit, exact and local to context', (
     expect(() => prepareGptDays(result(['own', 'prospect']), [own], intent, settings, date, ['prospect'])).toThrow('non più disponibile');
   });
   it('no acceptance is inferred by legacy calls', () => {
-    expect(prepareGptDays(result(['own', 'prospect']), pool, intent, settings, date).days[0].selection.map((s) => s.key)).toEqual(['own']);
+    expect(prepareGptDays(result(['own', 'prospect']), pool, strictIntent, settings, date).days[0].selection.map((s) => s.key)).toEqual(['own']);
     expect(readAcceptedFillKeys(undefined)).toEqual([]); expect(readAcceptedFillKeys(null)).toEqual([]);
     expect(() => readAcceptedFillKeys({ prospect: true })).toThrow('non valido');
     expect(() => readAcceptedFillKeys(['prospect', 1])).toThrow('non valido');
@@ -120,11 +123,11 @@ describe('GPTour accepted fill keys — explicit, exact and local to context', (
   it('removal/pruning revokes only removed keys, without broadening later AI selections', () => {
     const retained = retainAcceptedFillKeys(['prospect', 'free', 'prospect'], ['own', 'free']);
     expect(retained).toEqual(['free']);
-    expect(prepareGptDays(result(['own', 'prospect', 'free']), pool, intent, settings, date, retained).days[0].selection.map((s) => s.key)).toEqual(['own', 'free']);
+    expect(prepareGptDays(result(['own', 'prospect', 'free']), pool, { ...intent, excludedStops: ['prospect'] }, settings, date, retained).days[0].selection.map((s) => s.key)).toEqual(['own', 'free']);
   });
   it('wantAll remains restricted to initial criteria for unaccepted keys', () => {
-    const p = prepareGptDays(result(['own', 'prospect']), pool, { ...intent, wantAll: true }, settings, date, ['prospect']);
-    expect(p.days.flatMap((d) => d.selection.map((s) => s.key)).sort()).toEqual(['own', 'prospect']);
+    const p = prepareGptDays(result(['own', 'prospect']), pool, { ...intent, allowedExpansionTypes: ['prospect'], wantAll: true }, settings, date, ['prospect']);
+    expect(p.days.flatMap((d) => d.selection.map((s) => s.key)).sort()).toEqual(['other-prospect', 'own', 'prospect']);
   });
 });
 
@@ -141,7 +144,7 @@ describe('GPTour receipt — draft, rebuild, save, reload and existing Live vali
     const stored = rpc.mock.calls[0][1].p_tours[0].tour.area_filter;
     expect(stored).toMatchObject({ mode: 'city', city: 'Rozzano', zoneIds: ['existing-zone'], gptourContext: { version: 1, acceptedFillKeys: ['prospect'] } });
     expect(stored.gptourContext.intent).toEqual(intent);
-    expect(stored.gptourContext.intent.allowedExpansionTypes).toEqual([]);
+    expect(stored.gptourContext.intent.allowedExpansionTypes).toEqual(['prospect', 'free', 'never']);
   });
   it('saved context read/restore and standard Live preflight preserve the accepted visit', async () => {
     const plan = await planWith(), area = JSON.parse(JSON.stringify(plan.areaFilter));
@@ -156,6 +159,7 @@ describe('GPTour receipt — draft, rebuild, save, reload and existing Live vali
   });
   it('old v1 context without acceptedFillKeys gets no new exception', async () => {
     const plan = await planWith(); delete plan.areaFilter!.gptourContext!.acceptedFillKeys;
+    plan.areaFilter!.gptourContext!.intent = strictIntent;
     expect(readGptourContext(plan.areaFilter)).toBeTruthy();
     expect(() => assertGptourPlan(plan)).toThrow('tipologia non autorizzata');
     expect(() => assertGptourPlan({ areaFilter: null } as TourPlan)).not.toThrow();

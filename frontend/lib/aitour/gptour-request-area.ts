@@ -5,7 +5,7 @@ import type { TourIntentArea } from './gptour-intent';
 
 // Geographic wording ends before commercial conditions, dates and instructions.
 // In particular, "provincia che non comprano..." is NEVER a locality.
-const END_AREA = /\s+(?:che|non\s+(?:compr\w*|acquist\w*|ordin\w*|visitat\w*)|senza\s+(?:ordini|acquisti)|con\s+fatturato|fermi\s+da|domani|dopodomani|oggi)\b|[,;]?\s*(?:niente|senza|no)\s+follow[ -]?up|\s+e\s+(?:comuni\s+)?(?:limitrofi|confinanti)|\s+dalle?\s+\d|[.!?;\n]/i;
+const END_AREA = /\s+(?:che|non\s+(?:compr\w*|acquist\w*|ordin\w*|visitat\w*)|senza\s+(?:ordini|acquisti)|con\s+(?:fatturato|ultimo\s+(?:acquisto|ordine))|fermi\s+da|domani|dopodomani|oggi)\b|[,;]?\s*(?:niente|senza|no)\s+follow[ -]?up|\s+e\s+(?:(?:ai?|le|i)\s+)?(?:nuovi|nuove|clienti|tabaccherie)|\s+e\s+(?:comuni\s+)?(?:limitrofi|confinanti)|\s+dalle?\s+\d|[.!?;\n]/i;
 const clean = (s: string) => s.split(END_AREA)[0].trim().replace(/^['"“”]|['"“”]$/g, '');
 const isLocalityName = (s: string) => s.length >= 2 && s.length <= 80
   && !/\b(?:voglio|visita|clienti|tabaccherie|punti vendita|provincia|ore|partenza|rientro|limitrofi|confinanti|vicini|territorio)\b/i.test(s);
@@ -18,9 +18,12 @@ export function normalizeStoreWords(message: string): string {
 
 function localityText(message: string): string | null {
   const matches = [
+    message.match(/\baggiungi\s+(?:anche\s+)?(?!nuovi\b|clienti\b|prospect\b|orfani\b|le\b)([A-ZÀ-Ý][^.!?;\n]*)/i),
     message.match(/\b(?:comun[ei]|localit[aà]|frazion[ei])\s+(?:di\s+)?(.+)/i),
     message.match(/\b(?:nuovi punti vendita|sviluppo)\s+a\s+(.+)/i),
     message.match(/\b(?:tabaccherie|clienti|orfani|prospect)\s+(?:di|a)\s+(.+)/i),
+    message.match(/\b(?:sviluppo|acquisizione)\s+(?:di|a|in)\s+(.+)/i),
+    message.match(/\b(?:clienti|tabaccherie|punti vendita)\b[^.!?;\n]*?\s+a\s+(.+)/i),
   ].filter((m): m is RegExpMatchArray => !!m);
   const first = matches.sort((a, b) => (a.index || 0) - (b.index || 0))[0];
   return first ? clean(first[1]) : null;

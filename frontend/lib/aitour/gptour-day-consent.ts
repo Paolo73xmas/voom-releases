@@ -8,12 +8,13 @@ export function applyDayConsent(intent: TourIntent, text: string, previous?: Tou
   let approved = previous?.extraDaysApproved || false;
   if (/\b(?:suddividi|dividi|distribuisci)\b.*\b(?:giorni|giornate)\b|\bsu (?:più|due|tre|\d+) giorni\b/i.test(text)) approved = true;
   if (/\b(?:solo|soltanto)\s+(?:domani|oggi|una giornata|un giorno)\b/i.test(text)) approved = false;
-  const single = !!intent.singleDayRequested || /\b(domani|dopodomani|oggi|giornata|un giorno)\b/i.test(text);
+  const single = !!previous?.singleDayRequested || !!intent.singleDayRequested || /\b(domani|dopodomani|oggi|giornata|un giorno)\b/i.test(text);
   const window = text.match(/dalle\s+(\d{1,2}(?::[0-5]\d)?)\s+alle\s+(\d{1,2}(?::[0-5]\d)?)/i);
+  const start = text.match(/(?:parti|partenza|inizia|inizio)\s+(?:dalle|alle|da|ore)\s*(\d{1,2}(?::[0-5]\d)?)/i);
   const hhmm = (t: string) => t.includes(':') ? t.padStart(5, '0') : t.padStart(2, '0') + ':00';
   return { ...intent, extraDaysApproved: approved, singleDayRequested: single,
     maxDays: single && !approved ? 1 : approved ? null : intent.maxDays,
-    requestedStartTime: window ? hhmm(window[1]) : previous?.requestedStartTime,
+    requestedStartTime: window ? hhmm(window[1]) : start && Number(start[1].split(':')[0]) < 24 ? hhmm(start[1]) : previous?.requestedStartTime,
     requestedEndTime: window ? hhmm(window[2]) : previous?.requestedEndTime };
 }
 

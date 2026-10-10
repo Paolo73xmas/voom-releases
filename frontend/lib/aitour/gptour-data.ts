@@ -4,6 +4,7 @@ import { listAllZones, pointInZones, zoneLabel, type TerritoryZone } from './ter
 import { scoreCandidates } from './scoring';
 import { daysSince, type AiTourSettings, type TourCandidate } from './types';
 import { dedupeGptour } from './gptour-identity';
+import { readNewPointEvidence } from './gptour-commercial-data';
 
 export interface GptPool { candidates: TourCandidate[]; authorizedCandidates: TourCandidate[]; zones: TerritoryZone[]; complete: boolean; warnings: string[] }
 export function physicalContact(visit: string | null, inspection: string | null): string | null {
@@ -41,6 +42,8 @@ export async function loadGptourPool(agentId: string, settings: AiTourSettings):
     c.daysSincePhysicalContact = daysSince(c.lastPhysicalContactDate);
     if (order) { c.lastOrderDate = order.last_order_date; c.daysSinceOrder = daysSince(c.lastOrderDate); c.revenue6m = Number(order.revenue_6m); }
     c.gptourData = { contactKnown: !!contact, orderKnown: !!order, revenueKnown: !!order && Number.isFinite(Number(order.revenue_6m)),
+      commercial: { authorized: c.entityType !== 'orphan' || c.isOwnOrphan === true || (!!zones.length && pointInZones(c.lat, c.lng, zones)), relationship: c.customerId
+        ? (c.entityType !== 'orphan' || c.isOwnOrphan ? 'own' : 'other') : 'unknown', newPointVerified: false },
       zoneNames: zones.filter((z) => pointInZones(c.lat, c.lng, [z])).flatMap((z) => [z.zone_name, zoneLabel(z)]) };
   }
   const points = zones.length ? zones.flatMap((z) => z.geometry.coordinates.flat().map(([lng, lat]) => ({ lat, lng }))) : base;
@@ -54,8 +57,14 @@ export async function loadGptourPool(agentId: string, settings: AiTourSettings):
         { allowLimit: true, onLimitReached: () => warnings.push('Registro limitato ai primi 2500 risultati: il pool non rappresenta l’intero territorio.') });
     } catch (e) { warnings.push(e instanceof Error ? e.message : 'Registro parziale.'); }
   } else warnings.push('Area operativa non disponibile: registro non caricato.');
+  let newEvidence = new Set<string>();
+  try { newEvidence = await readNewPointEvidence(free); }
+  catch (e) { warnings.push(e instanceof Error ? e.message : 'Nuovi punti non verificati.'); }
+  if (free.some(c => !newEvidence.has(c.tabaccheriaId!))) warnings.push('Alcuni punti del registro non hanno evidenza esplicita di mancata visita: esclusi dalle richieste di nuovi punti.');
   free.forEach((c) => { c.daysSincePhysicalContact = null; c.lastInspectionDate = null; c.lastPhysicalContactDate = null;
-    c.gptourData = { contactKnown: true, orderKnown: true, revenueKnown: true, zoneNames: zones.filter((z) => pointInZones(c.lat, c.lng, [z])).flatMap((z) => [z.zone_name, zoneLabel(z)]) }; });
+    c.gptourData = { contactKnown: newEvidence.has(c.tabaccheriaId!), orderKnown: false, revenueKnown: true,
+      commercial: { authorized: !!zones.length && pointInZones(c.lat, c.lng, zones), relationship: 'none', newPointVerified: newEvidence.has(c.tabaccheriaId!) },
+      zoneNames: zones.filter((z) => pointInZones(c.lat, c.lng, [z])).flatMap((z) => [z.zone_name, zoneLabel(z)]) }; });
   const candidates = dedupeGptour([...base, ...free].filter((c) => isVisibleInAgentZones(c, zones)));
   scoreCandidates(candidates, settings);
   if (base.some((c) => !c.gptourData?.contactKnown || !c.gptourData?.orderKnown)) warnings.push('Alcuni soggetti hanno storico non verificato: non vengono trattati come mai contattati.');

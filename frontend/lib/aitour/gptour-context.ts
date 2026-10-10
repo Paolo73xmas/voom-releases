@@ -3,6 +3,7 @@ import type { TourCandidate, TourPlan, SavedAreaFilter } from './types';
 import type { GptDayPlan } from './gptour-engine';
 import { acceptedCandidateProblems, readAcceptedFillKeys, retainAcceptedFillKeys } from './gptour-acceptance';
 import { isoDow } from './gptour-dates';
+import { validateCommercialGroups } from './gptour-commercial';
 export interface GptourContext {
   version: 1; source: 'mobile'; webReference: string; groupId: string; dayIndex: number; dayCount: number;
   intent: TourIntent; followUpDecisions: TourIntent['followUpDecisions']; lodgingRule: TourIntent['lodgingRule'];
@@ -26,6 +27,7 @@ export function readGptourContext(area?: SavedAreaFilter | null): GptourContext 
   if (!ctx) return null;
   if (ctx.version !== 1 || !Array.isArray(ctx.facts) || !ctx.intent || !Array.isArray(ctx.intent.excludedStops)) throw new Error('Contesto GPTour non supportato. Il giro è visibile, ma i criteri non possono essere ricostruiti.');
   const accepted = readAcceptedFillKeys(ctx.acceptedFillKeys);
+  validateCommercialGroups(ctx.intent.commercialGroups);
   if (accepted.some((key) => !ctx.facts.some((c) => c.key === key))) throw new Error('Tappe fill accettate non coerenti con il contesto salvato. Verifica il giro GPTour.');
   return ctx;
 }

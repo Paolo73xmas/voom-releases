@@ -2,12 +2,22 @@
 import type { EntityType } from './types';
 
 export interface TourIntentArea { comune?: string | null; comuni?: string[] | null; zona?: string | null; provincia?: string | null }
+/** Client-owned contract: the LLM cannot grant groups or erase them. Optional for old v1 drafts. */
+export interface CommercialGroups {
+  version: 1;
+  existing: boolean;
+  newPoints: boolean;
+  ownOnly: boolean;
+  inactiveDays: number | null;
+  needsDays: boolean;
+}
 export interface FollowUpDecision {
   followUpId: string; key: string; customerName: string; originalDate: string;
   currentDate: string; currentTime: string | null;
   decision: 'required' | 'excluded' | 'rescheduled';
 }
 export interface TourIntent {
+  commercialGroups?: CommercialGroups;
   requestedEntityTypes: EntityType[]; physicalContactMinDays: number | null; orderMinDays: number | null;
   minRevenue: number | null; maxRevenue: number | null; project: string | null;
   requestedArea: TourIntentArea | null; requiredStops: string[]; excludedStops: string[];

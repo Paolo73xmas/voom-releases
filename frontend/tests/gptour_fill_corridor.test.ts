@@ -18,12 +18,13 @@ function fixture(entityType: EntityType, key: string, isOwnOrphan = false, conta
 }
 const pool = [fixture('orphan', 'own', true), fixture('orphan', 'other'), fixture('prospect', 'prospect'), fixture('free', 'free'), fixture('never', 'never')];
 const ownIntent: TourIntent = { ...DEFAULT_INTENT, requestedEntityTypes: ['orphan'], ownOrphansOnly: true, allowedExpansionTypes: [] };
+const authorized: TourIntent = { ...ownIntent, allowedExpansionTypes: ['prospect'] };
 const accepted = (intent: TourIntent, mode: IntentMatchMode) => pool.filter((c) => candidateMatchesTourIntent(c, intent, mode)).map((c) => c.key);
 
-describe('GPTour fill/corridor — parity with web 88bfb44', () => {
-  it('A: own orphan + progressive prospect/free/never; never foreign orphan', () => {
-    expect(allowedTypesFor(ownIntent, 'fill')).toBeNull();
-    expect(accepted(ownIntent, 'fill')).toEqual(['own', 'prospect', 'free', 'never']);
+describe('GPTour fill/corridor — explicit category consent (intentional correction of web 88bfb44)', () => {
+  it('A: own orphan only; no progressive prospect/free/never without consent', () => {
+    expect([...allowedTypesFor(ownIntent, 'fill')!]).toEqual(['orphan']);
+    expect(accepted(ownIntent, 'fill')).toEqual(['own']);
   });
   it('B: corridor never broadens orphan-only without explicit expansion', () => {
     expect([...allowedTypesFor(ownIntent, 'corridor')!]).toEqual(['orphan']);
@@ -48,22 +49,23 @@ describe('GPTour fill/corridor — parity with web 88bfb44', () => {
   it('initial AI selection remains constrained and does not inherit progressive fill', () => {
     expect(accepted(ownIntent, 'initial')).toEqual(['own']);
   });
-  it('web null means no type gate, ranking remains responsible for priority (including client fallback)', () => {
-    expect(candidateMatchesTourIntent(fixture('client', 'client'), ownIntent, 'fill')).toBe(true);
+  it('ranking never authorizes an unrequested category', () => {
+    expect(candidateMatchesTourIntent(fixture('client', 'client'), ownIntent, 'fill')).toBe(false);
     expect(candidateMatchesTourIntent(fixture('client', 'client'), ownIntent, 'corridor')).toBe(false);
   });
   it.each([14, 15, 16, null])('default prospect physical-contact boundary %s (fill and explicitly authorized corridor)', (days) => {
     expect(DEFAULT_FILL_CONTACT_DAYS).toBe(15);
     const p = fixture('prospect', 'p', false, days), pass = days === null || days >= 15;
-    expect(candidateMatchesTourIntent(p, ownIntent, 'fill')).toBe(pass);
+    expect(candidateMatchesTourIntent(p, authorized, 'fill')).toBe(pass);
+    expect(candidateMatchesTourIntent(p, ownIntent, 'fill')).toBe(false);
     expect(candidateMatchesTourIntent(p, { ...ownIntent, allowedExpansionTypes: ['prospect'] }, 'corridor')).toBe(pass);
   });
   it.each([29, 30, 31, null])('explicit physical-contact threshold30 takes priority over default15 (%s)', (days) => {
-    expect(candidateMatchesTourIntent(fixture('prospect', 'p', false, days), { ...ownIntent, physicalContactMinDays: 30 }, 'fill')).toBe(days === null || days >= 30);
+    expect(candidateMatchesTourIntent(fixture('prospect', 'p', false, days), { ...authorized, physicalContactMinDays: 30 }, 'fill')).toBe(days === null || days >= 30);
   });
   it('explicit zero is not overwritten by default; unknown remains unknown', () => {
     const p = fixture('prospect', 'p', false, 0);
-    expect(candidateMatchesTourIntent(p, { ...ownIntent, physicalContactMinDays: 0 }, 'fill')).toBe(true);
+    expect(candidateMatchesTourIntent(p, { ...authorized, physicalContactMinDays: 0 }, 'fill')).toBe(true);
     expect(candidateMatchesTourIntent({ ...p, daysSincePhysicalContact: null, gptourData: { contactKnown: false, orderKnown: true, revenueKnown: true } }, ownIntent, 'fill')).toBe(false);
   });
   it('progressive types never bypass exclusions, revenue or strict province; comune/zona are hints', () => {
@@ -71,7 +73,7 @@ describe('GPTour fill/corridor — parity with web 88bfb44', () => {
     for (const patch of [{ excludedStops: [p.key] }, { rejectedOpportunityKeys: [p.key] }, { minRevenue: 700 }, { requestedArea: { provincia: 'TO' } }])
       expect(candidateMatchesTourIntent(p, { ...ownIntent, ...patch }, 'fill')).toBe(false);
     for (const patch of [{ requestedArea: { comune: 'Milano' } }, { requestedArea: { zona: 'Nord' } }])
-      expect(candidateMatchesTourIntent(p, { ...ownIntent, ...patch }, 'fill')).toBe(true);
+      expect(candidateMatchesTourIntent(p, { ...authorized, ...patch }, 'fill')).toBe(true);
   });
   it('actual proposal uses progressive fill order and strict corridor; does not mutate Intent or insert automatically', async () => {
     const start = { lat: 45.39, lng: 9.1, label: 'Casa' }, end = { lat: 45.41, lng: 9.1, label: 'Fine' };
@@ -79,7 +81,8 @@ describe('GPTour fill/corridor — parity with web 88bfb44', () => {
     const matrix = vi.fn(async (points: { lat: number; lng: number }[]) => ({ fallback: false,
       durations: points.map((_, i) => points.map((_, j) => i === j ? 0 : 60)), distances: points.map((_, i) => points.map((_, j) => i === j ? 0 : 100)) }));
     const before = JSON.stringify(ownIntent);
-    expect((await proposeGptour(plan, [plan], [...pool].reverse(), ownIntent, DEFAULT_SETTINGS, false, matrix)).candidates.map((c) => c.key)).toEqual(['own', 'prospect', 'never', 'free']);
+    expect((await proposeGptour(plan, [plan], [...pool].reverse(), ownIntent, DEFAULT_SETTINGS, false, matrix)).candidates.map((c) => c.key)).toEqual(['own']);
+    expect((await proposeGptour(plan, [plan], [...pool].reverse(), authorized, DEFAULT_SETTINGS, false, matrix)).candidates.map((c) => c.key)).toEqual(['own', 'prospect']);
     expect((await proposeGptour(plan, [plan], pool, ownIntent, DEFAULT_SETTINGS, true, matrix)).candidates.map((c) => c.key)).toEqual(['own']);
     expect(JSON.stringify(ownIntent)).toBe(before); expect(plan.stops).toHaveLength(0);
   });

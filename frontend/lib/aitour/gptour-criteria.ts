@@ -3,6 +3,7 @@ import type { TourIntent, TourIntentArea } from './gptour-intent';
 import { normalizeComune } from './comuni-adjacency';
 import { normalizeGptourName as norm } from './gptour-identity';
 import { normalizeProvincia } from '../italy-provinces';
+import { commercialProblems } from './gptour-commercial';
 export type IntentMatchMode = 'initial' | 'fill' | 'corridor';
 export const DEFAULT_FILL_CONTACT_DAYS = 15;
 /** Stessa normalizzazione ISTAT del web per comuni richiesti e confinanti. */
@@ -22,29 +23,28 @@ export function cityMatches(c: TourCandidate, area: TourIntentArea | null | unde
   if (set.size === 0) return true;
   return [c.city, ...(c.matchedLocalities || [])].some((name) => set.has(normalizeComune(name || '')));
 }
-/** Web 88bfb44: fill without explicit expansions uses the progressive ranking.
- * Initial AI selections and corridor remain constrained to requested + allowed types. */
-export function allowedTypesFor(intent: TourIntent, mode: IntentMatchMode): Set<EntityType> | null {
+/** Requested categories are constraints in EVERY mode, not a progressive ranking permission. */
+export function allowedTypesFor(intent: TourIntent, _mode: IntentMatchMode): Set<EntityType> | null {
   const requested = intent.requestedEntityTypes, expansion = intent.allowedExpansionTypes;
   if (requested.length === 0 && expansion.length === 0) return null;
-  if (mode === 'fill' && expansion.length === 0) return null;
   return new Set<EntityType>([...requested, ...expansion]);
 }
 export function candidateIntentProblems(c: TourCandidate, i: TourIntent, mode: IntentMatchMode = 'initial'): string[] {
   const e: string[] = [];
+  if (i.commercialGroups) e.push(...commercialProblems(c, i.commercialGroups));
   if (i.excludedStops.includes(c.key) || i.rejectedOpportunityKeys.includes(c.key)) e.push('escluso');
   if (i.ownOrphansOnly && c.entityType === 'orphan' && c.isOwnOrphan !== true) e.push('orfano non proprio');
   // Web 30b163a: "non comprano da N giorni" richiede un ordine reale: mai visite, nuovi punti o chi non ha mai acquistato.
-  if (i.requireOrderHistory && (!['client', 'orphan'].includes(c.entityType) || c.daysSinceOrder == null || !Number.isFinite(c.daysSinceOrder))) e.push('senza storico acquisti verificato');
+  if (!i.commercialGroups && i.requireOrderHistory && (!['client', 'orphan'].includes(c.entityType) || c.daysSinceOrder == null || !Number.isFinite(c.daysSinceOrder))) e.push('senza storico acquisti verificato');
   const types = allowedTypesFor(i, mode);
   if (types && !types.has(c.entityType)) e.push('tipologia non autorizzata');
   if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng) || Math.abs(c.lat) > 90 || Math.abs(c.lng) > 180) e.push('coordinate mancanti');
-  const contactLimit = i.physicalContactMinDays ?? (mode !== 'initial' && c.entityType === 'prospect' ? DEFAULT_FILL_CONTACT_DAYS : null);
+  const contactLimit = i.physicalContactMinDays ?? (!i.commercialGroups && mode !== 'initial' && c.entityType === 'prospect' ? DEFAULT_FILL_CONTACT_DAYS : null);
   if (contactLimit != null) {
     if (c.gptourData?.contactKnown === false) e.push('contatto fisico non verificato');
     else if (c.daysSincePhysicalContact != null && c.daysSincePhysicalContact < contactLimit) e.push('contatto fisico recente');
   }
-  if (i.orderMinDays != null) {
+  if (!i.commercialGroups && i.orderMinDays != null) {
     if (c.gptourData?.orderKnown === false) e.push('storico ordini non verificato');
     else if (c.daysSinceOrder != null && c.daysSinceOrder < i.orderMinDays) e.push('ordine recente');
   }

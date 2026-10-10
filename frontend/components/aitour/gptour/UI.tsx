@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA } from '../../../lib/theme';
 import type { TourIntent } from '../../../lib/aitour/gptour-intent';
 import { ENTITY_LABELS } from '../../../lib/aitour/types';
+import { commercialLabels } from '../../../lib/aitour/gptour-commercial';
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 export function GptButton({ id, label, onPress, disabled = false, primary = false, danger = false, icon, small = false }: {
   id: string; label: string; onPress: () => void; disabled?: boolean; primary?: boolean; danger?: boolean; icon?: IconName; small?: boolean;
@@ -43,11 +44,11 @@ export function GptToast({ text, bottom, onHide }: { text: string; bottom: numbe
   </Animated.View>;
 }
 export function criteriaChips(intent: TourIntent): string[] {
-  return [...intent.requestedEntityTypes.map((t) => ENTITY_LABELS[t]),
+  return [...(intent.commercialGroups ? commercialLabels(intent) : intent.requestedEntityTypes.map((t) => ENTITY_LABELS[t])),
     ...(intent.requestedArea?.comuni?.length ? intent.requestedArea.comuni : (intent.requestedArea?.comune ? [intent.requestedArea.comune] : [])),
     intent.requestedArea?.provincia, intent.requestedArea?.zona,
     intent.project, intent.minRevenue != null && `≥ €${intent.minRevenue} / 6 mesi`, intent.maxRevenue != null && `≤ €${intent.maxRevenue} / 6 mesi`,
-    intent.physicalContactMinDays != null && `non visitati ≥ ${intent.physicalContactMinDays} gg`, intent.orderMinDays != null && `non ordinano ≥ ${intent.orderMinDays} gg`,
+    intent.physicalContactMinDays != null && `non visitati ≥ ${intent.physicalContactMinDays} gg`, !intent.commercialGroups && intent.orderMinDays != null && `non ordinano ≥ ${intent.orderMinDays} gg`,
     intent.ownOrphansOnly && 'solo miei orfani', intent.wantAll && 'tutti gli idonei', intent.maxDays && `max ${intent.maxDays} giorni`,
     intent.lodgingRule && `casa se < ${intent.lodgingRule.maxKmHome} km`, intent.allowLargeBuffer && 'fine anticipata accettata',
     ...intent.allowedExpansionTypes.map((t) => `integrazioni: ${ENTITY_LABELS[t]}`)].filter((s): s is string => typeof s === 'string' && !!s);

@@ -37,6 +37,7 @@ export function acceptDisplayedFillKeys(previous: readonly string[], proposal: {
 export function acceptedKeysAfterIntentPatch(keys: readonly string[], previous: TourIntent,
   patch?: Partial<TourIntent>, reset = false): string[] {
   if (reset) return [];
+  if (patch?.commercialGroups && JSON.stringify(previous.commercialGroups) !== JSON.stringify(patch.commercialGroups)) return [];
   for (const field of ['requestedEntityTypes', 'allowedExpansionTypes'] as const) {
     if (patch?.[field] !== undefined && [...new Set(previous[field])].sort().join('|') !== [...new Set(patch[field])].sort().join('|')) return [];
   }

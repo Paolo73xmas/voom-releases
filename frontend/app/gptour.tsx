@@ -11,6 +11,7 @@ import { DS } from '../lib/theme';
 import { canUseGptour, normalizeGptourAgents } from '../lib/aitour/gptour-auth';
 import { useGptour } from '../hooks/useGptour';
 import { candidateMatchesTourIntent } from '../lib/aitour/gptour-criteria';
+import { verifiedPurchaseDays } from '../lib/aitour/gptour-commercial';
 import { IdentitySet } from '../lib/aitour/gptour-identity';
 import { GptButton, GptIcon, GptNotice, GptCriteria, GptToast, ui } from '../components/aitour/gptour/UI';
 import { GptThread, GptComposer } from '../components/aitour/gptour/Conversation';
@@ -92,8 +93,9 @@ function GptourAllowed({ actor }: { actor: { id: string; role: string; name: str
         {!g.pool.complete && <GptNotice id="gptour-pool-partial" text={`Pool parziale: “tutti” significa tutti gli idonei disponibili, non l’intero CRM. ${g.pool.warnings.join(' ')}`} />}
         {!g.home && <GptNotice id="gptour-base-missing" text="Scegli la base di partenza (Casa, Sede o GPS) dalle impostazioni in alto a destra prima di chiedere il giro." />}
         <GptCriteria intent={g.intent} />
-        {g.intent.requireOrderHistory && <Text testID="gptour-purchase-filter" style={ui.muted}>
-          Ultimo acquisto da almeno {g.intent.orderMinDays} giorni · Clienti e orfani con storico acquisti
+        {verifiedPurchaseDays(g.intent) != null && <Text testID="gptour-purchase-filter" style={ui.muted}>
+          Ultimo acquisto da almeno {verifiedPurchaseDays(g.intent)} giorni · Clienti con storico acquisti
+          {g.intent.commercialGroups?.newPoints ? ' + nuovi punti mai visitati (senza soglia acquisti)' : ''}
           {g.intent.requestedArea?.provincia ? ` · Provincia ${g.intent.requestedArea.provincia}` : g.intent.requestedArea?.comuni?.length ? ` · ${g.intent.requestedArea.comuni.join(', ')}` : ''}
         </Text>}
         <GptThread messages={g.messages} busy={g.busy} stage={g.stage} onSuggest={setDraft} />

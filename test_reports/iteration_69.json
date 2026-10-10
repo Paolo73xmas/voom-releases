@@ -1,0 +1,49 @@
+{
+  "summary": "Implemented and executed missing GPTour commercial acceptance tests for iteration 68 scope (frontend-only, isolated fixtures). Added real useGptour hook conversation tests and direct loader boundary tests; reproduced a real bug on compact phrase parsing in the Rozzano flow.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "GPTour conversation via real useGptour hook",
+        "issue": "Message 'Domani clienti che non comprano da20giorni e nuovi punti vendita a Rozzano' does not preserve inactive threshold (inactiveDays becomes null instead of 20) when processed through hook send flow with model patch merge, blocking required A/B/C persistence behavior for compact user phrasing.",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/use_gptour_commercial.test.ts",
+    "/app/frontend/tests/gptour_new_point_evidence.test.ts",
+    "/app/frontend/tests/gptour_commercial.test.ts",
+    "/app/test_reports/artifacts_iter69/iter69_preview_mobile.jpeg"
+  ],
+  "action_items": [
+    "Main agent: fix compact threshold parsing/retention for 'da20giorni' and similar no-space phrases in real hook conversation path after response.intent merge.",
+    "Main agent: re-run targeted suite `yarn test:unit tests/gptour_commercial.test.ts tests/use_gptour_commercial.test.ts tests/gptour_new_point_evidence.test.ts` until all pass.",
+    "Main agent: keep existing no-default behavior for 'Clienti inattivi negli acquisti' clarification (verified good: no Edge call before numeric answer)."
+  ],
+  "critical_code_review_comments": [
+    "No app code modified by testing agent; only new tests and report file added.",
+    "Loader boundary coverage is now explicit on real supabase chain semantics (positive/non_visitato, null status, closed, linked, missing row, read error, 200-batch chunking).",
+    "Existing pure commercial suite still passes (21 tests), so regression is specifically exposed in real hook conversation acceptance path with compact input phrasing."
+  ],
+  "updated_files": [
+    "/app/frontend/tests/use_gptour_commercial.test.ts",
+    "/app/frontend/tests/gptour_new_point_evidence.test.ts",
+    "/app/test_reports/iteration_69.json"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "29/30 tests passed in targeted run (1 failing acceptance case)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Testing type was frontend-only. MOCKED (TEST-ONLY) boundaries: Supabase/AI/OSRM/auth in unit/hook fixtures. No live CRM/auth writes. Public preview smoke loaded successfully at https://voom-ios.preview.emergentagent.com with mobile screenshot captured.",
+  "rca_of_issue": "Reproduction: run `yarn test:unit tests/use_gptour_commercial.test.ts`. Failing case is 'conversation Rozzano→09:00→Opera→remove new...'. At first turn, expected commercialGroups.inactiveDays=20 from exact user text '...da20giorni...', but received inactiveDays=null after hook send merge path. This indicates compact token parsing/retention gap for no-space threshold forms in real conversation pipeline. Mitigation: normalize compact day tokens before/inside purchase threshold extraction used by conversation rules, then preserve threshold across merge/applyConversationRules turns."
+}

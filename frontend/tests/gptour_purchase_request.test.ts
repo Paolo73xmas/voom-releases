@@ -1,6 +1,6 @@
 // Parità con web tests/aitour/gptour_purchase_request.unit.ts @ 30b163a/2eea9933 (61 asserzioni).
-// Differenza mobile: i candidati fixture hanno coordinate valide (il filtro mobile scarta anche
-// 'coordinate mancanti', invariante del planner nativo); regole e risultati sono identici al web.
+// Commercial correction: verified prospects with existing relationships are customers too.
+// Fixtures now carry explicit loader/order provenance; no unverified snapshot is accepted.
 import assert from 'node:assert/strict';
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_INTENT, mergeIntent } from '../lib/aitour/gptour-intent';
@@ -16,7 +16,7 @@ import type { TourCandidate } from '../lib/aitour/types';
 vi.mock('../lib/supabase', () => ({ supabase: {} }));
 
 describe('GPTour richieste acquisti/provincia (parità web gptour_purchase_request)', () => {
-  it('61 asserzioni identiche al web', async () => {
+  it('61 asserzioni geografia/acquisti, con provenienza commerciale verificata', async () => {
     let checks = 0;
     const ok = (value: unknown, label: string) => { assert.ok(value, label); checks++; };
     const phrase = 'TABACCHERIE DI TREVISO E PROVINCIA CHE NON COMPRANO DA 30 GIORNI';
@@ -26,7 +26,7 @@ describe('GPTour richieste acquisti/provincia (parità web gptour_purchase_reque
     ok(province.physicalContactMinDays === null, 'acquisti non sono visite: soglia inventata ignorata');
     ok(request('Domani voglio visitare le tabaccherie di Treviso che non comprano da 30 giorni').physicalContactMinDays === null, 'visitare non implica un filtro sulla data della visita');
     ok(province.requestedArea?.provincia === 'TV' && !province.requestedArea.comuni?.length, 'Treviso e provincia non si restringe al capoluogo');
-    ok(province.requestedEntityTypes.join() === 'client,orphan' && !province.allTobacconists, 'inattivi non sono nuovi punti vendita');
+    ok(province.requestedEntityTypes.join() === 'client,prospect,orphan' && !province.allTobacconists && !province.commercialGroups?.newPoints, 'inattivi non sono nuovi punti vendita, anche prospect con relazione/ordini verificati');
     ok(!province.wantAll, 'nessun tutti implicito dalla sola parola tabaccherie con filtro');
     ok(explicitLocalityNames(phrase).length === 0, 'nessuna pseudo-località provincia che non comprano');
     ok(request('Tutte le tabaccherie di Treviso che non comprano da 30 giorni').wantAll, 'tutte esplicito preservato');
@@ -81,6 +81,8 @@ describe('GPTour richieste acquisti/provincia (parità web gptour_purchase_reque
     const cand = (key: string, extra: Partial<TourCandidate> = {}) => ({
       key, entityType: 'client', customerId: key, tabaccheriaId: null, name: key,
       city: 'Treviso', province: 'TV', lat: 45.6669, lng: 12.2431, daysSinceOrder: 30, daysSincePhysicalContact: 1,
+      lastOrderDate: '2026-09-09', gptourData: { contactKnown: true, orderKnown: true, revenueKnown: true,
+        commercial: { authorized: true, relationship: 'own', newPointVerified: false, purchasesVerified: true } },
       revenue6m: 0, ...extra,
     }) as TourCandidate;
     const pool = [cand('29', { daysSinceOrder: 29 }), cand('30'), cand('31', { daysSinceOrder: 31, city: 'Conegliano', province: 'Treviso', entityType: 'orphan' }),

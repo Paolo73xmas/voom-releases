@@ -91,6 +91,7 @@ export default function RootLayout() {
         <Stack.Screen name="orphan-claims" options={{ headerShown: false }} />
         <Stack.Screen name="ai-tour" options={{ headerShown: false }} />
         <Stack.Screen name="gptour" options={{ headerShown: false }} />
+        <Stack.Screen name="gptour-orchestrator" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="customer/[id]"

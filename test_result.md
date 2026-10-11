@@ -102,7 +102,20 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Correzione mirata GPTour Android/iOS commerciale: categorie mai ampliate senza consenso, clienti/nuovi/inattivi verificati, gruppi misti con filtri scoped, persistenza conversazione. User approva codice e SOLO test isolati; NO CRM reale/AI reale/Edge/database/auth/deps."
+user_problem_statement: "GPTour Orchestrator Fase5MOBILE: motorecentrale unicaautorità, adapter/sessione/UI separati dallegacy. HANDOFF inpreparazione: userautorizza predisposizioneisolata+mocktest, NONintegrazionedefinitiva/noAPIrealefinchèdocumentoapprovato. Locale mainautorizzato perchéHEAD coincideesattamenteconremotoconflict;futurepushSOLOramoconflictfastforwardprevio consenso;oraNESSUNGITWRITE."
+
+phase5_mobile_current:
+  base_sha: 879333badd5821c1fd5572ed54781818a2e6a3a7
+  local_branch: main
+  intended_remote_branch: conflict_170826_1303
+  remote_main_sha: 14b244580db42a2e4bbd1795c5b5df8046135746
+  git_evidence: "LocalHEAD=remoteconflict,trackedcleanallinizio;untrackedstoricipreservati;nessunremote/upstream/pushurlconfigurato. Antenatib6f680c3/c84e31a2presentinelconflict;Gitnoncertificaworkflowpushstorico/buildpubblicate. Userchiarisceesplicitamentemainlocaleconsentito."
+  handoff: "NONPRESENTE;getglobnessunMOBILE_API_HANDOFF. Utenteconfermainpreparazione. API1.0/v6dichiaratimaNONverifiedlive. PHASE5_MOBILE_CONTRACT_GAPS.md indica camposconosciuti. NONinventarewireaction/responsecoordinate. TipinormalizzativiMODELINTERNI,NONcontrattoAPI."
+  implementation: "Adaptergptour-orchestrator-api.ts+orchestratorcontract/errors/request/coordinates/view/storage/session;supabaseesistenteJWTnomefunctionfixed,noduplicauth/ruoli;gatebindingNULL+extraflagabsente=OFF;sessionUUID/revision/lastpendingoutboundonlypersistaccounttargetseparati;manualretrysameID,persistbeforenetwork,401403409503+deadline+identityguard. ControllerNONreplannin. UI OrchestratorScreen/ServerPlan/ServerRouteMap.native displaysserveronly;webmaplimitationexplicit;newroutegptour-orchestrator,soloaggiuntaStacklayout. Legacytuttobitidenticononmodificato."
+  verified_main: "FINALE11ott2026: TSC/lintPASS;32newunit(10API14session8view),400APPtest38suitePASS;FULL406PASS6FAIL/412test39suite(esclusivamente6lockfilepreesistentinonmodificati). Browser390x844prodgatePASS;UI6statirealcomponentfixturePASSestimatedrouting/multiday/retry,temporaneatestrouteREMOVED. NoREALAPI;existingSupabaseprojecthostmatchesuseroffline. adb/xcrunASSENTI;NONnativeemulator/devicechecks. Legacyconfigunchangedgitexit0."
+  tests_next: "StopintegrazionefinalefinchèMOBILE_API_HANDOFFarriva;vedereROOT PHASE5_MOBILE_INTEGRATION_REPORT.md e CONTRACT_GAPS. NOrealCRM/Auth/AIcallswithoutNEWconsent. BindingfixtureINTERNALviewmodelnotAPI. Agentreport70unit23inizialimainaggiunge9verificati(32),fixpendingsecondtapretry/cancellationauth/optionalfields. NOflagactivation/castdecoderfake/Gitwrites."
+  code_manifest_sha256: 774aa495c817d6a75b8f542e6e84149063be62403df778057c595dfe5bc68d36
+  final_git: "LocalHEADbase879333badd5821c1fd5572ed54781818a2e6a3a7;workingtreechangesONLY,nessunGitcommit/pushmanuale. Remotimain/conflictri-verificati19:03UTC11ottimmutati. Futurodestesclusivosolo conflictfastforwarddaautorizzare."
 
 commercial_rules_current:
   initial_mobile_sha: edb2852fcbaac9467cb6cb81f13c69b349adda62

@@ -1,0 +1,30 @@
+{
+  "route": "/orchestrator-ui-smoke",
+  "viewport": "390x844",
+  "checks": {
+    "initial_status": "Serve una tua risposta",
+    "after_option_tap": "Il motore sta pianificando",
+    "ready_plan_visible": true,
+    "estimated_routing_warning_visible": true,
+    "multiday_daypicker_visible": true,
+    "daypicker_switched_date": "2099-10-06",
+    "states_rendered": {
+      "infeasible": "Giornata non fattibile",
+      "blocked": "Pianificazione bloccata",
+      "failed": "Pianificazione non riuscita"
+    },
+    "http_error_retry_visible": true,
+    "retry_hidden_after_tap": true
+  },
+  "screenshots": [
+    "/app/test_reports/artifacts_iter70/iter70_smoke_initial.jpeg",
+    "/app/test_reports/artifacts_iter70/iter70_smoke_planning.jpeg",
+    "/app/test_reports/artifacts_iter70/iter70_smoke_ready.jpeg",
+    "/app/test_reports/artifacts_iter70/iter70_smoke_terminal_states.jpeg",
+    "/app/test_reports/artifacts_iter70/iter70_smoke_retry.jpeg"
+  ],
+  "notes": [
+    "TEST-ONLY fixture harness using actual OrchestratorScreen and internal model mock.",
+    "No Supabase/Auth/Edge/AI/GPS/network calls were required for this smoke."
+  ]
+}

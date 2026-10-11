@@ -1,0 +1,23 @@
+{
+  "scope": "API1.0 official handoff, client-only offline tests",
+  "app_tests": {"passed": 426, "failed": 0, "files": 43, "explicit_exclusion": "tests/build_lockfile.test.ts"},
+  "integral_tests": {"passed": 432, "failed": 6, "total": 438, "files": 44, "failures": "pre-existing lockfile baseline only"},
+  "orchestrator_tests": {"passed": 58, "existing": 32, "new_official": 26},
+  "typecheck": "PASS",
+  "lint": "PASS",
+  "ui": {
+    "platform": "browser mobile viewport, not native",
+    "sizes": ["390x844", "320x568"],
+    "real_components": ["OrchestratorScreen", "ServerPlan", "ServerQuestion", "OrchestratorSession", "official binding", "transport with injected IO"],
+    "checks": ["official follow-up question", "individual decision exact event ID", "planning draft unconfirmable", "ready verified", "day 2", "excluded reasons", "local confirmation zero calls", "503 same-body retry", "409 revision20 explicit new request", "new conversation", "infeasible/blocked/failed no plan", "require/exclude stop exact key", "no horizontal overflow", "production gate OFF"],
+    "evidence": ["/root/.emergent/automation_output/20261011_201229", "/root/.emergent/automation_output/20261011_201424", "/root/.emergent/automation_output/20261011_201927"],
+    "business_requests_observed": 0,
+    "temporary_route_removed": true
+  },
+  "live_calls": 0,
+  "crm_writes": 0,
+  "native_tests": "NOT EXECUTED: adb and xcrun unavailable",
+  "legacy": "10011 tracked frontend/backend files outside Orchestrator/layout compared against f1e0e876, no unexpected differences",
+  "git": {"local_branch": "main", "read_head": "f1e0e8762625a91233f895126955ef7b382d1881", "conflict_base_is_ancestor": true, "future_remote_only": "origin/conflict_170826_1303", "push_merge_ota_release": "NOT EXECUTED"},
+  "remaining": ["full P1 plan/geometry fixture or authorized parity test", "server idempotency cache lifetime", "live v6 authorization/version behavior", "native emulator and physical-device QA", "six pre-existing lockfile failures"]
+}

@@ -12,6 +12,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { useAuthStore, initializeAuthListeners } from '../store/authStore';
 import { COLORS, FONTS, applyThemeMode, getStoredThemeMode } from '../lib/theme';
+import { observeOrchestratorAccountLifecycle } from '../lib/aitour/orchestrator/lifecycle';
 
 // Tempo massimo di attesa per il caricamento dei font.
 // Su Android Expo Go, il fetch dei font da Google può fallire o bloccarsi:
@@ -19,6 +20,7 @@ import { COLORS, FONTS, applyThemeMode, getStoredThemeMode } from '../lib/theme'
 const FONTS_LOAD_TIMEOUT_MS = 3000;
 
 export default function RootLayout() {
+  useEffect(observeOrchestratorAccountLifecycle, []);
   const initialize = useAuthStore((state) => state.initialize);
   const [fontsTimedOut, setFontsTimedOut] = useState(false);
   const [themeReady, setThemeReady] = useState(false);

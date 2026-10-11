@@ -1,0 +1,9 @@
+{"status":"needs_clarification","contractVersion":"1.0","engineVersion":"gptour-orchestrator/0.2.0","sessionId":"mob-83ca397d-m1x2y3-ab12cd","sessionRevision":1,"requestId":"req-m1x2y3-0001","generatedAt":"2026-10-11T19:17:00.000Z",
+ "message":"Per lunedì 12 ottobre 2026 risultano impegni da decidere: …",
+ "question":{"id":"followups:<uuid-evento-1>,<uuid-evento-2>","kind":"follow_ups",
+   "text":"Per lunedì 12 ottobre 2026 risultano impegni da decidere:\n• «Cliente A» — follow-up del venerdì 9 ottobre 2026 (arretrato) ore 11:00\n• «Cliente B» — follow-up del venerdì 9 ottobre 2026 (arretrato) ore 16:00\nLi includo nel giro, li lascio fuori, oppure propongo una nuova data?",
+   "options":[{"id":"include_all","label":"Includili tutti"},{"id":"exclude_all","label":"Lasciali fuori dal giro"},{"id":"propose_reschedule","label":"Proponi una riprogrammazione"}]},
+ "criteria":{"groups":{"version":1,"existing":true,"newPoints":true,"ownOnly":false,"inactiveDays":null,"needsDays":false},"area":{"comuni":["MILANO"],"provincia":null,"exhaustive":false},"date":"2026-10-12","dateAnchorTurn":1,"startTime":null,"endTime":null,"wantAll":false,"nonWorkingConfirmed":false,"maxDays":null,"extraDaysApproved":false,"requiredKeys":[],"requiredNames":[],"excludedNames":[],"excludedKeys":[],"consents":[]},
+ "pendingDecisions":[],"plan":null,"planId":null,"conflicts":[],
+ "dataQuality":{"candidatesComplete":true,"poolTruncated":false,"purchasesVerified":true,"registryVerified":true,"routingSource":"none","notes":[]},
+ "metrics":{"durationMs":2224,"crmQueries":6,"aiCalls":0,"routingCalls":0}}

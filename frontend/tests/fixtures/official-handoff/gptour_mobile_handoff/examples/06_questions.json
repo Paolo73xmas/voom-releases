@@ -1,0 +1,5 @@
+{
+ "inactive_days": {"id":"inactive_days","kind":"inactive_days","text":"Da quanti giorni devono essere inattivi i clienti?","options":[{"id":"15","label":"15 giorni"},{"id":"20","label":"20 giorni"},{"id":"30","label":"30 giorni"}]},
+ "date": {"id":"date","kind":"date","text":"Per quale giorno?","options":[{"id":"2026-10-11","label":"Oggi (domenica 11 ottobre 2026)"},{"id":"2026-10-12","label":"Domani (lunedì 12 ottobre 2026)"},{"id":"other","label":"Un altro giorno"}]},
+ "follow_ups": {"id":"followups:<uuid-evento-1>,<uuid-evento-2>","kind":"follow_ups","text":"Per lunedì 12 ottobre 2026 risultano impegni da decidere:\n• «Cliente A» — follow-up del venerdì 9 ottobre 2026 (arretrato) ore 11:00\n• «Cliente B» — follow-up del venerdì 9 ottobre 2026 (arretrato) ore 16:00\nLi includo nel giro, li lascio fuori, oppure propongo una nuova data?","options":[{"id":"include_all","label":"Includili tutti"},{"id":"exclude_all","label":"Lasciali fuori dal giro"},{"id":"propose_reschedule","label":"Proponi una riprogrammazione"}]}
+}

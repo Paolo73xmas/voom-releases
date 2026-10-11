@@ -1,0 +1,117 @@
+{
+ "at": "2026-10-11T18:08:23.396Z",
+ "poolSize": 87,
+ "poolMs": 7224,
+ "results": [
+  {
+   "scenario": "P1 Milano esistenti + nuove mai visitate",
+   "turns": [
+    {
+     "in": "Organizzami un giro per domani a Milano, visitando clienti esistenti e nuove tabaccherie mai visitate.",
+     "ms": 12951,
+     "needsInfo": false,
+     "reply": "Ho preparato per domani un giro a Milano con i clienti esistenti disponibili e le nuove tabaccherie del registro, concentrando le tappe nel cluster più compatto possibile. Il motore CRM potrà riordinare le visite in base ai tempi reali di percorrenza.",
+     "selection": 7
+    }
+   ],
+   "buildMs": 630,
+   "missing": 0,
+   "duplicates": 0,
+   "days": [
+    {
+     "day": 1,
+     "date": "2026-10-12",
+     "start": "07:00",
+     "finish": "20:00",
+     "stops": 7,
+     "cities": {
+      "undefined": 7
+     },
+     "totalKm": 103.6,
+     "driveMin": 134,
+     "visitMin": 204,
+     "waitMin": 0,
+     "bufferMin": 479.75333333333344,
+     "hopKmMax": 29.5,
+     "hopKmAvg": 5.7,
+     "byType": {
+      "client": 2,
+      "free": 5
+     },
+     "lodging": "home"
+    }
+   ],
+   "notes": "Nel pool fornito non risultano righe di tipo never a Milano; sono state selezionate le nuove tabaccherie di tipo free presenti nel comune.",
+   "multiDay": false
+  },
+  {
+   "scenario": "P2 Rozzano+Opera inattivi 20gg",
+   "turns": [
+    {
+     "in": "Organizzami un giro a Rozzano e Opera con i clienti che non ordinano da almeno 20 giorni.",
+     "ms": 11525,
+     "needsInfo": false,
+     "reply": "Ho preparato un giro compatto su Rozzano con i clienti e gli orfani che non ordinano da almeno 20 giorni. Nell’elenco non risultano clienti di Opera che rispettino questo criterio.",
+     "selection": 3
+    }
+   ],
+   "buildMs": 476,
+   "missing": 0,
+   "duplicates": 0,
+   "days": [
+    {
+     "day": 1,
+     "date": "2026-10-11",
+     "start": "07:00",
+     "finish": "20:00",
+     "stops": 3,
+     "cities": {
+      "undefined": 3
+     },
+     "totalKm": 15.3,
+     "driveMin": 32,
+     "visitMin": 90,
+     "waitMin": 0,
+     "bufferMin": 665.2533333333333,
+     "hopKmMax": 4.9,
+     "hopKmAvg": 2.7,
+     "byType": {
+      "orphan": 1,
+      "client": 2
+     },
+     "lodging": "home"
+    }
+   ],
+   "notes": "Sono stati selezionati tutti i soggetti presenti nell’area richiesta che rispettano il criterio temporale.",
+   "multiDay": false
+  },
+  {
+   "scenario": "P3 max inattivi nell'orario",
+   "turns": [
+    {
+     "in": "Voglio visitare il maggior numero possibile di clienti inattivi (almeno 30 giorni) a Milano, rispettando il mio orario lavorativo.",
+     "ms": 5429,
+     "needsInfo": true,
+     "reply": "Nell’elenco non trovo a Milano clienti o orfani con almeno 30 giorni dall’ultimo ordine: i clienti milanesi presenti risultano più recenti. Vuoi estendere la ricerca ai comuni vicini, come Rozzano, Pieve Emanuele o Sesto San Giovanni?",
+     "selection": 0
+    },
+    {
+     "in": "domani, includi i follow-up, decidi tu il numero di tappe",
+     "ms": 4748,
+     "needsInfo": true,
+     "reply": "Per domani non trovo nell’elenco clienti inattivi da almeno 30 giorni a Milano, né follow-up pertinenti da inserire. Vuoi che allarghi il giro ai comuni vicini?",
+     "selection": 0
+    },
+    {
+     "in": "domani, includi i follow-up, decidi tu il numero di tappe",
+     "ms": 4873,
+     "needsInfo": true,
+     "reply": "Per domani non trovo nell’elenco clienti o orfani di Milano inattivi da almeno 30 giorni, e non risultano follow-up pertinenti da includere. Vuoi estendere il giro ai comuni vicini?",
+     "selection": 0
+    }
+   ],
+   "noPlan": true,
+   "lastReply": "Per domani non trovo nell’elenco clienti o orfani di Milano inattivi da almeno 30 giorni, e non risultano follow-up pertinenti da includere. Vuoi estendere il giro ai comuni vicini?"
+  }
+ ]
+}

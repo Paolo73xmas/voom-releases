@@ -4,7 +4,7 @@ import { OrchestratorError } from './errors';
 export function validRevision(value: unknown): value is Revision {
   return (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) || (typeof value === 'string' && value.length > 0 && value.length < 200);
 }
-const authFields = /^(?:role|roles|permissions|is_admin|isAdmin|access_token|refresh_token|authorization|service_role|api_key)$/i;
+const authFields = /^(?:role|roles|permissions|agentId|tenantId|is_admin|isAdmin|access_token|refresh_token|authorization|service_role|api_key)$/i;
 export function jsonSafe(value: unknown, depth = 0): value is JsonValue {
   if (depth > 30) return false;
   if (value === null || typeof value === 'boolean' || typeof value === 'string') return true;

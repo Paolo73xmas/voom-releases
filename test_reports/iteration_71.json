@@ -1,0 +1,73 @@
+{
+  "summary": "Frontend-only verification completed for Phase 5 mobile orchestrator offline scope. Typecheck/lint/targeted/full-excluding-lock passed; integral Vitest failed only on 6 known lockfile-baseline tests. Mobile web preview and /gptour-orchestrator gate behavior are working with pilot OFF and no live calls.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Official handoff fixture provenance",
+        "issue": "Copied official fixture subset is present, but explicit provenance hash file is missing (no PROVENANCE_SHA256 metadata found).",
+        "affected_testIDs": []
+      },
+      {
+        "flow": "Contract-test completeness vs requested scope",
+        "issue": "Current orchestrator tests (32) still depend on internal fixture binding for main behavior checks; no dedicated tests found that fully assert the official-handoff JSON examples end-to-end through the real wire decoder across all requested malformed envelope and transport matrix scenarios.",
+        "affected_testIDs": []
+      },
+      {
+        "flow": "Phase 5 documentation alignment",
+        "issue": "PHASE5_MOBILE_INTEGRATION_REPORT.md and PHASE5_MOBILE_CONTRACT_GAPS.md still state 'handoff missing/binding null' while codebase now includes handoff fixture copy and active handoff-verified binding implementation path (gated by pilot flag).",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/phase5_mobile_iter71/tsc.log",
+    "/app/test_reports/phase5_mobile_iter71/lint_targeted.log",
+    "/app/test_reports/phase5_mobile_iter71/vitest_targeted.log",
+    "/app/test_reports/phase5_mobile_iter71/vitest_full_excl_lock.log",
+    "/app/test_reports/phase5_mobile_iter71/vitest_integral.log",
+    "/app/test_reports/artifacts_iter71/iter71_preview_390x844.jpeg",
+    "/app/test_reports/artifacts_iter71/iter71_orchestrator_390x844.jpeg",
+    "/app/test_reports/artifacts_iter71/iter71_orchestrator_320x568.jpeg",
+    "/app/test_reports/artifacts_iter71/iter71_orchestrator_gate_assert_390x844.jpeg",
+    "/app/test_reports/iteration_71.json"
+  ],
+  "action_items": [
+    "Update PHASE5_MOBILE_INTEGRATION_REPORT.md to current state (tests run now, handoff fixture availability, pilot gate behavior, and real remaining limits only).",
+    "Update PHASE5_MOBILE_CONTRACT_GAPS.md to reflect only unresolved API1.0 incompatibilities still open after current code/tests.",
+    "Add explicit provenance hash artifact (SHA256 manifest) for offline official-handoff fixture subset under frontend/tests/fixtures/official-handoff.",
+    "If required by acceptance scope, add dedicated official-json contract suites covering requested malformed envelope/transport/status matrix through real wire validator path (IO mocked only).",
+    "Keep six lockfile baseline failures unpatched, but document them separately in delivery output exactly by failing test names."
+  ],
+  "critical_code_review_comments": [
+    "Gate-off behavior is correct: orchestrator input is RNW readonly (editable=false -> readonly attr true) and send action disabled while pilot is not enabled.",
+    "Transport/session code continues to enforce no role leakage and safe account-switch handling paths; no live Supabase invocation was executed in this run.",
+    "Documentation is currently the main mismatch risk versus implementation/test state."
+  ],
+  "updated_files": [
+    "/app/test_reports/iteration_71.json"
+  ],
+  "success_rate": {
+    "backend": "N/A (frontend-only request)",
+    "frontend": "Targeted/contract-related suites: 32/32 PASS; Full app excl lockfile: 400/400 PASS; Integral: 406/412 PASS (6 known lockfile baseline failures)"
+  },
+  "known_lockfile_baseline_failures": [
+    "tests/build_lockfile.test.ts > pre-build: contenuto salvato, non solo esistenza del lockfile > accetta file salvati identici e registro npm, senza scrivere Git",
+    "tests/build_lockfile.test.ts > pre-build: contenuto salvato, non solo esistenza del lockfile > blocca il caso reale: HEAD ha ancora URL Yarn e locale ha URL npm",
+    "tests/build_lockfile.test.ts > pre-build: contenuto salvato, non solo esistenza del lockfile > blocca un file di configurazione mancante nel commit",
+    "tests/build_lockfile.test.ts > pre-build: contenuto salvato, non solo esistenza del lockfile > blocca qualsiasi differenza salvata in package.json",
+    "tests/build_lockfile.test.ts > pre-build: contenuto salvato, non solo esistenza del lockfile > blocca qualsiasi differenza salvata in .yarnrc",
+    "tests/build_lockfile.test.ts > pre-build: contenuto salvato, non solo esistenza del lockfile > blocca qualsiasi differenza salvata in yarn.lock"
+  ],
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "MOCKED APIS in this run: browser checks only, no real auth login, no real Supabase/Edge calls executed. Confirmed preview route and gate UI only. Keep production pilot OFF. Lockfile failures are pre-existing and isolated to tests/build_lockfile.test.ts.",
+  "rca_of_issue": "Integral Vitest fails because current yarn.lock still contains old registry URLs, causing assertBuildSnapshot guard errors in 6 lockfile tests. This is consistent with known baseline behavior and unrelated to orchestrator runtime UI/API guard logic."
+}

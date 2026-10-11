@@ -102,9 +102,24 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "GPTour Orchestrator Fase5MOBILE: motorecentrale unicaautorità, adapter/sessione/UI separati dallegacy. HANDOFF inpreparazione: userautorizza predisposizioneisolata+mocktest, NONintegrazionedefinitiva/noAPIrealefinchèdocumentoapprovato. Locale mainautorizzato perchéHEAD coincideesattamenteconremotoconflict;futurepushSOLOramoconflictfastforwardprevio consenso;oraNESSUNGITWRITE."
+user_problem_statement: "Completare GPTour Orchestrator Mobile con handoff API1.0 ufficiale. Utente conferma solo test isolati, nessuna chiamata Supabase/Auth/Edge/CRM reale, nessuna scrittura CRM, push, merge, OTA/pubblicazione. Preservare legacy e base conflict_170826_1303, main locale autorizzato. Aggiornare report/gap, separare 6 failure lockfile, preparare piano Android/iPhone senza eseguirlo."
 
-phase5_mobile_current:
+phase5_handoff_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  scope: "SOLO casi offline verificati. Live/native NON eseguiti, richiedono nuovo consenso."
+  final_results: "426appPASS/43suite; integrale432PASS6FAIL/438/44suite;58OrchestratorPASS(26nuoviofficial);TSC/lintPASS. Browser390+320 full realUI/binding/controller conIOmockPASS, nooverflow/0businesscalls;routeharnessrimossa. Rapporti71/72storici integrati da main."
+  evidence: "test_reports/phase5_handoff_final/verification.json; logtestnella stessa cartella; browserautomation_output20261011_201229 e201424; reportROOT aggiornati e pianoLIVE pronto noneseguito."
+  official_source: /tmp/gptour-handoff-official/gptour_mobile_handoff
+  baseline_head: f1e0e8762625a91233f895126955ef7b382d1881
+  git_check: "879333ba è antenato di HEAD; branch main, nessun remote configurato. Nessuna operazione Git write."
+  changes: "Binding ufficiale, decoder validante, actions get_plan(planId), 403 ridotto/422 completo/409 revision, transcript locale TTL24h e pulizia account, probe dietro flag spento, UI criteria/pending/followup-per-riga/planning-stimato/conferma-solo-locale/esclusi/mappe/dettagli. Nessun secondo motore o fallback automatico. Target admin UUID esplicito senza query CRM."
+  checks: "TSC/lint PASS. 32 precedenti test Orchestrator PASS prima completamento UI. Screenshot390x844: gate spento visibile, 0APIbusiness; assert is_disabled sul TextInput RNW fallisce perché editable=false produce readonly: correggere TEST non auth/app."
+  test_plan: "Aggiungere/rieseguire suite ufficiali offline complete e regressione, fixture ufficiali JSON (non eseguire Python/web-reference del pacchetto), all actions/errors/probe/session/resume/TTL/logout/target/conflict/malformed/multi-day/map coords/planning. Browser harness reale UI+binding+controller con auth/Edge mock e guard failclosed PRIMA navigazione; non attivare flag produzione. Nessun native/live. Documentare 6 fail lockfile separati, NON modificarli."
+  protected: "NON modificare legacy/backend/authStore/Edge/DB/config protette/env/deps/lock. Vietate tutte chiamate live incl login/probe e CRM readonly. Eventuale harness test temporaneo da rimuovere."
+
+phase5_mobile_initial_archived:
   base_sha: 879333badd5821c1fd5572ed54781818a2e6a3a7
   local_branch: main
   intended_remote_branch: conflict_170826_1303

@@ -9,13 +9,9 @@ export interface TransportOptions { binding: ContractBinding | null; client?: Or
 export type SendRequest = (request: RequestEnvelope, ownerId: string, stillCurrent: () => boolean, signal?: AbortSignal) => Promise<ServerSnapshot>;
 
 /** No retries here: the session coordinator owns the persisted exact requestId/body. */
-export function createOrchestratorTransport(options: TransportOptions): SendRequest {
+function authorizedExchange(options: TransportOptions) {
   const client = options.client ?? supabase;
-  return async (input, ownerId, stillCurrent, outerSignal) => {
-    const binding = options.binding;
-    if (!binding || binding.version !== '1.0' || (binding.provenance !== 'handoff-verified' && !(options.isolatedTest && options.client)))
-      throw new OrchestratorError('HANDOFF_REQUIRED');
-    const body = buildRequest(input);
+  return async (body: RequestEnvelope | { contractVersion: '1.0' }, ownerId: string, stillCurrent: () => boolean, outerSignal?: AbortSignal) => {
     const controller = new AbortController();
     let rejectCancellation!: (reason: OrchestratorError) => void;
     const cancellation = new Promise<never>((_, reject) => { rejectCancellation = reject; });
@@ -28,7 +24,7 @@ export function createOrchestratorTransport(options: TransportOptions): SendRequ
       if (outerSignal?.aborted) throw new OrchestratorError('CANCELLED');
       if (controller.signal.aborted) throw new OrchestratorError('NETWORK');
     };
-    const run = async (): Promise<ServerSnapshot> => {
+    const run = async (): Promise<{ data: unknown; status: number }> => {
       check();
       const before = await client.auth.getSession(); check();
       if (before.error || !before.data.session?.access_token) throw new OrchestratorError('AUTH_REQUIRED');
@@ -39,11 +35,13 @@ export function createOrchestratorTransport(options: TransportOptions): SendRequ
       const after = await client.auth.getSession(); check();
       if (after.error) throw new OrchestratorError('AUTH_REQUIRED');
       if (!after.data.session || after.data.session.user.id !== ownerId) throw new OrchestratorError('ACCOUNT_CHANGED');
-      if (result.error) throw httpError((result.error as { context?: { status?: number } }).context?.status);
-      let snapshot: ServerSnapshot;
-      try { snapshot = binding.decodeResponse(result.data, body); assertSnapshot(snapshot, body); }
-      catch { throw new OrchestratorError('INVALID_RESPONSE'); }
-      return snapshot;
+      if (result.error) {
+        const context = (result.error as { context?: Response }).context;
+        let data: unknown = null;
+        try { data = await context?.clone().json(); } catch { /* Transport-only error, never log raw bodies/tokens. */ }
+        check(); return { data, status: context?.status ?? 0 };
+      }
+      return { data: result.data, status: 200 };
     };
     try {
       const deadline = new Promise<never>((_, reject) => { timer = setTimeout(() => {
@@ -55,4 +53,26 @@ export function createOrchestratorTransport(options: TransportOptions): SendRequ
       throw e instanceof OrchestratorError ? e : new OrchestratorError('NETWORK');
     } finally { if (timer) clearTimeout(timer); outerSignal?.removeEventListener('abort', cancel); }
   };
+}
+export function createOrchestratorTransport(options: TransportOptions): SendRequest {
+  const exchange = authorizedExchange(options);
+  return async (input, ownerId, stillCurrent, signal) => {
+    const binding = options.binding;
+    if (!binding || binding.version !== '1.0' || (binding.provenance !== 'handoff-verified' && !(options.isolatedTest && options.client)))
+      throw new OrchestratorError('HANDOFF_REQUIRED');
+    const body = buildRequest(input); binding.validateRequest?.(body);
+    const reply = await exchange(body, ownerId, stillCurrent, signal);
+    const status = (reply.data as { status?: string } | null)?.status;
+    if (reply.status !== 200 && !(reply.status === 403 && status === 'blocked') && !(reply.status === 422 && status === 'failed'))
+      throw httpError(reply.status, reply.data);
+    try { const snapshot = binding.decodeResponse(reply.data, body); assertSnapshot(snapshot, body); return snapshot; }
+    catch { throw new OrchestratorError('INVALID_RESPONSE'); }
+  };
+}
+export type PilotAccess = 'enabled' | 'not_allowed' | 'disabled' | 'unavailable';
+/** Dormant until the local pilot flag is explicitly enabled. No session ID, CRM load or allowlist on device. */
+export async function probeOrchestratorAccess(options: TransportOptions, ownerId: string, stillCurrent: () => boolean, signal?: AbortSignal): Promise<PilotAccess> {
+  if (options.binding?.provenance !== 'handoff-verified' && !(options.isolatedTest && options.client)) return 'unavailable';
+  const { status } = await authorizedExchange(options)({ contractVersion: '1.0' }, ownerId, stillCurrent, signal);
+  return status === 400 ? 'enabled' : status === 403 ? 'not_allowed' : status === 503 ? 'disabled' : 'unavailable';
 }

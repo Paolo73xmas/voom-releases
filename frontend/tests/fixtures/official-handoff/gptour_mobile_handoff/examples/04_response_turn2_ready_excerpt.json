@@ -1,0 +1,22 @@
+{"status":"ready","contractVersion":"1.0","engineVersion":"gptour-orchestrator/0.2.0","sessionId":"mob-83ca397d-m1x2y3-ab12cd","sessionRevision":2,"requestId":"req-m1x2y3-0002","generatedAt":"2026-10-11T19:17:04.000Z",
+ "message":"lunedì 12 ottobre 2026 a Milano — clienti con relazione commerciale + nuovi punti mai visitati: 13 tappe, partenza 07:00, fine 15:53 (guida 113 min, visite 390 min, pause 30 min, attese 0 min).",
+ "question":null,"pendingDecisions":[],"planId":"<uuid piano>",
+ "plan":{"planId":"<uuid piano>","sessionId":"mob-83ca397d-m1x2y3-ab12cd","sessionRevision":2,"engineVersion":"gptour-orchestrator/0.2.0","contractVersion":"1.0","generatedAt":"2026-10-11T19:17:04.000Z",
+   "date":"2026-10-12","startMin":420,"finishMin":953,"endMin":1200,
+   "departure":{"lat":45.348,"lng":9.164,"label":"Casa"},"returnTo":{"lat":45.348,"lng":9.164,"label":"Casa"},
+   "verification":"verified_routing","snapshotRef":"<ref>",
+   "stops":[
+     {"key":"cust:<id>","name":"<cliente 1>","city":"MILANO","lat":45.3168,"lng":9.1389,"role":"suggested","group":"existing","arrivalMin":432,"departureMin":462,"travelMinFromPrev":11.7,"travelKmFromPrev":6.6,"waitMin":0,"visitMin":30,"lunchBeforeMin":0,"reason":"cliente con relazione commerciale","lastOrderDate":null,"daysSinceOrder":null,"outsideWindow":false},
+     {"key":"cust:<id>","name":"<cliente 2>","city":"MILANO","lat":45.443,"lng":9.1795,"role":"suggested","group":"existing","arrivalMin":541,"departureMin":571,"travelMinFromPrev":19.2,"travelKmFromPrev":18.6,"waitMin":0,"visitMin":30,"lunchBeforeMin":0,"reason":"cliente con relazione commerciale","lastOrderDate":null,"daysSinceOrder":null,"outsideWindow":false},
+     {"key":"tab:<id>","name":"<nuovo punto 7>","city":"MILANO","lat":45.52,"lng":9.2231,"role":"suggested","group":"new","arrivalMin":726,"departureMin":756,"travelMinFromPrev":6.4,"travelKmFromPrev":3.1,"waitMin":0,"visitMin":30,"lunchBeforeMin":0,"reason":"nuovo punto verificato nel registro","lastOrderDate":null,"daysSinceOrder":null,"outsideWindow":false},
+     {"key":"tab:<id>","name":"<nuovo punto 8>","city":"MILANO","lat":45.5186,"lng":9.2211,"role":"suggested","group":"new","arrivalMin":787,"departureMin":817,"travelMinFromPrev":1.0,"travelKmFromPrev":0.3,"waitMin":0,"visitMin":30,"lunchBeforeMin":30,"reason":"nuovo punto verificato nel registro","lastOrderDate":null,"daysSinceOrder":null,"outsideWindow":false},
+     {"key":"cust:<id>","name":"<cliente 13>","city":"MILANO","lat":45.5089,"lng":9.2465,"role":"suggested","group":"existing","arrivalMin":887,"departureMin":917,"travelMinFromPrev":3.3,"travelKmFromPrev":1.2,"waitMin":0,"visitMin":30,"lunchBeforeMin":0,"reason":"cliente con relazione commerciale","lastOrderDate":null,"daysSinceOrder":null,"outsideWindow":false}
+   ],
+   "totals":{"driveMin":77.2,"visitMin":390,"waitMin":0,"breakMin":30,"returnMin":35.6,"totalMin":532.8,"availableMin":780,"bufferMin":247.2,"totalKm":79.7},
+   "geometry":[[45.348,9.164],[45.3479,9.1642],[45.348,9.164]],
+   "selectionReasons":{"selected":[{"key":"cust:<id>","reason":"cliente con relazione commerciale"}],"excluded":[{"key":"tab:<id>","name":"<punto>","reason":"fuori dal territorio autorizzato"}]},
+   "warnings":["follow-up arretrato «Cliente A» fuori dall'area del giro: non inserito nel percorso, resta da pianificare separatamente (nessun tempo riservato)","follow-up arretrato «Cliente B» fuori dall'area del giro: non inserito nel percorso, resta da pianificare separatamente (nessun tempo riservato)"],
+   "dependsOnPendingChanges":[]},
+ "conflicts":[],"dataQuality":{"candidatesComplete":true,"poolTruncated":false,"purchasesVerified":true,"registryVerified":true,"routingSource":"osrm","notes":[]},
+ "metrics":{"durationMs":3275,"crmQueries":7,"aiCalls":0,"routingCalls":2},
+ "_nota":"Estratto reale anonimizzato: nel piano completo stops ha 13 elementi, geometry 2704 coppie [lat,lng], excluded 672 voci."}

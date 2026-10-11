@@ -1,0 +1,555 @@
+{
+ "run": "p4b-mv450ruf",
+ "at": "2026-10-11T18:09:56.661Z",
+ "checks": 23,
+ "fails": 0,
+ "results": [
+  {
+   "scenario": "P1 Milano esistenti + nuove mai visitate",
+   "status": "ready",
+   "http": 200,
+   "turns": 2,
+   "message": "lunedì 12 ottobre 2026 a MILANO — clienti con relazione commerciale + nuovi punti mai visitati: 13 tappe, partenza 07:00, fine 15:53 (guida 113 min, visite 390 min, pause 30 min, attese 0 min).",
+   "question": null,
+   "metricsLastTurn": {
+    "durationMs": 3126,
+    "crmQueries": 6,
+    "aiCalls": 0,
+    "routingCalls": 2
+   },
+   "totalMs": 7123,
+   "aiCalls": 0,
+   "aiTokens": 0,
+   "aiFailures": 0,
+   "dataQuality": {
+    "candidatesComplete": true,
+    "poolTruncated": false,
+    "purchasesVerified": true,
+    "registryVerified": true,
+    "routingSource": "osrm",
+    "notes": []
+   },
+   "warnings": [
+    "follow-up arretrato «cliente A» fuori dall'area del giro: non inserito nel percorso, resta da pianificare separatamente (nessun tempo riservato)",
+    "follow-up arretrato «cliente B» fuori dall'area del giro: non inserito nel percorso, resta da pianificare separatamente (nessun tempo riservato)"
+   ],
+   "conflicts": [],
+   "plan": {
+    "date": "2026-10-12",
+    "verification": "verified_routing",
+    "start": "07:00",
+    "finish": "15:53",
+    "end": "20:00",
+    "stops": 13,
+    "byGroup": {
+     "existing": 8,
+     "new": 5
+    },
+    "byRole": {
+     "suggested": 13
+    },
+    "cities": {
+     "Milano": 3,
+     "MILANO": 10
+    },
+    "totals": {
+     "driveMin": 77.2,
+     "visitMin": 390,
+     "waitMin": 0,
+     "breakMin": 30,
+     "returnMin": 35.6,
+     "totalMin": 532.8,
+     "availableMin": 780,
+     "bufferMin": 247.2,
+     "totalKm": 79.7
+    },
+    "hopKmMax": 18.6,
+    "hopKmAvg": 3.8,
+    "utilizationPct": 50,
+    "excludedByReason": [
+     [
+      "fuori dal territorio autorizzato",
+      672
+     ]
+    ],
+    "filled": 0,
+    "stopsAnon": [
+     {
+      "n": 1,
+      "key": "cust:…",
+      "city": "Milano",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "07:12",
+      "dep": "07:42",
+      "travelMin": 11.7,
+      "km": 6.6,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.32,
+      "lng": 9.14
+     },
+     {
+      "n": 2,
+      "key": "cust:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "08:01",
+      "dep": "08:31",
+      "travelMin": 19.2,
+      "km": 18.6,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.44,
+      "lng": 9.18
+     },
+     {
+      "n": 3,
+      "key": "cust:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "08:38",
+      "dep": "09:08",
+      "travelMin": 6.9,
+      "km": 4.1,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.44,
+      "lng": 9.22
+     },
+     {
+      "n": 4,
+      "key": "cust:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "09:14",
+      "dep": "09:44",
+      "travelMin": 6.6,
+      "km": 3.9,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.47,
+      "lng": 9.21
+     },
+     {
+      "n": 5,
+      "key": "cust:…",
+      "city": "Milano",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "09:52",
+      "dep": "10:22",
+      "travelMin": 7.8,
+      "km": 3.6,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.49,
+      "lng": 9.19
+     },
+     {
+      "n": 6,
+      "key": "cust:…",
+      "city": "Milano",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "10:30",
+      "dep": "11:00",
+      "travelMin": 8,
+      "km": 4.1,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.52,
+      "lng": 9.21
+     },
+     {
+      "n": 7,
+      "key": "tab:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "new",
+      "arr": "11:06",
+      "dep": "11:36",
+      "travelMin": 6.2,
+      "km": 3.1,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.52,
+      "lng": 9.22
+     },
+     {
+      "n": 8,
+      "key": "tab:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "new",
+      "arr": "11:37",
+      "dep": "12:07",
+      "travelMin": 0.7,
+      "km": 0.3,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.52,
+      "lng": 9.22
+     },
+     {
+      "n": 9,
+      "key": "cust:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "12:09",
+      "dep": "12:39",
+      "travelMin": 1.9,
+      "km": 0.7,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.52,
+      "lng": 9.23
+     },
+     {
+      "n": 10,
+      "key": "tab:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "new",
+      "arr": "13:09",
+      "dep": "13:39",
+      "travelMin": 0.4,
+      "km": 0.3,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 30,
+      "lat": 45.52,
+      "lng": 9.23
+     },
+     {
+      "n": 11,
+      "key": "tab:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "new",
+      "arr": "13:44",
+      "dep": "14:14",
+      "travelMin": 4.1,
+      "km": 2.1,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.52,
+      "lng": 9.25
+     },
+     {
+      "n": 12,
+      "key": "tab:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "new",
+      "arr": "14:14",
+      "dep": "14:44",
+      "travelMin": 0.9,
+      "km": 0.3,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.52,
+      "lng": 9.24
+     },
+     {
+      "n": 13,
+      "key": "cust:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "14:47",
+      "dep": "15:17",
+      "travelMin": 2.8,
+      "km": 1.2,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": null,
+      "lunch": 0,
+      "lat": 45.51,
+      "lng": 9.25
+     }
+    ]
+   },
+   "lastRequestId": "p4b-mv450ruf-2"
+  },
+  {
+   "scenario": "P2 Rozzano+Opera inattivi 20gg",
+   "status": "ready",
+   "http": 200,
+   "turns": 3,
+   "message": "lunedì 12 ottobre 2026 a Rozzano, OPERA — clienti con ultimo ordine da almeno 20 giorni: 2 tappe, partenza 07:00, fine 08:18 (guida 18 min, visite 60 min, pause 0 min, attese 0 min).",
+   "question": null,
+   "metricsLastTurn": {
+    "durationMs": 2037,
+    "crmQueries": 7,
+    "aiCalls": 0,
+    "routingCalls": 2
+   },
+   "totalMs": 7161,
+   "aiCalls": 0,
+   "aiTokens": 0,
+   "aiFailures": 0,
+   "dataQuality": {
+    "candidatesComplete": true,
+    "poolTruncated": false,
+    "purchasesVerified": true,
+    "registryVerified": true,
+    "routingSource": "osrm",
+    "notes": []
+   },
+   "warnings": [
+    "follow-up arretrato «cliente A» fuori dall'area del giro: non inserito nel percorso, resta da pianificare separatamente (nessun tempo riservato)",
+    "follow-up arretrato «cliente B» fuori dall'area del giro: non inserito nel percorso, resta da pianificare separatamente (nessun tempo riservato)"
+   ],
+   "conflicts": [],
+   "plan": {
+    "date": "2026-10-12",
+    "verification": "verified_routing",
+    "start": "07:00",
+    "finish": "08:18",
+    "end": "20:00",
+    "stops": 2,
+    "byGroup": {
+     "existing": 2,
+     "new": 0
+    },
+    "byRole": {
+     "suggested": 2
+    },
+    "cities": {
+     "ROZZANO": 2
+    },
+    "totals": {
+     "driveMin": 11.3,
+     "visitMin": 60,
+     "waitMin": 0,
+     "breakMin": 0,
+     "returnMin": 7.1,
+     "totalMin": 78.4,
+     "availableMin": 780,
+     "bufferMin": 701.6,
+     "totalKm": 9.4
+    },
+    "hopKmMax": 4.8,
+    "hopKmAvg": 3,
+    "utilizationPct": 8,
+    "excludedByReason": [
+     [
+      "ordine recente (N giorni < N)",
+      2
+     ],
+     [
+      "nessun ordine valido verificato (mai acquirente)",
+      1
+     ],
+     [
+      "fuori dal territorio autorizzato",
+      1
+     ]
+    ],
+    "filled": 0,
+    "stopsAnon": [
+     {
+      "n": 1,
+      "key": "cust:…",
+      "city": "ROZZANO",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "07:09",
+      "dep": "07:39",
+      "travelMin": 9.3,
+      "km": 4.8,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": 24,
+      "lunch": 0,
+      "lat": 45.38,
+      "lng": 9.16
+     },
+     {
+      "n": 2,
+      "key": "cust:…",
+      "city": "ROZZANO",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "07:41",
+      "dep": "08:11",
+      "travelMin": 2,
+      "km": 1.1,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": 33,
+      "lunch": 0,
+      "lat": 45.37,
+      "lng": 9.15
+     }
+    ]
+   },
+   "lastRequestId": "p4b-mv450ruf-5"
+  },
+  {
+   "scenario": "P3 max inattivi nell'orario",
+   "status": "ready",
+   "http": 200,
+   "turns": 5,
+   "message": "lunedì 12 ottobre 2026 a MILANO — clienti con ultimo ordine da almeno 30 giorni: 2 tappe, partenza 07:00, fine 09:17 (guida 77 min, visite 60 min, pause 0 min, attese 0 min).",
+   "question": null,
+   "metricsLastTurn": {
+    "durationMs": 2450,
+    "crmQueries": 7,
+    "aiCalls": 0,
+    "routingCalls": 2
+   },
+   "totalMs": 9932,
+   "aiCalls": 0,
+   "aiTokens": 0,
+   "aiFailures": 0,
+   "dataQuality": {
+    "candidatesComplete": true,
+    "poolTruncated": false,
+    "purchasesVerified": true,
+    "registryVerified": true,
+    "routingSource": "osrm",
+    "notes": []
+   },
+   "warnings": [
+    "follow-up arretrato «cliente A» fuori dall'area del giro: non inserito nel percorso, resta da pianificare separatamente (nessun tempo riservato)",
+    "follow-up arretrato «cliente B» fuori dall'area del giro: non inserito nel percorso, resta da pianificare separatamente (nessun tempo riservato)"
+   ],
+   "conflicts": [],
+   "plan": {
+    "date": "2026-10-12",
+    "verification": "verified_routing",
+    "start": "07:00",
+    "finish": "09:17",
+    "end": "20:00",
+    "stops": 2,
+    "byGroup": {
+     "existing": 2,
+     "new": 0
+    },
+    "byRole": {
+     "suggested": 2
+    },
+    "cities": {
+     "MILANO": 2
+    },
+    "totals": {
+     "driveMin": 41.4,
+     "visitMin": 60,
+     "waitMin": 0,
+     "breakMin": 0,
+     "returnMin": 35.6,
+     "totalMin": 137,
+     "availableMin": 780,
+     "bufferMin": 643,
+     "totalKm": 54
+    },
+    "hopKmMax": 16.9,
+    "hopKmAvg": 11.6,
+    "utilizationPct": 8,
+    "excludedByReason": [
+     [
+      "fuori dal territorio autorizzato",
+      25
+     ],
+     [
+      "ordine recente (N giorni < N)",
+      5
+     ],
+     [
+      "nessun ordine valido verificato (mai acquirente)",
+      1
+     ]
+    ],
+    "filled": 0,
+    "stopsAnon": [
+     {
+      "n": 1,
+      "key": "cust:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "07:30",
+      "dep": "07:00",
+      "travelMin": 29.7,
+      "km": 16.9,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": 39,
+      "lunch": 0,
+      "lat": 45.47,
+      "lng": 9.21
+     },
+     {
+      "n": 2,
+      "key": "cust:…",
+      "city": "MILANO",
+      "role": "suggested",
+      "group": "existing",
+      "arr": "08:11",
+      "dep": "08:41",
+      "travelMin": 11.7,
+      "km": 6.3,
+      "waitMin": 0,
+      "visitMin": 30,
+      "daysSinceOrder": 97,
+      "lunch": 0,
+      "lat": 45.51,
+      "lng": 9.25
+     }
+    ]
+   },
+   "lastRequestId": "p4b-mv450ruf-10"
+  },
+  {
+   "scenario": "ADMIN",
+   "adminChecks": [
+    200,
+    null,
+    "forbidden_session"
+   ]
+  },
+  {
+   "scenario": "AI",
+   "status": "needs_clarification",
+   "metrics": {
+    "durationMs": 1691,
+    "crmQueries": 3,
+    "aiCalls": 1,
+    "routingCalls": 0,
+    "aiPromptTokens": 888,
+    "aiCompletionTokens": 49,
+    "aiMs": 926
+   },
+   "message": "Non ho riconosciuto la richiesta. Indica zona (comune o provincia), tipo di clienti e giorno del giro."
+  }
+ ]
+}

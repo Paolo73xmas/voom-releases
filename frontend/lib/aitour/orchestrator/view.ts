@@ -39,3 +39,7 @@ export function assertSnapshot(s: ServerSnapshot, request: RequestEnvelope): voi
 export function definitivePlan(snapshot: ServerSnapshot | null, unconfirmed = false): PlanView | null {
   return !unconfirmed && snapshot?.status === 'ready' ? snapshot.plan : null;
 }
+/** An estimated plan may be shown only as a non-confirmable draft, never as a ready plan. */
+export function visibleServerPlan(snapshot: ServerSnapshot | null, unconfirmed = false): PlanView | null {
+  return !unconfirmed && snapshot && ['ready', 'planning'].includes(snapshot.status) ? snapshot.plan : null;
+}

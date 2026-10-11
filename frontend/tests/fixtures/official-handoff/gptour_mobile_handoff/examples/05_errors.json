@@ -1,0 +1,11 @@
+{
+ "409_revision_conflict": {"http":409,"body":{"status":"failed","errorCode":"revision_conflict","sessionRevision":2,"message":"Revisione non aggiornata (attesa 2).","contractVersion":"1.0","engineVersion":"gptour-orchestrator/0.2.0"}},
+ "403_pilot_not_enabled_gateway_body_ridotto": {"http":403,"body":{"status":"blocked","errorCode":"pilot_not_enabled","error":"GPTour Orchestrator in collaudo: utente non abilitato al pilota","engineVersion":"gptour-orchestrator/0.2.0"}},
+ "403_blocked_contratto_completo": {"http":403,"body":{"status":"blocked","errorCode":"agent_mismatch","message":"La sessione è legata a un altro agente: apri una nuova sessione.","_nota":"altri errorCode: forbidden_role, forbidden_agent, forbidden_session, agent_settings_unavailable, territory_unavailable"}},
+ "422_failed": {"http":422,"body":{"status":"failed","errorCode":"routing_unavailable","message":"Servizio di calcolo percorsi non disponibile (...): nessun piano generato, riprova tra poco."}},
+ "401": {"http":401,"body":{"error":"token non valido"}},
+ "400_identita_nel_payload": {"http":400,"body":{"error":"campo role non ammesso nel payload: identità dall'autenticazione","contractVersion":"1.0"}},
+ "400_sonda_utente_abilitato": {"http":400,"richiesta":{"contractVersion":"1.0"},"body":{"error":"sessionId non valido","contractVersion":"1.0"}},
+ "500": {"http":500,"body":{"status":"failed","error":"errore interno orchestratore","detail":"..."}},
+ "503": {"http":503,"body":{"error":"gptour-orchestrator non attivo (fase di collaudo isolato)","engineVersion":"gptour-orchestrator/0.2.0"}}
+}

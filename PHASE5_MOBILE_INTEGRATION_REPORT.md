@@ -1,5 +1,104 @@
 # GPTour Orchestrator — Fase 5 MOBILE
 
+## Consegna aggiornata dopo handoff API 1.0 — 11 ottobre 2026
+
+**Adeguamento client e collaudo isolato completati nei casi verificati. Collegamento live intenzionalmente SPENTO.**
+Questo aggiornamento prevale sulle sezioni storiche più sotto: l'handoff non è più mancante e il binding non è più `null`. Non equivale a certificazione della Edge v6 reale né di Android/iPhone fisici.
+
+### A. Fonte, Git e perimetro
+- Pacchetto ufficiale: `gptour-orchestrator-mobile-handoff-2026-10-11.zip`, SHA256 `4be8cc369258536939d5752f9c86128c42f1bb2b78c3f4bd452456d1397450f6`, 26 file estratti separatamente. Il codice incluso è stato letto, **non eseguito/importato come implementazione mobile**.
+- Fonte prevalente: `MOBILE_API_HANDOFF.md`, contratto1.0, engine `gptour-orchestrator/0.2.0`. Reference web analizzata, non trapiantata. Versione pubblicata v6 e risultati web dichiarati nell'handoff, non verificati con richieste reali.
+- Copia documenti/esempi/fixture anonimizzate: `frontend/tests/fixtures/official-handoff/gptour_mobile_handoff/`. Manifest SHA256 dei sette esempi JSON confrontato con gli originali estratti: PASS.
+- Branch locale `main`, autorizzato; ultimo HEAD letto durante questa verifica: `f1e0e8762625a91233f895126955ef7b382d1881`. `879333badd5821c1fd5572ed54781818a2e6a3a7` è suo antenato (`merge-base --is-ancestor`, exit0). Non è una perdita della base conflict: HEAD include la predisposizione successiva.
+- Nessun remote/upstream/pushurl configurato localmente. Nessun nuovo controllo remoto in questa fase; SHA remoti della sezione storica sono riferimenti datati, non certificazione aggiornata. Destinazione futura ammessa soltanto **`origin/conflict_170826_1303`**, fast-forward, previa autorizzazione; mai main remoto/force/merge.
+- Nessuna operazione Git write manuale, nessun push/merge/OTA/pubblicazione. Nessun cambiamento Supabase, Edge, DB, RLS, authStore, backend, manifest/lockfile/env/Metro.
+- Controllo byte-per-byte rispetto a `f1e0e876`: **10011 file tracciati frontend/backend**, esclusi i moduli Orchestrator e il layout deliberatamente modificati, nessuna differenza inattesa. GPTour legacy e tutte le sue correzioni commerciali preservati.
+
+### B. Matrice contratto → implementazione mobile
+
+| Funzionalità prevista | Stato mobile | Compatibilità/API1.0 | Modifica effettuata / residuo |
+|---|---|---|---|
+| Envelope/JWT/identità | Implementato | Verifica offline PASS | Client Supabase esistente, whitelist, no ruoli/service_role, nessuna nuova auth |
+| Sonda pilota | Implementata, dormiente | Body solo contractVersion;400/403/503 PASS | Probe prima di sessione; flag pilota non abilitato |
+| Otto azioni | Implementate | Encoding ufficiale PASS | Obbligo planId per get_plan; `propose_reschedule`, key e optionId esatti |
+| Sessioni/revisioni | Implementato | PASS nei casi testati | UUID, una richiesta in volo, persistenza prima dell'invio, revisione server |
+| Retry idempotente | Implementato | PASS rete/5xx e replay422 | Body/ID identici; nuovo turno solo con nuovo invio/ID |
+| Conflitto409 | Implementato | PASS | Revisione server anche0, niente replay automatico, piano/domande obsolete rimossi |
+| Transcript/ripresa | Implementato | PASS | Locale24h, niente piano/geometry salvati; recupero server con planId, mai ricostruzione da chat |
+| Logout/account/target | Implementato | Unitari PASS | Pulizia cache locale tramite listener indipendente, rigetto scritture tardive, nuova sessione al cambio agente |
+| Target amministrativo | Implementato | Campo ammesso solo UI admin/admincustom | UUID esplicito; nessuna lista/allowlist locale inventata; autorizzazione server |
+| Sei stati e messaggi | Implementati | Unitari + UI isolata PASS | planning mostra bozza stimata, terminali senza piano |
+| Criteri/domande/follow-up | Implementati | PASS | Criteri e decisioni pendenti visibili; aggregate e individuali senza autoselezione |
+| Piano daily/multi-day | Implementato | PASS su fixture sintetiche tipizzate | Sequenze, tempi, km, rientro, pernottamenti, avvisi senza ricalcolo |
+| Mappe | Renderer RN predisposto | Coordinate/order/unitari PASS | LAT,LNG, geometry server; assenza geometry solo linea visuale esplicitamente non stradale |
+| Dettagli/esclusioni | Implementati | PASS | Ruolo/gruppo, ultimo ordine, pausa/attesa, fuori finestra, esclusi su richiesta |
+| Conferma esplicita | Implementata | UI PASS, zero chiamate aggiuntive | Solo locale, solo ready verified; non salva tour o appuntamenti |
+| P1 Pirone esatto | NON certificato | Fixture ufficiale incompleta | Non inventate13tappe/geometria; serve piano completo o live autorizzato |
+| Legacy | Invariato | Regressioni PASS | Nessun fallback automatico; pulsante esplicito modalità separata |
+
+**Autorità unica:** nessun nuovo parser commerciale/geografico/date, caricamento pool, routing OSRM client, ordinamento, riempimento giornata o calcolo di fattibilità. Le trasformazioni sono esclusivamente di visualizzazione. Conferma locale non equivale a creazione tour.
+
+### C. Dettagli di recovery e scelte conservative
+- 403 `pilot_not_enabled` ridotto non pretende campi mancanti e non conferma una revisione nuova. Gli altri403 e i422 completi passano dal decoder strutturale.
+- Errori400/401 non vengono ritentati automaticamente.503/500/rete mantengono l'operazione pendente per retry esplicito identico.
+- Replay422 conserva la risposta memorizzata senza duplicare il transcript; per tentare un nuovo turno l'utente invia un nuovo messaggio/azione. Non viene simulato un falso successo del replay.
+-409 non usa il vecchio get_plan come se fosse l'ultimo piano autorevole: aggiorna revisione, invalida piano/opzioni precedenti e richiede un nuovo invio esplicito. Nessun rebase automatico.
+- Il recupero get_plan verifica anche che il planId restituito sia quello richiesto; ammette revisione del piano precedente alla revisione corrente della sessione, mai futura.
+- La cache locale non contiene geometry/tappe. TTL24h locale; richieste con esito incerto non vengono scartate automaticamente alla scadenza. Durata cache/TTL server non documentata: gap dichiarato.
+- Nuova conversazione genera un nuovo sessionId senza chiamare reset server. Se abbandona una richiesta incerta, la UI avverte che non annulla l'eventuale elaborazione server.
+- Nessun polling inventato: planning è una bozza stimata, non un indicatore di job in background garantito.
+
+### D. Test finali effettivamente eseguiti
+
+| Verifica | Esito |
+|---|---|
+| Test Orchestrator precedenti (astrazione interna) |32 PASS|
+| Nuovi test attraverso binding ufficiale/lifecycle/condizioni limite |26 PASS, 5 suite|
+| Totale Orchestrator |**58 PASS**, 8 suite|
+| Tutte le regressioni applicative, escluso SOLO build_lockfile.test.ts |**426 PASS**, 43 suite|
+| Suite integrale |**432 PASS / 6 FAIL / 438**, 44 suite|
+| TypeScript tsc --noEmit |PASS|
+| Lint mirato codice/test toccati |PASS; avvisi introdotti nei nuovi file rimossi|
+| Legacy/config/backend rispetto a baseline |Invariati fuori moduli Orchestrator/layout|
+| Emulatore Android / simulatore iOS / device fisici |**NON ESEGUITI**|
+| Supabase/Auth/Edge/CRM reali |**NON CHIAMATI**|
+
+I sei errori preesistenti sono elencati separatamente in `test_reports/PHASE5_LOCKFILE_BASELINE.md`; nessuna modifica a lockfile o test per nasconderli. **Non dichiaro verde la suite integrale.** Le suite GPTour acquisti e ultimi ordini sono incluse nella regressione finale; i loro wrapper Vitest restano un test ciascuno, non confondere numero di test con asserzioni interne.
+
+**Unitari:** request esatte/8azioni, limiti payload, probe,403ridotto/completo,422,409,400/401/500/503, errori malformati, coordinate, single/multi-day, planId/revisioni, ripresa,TTL, target, cleanup logout e scrittura locale in volo. Auth/functions sono sostituite SOLO nei test, non nell'app operativa.
+
+**Browser mobile isolato (390×844 e320×568):** UI + binding + trasporto + coordinatore reali, risposte wire iniettate; percorso chiarimento ufficiale → decisione singola follow-up → planning stimato non confermabile → ready → giorno2/esclusi/conferma locale senza chiamate.503 replay body identico;409 revisione20 e invio esplicito nuovo; nuova conversazione; infeasible/blocked/failed senza piano; require/exclude_stop con key esatta; nessun overflow orizzontale. Nessuna richiesta business reale rilevata.
+
+Harness riutilizzabile SOLOtest: `frontend/tests/fixtures/OrchestratorHarness.tsx`. La route temporanea `/phase5-offline-check` è stata **rimossa**. Flag operativo mai attivato; gateOFF verificato separatamente nell'app reale. Il browser non prova Apple/Google Maps, tastiera o lifecycle nativi.
+
+Evidenze:
+- `test_reports/phase5_handoff_final/{tsc,lint,vitest-app,vitest-full}.log`.
+- `test_reports/iteration_71.json`: primo run, gap copertura ufficiale ancora aperto in quel momento.
+- `test_reports/iteration_72.json`: aggiunge12 test; il limite UI del report è superato dai replay main seguenti, senza attivare il pilota.
+- `/root/.emergent/automation_output/20261011_201229/`: percorso principale/retry/conflitto/conferma.
+- `/root/.emergent/automation_output/20261011_201424/`: stati terminali/azioni tappe/320px.
+- `test_reports/phase5_handoff_final/verification.json`: riepilogo consolidato.
+- Verifica finale dopo riavvioExpo: `/root/.emergent/automation_output/20261011_201927/`, gateOFF/inputreadonly/senddisabled/harnessassente PASS, zero richieste business. Expo RUNNING, bundle completato. Log server contiene warning deprecazione shadow e messaggi `Cannot pipe to a closed or destroyed stream`; nessun guasto del rendering riprodotto nell'ultima prova. Non sono stati modificati Metro o infrastruttura per tali messaggi.
+
+### E. File interessati dall'adeguamento all'handoff
+Nuovi moduli: `lib/aitour/orchestrator/{binding,wire-contract,wire-actions,wire-response,presentation,lifecycle}.ts`, `hooks/useOrchestratorAccess.ts`, `components/aitour/orchestrator/{ServerQuestion,TargetAgentControl}.tsx`.
+
+Aggiornati i moduli Fase5 esistenti: `gptour-orchestrator-api.ts`, `orchestrator/{contract,errors,request,session,storage,view}.ts`, `hooks/useOrchestratorSession.ts`, `app/gptour-orchestrator.tsx`, `OrchestratorScreen.tsx`, `ServerPlan.tsx`. `_layout.tsx` aggiunge soltanto il listener di pulizia cache locale Orchestrator; authStore non modificato.
+
+Test aggiunti: `orchestrator_official_{contract,session,ui_harness,edges,lifecycle}.test.ts`, fixture sintetica tipizzata, harnessUI, documenti/esempi ufficiali e manifest. Il test denominato `ui_harness.test.ts` è una prova del coordinatore/modello, **non** una prova del renderer; quella è documentata dai replay browser separati.
+
+### F. Cosa resta prima del live
+Nessuna incompatibilità bloccante riprodotta nei casi offline. Restano: piano P1 completo/parità esatta, versione/autorizzazioni/risposte reali della Edge, durata cache server e QA nativo Android/iPhone. Dettaglio in **`PHASE5_MOBILE_CONTRACT_GAPS.md`**.
+
+Piano separato pronto: **`PHASE5_MOBILE_LIVE_TEST_PLAN.md`**, con precondizioni/consenso anche per sessioni tecniche lato server, budget proposto, matrice emulatori/device, stop su scritture CRM o discrepanze, confronto web/mobile e protezione dati.
+
+**STOP rispettato:** nessuna chiamata live, push, merge, OTA o pubblicazione. Attendere autorizzazione utente al piano reale. Eventuale miglioramento successivo: selettore amministrativo leggibile al posto dell'UUID manuale, usando solo una fonte autorizzata e senza replicare i permessi server.
+
+---
+## ARCHIVIO — predisposizione iniziale prima dell'handoff
+
+**Le sezioni seguenti sono conservate come storico. Le affermazioni “handoff mancante”, “binding null” e i vecchi conteggi non descrivono più la consegna attuale.**
+
 ## Stato della consegna
 
 **Predisposizione client isolata implementata e testata. Integrazione operativa NON attivata e NON dichiarata completata.**

@@ -1,4 +1,42 @@
-# Fase 5 — richieste di integrazione per AI WEB (non difetti server dimostrati)
+# Fase 5 — compatibilità API 1.0 e gap residui
+
+## Stato aggiornato dopo l'handoff ufficiale — 11 ottobre 2026
+
+**Handoff ricevuto, binding ufficiale implementato e verificato offline. Pilota operativo spento.**
+Fonte prevalente: `MOBILE_API_HANDOFF.md` del pacchetto ufficiale; `CLIENT_CONTRACT.md` precedente non prevale. Copia consultabile in `frontend/tests/fixtures/official-handoff/gptour_mobile_handoff/`.
+Non sono state effettuate chiamate Supabase/Auth/Edge reali. Nessun difetto del server pubblicato è dimostrato da questi test.
+
+### Chiusura punto per punto delle richieste iniziali
+
+| Punto storico | Esito / adeguamento mobile | Stato |
+|---|---|---|
+| 1. Envelope/versione/revisione/ID | Versione stringa `1.0`, revisioni intere non negative, ID ≤128, messaggio ≤2000; whitelist e validazione prima dell'invio | Risolto offline |
+| 2. Otto azioni | `type`, campi esatti; `get_plan.planId` obbligatorio; follow-up usa `propose_reschedule` e non `reschedule`; nessuna scelta automatica | Risolto offline |
+| 3. Risposta/stati/errori | Decoder strutturale completo; verifica session/request/plan ID e revisioni; 403 gateway ridotto distinto dai corpi completi | Risolto offline |
+| 4. Piano/metriche/giorni | `plan`/`days[]`, minuti/orari, totali, ruoli/gruppi/ordini/pause, rientro e pernottamenti resi senza pianificare | Risolto offline |
+| 5. Geometria/routing | `[lat,lng]` esplicito; conversione RN, ordine ricevuto; geometry vuota → sole connessioni visuali etichettate, come §6 handoff | Risolto offline; resa nativa da collaudare |
+| 6. Idempotenza/reset | Stesso body/requestId per retry rete/5xx e replay422; reset è un turno server; nuova conversazione è reset locale con nuova sessione | Implementato; durata cache server non specificata |
+| 7. Conflitto409 | Legge `sessionRevision` anche0; scarta richiesta obsoleta/piano, persiste revisione, nessun replay automatico; invio esplicito con nuovoID | Risolto offline |
+| 8. Sessioni/TTL/transcript | Transcript locale24h, mai ricostruzione piano; `get_plan` solo con planId; nuova sessione al cambio target, pulizia al logout/account switch | Risolto offline; TTL server non specificato |
+| 9. Target/pilota | Campo target solo UI admin/admincustom e omesso per giro proprio; UUID esplicito, autorizzazione server. Probe senza sessione dietro flag spento:400/403/503 | Risolto offline; account reali non verificati |
+| 10. Versione/fixture/operatività | Contratto1.0 ed engine0.2.0 dai documenti; conferma solo locale; nessun salvataggio tour API | Versione live e parità Pirone non verificate |
+
+### Incompatibilità e limiti ancora aperti
+
+1. **Nessuna incompatibilità bloccante riprodotta nei casi API1.0 offline verificati.** Questo non certifica il servizio v6 attualmente installato né tutti gli stati possibili in produzione.
+2. **Fixture P1 incompleta:** l'estratto ready contiene segnaposto e non l'intero piano13tappe/2704punti. Il decoder lo rifiuta correttamente; nessuna geometria reale inventata per far passare i test. Per parità completa occorre JSON anonimizzato integrale oppure collaudo live autorizzato.
+3. **Durata cache idempotenza/TTL server non indicata.** TTL24h riguarda il transcript client; una richiesta incerta conserva il body per evitare nuove operazioni involontarie. Prima di prove di retry a lunga distanza va chiarita la finestra server.
+4. **422: precisazione documentale.** §4 suggerisce nuovo requestId per un nuovo turno, checklist§9 consente replay stessoID. Mobile distingue replay identico (può restituire lo stesso errore memorizzato) da nuovo invio esplicito/nuovoID. Test corretto per non simulare un falso successo del replay422.
+5. **Nessuna API history/list o polling definita:** non inventati endpoint né polling. `planning` è una bozza stimata visualizzabile, non promessa di completamento automatico.
+6. **Android/iPhone:** mappe native, tastiera, lifecycle/process kill e sessione reale restano non certificati. `adb`/`xcrun` assenti.
+7. **Sei failure lockfile preesistenti:** fuori contratto, fuori perimetro; vedere rapporto separato `test_reports/PHASE5_LOCKFILE_BASELINE.md`.
+
+Piano successivo, **non eseguito**: `PHASE5_MOBILE_LIVE_TEST_PLAN.md`. Nessuna attivazione senza nuovo consenso.
+
+---
+## Archivio: richieste iniziali prima della ricezione dell'handoff
+
+Le righe seguenti sono lo storico della predisposizione precedente, NON lo stato attuale. Sono conservate per tracciabilità.
 
 MOBILE_API_HANDOFF.md non presente nel workspace al controllo iniziale; utente conferma che è in preparazione.
 Funzione `gptour-orchestrator` v6 e API1.0: dichiarate dall'utente, **nessuna chiamata reale autorizzata/eseguita**.

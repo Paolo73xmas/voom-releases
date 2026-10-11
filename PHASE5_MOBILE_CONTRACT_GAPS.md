@@ -1,5 +1,12 @@
 # Fase 5 — compatibilità API 1.0 e gap residui
 
+## Verifica finale P1 — aggiornamento input e provenienza v6
+- **v6 attiva confermata direttamente dall'utente su Supabase**, con contratto1.0/engine0.2.0. Il client non ha ripetuto sonde o test live; resta distinta la fonte utente dall'evidenza HTTP precedente.
+- La fixture completa è stata annunciata e allegata, ma il file ricevuto è **HTML1525byte invece di ZIP/JSON**. Nessun dato completo dei tre turni è estraibile; il gap di parità esatta13tappe/2704coordinate e rendering resta **APERTO per input non valido**, non un'incompatibilità dimostrata del client.
+- Originale mantenuto solo in temporaneo privato fuori repository per controllarne formato/digest, evidenze solo aggregate e pulizia a fine controllo. Nessuna ricostruzione del piano o esecuzione dello script HTML.
+- Rapporti: `PHASE5_MOBILE_PRIVATE_FIXTURE_REPORT.md` e `test_reports/phase5_private_fixture_intake.json`. Installazione privata su device specificata nella guida nativa; nessuna build o prova nativa eseguita.
+- Restano inoltre cache/TTLserver, UI/lifecycle/mappe native e i6failurelockfile preesistenti. Nessuna nuova chiamata Supabase.
+
 ## Aggiornamento dopo primo live autorizzato — 11 ottobre2026
 - Login/identità Pirone e accesso pilota sul Supabase principale verificati realmente,7invocazioniEdgecomplessive.
 - API1.0/engine0.2.0 osservati nei percorsi reali: chiarimento follow-up, include_all,ready,secondoturno,idempotenza,get_plan,409. Nessuna incompatibilità bloccante del client riprodotta in questi casi.

@@ -1,5 +1,17 @@
 # GPTour Orchestrator — Fase 5 MOBILE
 
+## Verifica finale offline P1 — input non utilizzabile
+
+L'utente ha confermato direttamente su Supabase v6 attiva, contratto1.0 ed engine0.2.0; **conferma di provenienza utente, nessuna nuova chiamata eseguita**.
+
+Il nuovo allegato con estensioneZIP contiene **1525byte di HTML di caricamento**, non un archivio né JSON: il confronto esatto dei tre turni,13tappe/identificativi,2704coordinate, orari/totali/pausa/follow-up e relativo rendering è **NON ESEGUITO**, bloccato in acquisizione. Non viene sostituito con risultati live precedenti, fixture sintetiche o una rigenerazione.
+
+Nuovo rapporto solo aggregato: **`PHASE5_MOBILE_PRIVATE_FIXTURE_REPORT.md`**, evidenza `test_reports/phase5_private_fixture_intake.json`. Nessun dato identificativo/coordinate copiato dall'allegato nel repository o bundle; gestione temporanea privata con pulizia documentata. Serve il vero ZIP binario o i JSON completi originali.
+
+Procedura materiale ampliata in **`PHASE5_MOBILE_NATIVE_TEST_INSTRUCTIONS.md`**: variante test separata, APKAndroid interno e IPAiPhone ad hoc; EASproposto come servizio esterno di build oppure tool locali, senza store e senza aggiornare gli agenti. Nessuna build/configurazione applicata. Profilo developmentattuale iOSsimulatortrue non vale per un iPhone; firma/UDID/mappeAndroid/accessoaccount e lockfile da predisporre/verificare dopo consenso.
+
+**Native Android/iPhone ancora NON ESEGUITI. Nuove chiamate live0; registro storico invariato a7. Motore, legacy, env/config e branch remoto non modificati; nessun push/merge/build/OTA/pubblicazione.**
+
 ## Aggiornamento: primo collaudo live autorizzato concluso — 11 ottobre2026
 
 **7/25 invocazioni Edge, tutte con risposta; autentica Pirone reale riuscita una sola volta.** Moduli effettivi del client (trasporto/binding/coordinatore/storage isolato) eseguiti in Node contro Supabase principale. Domanda follow-up, include_all, piano, secondo turno ore08, idempotenza, recupero get_plan e conflitto409 superati.

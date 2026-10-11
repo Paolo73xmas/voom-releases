@@ -1,5 +1,16 @@
 # GPTour Orchestrator — Fase 5 MOBILE
 
+## Verificatore offline trasferibile — PRONTO, P1 reale ancora da eseguire
+
+Su scelta esplicita dell'utente è pronto un verificatore da eseguire **nel workspace Web che conserva gli originali**, senza trasferire i dati reali a Mobile:
+- `tools/gptour-offline-verifier/gptour-p1-verify.cjs`: unico sorgente Node18+ senza dipendenze/rete.
+- `tools/gptour-offline-verifier/TRANSFER_TO_AI_WEB.md`: **istruzioni e codice completo in testo**, senza necessità di accesso al workspace Mobile.
+- Riutilizza10funzioni/moduli puri del client effettivo e confronta integralmente le13tappe/ordine/key,2704tuple,tempi/79,7km/pausa/follow-up/avvisi e cambio07→08; rapporto solo aggregato e codice di uscita nonzero per anomalie.
+- **50 test sintetici del tool PASS;476 regressioni applicative PASS** (solo lockfile storico escluso), TypeScript/lint e prova del testo trasferito PASS. Nessuna fixture reale usata, nessun originale distribuito.
+- **Non certifica rendering nativo/browser né autenticità del JSON.** Il PASS della fixture reale resta subordinato al report che produrrà l'AI Web.
+
+Rapporto completo: **`PHASE5_MOBILE_OFFLINE_VERIFIER_REPORT.md`**. Nessuna nuova chiamata live, contatore7invariato, nessuna modifica al codice operativo/motore/legacy/config, nessuna build nativa o pubblicazione. Attendere solo esiti aggregati dell'esecuzione esterna.
+
 ## Verifica finale offline P1 — input non utilizzabile
 
 L'utente ha confermato direttamente su Supabase v6 attiva, contratto1.0 ed engine0.2.0; **conferma di provenienza utente, nessuna nuova chiamata eseguita**.

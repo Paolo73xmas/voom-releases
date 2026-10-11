@@ -104,9 +104,23 @@
 
 user_problem_statement: "Completare GPTour Orchestrator Mobile con handoff API1.0 ufficiale. Utente conferma solo test isolati, nessuna chiamata Supabase/Auth/Edge/CRM reale, nessuna scrittura CRM, push, merge, OTA/pubblicazione. Preservare legacy e base conflict_170826_1303, main locale autorizzato. Aggiornare report/gap, separare 6 failure lockfile, preparare piano Android/iPhone senza eseguirlo."
 
+phase5_offline_verifier_current:
+  user_authorized: "Standalone textual offline verifier to run at AI Web where originals reside; aggregate-only return, NO live/native/build/Git publishing"
+  ready: true
+  files: "tools/gptour-offline-verifier/gptour-p1-verify.cjs and TRANSFER_TO_AI_WEB.md (full code+instructions)"
+  runtime: "Node18+ no dependencies; 10 actualpureMobilemodules embedded/transpiled, no Supabase/Auth/network"
+  results: "50 synthetic tool testsPASS;476appregressionsPASS44files excludingonlyhistoricalbuild_lockfile6fails;TSC/lintPASS; codeextractedfromtextpassedemptycwdtest"
+  privacy: "No realdataused, noIDs/coordinates/rawnames/questions/warnings/pathsreturned; onlyaggregate. Originalfilesreadonly,reportexclusive0600,synthetictmpcleaned."
+  real_p1: "NOT_EXECUTED awaitingexternalAIWebaggregate. NO nativerendering/browserclaim."
+  reports: "PHASE5_MOBILE_OFFLINE_VERIFIER_REPORT.md,test_reports/offline_verifier/verification.json. iteration76interim41tests,mainfinal50."
+  exit_codes: "0PASS,1validationFAIL,2input/outputERROR"
+  next: "Forward complete SOURCE TEXT handoff toAIWeb, run private3originalJSON, returnreport+exitcodeONLY. No originalfixturetransferrequired."
+
 phase5_private_fixture_current:
   user_authorized: "ONLY offline, private temporary input outside repository, aggregate-only evidence and delete temporary copies after evidence saved"
   outcome: "BLOCKED_INVALID_ARCHIVE_CONTENT"
+  uploads_checked: 2
+  latest_upload: "New URL, exact same1525byteHTMLandSHA asfirst; no original3turnJSON; privatecopycleanup inaggregateevidence"
   actual_input: "1525byte HTML loading document, not ZIP or JSON; no embedded fixture/archive/downloadlink"
   exact_fixture_tests: "NOT_EXECUTED missing valid original three-turn JSON; never substitute earlier live data/synthetic fixtures"
   live_calls: 0
@@ -114,7 +128,7 @@ phase5_private_fixture_current:
   v6_status: "Active confirmed directly by user, no new verification calls"
   evidence: "PHASE5_MOBILE_PRIVATE_FIXTURE_REPORT.md; test_reports/phase5_private_fixture_intake.json (aggregate, cleanup status recorded)"
   native_guide: "PHASE5_MOBILE_NATIVE_TEST_INSTRUCTIONS.md expanded with isolated internal APK/ad-hocIPA externalEAS orlocaltools;NO builds/configchanges"
-  next: "Need real ZIP binary or complete original JSON for3turns. No new live calls or build/distribution without new authorization."
+  next: "Need verifiedprivatechannel foractualoriginalZIP/3turnJSON or agreedofflineclientverificationatsourcewithaggregateonlyreturn. CurrentattachmentsarePublicartifacts;donotrequestrealsensitivepayloadthereorrepeatpreviewupload. Noneofalternativesimplemented. No new live calls or build/distribution."
 
 phase5_first_live_authorization:
   user_authorized: true

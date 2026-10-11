@@ -1,6 +1,8 @@
 {
   "scope": "private offline P1 fixture intake; aggregate-only evidence",
   "outcome": "BLOCKED_INVALID_ARCHIVE_CONTENT",
+  "distinct_uploads_checked": 2,
+  "latest_upload_content_identical_to_previous": true,
   "downloaded_bytes": 1525,
   "sha256": "f5d0504fdf03c769a0372b11b638d2d19fbd4520974f0b4f51ff5982c79c341e",
   "zip_valid": false,
@@ -21,10 +23,10 @@
   "android_native": "NOT_EXECUTED",
   "iphone_native": "NOT_EXECUTED",
   "v6_status_source": "user independently confirms active v6, contract1.0, engine0.2.0; no new agent API query",
-  "temporary_cleanup": "COMPLETE_AFTER_AGGREGATE_EVIDENCE_VALIDATION",
-  "temporary_files_deleted": 1,
+  "temporary_cleanup": "COMPLETE_FOR_BOTH_UPLOADS_AFTER_AGGREGATE_EVIDENCE_VALIDATION",
+  "temporary_files_deleted": 2,
   "private_directory_absence_verified": true,
   "application_or_native_configuration_modified": false,
-  "next_input": "valid original ZIP or original complete JSON for all three turns",
+  "next_input": "valid original ZIP/three-turn JSON through a verified private channel, or agreed offline verification where originals reside; do not repeat public preview upload",
   "builds_push_merge_ota_publication": "NOT_EXECUTED"
 }

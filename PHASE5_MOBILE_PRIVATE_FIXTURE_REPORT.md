@@ -1,6 +1,11 @@
 # Fase5 Mobile — ricezione fixture P1 e verifica finale offline
 
+## Evoluzione concordata: nessun ulteriore trasferimento degli originali
+L'utente ha scelto di eseguire la verifica **dove la fixture è già conservata**. È pronto `tools/gptour-offline-verifier/TRANSFER_TO_AI_WEB.md`, contenente istruzioni e intero codice di un verificatore autonomo Node. Nessun dato reale incluso; tornano solo esiti aggregati. Rapporto di consegna: `PHASE5_MOBILE_OFFLINE_VERIFIER_REPORT.md`. **I controlli sulla fixture reale restano NON ESEGUITI qui**, mentre i test sintetici del verificatore sono passati.
+
 ## Esito attuale: BLOCCATO DAL CONTENUTO DELL'ALLEGATO
+
+**Secondo invio verificato:** il nuovo allegato, ricevuto tramite un URL diverso, contiene esattamente gli stessi1525byte e lo stesso SHA256 del precedente. È nuovamente HTML, non un nuovo ZIP. Nessuna delle verifiche sul JSON originale può quindi iniziare. Il riferimento di download è diverso, il contenuto no.
 
 L'allegato denominato `gptour-p1-pirone-real-fixture-2026-10-11 (1).zip` è stato scaricato una sola volta in una directory temporanea privata esterna al repository. **I byte ricevuti sono un documento HTML di caricamento, non un archivio ZIP né un JSON di fixture.**
 
@@ -45,7 +50,7 @@ Appena disponibile il file valido: confronto di uguaglianza su tutti gli element
 - Nessun UUID cliente/sessione o coordinata copiato in questo documento, nei nuovi test o nel bundle.
 - Nessuna esecuzione dei contenuti caricati, nessun tentativo di seguire pagine/script per ottenere dati alternativi.
 - Evidenze conservate: formato, dimensione, digest e stati della matrice, non il documento HTML.
-- **Pulizia completata:** dopo aver verificato il salvataggio di digest e risultati aggregati, eliminati l'unico file scaricato e la relativa directory temporanea privata. Assenza del percorso verificata. Nessun originale trattenuto nel repository, bundle o directory servita pubblicamente.
+- **Pulizia completata per entrambi gli invii:** le due copie temporanee e le rispettive directory private sono state eliminate dopo il salvataggio delle evidenze aggregate. Assenza di entrambi i percorsi verificata; nessun originale trasferito al repository, bundle o directory servita pubblicamente.
 
 ## Stato v6 e installazione sui telefoni
 L'utente comunica di aver verificato direttamente su Supabase che **v6 è attiva**, con contratto1.0 ed engine0.2.0. Questa conferma ha **provenienza utente**, non deriva da ulteriori chiamate del collaudo Mobile. Le sette chiamate precedenti non sono state ripetute.
@@ -54,5 +59,7 @@ Procedura di installazione privata e prerequisiti reali aggiornati in `PHASE5_MO
 
 ## Input necessario per proseguire
 Occorre **il vero ZIP binario esportato dall'AI Web**, oppure il/i JSON originali contenenti le tre risposte complete. Non basta rinominare questa pagina HTML in `.zip` o `.json`. Il nuovo file verrà nuovamente verificato prima di essere estratto o usato.
+
+Non ripetere il medesimo metodo di download dall'anteprima: prima verificare il binario nel workspace sorgente. I due allegati di questa conversazione sono stati forniti come **Public artifacts**, quindi questo recapito non è stato certificato come autenticato. Non vi si deve trasferire la fixture reale in contrasto con il vincolo di riservatezza. Alternative da concordare: trasferimento tramite un canale privato effettivamente verificato, oppure esecuzione di un verificatore offline del client presso il workspace/computer che possiede già gli originali, riportando qui solo esiti aggregati. Nessuna di queste alternative è stata eseguita o predisposta senza accordo.
 
 STOP: nessuna nuova chiamata live, modifica motore/legacy, push, merge, build, OTA o pubblicazione.

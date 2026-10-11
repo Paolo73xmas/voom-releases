@@ -1,5 +1,10 @@
 # Fase 5 — compatibilità API 1.0 e gap residui
 
+## Nuova modalità concordata: confronto presso AI Web
+È pronto il verificatore autonomo `tools/gptour-offline-verifier/gptour-p1-verify.cjs`, con sorgente completo trasferibile in `TRANSFER_TO_AI_WEB.md`. Non richiede dati reali in questo workspace o nel bundle dell'app. Riutilizza i moduli puri effettivi del client;50test sintetici e476regressioni applicative superati.
+
+**Gap P1 reale ancora APERTO:** il tool deve essere eseguito dall'AI Web sui propri originali e restituire un aggregato. La preparazione del verificatore e i test sintetici non sono un confronto reale riuscito. Rendering nativo/browser e autenticità della fixture sono esplicitamente fuori dalla prova automatica del modello dati.
+
 ## Verifica finale P1 — aggiornamento input e provenienza v6
 - **v6 attiva confermata direttamente dall'utente su Supabase**, con contratto1.0/engine0.2.0. Il client non ha ripetuto sonde o test live; resta distinta la fonte utente dall'evidenza HTTP precedente.
 - La fixture completa è stata annunciata e allegata, ma il file ricevuto è **HTML1525byte invece di ZIP/JSON**. Nessun dato completo dei tre turni è estraibile; il gap di parità esatta13tappe/2704coordinate e rendering resta **APERTO per input non valido**, non un'incompatibilità dimostrata del client.

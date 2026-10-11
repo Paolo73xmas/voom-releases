@@ -1,0 +1,30 @@
+{
+  "author": "main-agent consolidated verification after harness-only correction",
+  "summary": "First authorized real Pirone test passed using mobile shared modules in Node. No native/UI live testing.",
+  "live": {
+    "result": "PASS",
+    "auth_password_attempts": 1,
+    "auth_password_http": 200,
+    "auth_get_user_attempts": 1,
+    "auth_get_user_http": 200,
+    "edge_limit": 25,
+    "edge_dispatched": 7,
+    "edge_responses": 7,
+    "edge_http_statuses": [400, 200, 200, 200, 200, 200, 409],
+    "checks": ["identity", "pilot access", "new session", "commercial mixed scenario", "follow-up clarification/answer", "server OSRM plan", "second turn with preserved criteria", "revisions1-2-3", "identical-body idempotency", "get_plan recovery without regeneration", "controlled409"],
+    "client_modules_executed": ["createOrchestratorTransport", "APPROVED_ORCHESTRATOR_BINDING", "OrchestratorSession", "SessionStore with isolated storage"],
+    "real_auth_and_edge": true,
+    "ui_live": "NOT_EXECUTED",
+    "android_emulator": "NOT_EXECUTED",
+    "android_physical": "NOT_EXECUTED",
+    "ios_simulator": "NOT_EXECUTED",
+    "iphone_physical": "NOT_EXECUTED"
+  },
+  "itinerary": {"date": "2026-10-12", "stops": 13, "existing": 8, "new": 5, "km": 79.7, "first_start": "07:00", "first_finish": "15:53", "second_start": "08:00", "second_finish": "16:53", "break_minutes": 30, "geometry_points": 2704, "verification": "verified_routing", "routing_source": "osrm", "followups": "Two out-of-area followups warned, not inserted"},
+  "technical_effects": {"observed_sessions": 1, "accepted_turns": 3, "observed_plan_ids": 2, "distinct_sent_request_ids": 5, "sql_row_counts": "NOT_QUERIED", "server_business_write_audit": "NOT_INDEPENDENTLY_PERFORMED", "direct_business_writes": 0},
+  "resolved_harness_issue": {"prior_report": "iteration_74.json", "cause": "JWT-only preflight incorrectly rejected existing opaque publishable key", "auth_calls_before_correction": 0, "edge_calls_before_correction": 0, "fix_scope": "test harness only; no environment/key/account/auth/prod-code changes", "original_evidence_preserved": true},
+  "offline_final": {"dry_guard_tests_passed": 9, "live_macro_test_passed": 1, "app_regression_passed": 426, "app_exclusion": "tests/build_lockfile.test.ts: six unchanged baseline failures documented separately", "tsc": "PASS", "targeted_lint": "PASS", "local_server_arithmetic_audit": "PASS", "secret_scan_artifacts": "PASS"},
+  "remaining": ["native client access and device QA", "full Web P1 fixture exact comparison", "independent deployment-v6 metadata", "cache/TTL semantics for long retries", "optional technical DB row audit"],
+  "evidence": ["/app/PHASE5_MOBILE_LIVE_TEST_REPORT.md", "/app/PHASE5_MOBILE_NATIVE_TEST_INSTRUCTIONS.md", "/app/test_reports/phase5_live_first/live-result.json", "/app/test_reports/phase5_live_first/edge-ledger.json", "/app/test_reports/phase5_live_first/preflight-incident-original.json"],
+  "stop": "Run permanently stopped; do not reset ledger/marker or make more calls without new instructions. No push/merge/OTA/deployment/publication."
+}

@@ -1,5 +1,15 @@
 # Fase 5 — compatibilità API 1.0 e gap residui
 
+## Aggiornamento dopo primo live autorizzato — 11 ottobre2026
+- Login/identità Pirone e accesso pilota sul Supabase principale verificati realmente,7invocazioniEdgecomplessive.
+- API1.0/engine0.2.0 osservati nei percorsi reali: chiarimento follow-up, include_all,ready,secondoturno,idempotenza,get_plan,409. Nessuna incompatibilità bloccante del client riprodotta in questi casi.
+- Piani server reali13tappe/79,7km/2704coordinate ricevuti; **NON equivale al confronto esatto con la fixture Web completa**, ancora attesa. Non ricostruita alcuna geometria artificiale.
+- Rimangono: numero pubblicazionev6 non esposto e non riscontrato viaManagementAPI, durata cache/TTL server, errori/scenari non attraversati live, UI/mappe/lifecycle nativi, auditindipendente delle righe tecniche/assenza mutazioniCRMserver-side.
+- Errore preparazione harness `SUPABASE_ANON_INVALID` dovuto al solo validatore JWT-only: corretto per chiavepublishable senza cambiareenv/chiavi/auth; nessuna chiamata era partita. Credenziali Pirone funzionanti nel successivo unico login reale.
+- Dato nominale tappa6 con caratteri anomali e campi ultimoordine null ricevuti: riportati senza correzioni CRM né deduzioni ulteriori; non classificati come incompatibilitàdelwirecontract.
+
+Riferimento: `PHASE5_MOBILE_LIVE_TEST_REPORT.md`. PilotaOFF; collaudo fermato, serve nuova istruzione per altre chiamate. La sezione offline sotto è mantenuta come storico.
+
 ## Stato aggiornato dopo l'handoff ufficiale — 11 ottobre 2026
 
 **Handoff ricevuto, binding ufficiale implementato e verificato offline. Pilota operativo spento.**

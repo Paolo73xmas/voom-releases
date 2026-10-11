@@ -1,6 +1,25 @@
 # GPTour Orchestrator — piano di collaudo Android/iPhone
 
-**SOLO PIANO. Nessuna prova qui descritta è stata eseguita. Richiede nuova autorizzazione esplicita.**
+**Esito prima fase: CONCLUSA**,7/25Edge, loginPirone reale riuscito, nessun test nativo. Rapporti: `PHASE5_MOBILE_LIVE_TEST_REPORT.md` e istruzioni `PHASE5_MOBILE_NATIVE_TEST_INSTRUCTIONS.md`. L'autorizzazione seguente descrive il perimetro appena eseguito; **non proseguire automaticamente con i18invii residui**. PilotaappOFF, attendere nuove istruzioni.
+
+## Autorizzazione prima fase — 11 ottobre 2026
+
+L'utente ha autorizzato il primo collaudo reale controllato, soltanto per le prove tecnicamente possibili nell'ambiente corrente. **Questo consenso sostituisce il precedente limite proposto per piattaforma: massimo25 invocazioni Edge COMPLESSIVE, inclusi probe, messaggi, azioni, recuperi e retry.** Nessuna chiamata oltre tale limite senza nuovo consenso.
+
+- Progetto principale: `gorwxfzzyzxmxnizmebw`; funzione `gptour-orchestrator`; riferimento v6, contratto1.0. Nessuna modifica al servizio per verificarne la versione. Engine restituito e versione di pubblicazione v6 saranno distinti nel rapporto.
+- Account: **Salvatore Pirone**, login reale tramite credenziali già documentate localmente. Nessuna credenziale nei log. Se fallisce, STOP senza altro account/modalità/service_role.
+- Scenario confermato: **giro misto a Milano per domani, clienti esistenti e nuovi punti mai visitati, includendo i follow-up proposti dal server; secondo turno con modifica dell'orario**. Nessun risultato P1 forzato.
+- Autorizzati: autenticazione, letture CRM necessarie tramite Edge, scritture tecniche effettuate dal servizio esclusivamente in `gptour_orchestrator_*` per sessioni/richieste/piani di prova. Nessuna scrittura diretta alle tabelle dal collaudo.
+- Vietati: modifiche clienti, ordini, appuntamenti, follow-up, territori, visite, tour operativi, DB/schema/RLS/Edge/secret; push, merge, OTA, deployment e pubblicazione.
+- App pilota rimane spenta. Consentito harness isolato con moduli mobile reali e vero client autenticato, senza attivare agenti o dashboard operative.
+- Protezioni: fetch ristretto ad Auth token/user e funzione esatta, contatore persistente prenotato prima di ciascun invio, nessun retry automatico, token solo in memoria, STOP su auth/identità fallita, chiamata fuori perimetro o dati contrari al contratto.
+- Harness Node = **test HTTP live e logica condivisa del client**, NON test UI Expo, Android o iPhone. `adb` e `xcrun` assenti; nessun dispositivo fisico disponibile nell'ambiente.
+- Il numero di righe DB tecniche non sarà inventato da revisioni/ID: si riporteranno evidenze del servizio e limiti dell'osservabilità senza accesso privilegiato.
+- Consegna: rapporto separato HTTP/client/nativo, ledger Edge, sessioni/requestId/planId osservati, itinerario ricevuto, errori e istruzioni device. STOP al termine. Fixture P1 completa ancora da ricevere/validare prima della parità esatta.
+
+---
+## Piano originario e matrice delle prove
+La matrice sotto resta il riferimento; prove fuori dal primo perimetro o non tecnicamente eseguibili saranno indicate NON ESEGUITE. I budget e l'attesa di consenso generici sotto sono storici: prevale l'autorizzazione sopra.
 
 ## 1. Consenso e preparazione
 Prima di procedere concordare: account pilota autorizzato, eventuale admin→agente destinatario, date/scenari, dispositivi, finestra temporale e budget massimo di chiamate. Proposta iniziale: massimo25 invocazioni Orchestrator totali per un pilota su una piattaforma; replica sulla seconda solo con budget separatamente approvato. Non creare account o cambiare allowlist autonomamente.

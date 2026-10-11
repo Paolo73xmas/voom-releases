@@ -104,6 +104,27 @@
 
 user_problem_statement: "Completare GPTour Orchestrator Mobile con handoff API1.0 ufficiale. Utente conferma solo test isolati, nessuna chiamata Supabase/Auth/Edge/CRM reale, nessuna scrittura CRM, push, merge, OTA/pubblicazione. Preservare legacy e base conflict_170826_1303, main locale autorizzato. Aggiornare report/gap, separare 6 failure lockfile, preparare piano Android/iPhone senza eseguirlo."
 
+phase5_first_live_authorization:
+  user_authorized: true
+  completed: true
+  outcome: "PASSHTTP+moduli client inNode. NONUIlive/nativo. STOPdopo7Edge,18residue nonusare senza nuoveistruzioni."
+  account: "Salvatore Pirone; credenziali in memory/test_credentials.md, NON riportarle nei log/output"
+  project: gorwxfzzyzxmxnizmebw
+  function: gptour-orchestrator
+  contract: "1.0; v6 riferimento, distinguerlo da engineVersion0.2.0 restituito"
+  global_edge_limit: 25
+  scenario: "Giro misto Milano domani, clienti esistenti+nuovi punti, includere follow-up proposti; secondo turno modificaorario"
+  live_status: "CONCLUSO2026-10-11T20:41:32Z;1login+1getUser200;7Edge400,200,200,200,200,200,409. 13tappe8existing5new/79.7km/OSRMverified/2704points. Rev2start07finish15:53;rev3start08finish16:53. Idempotency/get_plan/409PASS."
+  evidence: "PHASE5_MOBILE_LIVE_TEST_REPORT.md; PHASE5_MOBILE_NATIVE_TEST_INSTRUCTIONS.md; test_reports/phase5_live_first/{live-result,edge-ledger,run-marker}.json; iteration_75.json. Rapporti73/74preliminari:74bloccopreflight0networkcorrettosoloharness per sb_publishable_ senza cambiareenv/auth."
+  no_repeat: "run-marker permanentlyStopped TRUE conloginAttempted/completedTRUE, ledger7/25. NONeliminare/reset/rilanciare. Nonc'èauthmocknelrunlive."
+  limitations: "NativeAndroid/iOS/UIliveNONE;v6deploymentnumbernonverified engine0.2.0observed;noexactP1fixturecompare; noSQLrowcounts/DBbeforeafteraudit. AppflagOFF."
+  allowed: "LoginPirone reale UNAvolta+getUser; CRMletture viaEdge; solotabelle tecnichegptour_orchestrator_* scritte dalservizio"
+  forbidden: "SERVICE_ROLE, cambioaccount, scrittureCRMoperative/DB/RLS/Edge/secret, pubb/push/merge/OTA/deployment. Appflagspento. NessunSDK/packagechange."
+  ledger: "/app/test_reports/phase5_live_first/edge-ledger.json; persistente/unico, contare prima invio, mai azzerare"
+  method: "Node harness con moduliREALImobile transport+binding+controller, SupabaseSDKREALE, storage locale isolato. Native/ExpoUI NONeseguiti. Defaultscript offline e fuori pattern *.test.ts, flagconsenso necessario."
+  stop_auth: "Se signin/getUserfalliscono,STOP totale, niente fallback/retrylogin/cambioaccount. Segretisolo memoria."
+  provenance: "HEADletto2dc33be3c3323ab39661f64e6d7966ebbad9c6bc, branchmainlocal, futureremoteONLYconflict_170826_1303; remotiassenti"
+
 phase5_handoff_current:
   implemented: true
   working: true

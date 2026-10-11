@@ -1,0 +1,32 @@
+{
+  "result": {
+    "startedAt": "2026-10-11T20:37:35.148Z",
+    "scenario": "Milano domani, misto, includere follow-up; secondo turno ore08",
+    "method": "Node with actual mobile transport/binding/session; genuine Supabase authenticated client",
+    "nativeAndroid": "NOT_EXECUTED",
+    "nativeIPhone": "NOT_EXECUTED",
+    "expoUi": "NOT_EXECUTED",
+    "deploymentV6": "REFERENCE_ONLY_NOT_INDEPENDENTLY_CONFIRMED",
+    "pilotFlagChanged": false,
+    "technicalRows": "NOT_DIRECTLY_QUERIED: observe session/request/plan IDs only",
+    "businessWrites": "No direct requests; existing Edge contract restricts mutations to technical tables. Server-side audit not independently available.",
+    "steps": [],
+    "result": "STOPPED",
+    "errorCode": "SUPABASE_ANON_INVALID",
+    "authAudit": [],
+    "finishedAt": "2026-10-11T20:37:35.150Z",
+    "edgeReserved": 0,
+    "edgeResponses": 0,
+    "observedSessionIds": [],
+    "observedPlanIds": [],
+    "observedRequestIds": []
+  },
+  "marker": {
+    "schemaVersion": 1,
+    "authFailed": false,
+    "loginCompleted": false,
+    "stoppedPermanently": true
+  },
+  "correction": "Harness supports existing publishable key; no env/account/key change; no auth or Edge call had started",
+  "ledgerUnchanged": true
+}

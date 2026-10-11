@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "maxCalls": 25,
+  "reservedCount": 7,
+  "receivedCount": 7,
+  "entries": [
+    {
+      "ts": "2026-10-11T20:41:14.611Z",
+      "operation": "orchestrator",
+      "requestId": null,
+      "expectedRevision": null,
+      "status": "received",
+      "durationMs": 953,
+      "sessionId": null,
+      "action": null,
+      "requestSha256": "20ce9ee2a0e7dc2c6c1b16a821f245b50bf2e544474ab64f6ed0ae20ff79410b",
+      "httpStatus": 400,
+      "responseSha256": "fc87e16ba7630fab2fb95d15ebde027a46ddbae85b6b6c5f450053404cf0b838",
+      "responseMeta": {
+        "x-sb-edge-region": "us-east-1",
+        "sb-request-id": "01a12cb2-c080-7445-8557-fe9914adfca2"
+      }
+    },
+    {
+      "ts": "2026-10-11T20:41:15.567Z",
+      "operation": "orchestrator",
+      "requestId": "9594e4d2-decb-46b8-a07d-ecbffb1cc628",
+      "expectedRevision": null,
+      "status": "received",
+      "durationMs": 3266,
+      "sessionId": "76c6971d-3819-4f0b-9955-91d3cd2042dc",
+      "action": null,
+      "requestSha256": "3a67acfee80a532227aeba9dbe40cf08b05834153b7ea99d3b8e42be5f17db14",
+      "httpStatus": 200,
+      "responseSha256": "169f58a4820c5df4963f27787ee51ddfde899db136a78ad61e62bb3f9fa4b69a",
+      "responseMeta": {
+        "x-sb-edge-region": "us-east-1",
+        "sb-request-id": "01a12cb2-c43c-7b5d-a6c4-81db7d1eba60"
+      }
+    },
+    {
+      "ts": "2026-10-11T20:41:18.837Z",
+      "operation": "orchestrator",
+      "requestId": "e2d3cc36-7c58-4b6a-9391-cbfb753cc5e2",
+      "expectedRevision": 1,
+      "status": "received",
+      "durationMs": 3683,
+      "sessionId": "76c6971d-3819-4f0b-9955-91d3cd2042dc",
+      "action": "answer",
+      "requestSha256": "54b11a62675399afbd6cb12fddae7084b3e4de571cc70c846c11129f36857ed5",
+      "httpStatus": 200,
+      "responseSha256": "951265d963a67caed2c191bb8359e47e79f855bddd1a4189e76814b6c7e0fa80",
+      "responseMeta": {
+        "x-sb-edge-region": "us-east-1",
+        "sb-request-id": "01a12cb2-d102-7845-81f9-20d6b1986fb7"
+      }
+    },
+    {
+      "ts": "2026-10-11T20:41:22.538Z",
+      "operation": "orchestrator",
+      "requestId": "b0fe4e87-93f2-44f0-8002-4fd19e237806",
+      "expectedRevision": 2,
+      "status": "received",
+      "durationMs": 5845,
+      "sessionId": "76c6971d-3819-4f0b-9955-91d3cd2042dc",
+      "action": null,
+      "requestSha256": "b429ed12c4a997bc627c0134e65a218ec8f6b675064bb2a359578a64bcda704d",
+      "httpStatus": 200,
+      "responseSha256": "89e00f54ae05b76c2664315a7d1ff2d3e190d4f4386c3b69da98fe47efa190c0",
+      "responseMeta": {
+        "x-sb-edge-region": "us-east-1",
+        "sb-request-id": "01a12cb2-df77-74b1-a76e-9c6149f53ea7"
+      }
+    },
+    {
+      "ts": "2026-10-11T20:41:28.397Z",
+      "operation": "orchestrator",
+      "requestId": "b0fe4e87-93f2-44f0-8002-4fd19e237806",
+      "expectedRevision": 2,
+      "status": "received",
+      "durationMs": 1476,
+      "sessionId": "76c6971d-3819-4f0b-9955-91d3cd2042dc",
+      "action": null,
+      "requestSha256": "b429ed12c4a997bc627c0134e65a218ec8f6b675064bb2a359578a64bcda704d",
+      "httpStatus": 200,
+      "responseSha256": "3443dbed26a9f0c8eec116a3d739b0585554a728e279e9872887ccf3fd3d2051",
+      "responseMeta": {
+        "x-sb-edge-region": "us-east-1",
+        "sb-request-id": "01a12cb2-f65a-747e-a219-1cd180473c30"
+      }
+    },
+    {
+      "ts": "2026-10-11T20:41:29.886Z",
+      "operation": "orchestrator",
+      "requestId": "110a1f3d-8457-46b9-b181-e64d3eb37939",
+      "expectedRevision": 3,
+      "status": "received",
+      "durationMs": 959,
+      "sessionId": "76c6971d-3819-4f0b-9955-91d3cd2042dc",
+      "action": "get_plan",
+      "requestSha256": "a3bd60cbfadfd5c4be32158ba2a103349cc84b4e098e08ada8065791ed16c246",
+      "httpStatus": 200,
+      "responseSha256": "a59aebf3288c515767755c791782910c9f340639dc7e2b7dded38902d7bf3203",
+      "responseMeta": {
+        "x-sb-edge-region": "us-east-1",
+        "sb-request-id": "01a12cb2-fc2a-75f3-a7bc-f31c631bc910"
+      }
+    },
+    {
+      "ts": "2026-10-11T20:41:30.859Z",
+      "operation": "orchestrator",
+      "requestId": "8412c279-ea08-4af6-bb32-8f61d6d7b065",
+      "expectedRevision": 2,
+      "status": "received",
+      "durationMs": 1189,
+      "sessionId": "76c6971d-3819-4f0b-9955-91d3cd2042dc",
+      "action": "set_start_time",
+      "requestSha256": "3ae7410646f4123eeeb8a849081635e1e5c1979f3b4a520603b2f07d277e5edf",
+      "httpStatus": 409,
+      "responseSha256": "e4aef6c5afe7ce9487ee013bdbc003664a70857d1e6b45b132563b3224f14305",
+      "responseMeta": {
+        "x-sb-edge-region": "us-east-1",
+        "sb-request-id": "01a12cb2-fff9-733d-a24b-75dfe4c65ede"
+      }
+    }
+  ]
+}

@@ -1,5 +1,18 @@
 # GPTour Orchestrator — Fase 5 MOBILE
 
+## Aggiornamento: primo collaudo live autorizzato concluso — 11 ottobre2026
+
+**7/25 invocazioni Edge, tutte con risposta; autentica Pirone reale riuscita una sola volta.** Moduli effettivi del client (trasporto/binding/coordinatore/storage isolato) eseguiti in Node contro Supabase principale. Domanda follow-up, include_all, piano, secondo turno ore08, idempotenza, recupero get_plan e conflitto409 superati.
+
+- Risultato server:13tappe (8esistenti+5nuovi),79,7km,07:00–15:53; secondo piano08:00–16:53,30min pausa,2704coordinate, **routingOSRM verified_routing**. Follow-up fuori area segnalati e non inseriti dal motore.
+- Engine0.2.0/contratto1.0 osservati; **pubblicazione v6 non verificata indipendentemente**. Fixture P1 Web completa ancora necessaria alla parità esatta.
+- **UI live/Android/iPhone nativi NON testati**, pilotaappOFF. Nessuna modifica al codice operativo, credenziali/env/DB/RLS/Edge/secret; nessun push/merge/OTA/deployment/pubblicazione.
+- Osservate1sessione,3revisioni,2planId; conteggio delle righe DB tecniche non effettuato. Nessuna richiesta diretta di scrittura CRM; nessun auditDBprima/dopo da dichiarare.
+- Iniziale errore preflight delsolo harness su chiavepublishable risolto prima di qualsiasi login; incidente0Auth/0Edge conservato. Totale effettivo finale **1login+1getUser e7Edge**, non due login.
+- Rapporti autorevoli della fase: **`PHASE5_MOBILE_LIVE_TEST_REPORT.md`**, **`PHASE5_MOBILE_NATIVE_TEST_INSTRUCTIONS.md`**, `test_reports/phase5_live_first/`, `test_reports/iteration_75.json`.
+
+**STOP attuale: fase autorizzata terminata, nessun'altra chiamata senza nuove istruzioni.** Le sezioni successive descrivono la consegna offline precedente e conservano la propria provenienza storica.
+
 ## Consegna aggiornata dopo handoff API 1.0 — 11 ottobre 2026
 
 **Adeguamento client e collaudo isolato completati nei casi verificati. Collegamento live intenzionalmente SPENTO.**

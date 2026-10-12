@@ -117,6 +117,17 @@ final_saved_snapshot_verification:
   next: "Actualsaved/buildlock inclusion requires supportedplatformfix; support@emergent.sh advised withJobID+evidence. No archivePublishmapping available. Lintfix needs sourcechange outside latestread-onlyconsent. NativeMap/signing/version/devicesunverified."
   report: "test_reports/gptour_final_snapshot_pre_publish.json"
 
+final_saved_snapshot_resolution:
+  authorization: "Utente autorizza: includere lockfile corretto nello snapshot, fix lint Buffer, salvataggio locale e verifica. NO Publish/deploy/OTA/push/Edge/DB/dipendenze."
+  status: "READY_FOR_PUBLISH"
+  saved_commit: "66150e7a159a0f1535ae4a9d66c4cc2d4c2ca7a1"
+  fixes: "frontend/yarn.lock (hash 04b388…, 0 vecchi registry) committato; probe .mjs: import { Buffer } from 'node:buffer' (nessuna logica cambiata). Nessun Git write oltre add+commit locale su main; nessun push."
+  prebuild: "check-build-lockfile.cjs exit 0 PASS su HEAD."
+  saved_snapshot_checks: "git archive HEAD in /tmp isolato: TSC PASS, lint 0 errori/147 warning, vitest 49 file 508/508 PASS."
+  config: "com.voom.crm / app.emergent.voomioscdc30962 invariati; updates.enabled=false; pilot flag true + sonda server 400/403/503 fail-closed; legacy gptour/ai-tour/osrm/eas/package/metro identici a c774806a."
+  report: "test_reports/gptour_final_snapshot_ready_for_publish.json"
+  unverified: "Binario nativo, firma, mappe native, OTA nel binario, pilota su device con Edge reale: solo dopo Publish/build."
+
 orchestrator_same_app_preparation:
   implemented: true
   needs_retesting: false

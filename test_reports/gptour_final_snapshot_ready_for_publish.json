@@ -1,0 +1,37 @@
+{
+  "status": "READY_FOR_PUBLISH",
+  "supersedes": "test_reports/gptour_final_snapshot_pre_publish.json (NOT_READY, commit c8918ffd)",
+  "authorized_changes": [
+    "frontend/yarn.lock (already corrected, URL-only registry fix, versions/integrity unchanged) added to the saved commit",
+    "frontend/scripts/aitour_inspection_rls_probe.mjs: explicit `import { Buffer } from 'node:buffer'` (no logic change)"
+  ],
+  "not_done": ["Publish", "deploy", "native build", "OTA", "push/merge", "Edge/DB/RLS/credential/dependency-version changes", "live Supabase/Edge calls"],
+  "saved_commit_with_fixes": "66150e7a159a0f1535ae4a9d66c4cc2d4c2ca7a1",
+  "lockfile": {
+    "head_sha256": "04b388c592f1a1e98c83ef99a5ea19585585908cd1ef56ca0ff8f7cf9f9225fd",
+    "working_sha256": "04b388c592f1a1e98c83ef99a5ea19585585908cd1ef56ca0ff8f7cf9f9225fd",
+    "old_registry_entries_head": 0,
+    "included_in_saved_commit": true
+  },
+  "pre_build_check": { "script": "frontend/scripts/check-build-lockfile.cjs", "exit_code": 0, "result": "PASS: Yarn 1.22.22, registro npm, manifest/config/lock identici in locale e HEAD." },
+  "saved_commit_checks": {
+    "method": "git archive HEAD → isolated /tmp copy, existing node_modules reused (same pinned graph)",
+    "typescript_exit_code": 0,
+    "lint_exit_code": 0,
+    "lint_errors": 0,
+    "lint_warnings": 147,
+    "unit_files": 49,
+    "unit_total": 508,
+    "unit_passed": 508,
+    "unit_failed": 0
+  },
+  "saved_configuration": {
+    "android_package": "com.voom.crm",
+    "ios_bundle_identifier": "app.emergent.voomioscdc30962",
+    "updates_enabled": false,
+    "pilot_flag_build_gate": true,
+    "pilot_server_gate": "probe 400→enabled, 403→not_allowed, 503→disabled, other→unavailable (fail closed); menu entry and route both gated",
+    "legacy_unchanged_vs_c774806a": ["frontend/app/gptour.tsx", "frontend/app/ai-tour.tsx", "frontend/lib/aitour/osrm.ts", "frontend/eas.json", "frontend/package.json", "frontend/metro.config.js"]
+  },
+  "unverified_until_publish_build": ["native Android/iOS binary", "signing/versionCode/buildNumber", "native maps provider/key", "OTA behaviour in binary", "pilot gate against live Edge on device", "in-place upgrade over installed app"]
+}

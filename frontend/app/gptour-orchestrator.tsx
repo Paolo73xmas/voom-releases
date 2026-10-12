@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Constants from 'expo-constants';
+import { useIsFocused } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { APPROVED_ORCHESTRATOR_BINDING } from '../lib/aitour/orchestrator/binding';
@@ -7,13 +7,15 @@ import { useOrchestratorSession } from '../hooks/useOrchestratorSession';
 import { useOrchestratorAccess } from '../hooks/useOrchestratorAccess';
 import { OrchestratorScreen } from '../components/aitour/orchestrator/OrchestratorScreen';
 import { TargetAgentControl } from '../components/aitour/orchestrator/TargetAgentControl';
+import { orchestratorPilotEnabled } from '../lib/aitour/orchestrator/pilot-config';
 
 /** No pilot entry in the legacy screen, and no live activation without BOTH gates. Server owns allowlist. */
 export default function OrchestratorRoute() {
   const user = useAuthStore(s => s.user), router = useRouter();
   const [target, setTarget] = useState<{ owner: string; id?: string } | null>(null);
   const binding = APPROVED_ORCHESTRATOR_BINDING;
-  const enabled = Constants.expoConfig?.extra?.gptourOrchestratorPilotEnabled === true && binding?.provenance === 'handoff-verified';
+  const focused = useIsFocused();
+  const enabled = focused && orchestratorPilotEnabled();
   const access = useOrchestratorAccess(user?.id ?? null, enabled);
   const admin = user?.role === 'admin' || user?.role === 'admincustom';
   const targetId = admin && target?.owner === user?.id ? target?.id : undefined;
@@ -24,5 +26,6 @@ export default function OrchestratorRoute() {
     send={async text => { await session?.message(text); }} act={command => { void session?.action(command); }}
     newConversation={() => { void session?.newConversation(); }}
     retry={() => { void session?.retry(); }} recover={() => { void session?.recover(); }}
+    back={() => { if (router.canGoBack()) router.back(); else router.replace('/(tabs)/altro'); }}
     legacy={() => router.replace('/gptour')} />;
 }

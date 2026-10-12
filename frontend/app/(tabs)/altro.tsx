@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DS, JAKARTA } from '../../lib/theme';
 import { useRimborsiAccess } from '../../hooks/useRimborsiAccess';
 import { hap } from '../../lib/haptics';
+import { OrchestratorPilotEntry } from '../../components/aitour/orchestrator/OrchestratorPilotEntry';
 
 interface MenuItem {
   label: string;
@@ -49,6 +50,7 @@ export default function AltroScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      <OrchestratorPilotEntry />
       {sections.map((section) => (
         <View key={section.title}>
           <Text style={styles.sectionTitle}>{section.title}</Text>

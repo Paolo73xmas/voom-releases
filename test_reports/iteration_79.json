@@ -1,0 +1,59 @@
+{
+  "summary": "Frontend-only orchestrator regression completed on preview with AUTH/EDGE/CRM fully MOCKED in-browser. Full unit suite and TypeScript checks passed, and authenticated synthetic Altro->Orchestrator flows were executed at 390 and 320 widths.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Reload/reopen orchestrator session",
+        "issue": "Reload generated two orchestrator-edge calls in fixture run (probe + get_plan). Last action was get_plan and no local confirm side-effect call occurred, but this still needs real-server confirmation for exact call-count expectation.",
+        "affected_testIDs": [
+          "menu-gptour-orchestrator",
+          "orchestrator-recover",
+          "orchestrator-confirm-plan"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "ServerRouteMap native provider",
+        "issue": "Native map provider behavior cannot be certified from Expo web preview."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/tests/e2e/iter79_orchestrator_authenticated_synthetic.py",
+    "/app/test_reports/artifacts_iter79/iter79_browser_result.json",
+    "/app/test_reports/artifacts_iter79/iter79_preview_390.jpeg",
+    "/app/test_reports/artifacts_iter79/iter79_flow_320.jpeg",
+    "/root/.emergent/automation_output/20261012_095853/console_20261012_095853.log"
+  ],
+  "action_items": [
+    "Main agent should run the saved iter79 script against its own browser runner to confirm identical call sequencing on reload (probe + get_plan) is acceptable for the requirement.",
+    "Validate the same flow once against the non-mocked integration pipeline (user-triggered Emergent pipeline) to confirm no server-side divergence.",
+    "Keep Cloudflare beacon blocked/ignored in isolated fixture runs; it is non-business traffic and appears as expected 503 in fail-closed mode."
+  ],
+  "critical_code_review_comments": [
+    "Pilot gate remains fully fail-closed in code path: card appears only when probe maps to 400; 403/503/error hide pilot entry.",
+    "Session controller behavior validated by tests/run: retry after 503 reuses exact request body/requestId; post-409 message sends a new explicit requestId.",
+    "No direct app-source mutation performed in this iteration; only reusable e2e test artifact/report files were added."
+  ],
+  "updated_files": [
+    "/app/tests/e2e/iter79_orchestrator_authenticated_synthetic.py",
+    "/app/test_reports/artifacts_iter79/iter79_browser_result.json",
+    "/app/test_reports/iteration_79.json"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "N/A (targeted frontend regression run, not a percentage score)"
+  },
+  "seed_data_creation": "No seed DB data. Browser run used MOCKED synthetic auth/session/profile and MOCKED Edge/function responses.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Executed: yarn tsc --noEmit PASS; yarn test:unit PASS (508/508). Browser synthetic run passed key checks: probe400 card visible, probe403/503/500 hidden, legacy AI Tour retained on 403, revocation between card and route disabled planning, include_all follow-up reached ready plan, 08:00 start rendered after time-change message, local confirm made zero new calls, retry503 reused same requestId/body, 409 then new message used new requestId, 320 input remained visible. Reload produced probe + get_plan sequence (increment=2) with last action=get_plan.",
+  "rca_of_issue": "No blocking product bug reproduced in this MOCKED run. The only flagged point is reload call count: route-level access probe plus get_plan recovery call both fire on reload. This may be expected by design (access re-check + session recovery), but requirement language references get_plan/no replan and should be explicitly accepted by main agent on real integration run."
+}

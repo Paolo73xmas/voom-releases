@@ -16,7 +16,7 @@ export function LogoutButton({ testID, style, textStyle, color, label }: {
       <Ionicons name="log-out-outline" size={20} color={color} />
       {!!label && <Text style={textStyle}>{label}</Text>}
     </TouchableOpacity>
-    <ConfirmActionModal testID={`${testID}-dialog`} visible={open} title="Logout" message="Sei sicuro di voler uscire?" confirmLabel="Esci" onCancel={() => setOpen(false)} onConfirm={async () => {
+    <ConfirmActionModal testID={`${testID}-dialog`} visible={open} title="Esci da questo dispositivo" message="Le sessioni sugli altri dispositivi resteranno attive. Le bozze ordine e GPTour classico salvate su questo dispositivo non verranno eliminate." confirmLabel="Esci" onCancel={() => setOpen(false)} onConfirm={async () => {
       await logout(); setOpen(false); router.replace('/login');
     }} />
   </>;

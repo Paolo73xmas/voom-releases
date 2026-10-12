@@ -1,0 +1,74 @@
+{
+  "summary": "Frontend-only orchestrator/auth regression run completed with MOCKED synthetic auth/network. Added new hook/auth/lifecycle tests and executed authenticated browser probes. Browser flow is BLOCKED for required Altro pilot-card path because pilot mode resolves OFF at runtime in preview.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Altro > Orchestrator pilot entry",
+        "issue": "[data-testid='menu-gptour-orchestrator'] never renders in authenticated synthetic browser run (count=0), so required menu->route flow cannot be executed.",
+        "testID": "menu-gptour-orchestrator",
+        "priority": "CRITICAL"
+      },
+      {
+        "component": "Orchestrator route composer",
+        "issue": "On direct route /gptour-orchestrator the screen stays in 'Collegamento operativo non attivo' (access=off), input is readonly and send is disabled; conversation/followup/recovery/409/retry steps are blocked in browser.",
+        "testID": "orchestrator-message-input",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Authenticated synthetic browser coverage for card->route->conversation",
+        "issue": "Unable to execute requested end-to-end path because route remains fail-closed with pilot mode OFF despite authenticated synthetic profile; probe call to gptour-orchestrator never triggers from Altro in preview run.",
+        "affected_testIDs": [
+          "menu-gptour-orchestrator",
+          "orchestrator-handoff-pending",
+          "orchestrator-message-input"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "ServerRouteMap native rendering",
+        "issue": "Still not verifiable in web preview; native provider behavior remains untested."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/frontend/tests/auth_store_regression.test.ts",
+    "/app/frontend/tests/use_orchestrator_access_hook.test.ts",
+    "/app/frontend/tests/orchestrator_lifecycle_namespace.test.ts",
+    "/app/test_reports/artifacts_iter78/iter78_preview_load_390.jpeg",
+    "/app/test_reports/artifacts_iter78/iter78_altro_no_menu_390.jpeg",
+    "/app/test_reports/artifacts_iter78/iter78_direct_route_error.jpeg"
+  ],
+  "action_items": [
+    "Main agent should verify why pilot gating resolves OFF at runtime in preview (Constants.expoConfig?.extra?.gptourOrchestratorPilotEnabled path) even though source app.json has true.",
+    "After pilot gate is truly ON in preview, re-run authenticated browser synthetic flow for required card->route journey (conversation/followup/plan/time-change/recovery/409/retry/local-confirm/back) at 390 and 320.",
+    "Keep fail-closed behavior, but ensure probe is actually reached when entering Altro/route under authenticated synthetic session."
+  ],
+  "critical_code_review_comments": [
+    "authStore logout remains local-only and preserves non-auth local draft keys; new regression test covers retry after SDK error and verifies no blanket storage purge.",
+    "Orchestrator local cleanup is namespace-scoped: tests now verify only voom:orchestrator:* keys are purged while @order_drafts and gptour:draft:v1:* remain.",
+    "useOrchestratorAccess owner-switch/late-response/probe-error/focus-reopen behaviors are now explicitly covered with hook-runner style tests."
+  ],
+  "updated_files": [
+    "/app/frontend/tests/auth_store_regression.test.ts",
+    "/app/frontend/tests/use_orchestrator_access_hook.test.ts",
+    "/app/frontend/tests/orchestrator_lifecycle_namespace.test.ts",
+    "/app/test_reports/iteration_78.json"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "72%"
+  },
+  "seed_data_creation": "No real credentials/APIs used. Browser and unit checks used MOCKED synthetic auth + network responses only.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Executed targeted vitest: auth_store_regression + use_orchestrator_access_hook + orchestrator_lifecycle_namespace => 14/14 PASS. yarn tsc --noEmit PASS. Browser authenticated synthetic run attempted 3 times for menu selector; menu card absent every run (loop prevention reached). Direct route opened but remained fail-closed/off, so chat input readonly and conversation flow blocked.",
+  "rca_of_issue": "RCA from browser evidence: in preview runtime, Orchestrator screen reports 'La modalità pilota non è attiva in questa schermata' (access='off'), and Altro never renders menu-gptour-orchestrator. This indicates pilot gate is not becoming true at runtime (likely config/runtime exposure mismatch), so access probe and requested authenticated flow cannot proceed. This is a gating/config-runtime issue, not a synthetic fixture auth failure."
+}

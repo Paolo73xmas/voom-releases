@@ -1,0 +1,58 @@
+{
+  "summary": "Frontend-only regression completed. Added authStore and orchestrator pilot-access unit regressions, ran full unit suite (501/501), tsc, targeted lint, isolated frozen yarn install/hash checks. Browser anonymous route to /gptour-orchestrator is fail-closed with no auth/REST/RPC/Edge calls observed. check-build-lockfile remains BLOCKED because HEAD yarn.lock differs from verified worktree.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Build preflight lockfile gate",
+        "issue": "scripts/check-build-lockfile.cjs exits 1: yarn.lock in HEAD does not match local verified lockfile",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Native map provider/render",
+        "issue": "Not verifiable in web preview; native device/provider rendering remains untested in this iteration."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/frontend/tests/auth_store_regression.test.ts",
+    "/app/frontend/tests/orchestrator_pilot_access_regression.test.ts",
+    "/app/frontend/tests/build_lockfile.test.ts",
+    "/app/frontend/tests/orchestrator_official_edges.test.ts",
+    "/app/test_reports/artifacts_iter77/check_build_lockfile_iter77.log",
+    "/app/test_reports/artifacts_iter77/iter77_orchestrator_anon_390.jpeg",
+    "/app/test_reports/artifacts_iter77/iter77_orchestrator_anon_320.jpeg"
+  ],
+  "action_items": [
+    "Main agent should align committed HEAD yarn.lock with verified local lockfile (URL-only npm registry rewrite already validated) so check-build-lockfile passes.",
+    "Run native Android/iOS map rendering verification externally (provider/API key/device), since web preview cannot validate native map module behavior.",
+    "If required, add dedicated hook-level tests for useOrchestratorAccess focus/owner switching with a React hook runner setup; current regression covers probe mappings and pilot config strictness."
+  ],
+  "critical_code_review_comments": [
+    "authStore logout path correctly uses supabase.auth.signOut({scope:'local'}) and does not clear authenticated state on SDK error/rejected promise.",
+    "SIGNED_OUT listener clears local auth state without recursive signOut calls.",
+    "Pilot flag gate is strict boolean + provenance check; tested true/false non-boolean and provenance mismatch cases.",
+    "Anonymous direct route /gptour-orchestrator stayed fail-closed and did not trigger blocked auth/rest/rpc/edge traffic in browser probe."
+  ],
+  "updated_files": [
+    "/app/frontend/tests/auth_store_regression.test.ts",
+    "/app/frontend/tests/orchestrator_pilot_access_regression.test.ts",
+    "/app/test_reports/iteration_77.json"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "98%"
+  },
+  "seed_data_creation": "No real credentials/data used. Unit/browser checks used MOCKED auth/network behavior and synthetic fixture responses only.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Executed: yarn test:unit => 47 files / 501 tests PASS; yarn tsc --noEmit PASS; targeted eslint PASS; isolated temp yarn --frozen-lockfile install PASS with unchanged hashes for package.json/.yarnrc/yarn.lock. check-build-lockfile script still BLOCKED due HEAD mismatch. Browser preview tested anonymously at 390x844 and 320x667 for fail-closed orchestrator route.",
+  "rca_of_issue": "Lockfile gate failure is not dependency-graph churn: isolated frozen install in clean temp copy preserved exact hashes (package.json 04ed95..., .yarnrc c776a3..., yarn.lock 04b388...). Root cause is source-control state mismatch only: script compares local verified files versus HEAD snapshot and fails because HEAD still has different yarn.lock content."
+}

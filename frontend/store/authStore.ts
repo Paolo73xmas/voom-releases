@@ -227,7 +227,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
 
       if (!profile.is_active) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' });
         throw new Error('Account disattivato. Contatta l\'amministratore.');
       }
 
@@ -246,7 +246,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // NON deve tentare il re-login silente con SecureStore
       intentionalLogout = true;
 
-      await supabase.auth.signOut();
+      // Supabase defaults to GLOBAL: always preserve this user's other device sessions.
+      // With the pinned SDK an offline error may leave persisted auth intact: surface it,
+      // do not claim a successful logout or clear drafts/session state optimistically.
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) throw new Error('Logout non completato. Controlla la connessione e riprova.');
       try {
         const { clearCache } = await import('../lib/memory-cache');
         clearCache();
@@ -258,9 +262,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // justLoggedOut=true: impedisce al login screen di triggerare
       // l'auto-biometric login subito dopo il logout volontario
       set({ user: null, profile: null, isAuthenticated: false, justLoggedOut: true });
-    } catch (error) {
-      set({ user: null, profile: null, isAuthenticated: false, justLoggedOut: true });
-      throw error;
     } finally {
       // Reset del flag dopo un breve delay
       setTimeout(() => { intentionalLogout = false; }, 1500);
@@ -313,7 +314,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
 
       if (!profile.is_active) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' });
         set({ user: null, profile: null, isAuthenticated: false, isLoading: false });
         return;
       }

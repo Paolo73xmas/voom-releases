@@ -18,8 +18,9 @@ export interface ScreenProps {
   state: SessionState; available: boolean; signedIn: boolean; testPreview?: boolean;
   send: (message: string) => Promise<void>; act: (command: Command) => void; retry: () => void; recover: () => void; legacy: () => void;
   newConversation?: () => void; access?: string; targetControl?: React.ReactNode;
+  back?: () => void;
 }
-export function OrchestratorScreen({ state, available, signedIn, testPreview, send, act, retry, recover, legacy, newConversation, access, targetControl }: ScreenProps) {
+export function OrchestratorScreen({ state, available, signedIn, testPreview, send, act, retry, recover, legacy, newConversation, access, targetControl, back }: ScreenProps) {
   const insets = useSafeAreaInsets(); const [text, setText] = useState('');
   const busy = ['hydrating', 'sending'].includes(state.phase);
   const disabled = !available || !signedIn || busy || state.pending;
@@ -27,6 +28,7 @@ export function OrchestratorScreen({ state, available, signedIn, testPreview, se
   const submit = async () => { if (!text.trim() || disabled) return; const value = text; setText(''); await send(value); };
   return <KeyboardAvoidingView testID="orchestrator-screen" style={s.screen} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
     <View style={[s.header, { paddingTop: insets.top + 12 }]}>
+      {back && <OButton id="orchestrator-back" label="Indietro" onPress={back} />}
       <View style={s.flex}><Text testID="orchestrator-title" style={s.title}>GPTour Orchestrator</Text>
         <Text testID="orchestrator-source" style={s.subtitle}>MOTORE CENTRALE VOOM · PILOTA</Text></View>
     </View>
@@ -34,8 +36,9 @@ export function OrchestratorScreen({ state, available, signedIn, testPreview, se
       {testPreview && <Text testID="orchestrator-fixture-notice" style={s.muted}>TEST ISOLATO · Dati simulati, nessuna API reale</Text>}
       {!available && <View testID="orchestrator-handoff-pending" style={s.notice}>
         <Text testID="orchestrator-access-title" style={s.heading}>{access === 'checking' ? 'Verifica accesso al pilota…' : 'Collegamento operativo non attivo'}</Text>
-        <Text testID="orchestrator-access-message" style={s.text}>{!access || access === 'off'
-          ? 'Contratto API 1.0 integrato. Il collaudo live deve ancora essere autorizzato: nessuna richiesta Orchestrator sarà inviata.'
+        <Text testID="orchestrator-access-message" style={s.text}>{!signedIn
+          ? 'La verifica del pilota richiede il tuo account VOOM. Nessuna richiesta Orchestrator sarà inviata prima dell’accesso.'
+          : !access || access === 'off' ? 'La modalità pilota non è attiva in questa schermata. Nessuna richiesta Orchestrator sarà inviata.'
           : access === 'not_allowed' ? 'Il server non ha autorizzato questo account al pilota.'
           : access === 'checking' ? 'Attendo la verifica del server, senza creare una conversazione.' : 'Pilota non disponibile. Puoi scegliere esplicitamente GPTour classico.'}</Text>
       </View>}

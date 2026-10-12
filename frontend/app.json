@@ -8,6 +8,12 @@
     "scheme": "voom-crm",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "updates": {
+      "enabled": false
+    },
+    "extra": {
+      "gptourOrchestratorPilotEnabled": true
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.emergent.voomioscdc30962",

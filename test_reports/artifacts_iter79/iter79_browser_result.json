@@ -1,0 +1,20 @@
+{
+  "menu_probe400": 1,
+  "menu_probe403": 0,
+  "menu_probe503": 0,
+  "menu_probe500": 0,
+  "legacy_ai_probe403": 1,
+  "revoked_send_disabled": true,
+  "ready_after_include_all": 1,
+  "day_start_text": "Partenza · 08:00 · Casa",
+  "confirm_no_new_calls": true,
+  "retry503_same_id": true,
+  "retry503_same_body": true,
+  "conflict_new_id": true,
+  "post_conflict_expectedRevision": 6,
+  "reload_call_increment": 2,
+  "reload_last_action": "get_plan",
+  "input_visible_320": true,
+  "unknown_blocked": 6,
+  "notes": "MOCKED synthetic auth/Edge/CRM/network in browser fixture run."
+}

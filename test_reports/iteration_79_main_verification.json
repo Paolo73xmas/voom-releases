@@ -1,0 +1,48 @@
+{
+  "scope": "Final frontend verification; no native/cloud build, real Auth/Edge/CRM call or signing/Git modification",
+  "unit": {"passed": 508, "failed": 0, "files": 49},
+  "typescript": "pass",
+  "targeted_lint": "pass",
+  "clean_frozen_install": "pass in isolated temporary directory (iteration77, Node24.19.0)",
+  "browser_script": "/app/tests/e2e/iter79_orchestrator_authenticated_synthetic.py",
+  "browser": {
+    "test_transport": "MOCKED Auth/Edge/CRM only in tests; all real business traffic blocked",
+    "menu_probe400": true,
+    "menu_probe403_hidden": true,
+    "menu_probe503_hidden": true,
+    "menu_probe500_hidden": true,
+    "revoked_between_menu_route": true,
+    "followups_timechange_tappe_confirm": true,
+    "recovery_same_plan_and_time_no_replan": true,
+    "reload_calls": ["probe", "get_plan"],
+    "retry503_same_id_body": true,
+    "conflict_explicit_new_request": true,
+    "layout390_320": true,
+    "back_to_altro": true,
+    "page_errors": 0,
+    "unknown_business_requests": 0
+  },
+  "corrections_to_tester_fixture": [
+    "Replaced fixed sleeps and printed counts with deterministic response/locator assertions.",
+    "Revocation now actually makes the second access probe return403; waits for explicit denied UI, not transient disabled composer.",
+    "get_plan returns the identical cached plan; asserts planId/sessionId and08:00 persist immediately after reload with no replan.",
+    "Preview/Supabase endpoints read from existing config without disclosing keys; same-origin API requests also fail-closed."
+  ],
+  "iteration79_open_item_resolution": "Two calls on reload are expected: authenticated access recheck, then get_plan. Verified exact sequence, identical plan/time, no message/replan. No code change required.",
+  "runtime_config": {"pilot_flag": true, "updates_enabled": false},
+  "native_package": "com.voom.crm",
+  "native_bundle": "app.emergent.voomioscdc30962",
+  "branch": "main",
+  "baseline_head": "c774806add556f6d44fe80e0fb307075888e8d25",
+  "unchanged_against_baseline": ["eas.json", "package.json", ".yarnrc", "metro.config.js", "app/gptour.tsx", "app/ai-tour.tsx", "hooks/useGptour.ts", "lib/aitour/orchestrator/session.ts", "lib/aitour/orchestrator/binding.ts", "components/aitour/orchestrator/ServerRouteMap.native.tsx"],
+  "lockfile": {
+    "change": "1213 resolved registry hosts only, no version/integrity/graph changes; reversible to baseline byte-for-byte",
+    "sha256": "04b388c592f1a1e98c83ef99a5ea19585585908cd1ef56ca0ff8f7cf9f9225fd",
+    "snapshot_guard": "BLOCKED until saved HEAD includes corrected yarn.lock; intentionally not bypassed, no git writes"
+  },
+  "remaining": [
+    "Saved build snapshot must include corrected lockfile; re-run check-build-lockfile.cjs before native compilation.",
+    "Real native Maps/provider, signing compatibility/version counters/EAS infrastructure and Android/iPhone installation remain unverified; no APK/IPA produced.",
+    "Preserve in-place update: do not uninstall/erase app data; Android backup declared by user, iPhone backup not verified."
+  ]
+}

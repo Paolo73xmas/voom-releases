@@ -1,0 +1,74 @@
+{
+  "summary": "Post-fix map403 regression executed on Expo browser preview with synthetic auth/Edge interception only. Shadow DOM map renderer, real OSM tile traffic, headers proof, fullscreen/day-switch interactions, and controlled failure/retry paths were tested; full frontend unit+TS+lint baseline re-run succeeded.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Tile traffic budget",
+        "issue": "Observed 67 OSM tile requests (target budget was ~40-60). Functional checks passed, but traffic budget exceeded in this run.",
+        "affected_testIDs": [
+          "orchestrator-map-surface",
+          "orchestrator-full-map-surface"
+        ]
+      },
+      {
+        "flow": "Fresh-context script/CDN failure overlay",
+        "issue": "Leaflet JS request was observed, but script-failure error overlay was not deterministic in every fresh-context pass (ready state recovered without visible overlay in this environment).",
+        "affected_testIDs": [
+          "orchestrator-map-error-text",
+          "orchestrator-map-ready"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "WebKit browser matrix",
+        "issue": "WebKit binary unavailable in container Playwright runtime; cross-browser run could not be executed locally without installing toolchain."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/tests/e2e/iter83_map403_fix.py",
+    "/app/tests/e2e/run_iter83_map403_fix.py",
+    "/app/tests/e2e/iter81_orchestrator_presentation.py",
+    "/app/frontend/tests/orchestrator_web_map_adapter.test.ts",
+    "/app/frontend/tests/orchestrator_route_map_presentation.test.ts",
+    "/app/test_reports/artifacts_iter83/iter83_tile_proof.json",
+    "/app/test_reports/artifacts_iter83/iter83_browser_result.json",
+    "/app/test_reports/artifacts_iter83/iter83_browser_matrix.json",
+    "/app/test_reports/artifacts_iter83/iter83_tile_sample.png",
+    "/root/.emergent/automation_output/20261012_153135/console_20261012_153135.log"
+  ],
+  "action_items": [
+    "Main agent should decide if tile budget optimization is needed for regression runs (67 observed vs target <=60).",
+    "If mandatory, harden deterministic script-failure UX assertion for fresh-context Leaflet load failures under cache variance.",
+    "Run equivalent iter83 script on an environment with WebKit installed to complete requested matrix coverage."
+  ],
+  "critical_code_review_comments": [
+    "Web map adapter now validates canonical OSM URL + strict-origin-when-cross-origin and no iframe/srcDoc/eval/header-spoof patterns via unit/static guards.",
+    "iter81 harness previously frame_locator-based was updated to Shadow DOM selectors so future full regression can run against the current map adapter.",
+    "ServerRouteMap comment was stale (iframe wording) and now matches current Shadow DOM web adapter behavior."
+  ],
+  "updated_files": [
+    "/app/tests/e2e/iter83_map403_fix.py",
+    "/app/tests/e2e/run_iter83_map403_fix.py",
+    "/app/tests/e2e/iter81_orchestrator_presentation.py",
+    "/app/frontend/tests/orchestrator_web_map_adapter.test.ts",
+    "/app/frontend/components/aitour/orchestrator/ServerRouteMap.tsx",
+    "/app/test_reports/iteration_83.json"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "~88% (core map403 checks passed; 3 follow-up gaps logged)"
+  },
+  "seed_data_creation": "No seed data created.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Positive evidence captured: Referer header equals preview origin with trailing slash; official tile host and image/png 200 with cache headers; map rendered with real cartography screenshots and server geometry payload/order checks. Chromium path passed through browser automation tool; direct Playwright launcher for Chromium/WebKit was unavailable in this container (missing browser binaries).",
+  "rca_of_issue": "Original 403 policy symptom was tied to missing Referer under sandboxed iframe approach (iter82). Current run validates the post-fix non-iframe Shadow DOM adapter sends real browser Referer to OSM. Remaining gaps are test-environment determinism (script-failure overlay branch under cache) and tile-budget tuning, not a reproduced return of missing Referer/403 behavior."
+}

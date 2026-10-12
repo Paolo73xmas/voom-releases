@@ -1,0 +1,57 @@
+{
+  "preview_url": "https://voom-ios.preview.emergentagent.com",
+  "preview_origin": "https://voom-ios.preview.emergentagent.com/",
+  "tile_request_count": 59,
+  "tile_budget_ok_le_60": true,
+  "tile_response_count": 59,
+  "leaflet_requests": 3,
+  "tile_failure_overlay_seen": true,
+  "script_failure_overlay_seen": true,
+  "unknown_business": 0,
+  "page_errors": [],
+  "tile_request_sample": {
+    "url": "https://tile.openstreetmap.org/9/268/182.png",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "referer": "https://voom-ios.preview.emergentagent.com/",
+      "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.0 Safari/537.36",
+      "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"HeadlessChrome\";v=\"145\", \"Chromium\";v=\"145\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Linux\""
+    }
+  },
+  "tile_response_sample": {
+    "url": "https://tile.openstreetmap.org/9/269/182.png",
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "access-control-allow-headers": "X-Requested-With",
+      "access-control-allow-methods": "GET, HEAD, OPTIONS",
+      "access-control-allow-origin": "*",
+      "age": "311869",
+      "alt-svc": "h3=\":443\";ma=86400,h3-29=\":443\";ma=86400,h3-27=\":443\";ma=86400",
+      "cache-control": "max-age=519273, stale-while-revalidate=604800, stale-if-error=604800",
+      "content-length": "48420",
+      "content-type": "image/png",
+      "date": "Mon, 12 Oct 2026 15:46:40 GMT",
+      "etag": "\"2ecc5995fc5f6ddcc37f2fca0a683574\"",
+      "expires": "Thu, 15 Oct 2026 01:23:24 GMT",
+      "server": "Apache",
+      "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+      "via": "1.1 varnish",
+      "x-cache": "MISS, HIT",
+      "x-cache-hits": "0, 4",
+      "x-served-by": "cache-iad-kcgs7200091-IAD, cache-iad-kiad7000087-IAD",
+      "x-tilerender": "palulukon.openstreetmap.org",
+      "x-timer": "S1791820000.235128,VS0,VE2"
+    }
+  },
+  "screenshots": [
+    "/app/test_reports/artifacts_iter83/iter83_map_embed_390.jpeg",
+    "/app/test_reports/artifacts_iter83/iter83_map_full_390.jpeg",
+    "/app/test_reports/artifacts_iter83/iter83_map_390.jpeg",
+    "/app/test_reports/artifacts_iter83/iter83_map_320.jpeg"
+  ],
+  "tile_png": "/app/test_reports/artifacts_iter83/iter83_tile_sample.png"
+}

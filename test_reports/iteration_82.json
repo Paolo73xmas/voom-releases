@@ -1,0 +1,50 @@
+{
+  "summary": "Diagnostic-only browser regression (iter82) executed on preview origin using synthetic same-origin harness. Captured real OSM tile request headers for sandbox/srcDoc/url-doc variants without opening authenticated app or calling business APIs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Map tile load from sandboxed iframe (srcDoc and URL document)",
+        "issue": "Tile requests from A/B/C had empty Referer and empty Origin headers; only unsandboxed baseline sent Referer=https://voom-ios.preview.emergentagent.com/. If provider policy requires Referer, sandboxed map can hit 403.",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/e2e/iter82_map_referrer_probe.py",
+    "/app/test_reports/artifacts_iter82/iter82_case_a.jpeg",
+    "/app/test_reports/artifacts_iter82/iter82_case_b.jpeg",
+    "/app/test_reports/artifacts_iter82/iter82_case_c.jpeg",
+    "/app/test_reports/artifacts_iter82/iter82_case_d.jpeg",
+    "/root/.emergent/automation_output/20261012_151424/console_20261012_151424.log"
+  ],
+  "action_items": [
+    "Do NOT change production based on assumptions alone; use this header evidence to choose fix path.",
+    "If stable Referer is required, evaluate moving web map rendering to normal DOM Leaflet context (non-sandboxed iframe) with trusted dependency controls.",
+    "Re-test on Chromium and WebKit after main-agent implementation; this run executed Chromium only (WebKit not available in current browser automation path)."
+  ],
+  "critical_code_review_comments": [
+    "Current sandbox=allow-scripts context suppresses Referer in observed tile requests for both srcDoc and same-origin URL document variants.",
+    "Adding meta referrer + iframe referrerPolicy did not alter headers in sandboxed cases.",
+    "Probe remained fail-closed: blocked_business_calls=0; no auth/edge/crm/business traffic was executed."
+  ],
+  "updated_files": [
+    "/app/tests/e2e/iter82_map_referrer_probe.py",
+    "/app/test_reports/iteration_82.json"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "100% of planned diagnostic checks"
+  },
+  "seed_data_creation": "No seed data created.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Observed 4 tile requests total (A/B/C sandboxed + D unsandboxed baseline). Status/content-type were 200 image/png for all. A/B/C request headers had referer='' and origin=''; D had referer='https://voom-ios.preview.emergentagent.com/'. Screenshots confirm world tile visual loaded in all cases.",
+  "rca_of_issue": "Reproduction in synthetic preview-origin harness: (1) sandbox allow-scripts + srcDoc, (2) sandbox allow-scripts + srcDoc + strict-origin-when-cross-origin, (3) sandbox allow-scripts + same-origin URL doc, (4) unsandboxed URL baseline. Result: only unsandboxed baseline emitted Referer. Root cause candidate: sandboxed iframe request context yields opaque/no-referrer behavior for cross-origin tile image requests. Mitigation direction: avoid sandboxed iframe map surface for production tile fetching if provider enforces referrer policy."
+}

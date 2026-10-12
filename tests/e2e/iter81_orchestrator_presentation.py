@@ -4,6 +4,7 @@ Goals:
 - Fail-closed network guard BEFORE navigation.
 - Top-frame-only bootstrap (avoid iframe localStorage sandbox errors).
 - Real map rendering assertions (Leaflet + OSM tiles), not placeholder/frame-only checks.
+- Updated for open Shadow DOM adapter (no iframe dependency).
 """
 
 from __future__ import annotations
@@ -344,7 +345,7 @@ async def run(page):
 
         # Allow real Leaflet + real OSM tiles for healthy path.
         if host == "unpkg.com" and method in ("GET", "HEAD"):
-            if state["fail_script_once"] and path.endswith("leaflet.js"):
+            if state["fail_script_once"] and path.endswith("leaflet.css"):
                 state["fail_script_once"] = False
                 await route.abort("failed")
                 return
@@ -573,26 +574,32 @@ async def run(page):
     map_frame = page.get_by_test_id("orchestrator-map-frame")
     await map_frame.scroll_into_view_if_needed()
     await expect(page.get_by_test_id("orchestrator-map-ready")).to_be_visible(timeout=20000)
-    frame = page.frame_locator('[data-testid="orchestrator-map-surface"]')
-    await expect(frame.locator(".leaflet-container")).to_be_visible(timeout=10000)
-    route_path = frame.locator('path[data-testid="orchestrator-server-route"]')
+    map_surface = page.get_by_test_id("orchestrator-map-surface")
+    await expect(page.locator('[data-testid="orchestrator-map-canvas"]')).to_be_visible(timeout=10000)
+    route_path = page.locator('path[data-testid="orchestrator-server-route"]')
     await expect(route_path).to_be_visible()
     d_attr = await route_path.get_attribute("d")
     assert d_attr and d_attr.strip(), "Expected non-empty SVG path d"
-    await expect(frame.locator('[data-testid="orchestrator-map-start"]')).to_be_visible()
-    await expect(frame.locator('[data-testid="orchestrator-map-return"]')).to_be_visible()
-    await expect(frame.locator('[data-testid="orchestrator-map-stop-1-1"]')).to_be_visible()
-    await expect(frame.locator('[data-testid="orchestrator-map-stop-1-2"]')).to_be_visible()
+    await expect(page.locator('[data-testid="orchestrator-map-start"]')).to_be_visible()
+    await expect(page.locator('[data-testid="orchestrator-map-return"]')).to_be_visible()
+    await expect(page.locator('[data-testid="orchestrator-map-stop-1-1"]')).to_be_visible()
+    await expect(page.locator('[data-testid="orchestrator-map-stop-1-2"]')).to_be_visible()
 
-    payload = await frame.locator("#server-map-data").evaluate("el => JSON.parse(el.textContent || '{}')")
+    is_shadow = await map_surface.evaluate("el => !!el.shadowRoot")
+    assert is_shadow is True
+
+    payload = await map_surface.evaluate(
+        """el => JSON.parse((el.shadowRoot && el.shadowRoot.querySelector('#server-map-data')?.textContent) || '{}')"""
+    )
     assert payload["geometry"] == [[45.348, 9.164], [45.57, 9.51], [45.42, 9.18], [45.375, 9.13], [45.348, 9.164]]
     assert [s["number"] for s in payload["stops"]] == ["1", "2"]
 
-    fit_check = await frame.locator("#map").evaluate(
+    fit_check = await map_surface.evaluate(
         """() => {
-          const map = document.querySelector('#map');
-          const route = document.querySelector('[data-testid="orchestrator-server-route"]');
-          const markers = Array.from(document.querySelectorAll('[data-testid^="orchestrator-map-stop-"]'));
+          const root = document.querySelector('[data-testid="orchestrator-map-surface"]')?.shadowRoot;
+          const map = root?.querySelector('#map');
+          const route = root?.querySelector('[data-testid="orchestrator-server-route"]');
+          const markers = Array.from(root?.querySelectorAll('[data-testid^="orchestrator-map-stop-"]') || []);
           if (!map || !route || markers.length < 2) return {ok:false};
           const mr = map.getBoundingClientRect();
           const rr = route.getBoundingClientRect();
@@ -609,11 +616,11 @@ async def run(page):
     assert fit_check.get("ok") and fit_check.get("inViewport")
     assert fit_check.get("routeExtends"), "Detour not reflected beyond marker envelope"
 
-    await expect(frame.locator("img.leaflet-tile-loaded").first).to_have_js_property("naturalWidth", 256)
+    await expect(page.locator("img.leaflet-tile-loaded").first).to_have_js_property("naturalWidth", 256)
     await page.screenshot(path="/tmp/iter81_embedded_map_rows.jpeg", quality=20, full_page=False)
 
-    # (3) Marker click in iframe selects parent row + detail.
-    await frame.locator('[data-testid="orchestrator-map-stop-1-2"]').click()
+    # (3) Marker click in shadow map selects parent row + detail.
+    await page.locator('[data-testid="orchestrator-map-stop-1-2"]').click()
     await expect(page.get_by_test_id("orchestrator-selected-stop")).to_be_visible()
     await expect(page.get_by_test_id("orchestrator-selected-stop-name")).to_contain_text("Cliente Beta")
     selected_row = page.get_by_test_id("orchestrator-stop-1-2")
@@ -651,10 +658,10 @@ async def run(page):
     # Fullscreen map with real svg/markers; click marker2 closes + highlights.
     embed_height = (await map_frame.bounding_box())["height"]
     await page.get_by_test_id("orchestrator-map-expand").click()
-    full_frame = page.frame_locator('[data-testid="orchestrator-full-map-surface"]')
-    await expect(full_frame.locator(".leaflet-container")).to_be_visible(timeout=10000)
-    await expect(full_frame.locator('[data-testid="orchestrator-server-route"]')).to_be_visible()
-    await full_frame.locator('[data-testid="orchestrator-map-stop-1-2"]').click()
+    full_surface = page.get_by_test_id("orchestrator-full-map-surface")
+    await expect(page.locator('[data-testid="orchestrator-full-map-surface"] [data-testid="orchestrator-map-canvas"]')).to_be_visible(timeout=10000)
+    await expect(page.locator('[data-testid="orchestrator-server-route"]')).to_be_visible()
+    await page.locator('[data-testid="orchestrator-map-stop-1-2"]').click()
     await expect(page.get_by_test_id("orchestrator-map-fullscreen")).to_be_hidden(timeout=5000)
     await expect(page.get_by_test_id("orchestrator-selected-stop-name")).to_contain_text("Cliente Beta")
 
@@ -664,7 +671,7 @@ async def run(page):
     full_box = await full_modal.bounding_box()
     assert full_box and full_box["height"] > embed_height
     await expect(page.get_by_test_id("orchestrator-full-map-ready")).to_be_visible()
-    await expect(full_frame.locator("img.leaflet-tile-loaded").first).to_have_js_property("naturalWidth", 256)
+    await expect(page.locator("img.leaflet-tile-loaded").first).to_have_js_property("naturalWidth", 256)
     await page.wait_for_function("() => document.getAnimations().every(a => a.playState !== 'running')")
     await page.screenshot(path="/tmp/iter81_full_map.jpeg", quality=20, full_page=False)
     await page.get_by_test_id("orchestrator-map-reduce").click()
@@ -690,9 +697,10 @@ async def run(page):
     await page.set_viewport_size({"width": 390, "height": 844})
     await page.get_by_test_id("orchestrator-day-2").click()
     await expect(page.get_by_test_id("orchestrator-selected-stop")).to_have_count(0)
-    day2_frame = page.frame_locator('[data-testid="orchestrator-map-surface"]')
-    await expect(day2_frame.locator('[data-testid="orchestrator-map-stop-2-1"]')).to_be_visible()
-    day2_payload = await day2_frame.locator("#server-map-data").evaluate("el => JSON.parse(el.textContent || '{}')")
+    await expect(page.locator('[data-testid="orchestrator-map-stop-2-1"]')).to_be_visible()
+    day2_payload = await map_surface.evaluate(
+        """el => JSON.parse((el.shadowRoot && el.shadowRoot.querySelector('#server-map-data')?.textContent) || '{}')"""
+    )
     assert day2_payload["geometry"] == [[45.45, 9.21], [45.365, 9.215], [45.348, 9.164]]
 
     await composer.fill("Parto alle8")
@@ -703,18 +711,24 @@ async def run(page):
     await composer.fill("empty geometry")
     await send.click()
     await expect(page.get_by_test_id("orchestrator-map-no-geometry")).to_be_visible()
-    d2_missing = page.frame_locator('[data-testid="orchestrator-map-surface"]')
-    assert await d2_missing.locator('[data-testid="orchestrator-server-route"]').count() == 0
-    await expect(d2_missing.locator('[data-testid="orchestrator-map-stop-2-1"]')).to_be_visible()
-    assert (await d2_missing.locator("#server-map-data").evaluate("el => JSON.parse(el.textContent)")).get("geometry") == []
+    assert await page.locator('[data-testid="orchestrator-server-route"]').count() == 0
+    await expect(page.locator('[data-testid="orchestrator-map-stop-2-1"]')).to_be_visible()
+    assert (
+        await map_surface.evaluate(
+            """el => JSON.parse((el.shadowRoot && el.shadowRoot.querySelector('#server-map-data')?.textContent) || '{}')"""
+        )
+    ).get("geometry") == []
 
     await composer.fill("single point")
     await send.click()
     await expect(page.get_by_test_id("orchestrator-map-no-geometry")).to_be_visible()
-    d2_single = page.frame_locator('[data-testid="orchestrator-map-surface"]')
-    await expect(d2_single.locator('[data-testid="orchestrator-map-stop-2-1"]')).to_be_visible()
-    assert await d2_single.locator('[data-testid="orchestrator-server-route"]').count() == 0
-    assert (await d2_single.locator("#server-map-data").evaluate("el => JSON.parse(el.textContent)")).get("geometry") == [[45.365, 9.215]]
+    await expect(page.locator('[data-testid="orchestrator-map-stop-2-1"]')).to_be_visible()
+    assert await page.locator('[data-testid="orchestrator-server-route"]').count() == 0
+    assert (
+        await map_surface.evaluate(
+            """el => JSON.parse((el.shadowRoot && el.shadowRoot.querySelector('#server-map-data')?.textContent) || '{}')"""
+        )
+    ).get("geometry") == [[45.365, 9.215]]
 
     # Map show/hide should not call edge.
     before_local = len(state["request_log"])

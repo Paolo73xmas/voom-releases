@@ -5,12 +5,13 @@ import type { DayView } from '../../../lib/aitour/orchestrator/contract';
 import { DS } from '../../../lib/theme';
 import { GptButton, GptIcon, GptNotice, ui } from '../gptour/UI';
 import MapSurface from './MapSurface';
-import { routeMapDocument } from './route-map-document';
+import { routeMapData, routeMapDocument } from './route-map-document';
 
 export interface RouteMapProps { day: DayView; selectedId?: string; onStopSelect?: (id: string) => void }
 
 function MapCanvas({ day, selectedId, onStopSelect, full = false }: RouteMapProps & { full?: boolean }) {
   const html = useMemo(() => routeMapDocument(day), [day]);
+  const data = useMemo(() => routeMapData(day), [day]);
   const [attempt, setAttempt] = useState(0), [ready, setReady] = useState(false);
   const [error, setError] = useState<'render' | 'tiles' | null>(null);
   const prefix = full ? 'orchestrator-full-map' : 'orchestrator-map';
@@ -30,7 +31,7 @@ function MapCanvas({ day, selectedId, onStopSelect, full = false }: RouteMapProp
     } catch { /* Ignore unrelated/malformed bridge messages; never execute a command. */ }
   };
   return <View testID={`${prefix}-canvas-container`} style={mapStyles.canvas}>
-    <MapSurface key={attempt} id={`${prefix}-surface`} html={html} selectedId={selectedId} onMessage={receive} onFailure={fail} />
+    <MapSurface key={attempt} id={`${prefix}-surface`} html={html} data={data} selectedId={selectedId} onMessage={receive} onFailure={fail} />
     {!ready && !error && <View testID={`${prefix}-loading`} style={mapStyles.status} pointerEvents="none">
       <ActivityIndicator color={DS.brand} /><Text style={ui.muted}>Caricamento mappa…</Text>
     </View>}

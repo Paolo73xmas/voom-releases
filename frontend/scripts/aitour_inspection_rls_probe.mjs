@@ -5,6 +5,7 @@
 // Then cleanup all 3.
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
+import { Buffer } from 'node:buffer';
 
 const env = fs.readFileSync('/app/frontend/.env', 'utf8');
 const url = env.match(/EXPO_PUBLIC_SUPABASE_URL=(.+)/)[1].trim();

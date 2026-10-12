@@ -104,6 +104,19 @@
 
 user_problem_statement: "Preparare GPTour Orchestrator nella NORMALE VOOM, stessi identificativi Android/iOS; utente ha duplicato sicurezza Android e userà comandi integrati Emergent per build/installazione. Autorizzate modifiche ordinarie necessarie e regressioni; NO Edgev6/DB/CRM/signing changes, NO push/merge/OTA/distribuzioneagenti. Workspace main, futura destinazione SOLO conflict_170826_1303. Test qui isolati, nessuna chiamata live necessaria."
 
+final_saved_snapshot_verification:
+  authorization: "READONLY source/config/Git/remote. User explicitly asks NO Publish/build/OTA/signing/Edge/DB changes. Reports only updated."
+  status: "NOT_READY_FOR_PUBLISH"
+  saved_commit: "c8918ffd595418f00a15b6dd8559a856e5825c91"
+  frontend_tree: "c2d7d1e8908069080343be29a35c53ad4df47b87"
+  comparison: "395trackedfrontendchecked; onlyyarn.lock differs, no untracked. Menu/gate/localLogout/OTAfalse committed, IDs/legacy preserved."
+  prebuild: "BLOCKEDexit1; savedlockf95d...1213oldURLs vsworking04b388...0oldURLs. Not bypassed."
+  saved_test_results: "Exactgitarchive inTEMP: TSCpass,502PASS6FAIL/508 all6lockfile; globallint1preexistingBuffererror147warnings. Existingnode_modules samepinnedgraph reused (notfreshinstall)."
+  working_test_results: "508PASS0FAIL+TSC,globallint1sameerror148warnings; this is NOT definitive snapshot pass."
+  false_rca_rejected: "uppercaseH gitlsfiles-v NORMAL; debugflags0; NOTassumeunchanged,NOTignored. NoGitindexwrites."
+  next: "Actualsaved/buildlock inclusion requires supportedplatformfix; support@emergent.sh advised withJobID+evidence. No archivePublishmapping available. Lintfix needs sourcechange outside latestread-onlyconsent. NativeMap/signing/version/devicesunverified."
+  report: "test_reports/gptour_final_snapshot_pre_publish.json"
+
 orchestrator_same_app_preparation:
   implemented: true
   needs_retesting: false

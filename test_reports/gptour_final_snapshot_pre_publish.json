@@ -1,0 +1,67 @@
+{
+  "status": "NOT_READY_FOR_PUBLISH",
+  "scope": "Read-only application verification; reports only updated. No Git writes, Publish, build, OTA, real Auth/Edge/CRM calls or signing changes.",
+  "saved_commit": "c8918ffd595418f00a15b6dd8559a856e5825c91",
+  "saved_frontend_tree": "c2d7d1e8908069080343be29a35c53ad4df47b87",
+  "actual_publish_archive": "Not available or verified. Local HEAD is not asserted to be the future Publish/EAS archive.",
+  "comparison": {
+    "tracked_frontend_files_checked": 395,
+    "differences": ["frontend/yarn.lock"],
+    "untracked_frontend_files": 0,
+    "orchestrator_menu_gate_logout_ota_in_saved_commit": true
+  },
+  "lockfile": {
+    "working_sha256": "04b388c592f1a1e98c83ef99a5ea19585585908cd1ef56ca0ff8f7cf9f9225fd",
+    "saved_sha256": "f95d3900bf35adf6bdd9936d931b40cfffc91880c03f5d515600c6624a33a4cd",
+    "old_registry_entries_working": 0,
+    "old_registry_entries_saved": 1213,
+    "pre_build_exit_code": 1,
+    "pre_build_result": "BLOCKED: yarn.lock nel commit HEAD non coincide con il file locale verificato",
+    "index_debug_flags": 0,
+    "git_ls_files_v": "H (uppercase; normal cached file, NOT assume-unchanged)",
+    "ignored": false,
+    "root_cause": "Persistence discrepancy proven; platform autosave selection mechanism not inspectable. Reject previous subagent claim that uppercase H proves assume-unchanged. No index changes attempted."
+  },
+  "saved_commit_checks": {
+    "method": "git archive of exact commit frontend+tools into isolated /tmp copy; shared existing dependencies, identical pinned graph; no fresh install claimed",
+    "copy": "/tmp/voom-saved-snapshot-9cofn6vg",
+    "typescript_exit_code": 0,
+    "unit_total": 508,
+    "unit_passed": 502,
+    "unit_failed": 6,
+    "unit_failed_file": "frontend/tests/build_lockfile.test.ts",
+    "unit_failure_cause": "Old registry URLs in the saved lockfile; existing guard rejects before subsequent assertion branches",
+    "lint_exit_code": 1,
+    "lint_errors": 1,
+    "lint_warnings": 147,
+    "lint_error": "frontend/scripts/aitour_inspection_rls_probe.mjs:42:15 no-undef Buffer (pre-existing)"
+  },
+  "working_copy_checks": {
+    "typescript_exit_code": 0,
+    "unit_passed": 508,
+    "unit_failed": 0,
+    "lint_exit_code": 1,
+    "lint_errors": 1,
+    "lint_warnings": 148,
+    "lint_error": "Same pre-existing Buffer error"
+  },
+  "saved_configuration": {
+    "android_package": "com.voom.crm",
+    "ios_bundle_identifier": "app.emergent.voomioscdc30962",
+    "updates_enabled": false,
+    "pilot_flag": true,
+    "pilot_authorization": "Server required, no development-only bypass. Denial/error/focus/account tests preserved and passing; installed live binary not tested.",
+    "legacy_and_planning_authority": "Legacy routes/hooks/engine and Orchestrator binding/session byte-identical to pre-preparation baseline",
+    "eas_package_metro": "Unchanged"
+  },
+  "external_readiness_check": {
+    "status": "fail",
+    "reported": ["gitignore excludes .env", "supervisor lacks --tunnel"],
+    "assessment": "Generic findings do not demonstrate the saved lockfile problem or a failure in native compilation; not applied. Protected configuration and secret exclusions retained. Not claimed as an overall pass."
+  },
+  "remaining": [
+    "Corrected lockfile must be actually persisted in saved/build input; support advised contacting support@emergent.sh with Job ID and evidence, no documented inclusion control without Publish.",
+    "Pre-existing global lint error remains; current task authorized checks only, no source changes.",
+    "Native Maps, signing/version compatibility, physical Android/iPhone and actual Publish/build archive remain unverified."
+  ]
+}

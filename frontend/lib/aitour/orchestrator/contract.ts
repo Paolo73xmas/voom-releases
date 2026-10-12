@@ -13,7 +13,12 @@ export interface RequestEnvelope {
 export interface Command { name: ActionName; input?: JsonValue }
 export interface Coordinate { latitude: number; longitude: number }
 export interface OptionView { id: string; label: string; command: Command }
-export interface QuestionView { id: string; text: string; options: OptionView[]; kind?: string; followUps?: { id: string; text: string }[] }
+export interface QuestionView { id: string; text: string; options: OptionView[]; kind?: string; followUps?: { id: string; text: string }[];
+  /** Presentation-only link to the assistant message in this exact response, never sent to the API. */
+  messageId?: string }
+export interface TranscriptMessage { id: string; role: 'user' | 'assistant'; text: string;
+  /** Keep a distinct question in history too, after its actionable options have expired. */
+  question?: { id: string; text: string } }
 export interface StopView {
   id: string; sequence: string; name: string; coordinate: Coordinate; arrival: string; departure: string;
   travel: string; visit: string; wait?: string; mandatory?: boolean; reason?: string; options?: OptionView[];
@@ -25,13 +30,13 @@ export interface DayView {
   stops: StopView[]; geometry: Coordinate[];
   metrics: { id: string; label: string; value: string }[]; // Server values, never locally summed/recomputed.
   breaks: string[]; commitments: string[]; overnight?: string; warnings: string[];
-  geometryKind?: 'server' | 'connections';
+  geometryKind?: 'server' | 'connections' | 'missing';
 }
 export interface PlanView { days: DayView[]; routing: 'verified' | 'estimated' | 'unknown'; warnings: string[];
   planId?: string; metadata?: string; excluded?: { key: string; name: string; reason: string }[] }
 export interface ServerSnapshot {
   sessionId: string; revision: Revision; status: ServerStatus;
-  messages: { id: string; role: 'user' | 'assistant'; text: string }[];
+  messages: TranscriptMessage[];
   questions: QuestionView[]; plan: PlanView | null; warnings: string[];
   planId?: string | null; criteria?: string[]; pendingDecisions?: string[]; engineVersion?: string; errorCode?: string;
   revisionConfirmed?: boolean;

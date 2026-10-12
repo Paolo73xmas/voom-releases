@@ -24,11 +24,10 @@ export function presentPlan(plan: Plan): PlanView {
     excluded: plan.selectionReasons.excluded,
     days: days.map((d, index): DayView => {
       const day = d as DayPlan, t = d.totals;
-      const geometry = d.geometry.length ? d.geometry : [[d.departure.lat, d.departure.lng], ...d.stops.map(s => [s.lat, s.lng]), ...(d.returnTo ? [[d.returnTo.lat, d.returnTo.lng]] : [])];
       return { id: String(multi ? day.day : 1), title: `Giorno ${multi ? day.day : 1}`, date: d.date,
         start: { ...point(d.departure), label: `${formatMinute(d.startMin)} · ${point(d.departure).label}${day.startsFrom === 'previous_day_end' ? ' · fine giornata precedente' : ''}` },
         end: d.returnTo ? { ...point(d.returnTo), label: `${formatMinute(d.finishMin)} · ${point(d.returnTo).label}` } : null,
-        geometry: displayCoordinates(geometry, 'lat_lng'), geometryKind: d.geometry.length ? 'server' : 'connections',
+        geometry: displayCoordinates(d.geometry, 'lat_lng'), geometryKind: d.geometry.length > 1 ? 'server' : 'missing',
         stops: d.stops.map((s, i) => stopView(s, i, index + 1)),
         metrics: [ ['distance', 'Chilometri complessivi', km(t.totalKm)], ['drive', 'Guida tra tappe', minutes(t.driveMin)],
           ['return', 'Rientro', minutes(t.returnMin)], ['visit', 'Visite', minutes(t.visitMin)], ['wait', 'Attese', minutes(t.waitMin)],
@@ -36,7 +35,7 @@ export function presentPlan(plan: Plan): PlanView {
           ['available', 'Tempo disponibile', minutes(t.availableMin)], ['buffer', 'Margine', minutes(t.bufferMin)],
           ['finish', 'Fine / limite', `${formatMinute(d.finishMin)} / ${formatMinute(d.endMin)}`] ].map(([id, label, value]) => ({ id, label, value })),
         breaks: [], commitments: [], overnight: multi && !day.returnHomeAfterDay ? `Pernottamento proposto${day.nightKmHome != null ? ` · casa a ${km(day.nightKmHome)}` : ''} · ${day.nightDecision}` : undefined,
-        warnings: [...(multi ? [...day.warnings, ...day.conflicts] : []), ...(!d.geometry.length ? ['Geometria non fornita: la linea collega solo i punti, non è un percorso stradale ricostruito.'] : [])] };
+        warnings: [...(multi ? [...day.warnings, ...day.conflicts] : [])] };
     }) };
 }
 export function criteriaLabels(c: NormalizedCriteria): string[] {

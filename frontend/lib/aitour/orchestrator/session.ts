@@ -5,6 +5,7 @@ import { OrchestratorError, safeError } from './errors';
 import { SessionStore, type SessionRecord } from './storage';
 import type { SendRequest } from '../gptour-orchestrator-api';
 import { assertSnapshot } from './view';
+import { recoveredQuestionLinks } from './conversation';
 
 export interface SessionState {
   phase: 'idle' | 'hydrating' | 'sending' | 'resume_pending' | 'error';
@@ -119,7 +120,9 @@ export class OrchestratorSession {
         const incoming = [...(!getPlan ? [{ id: `${pending.requestId}-u`, role: 'user' as const,
           text: pending.message ?? this.actionLabel(pending) }] : []), ...(!getPlan ? snapshot.messages : [])];
         const ids = new Set(history.map(m => m.id));
-        snapshot = { ...snapshot, messages: [...history, ...incoming.filter(m => !ids.has(m.id))] };
+        snapshot = { ...snapshot, messages: [...history, ...incoming.filter(m => !ids.has(m.id))],
+          // Presentation linkage only: a get_plan read has no new transcript turn.
+          questions: getPlan ? recoveredQuestionLinks(snapshot, this.record.cache, history) : snapshot.questions };
       }
       const confirmed: SessionRecord = { storageVersion: 1, sessionId: snapshot.sessionId,
         ...(snapshot.revisionConfirmed === false ? this.record.revision !== undefined ? { revision: this.record.revision } : {} : { revision: snapshot.revision }) };

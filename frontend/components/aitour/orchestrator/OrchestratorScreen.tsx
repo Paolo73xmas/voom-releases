@@ -6,7 +6,7 @@ import type { Command, ServerStatus } from '../../../lib/aitour/orchestrator/con
 import type { SessionState } from '../../../lib/aitour/orchestrator/session';
 import { visibleServerPlan } from '../../../lib/aitour/orchestrator/view';
 import { OButton } from './controls';
-import { ServerQuestion } from './ServerQuestion';
+import { ServerConversation } from './ServerConversation';
 import { ServerPlan } from './ServerPlan';
 import { styles as s } from './styles';
 
@@ -22,6 +22,7 @@ export interface ScreenProps {
 }
 export function OrchestratorScreen({ state, available, signedIn, testPreview, send, act, retry, recover, legacy, newConversation, access, targetControl, back }: ScreenProps) {
   const insets = useSafeAreaInsets(); const [text, setText] = useState('');
+  const [selectedDay, setSelectedDay] = useState<{ session: string; id: string } | null>(null);
   const busy = ['hydrating', 'sending'].includes(state.phase);
   const disabled = !available || !signedIn || busy || state.pending;
   const plan = visibleServerPlan(state.snapshot, busy || state.pending || !!state.error || !!state.restored);
@@ -52,8 +53,7 @@ export function OrchestratorScreen({ state, available, signedIn, testPreview, se
       {state.snapshot && <Text testID="orchestrator-server-revision" style={s.muted}>Revisione {state.snapshot.revision}{state.snapshot.engineVersion ? ` · ${state.snapshot.engineVersion}` : ''}</Text>}
       {state.snapshot?.criteria?.map((label, i) => <Text key={i} testID={`orchestrator-criteria-${i}`} style={s.text}>{label}</Text>)}
       {state.snapshot?.pendingDecisions?.map((label, i) => <Text key={i} testID={`orchestrator-pending-decision-${i}`} style={s.muted}>Decisione pendente: {label}</Text>)}
-      {state.snapshot?.messages.map(m => <View key={m.id} testID={`orchestrator-message-${m.id}`} style={[s.message, m.role === 'user' && s.userMessage]}>
-        <Text style={s.text}>{m.text}</Text></View>)}
+      {state.snapshot && <ServerConversation snapshot={state.snapshot} disabled={disabled || !!state.error} act={act} />}
       {busy && <View testID="orchestrator-loading" style={s.row}><ActivityIndicator color={DS.brand} /><Text style={s.text}>{state.phase === 'hydrating' ? 'Recupero sessione…' : 'Attendo il motore centrale…'}</Text></View>}
       {!!state.error && <View testID="orchestrator-error" accessibilityRole="alert" style={[s.notice, s.danger]}><Text style={s.text}>{state.error.message}</Text></View>}
       {state.error?.details?.revision !== undefined && <Text testID="orchestrator-conflict-revision" style={s.text}>Revisione server: {state.error.details.revision}. Reinvia esplicitamente il messaggio o la decisione.</Text>}
@@ -62,9 +62,11 @@ export function OrchestratorScreen({ state, available, signedIn, testPreview, se
         && <OButton id="orchestrator-retry" label="Riprova la stessa richiesta" onPress={retry} disabled={!available || !signedIn} />}
       {available && signedIn && !busy && state.canRecover && !state.pending
         && <OButton id="orchestrator-recover" label="Recupera piano dal server" onPress={recover} />}
-      {state.snapshot?.questions.map(q => <ServerQuestion key={q.id} question={q} disabled={disabled || !!state.error} act={act} />)}
       {state.snapshot?.warnings.map((w, index) => <Text testID={`orchestrator-warning-${index}`} key={`w-${index}`} style={s.muted}>{w}</Text>)}
-      {plan && <ServerPlan key={`${plan.planId}:${state.snapshot?.revision}`} plan={plan} disabled={disabled} act={act} confirmable={state.snapshot?.status === 'ready' && plan.routing === 'verified'} />}
+      {plan && <ServerPlan key={`${plan.planId}:${state.snapshot?.revision}`} plan={plan} disabled={disabled} act={act}
+        selectedDayId={selectedDay?.session === state.snapshot?.sessionId ? selectedDay?.id : undefined}
+        onDayChange={id => setSelectedDay({ session: state.snapshot!.sessionId, id })}
+        confirmable={state.snapshot?.status === 'ready' && plan.routing === 'verified'} />}
     </ScrollView>
     <View style={[s.composer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <TextInput testID="orchestrator-message-input" accessibilityLabel="Messaggio al motore centrale" multiline maxLength={2000} editable={!disabled}

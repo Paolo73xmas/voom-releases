@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "requests": 20,
+  "unknown_business": 0,
+  "react_duplicate_keys": 0,
+  "page_errors": 0,
+  "screenshots": [
+    "/tmp/iter81_embedded_map_rows.jpeg",
+    "/tmp/iter81_full_map.jpeg",
+    "/tmp/iter81_detail_sheet.jpeg"
+  ],
+  "start_return_labels_unobscured": true
+}

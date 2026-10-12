@@ -35,12 +35,11 @@ describe('Official edge conditions and faithful presentation', () => {
     expect(plan.days[0].overnight).toContain('61,0 km');
     expect(plan.days[1].start.label).toContain('fine giornata precedente');
   });
-  it('supports single-day and labels empty geometry only as point connections', () => {
+  it('supports single-day without generating any geometry when the server provides none', () => {
     const raw = data(); delete raw.plan!.days; raw.plan!.geometry = [];
     const day = decodeOfficialResponse(raw, request).plan!.days[0];
-    expect(day.geometryKind).toBe('connections');
-    expect(day.geometry).toEqual([raw.plan!.departure, ...raw.plan!.stops, raw.plan!.returnTo!].map(p => ({ latitude: p.lat, longitude: p.lng })));
-    expect(day.warnings.join(' ')).toContain('non è un percorso stradale');
+    expect(day.geometryKind).toBe('missing');
+    expect(day.geometry).toEqual([]);
     expect(day.stops[0].arrival).toBe('07:50');
     expect(day.stops[1].lunch).toBe('30 min');
     expect(day.stops[0].lastOrder).toBe('2026-09-18 · 24 giorni');

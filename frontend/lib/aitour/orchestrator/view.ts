@@ -16,8 +16,9 @@ export function assertSnapshot(s: ServerSnapshot, request: RequestEnvelope): voi
     if (!s || s.sessionId !== request.sessionId || !validRevision(s.revision) || !SERVER_STATUSES.includes(s.status)) throw new Error('identity');
     if (typeof request.expectedRevision === 'number' && typeof s.revision === 'number' && s.revision < request.expectedRevision) throw new Error('stale');
     if (!strings(s.warnings) || !Array.isArray(s.messages) || !Array.isArray(s.questions)) throw new Error('shape');
-    for (const m of s.messages) if (!id(m.id) || !['user', 'assistant'].includes(m.role) || typeof m.text !== 'string') throw new Error('message');
-    for (const q of s.questions) { if (!id(q.id) || typeof q.text !== 'string') throw new Error('question'); options(q.options); }
+    for (const m of s.messages) if (!id(m.id) || !['user', 'assistant'].includes(m.role) || typeof m.text !== 'string'
+      || (m.question !== undefined && (!m.question || !id(m.question.id) || typeof m.question.text !== 'string'))) throw new Error('message');
+    for (const q of s.questions) { if (!id(q.id) || typeof q.text !== 'string' || !optionalText(q.messageId)) throw new Error('question'); options(q.options); }
     if (s.status === 'ready' && !s.plan) throw new Error('ready without plan');
     if (s.plan) {
       if (!['verified', 'estimated', 'unknown'].includes(s.plan.routing) || !strings(s.plan.warnings) || !Array.isArray(s.plan.days) || !s.plan.days.length) throw new Error('plan');

@@ -14,7 +14,9 @@ export function decodeOfficialResponse(raw: unknown, req: Readonly<RequestEnvelo
   validateWireResponse(raw, req);
   if (raw.status !== 'ready' && raw.status !== 'planning' && raw.plan !== null) throw new OrchestratorError('INVALID_RESPONSE');
   return { sessionId: raw.sessionId, revision: raw.sessionRevision, status: raw.status, revisionConfirmed: true,
-    messages: [{ id: `${raw.requestId}-a`, role: 'assistant', text: raw.message }], questions: raw.question ? [presentQuestion(raw.question)] : [],
+    messages: [{ id: `${raw.requestId}-a`, role: 'assistant', text: raw.message,
+      ...(raw.question ? { question: { id: raw.question.id, text: raw.question.text } } : {}) }],
+    questions: raw.question ? [{ ...presentQuestion(raw.question), messageId: `${raw.requestId}-a` }] : [],
     plan: raw.plan ? presentPlan(raw.plan) : null, planId: raw.planId, engineVersion: raw.engineVersion, errorCode: raw.errorCode,
     criteria: criteriaLabels(raw.criteria), pendingDecisions: raw.pendingDecisions, warnings: [...raw.conflicts, ...raw.dataQuality.notes] };
 }

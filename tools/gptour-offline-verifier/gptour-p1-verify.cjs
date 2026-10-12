@@ -296,11 +296,10 @@ function presentPlan(plan) {
         excluded: plan.selectionReasons.excluded,
         days: days.map((d, index) => {
             const day = d, t = d.totals;
-            const geometry = d.geometry.length ? d.geometry : [[d.departure.lat, d.departure.lng], ...d.stops.map(s => [s.lat, s.lng]), ...(d.returnTo ? [[d.returnTo.lat, d.returnTo.lng]] : [])];
             return { id: String(multi ? day.day : 1), title: `Giorno ${multi ? day.day : 1}`, date: d.date,
                 start: { ...point(d.departure), label: `${(0, exports.formatMinute)(d.startMin)} · ${point(d.departure).label}${day.startsFrom === 'previous_day_end' ? ' · fine giornata precedente' : ''}` },
                 end: d.returnTo ? { ...point(d.returnTo), label: `${(0, exports.formatMinute)(d.finishMin)} · ${point(d.returnTo).label}` } : null,
-                geometry: (0, coordinates_1.displayCoordinates)(geometry, 'lat_lng'), geometryKind: d.geometry.length ? 'server' : 'connections',
+                geometry: (0, coordinates_1.displayCoordinates)(d.geometry, 'lat_lng'), geometryKind: d.geometry.length > 1 ? 'server' : 'missing',
                 stops: d.stops.map((s, i) => stopView(s, i, index + 1)),
                 metrics: [['distance', 'Chilometri complessivi', km(t.totalKm)], ['drive', 'Guida tra tappe', minutes(t.driveMin)],
                     ['return', 'Rientro', minutes(t.returnMin)], ['visit', 'Visite', minutes(t.visitMin)], ['wait', 'Attese', minutes(t.waitMin)],
@@ -308,7 +307,7 @@ function presentPlan(plan) {
                     ['available', 'Tempo disponibile', minutes(t.availableMin)], ['buffer', 'Margine', minutes(t.bufferMin)],
                     ['finish', 'Fine / limite', `${(0, exports.formatMinute)(d.finishMin)} / ${(0, exports.formatMinute)(d.endMin)}`]].map(([id, label, value]) => ({ id, label, value })),
                 breaks: [], commitments: [], overnight: multi && !day.returnHomeAfterDay ? `Pernottamento proposto${day.nightKmHome != null ? ` · casa a ${km(day.nightKmHome)}` : ''} · ${day.nightDecision}` : undefined,
-                warnings: [...(multi ? [...day.warnings, ...day.conflicts] : []), ...(!d.geometry.length ? ['Geometria non fornita: la linea collega solo i punti, non è un percorso stradale ricostruito.'] : [])] };
+                warnings: [...(multi ? [...day.warnings, ...day.conflicts] : [])] };
         }) };
 }
 function criteriaLabels(c) {
@@ -417,10 +416,11 @@ function assertSnapshot(s, request) {
         if (!strings(s.warnings) || !Array.isArray(s.messages) || !Array.isArray(s.questions))
             throw new Error('shape');
         for (const m of s.messages)
-            if (!id(m.id) || !['user', 'assistant'].includes(m.role) || typeof m.text !== 'string')
+            if (!id(m.id) || !['user', 'assistant'].includes(m.role) || typeof m.text !== 'string'
+                || (m.question !== undefined && (!m.question || !id(m.question.id) || typeof m.question.text !== 'string')))
                 throw new Error('message');
         for (const q of s.questions) {
-            if (!id(q.id) || typeof q.text !== 'string')
+            if (!id(q.id) || typeof q.text !== 'string' || !optionalText(q.messageId))
                 throw new Error('question');
             options(q.options);
         }
@@ -483,7 +483,9 @@ function decodeOfficialResponse(raw, req) {
     if (raw.status !== 'ready' && raw.status !== 'planning' && raw.plan !== null)
         throw new errors_1.OrchestratorError('INVALID_RESPONSE');
     return { sessionId: raw.sessionId, revision: raw.sessionRevision, status: raw.status, revisionConfirmed: true,
-        messages: [{ id: `${raw.requestId}-a`, role: 'assistant', text: raw.message }], questions: raw.question ? [(0, presentation_1.presentQuestion)(raw.question)] : [],
+        messages: [{ id: `${raw.requestId}-a`, role: 'assistant', text: raw.message,
+                ...(raw.question ? { question: { id: raw.question.id, text: raw.question.text } } : {}) }],
+        questions: raw.question ? [{ ...(0, presentation_1.presentQuestion)(raw.question), messageId: `${raw.requestId}-a` }] : [],
         plan: raw.plan ? (0, presentation_1.presentPlan)(raw.plan) : null, planId: raw.planId, engineVersion: raw.engineVersion, errorCode: raw.errorCode,
         criteria: (0, presentation_1.criteriaLabels)(raw.criteria), pendingDecisions: raw.pendingDecisions, warnings: [...raw.conflicts, ...raw.dataQuality.notes] };
 }
@@ -781,11 +783,11 @@ function runCli(api, argv) {
 const api = createVerifier(mobile, {
   "source": "VOOM Mobile pure Orchestrator functions",
   "moduleCount": 10,
-  "fingerprint": "cbde323da92e55858903caa3331794421dc4b4e329c10957f717f09b6ad3c871",
+  "fingerprint": "6c3583c8020b8fa72ad17f667f8cc44590c3aa4314b795f0c27152f43c7bf04c",
   "files": [
     {
       "module": "contract.ts",
-      "sha256": "c918c4188d13a8ce5cf5641db31f8605a15f04da4584382606c254d762337739"
+      "sha256": "50be91e53e36bef350d55b878272acb63421a71867735bcb9e9c16bda51c1f4f"
     },
     {
       "module": "errors.ts",
@@ -809,7 +811,7 @@ const api = createVerifier(mobile, {
     },
     {
       "module": "presentation.ts",
-      "sha256": "a29cb796e01da30cef77035b68e67a89b3499cc680c9039e28e195c0718411bc"
+      "sha256": "a062e298e33907d981576fa0315df2ec788dcee41c3f26222a9788543abb5138"
     },
     {
       "module": "request.ts",
@@ -817,13 +819,13 @@ const api = createVerifier(mobile, {
     },
     {
       "module": "view.ts",
-      "sha256": "a8d9eacd3c50405c011d2716b59780b5be9519bdb04d1e5995cc49f4fe630279"
+      "sha256": "023514ee06f1b3d7a3930acb227524e83fd79fdf5d1d247e02cdc7a70a09ee4b"
     },
     {
       "module": "binding.ts",
-      "sha256": "c61d5764efd3eab6b64c7d30daaa23f266e5f624d225da06bae4bcd2296d7cd1"
+      "sha256": "b67ae48c69de76ab370580d6257494cb964c41da3e73051ba5c35b1c41d901f5"
     }
   ]
 });
-module.exports = { verifyTurns: api.verifyTurns, provenance: {"source":"VOOM Mobile pure Orchestrator functions","moduleCount":10,"fingerprint":"cbde323da92e55858903caa3331794421dc4b4e329c10957f717f09b6ad3c871","files":[{"module":"contract.ts","sha256":"c918c4188d13a8ce5cf5641db31f8605a15f04da4584382606c254d762337739"},{"module":"errors.ts","sha256":"f317f9864c1810afb1826dcc8e8cb864da415d00578f16068cbde8558a87643e"},{"module":"coordinates.ts","sha256":"fb18f4583f3fcaf970a5ddde88e417f526802d0e6f97d0408668df8987ad588e"},{"module":"wire-contract.ts","sha256":"ddf36ebcd427437647bc0922beed1047d6a69ecbf7c3b379505fb5d3c9e52415"},{"module":"wire-actions.ts","sha256":"82ea590e3930b551db219daf9ca20717acf39aee0a59a0835f435a352b49bf7f"},{"module":"wire-response.ts","sha256":"25ddcf0f2af9437f6b4243f75c8e8f9fb8b1ebd42a6eeefda42cae4f3e5e64a1"},{"module":"presentation.ts","sha256":"a29cb796e01da30cef77035b68e67a89b3499cc680c9039e28e195c0718411bc"},{"module":"request.ts","sha256":"8237efe094e4c3aa2cc3d8b2891cf97bbd5768e4d775484ad4e6c67a6de250d2"},{"module":"view.ts","sha256":"a8d9eacd3c50405c011d2716b59780b5be9519bdb04d1e5995cc49f4fe630279"},{"module":"binding.ts","sha256":"c61d5764efd3eab6b64c7d30daaa23f266e5f624d225da06bae4bcd2296d7cd1"}]} };
+module.exports = { verifyTurns: api.verifyTurns, provenance: {"source":"VOOM Mobile pure Orchestrator functions","moduleCount":10,"fingerprint":"6c3583c8020b8fa72ad17f667f8cc44590c3aa4314b795f0c27152f43c7bf04c","files":[{"module":"contract.ts","sha256":"50be91e53e36bef350d55b878272acb63421a71867735bcb9e9c16bda51c1f4f"},{"module":"errors.ts","sha256":"f317f9864c1810afb1826dcc8e8cb864da415d00578f16068cbde8558a87643e"},{"module":"coordinates.ts","sha256":"fb18f4583f3fcaf970a5ddde88e417f526802d0e6f97d0408668df8987ad588e"},{"module":"wire-contract.ts","sha256":"ddf36ebcd427437647bc0922beed1047d6a69ecbf7c3b379505fb5d3c9e52415"},{"module":"wire-actions.ts","sha256":"82ea590e3930b551db219daf9ca20717acf39aee0a59a0835f435a352b49bf7f"},{"module":"wire-response.ts","sha256":"25ddcf0f2af9437f6b4243f75c8e8f9fb8b1ebd42a6eeefda42cae4f3e5e64a1"},{"module":"presentation.ts","sha256":"a062e298e33907d981576fa0315df2ec788dcee41c3f26222a9788543abb5138"},{"module":"request.ts","sha256":"8237efe094e4c3aa2cc3d8b2891cf97bbd5768e4d775484ad4e6c67a6de250d2"},{"module":"view.ts","sha256":"023514ee06f1b3d7a3930acb227524e83fd79fdf5d1d247e02cdc7a70a09ee4b"},{"module":"binding.ts","sha256":"b67ae48c69de76ab370580d6257494cb964c41da3e73051ba5c35b1c41d901f5"}]} };
 if (require.main === module) process.exitCode = runCli(api, process.argv.slice(2));

@@ -1,0 +1,566 @@
+{
+ "generated_at_utc": "2026-10-13T11:56:30Z",
+ "checks": 85,
+ "pass": 85,
+ "results": [
+  {
+   "section": "R1-ruoli-grant",
+   "label": "appartenenze: backend/anon/authenticated/service_role solo membri di authenticator; owner senza membri",
+   "status": "PASS",
+   "detail": "anon->authenticator,authenticated->authenticator,service_role->authenticator,gptour_semantic_backend->authenticator"
+  },
+  {
+   "section": "R1-ruoli-grant",
+   "label": "backend/owner: no superuser, no bypassrls, no login, noinherit",
+   "status": "PASS",
+   "detail": "gptour_semantic_backend:falsefalsefalsefalse,gptour_semantic_owner:falsefalsefalsefalse"
+  },
+  {
+   "section": "R1-ruoli-grant",
+   "label": "EXECUTE: anon/authenticated/service_role mai; backend solo su internal e read; helper solo owner",
+   "status": "PASS",
+   "detail": "assert_backend_caller:falsefalsefalsefalse,enforce_write_once:falsefalsefalsefalse,no_delete:falsefalsefalsefalse,u2_role_probe_internal:falsefalsefalsetrue,u2_role_probe_is_authorized:falsefalsefalse"
+  },
+  {
+   "section": "R1-ruoli-grant",
+   "label": "tabella interna: nessun privilegio per PUBLIC/anon/authenticated/service_role/backend (solo il ruolo writer di LABORATORIO)",
+   "status": "PASS",
+   "detail": "u2_probe_writer:SELECT,u2_probe_writer:UPDATE,u2_probe_writer:DELETE"
+  },
+  {
+   "section": "R1-ruoli-grant",
+   "label": "nessuna voce PUBLIC (\"=\") nelle ACL della tabella e delle funzioni della sonda",
+   "status": "PASS",
+   "detail": "0/0"
+  },
+  {
+   "section": "R1-ruoli-grant",
+   "label": "DOCUMENTATO: RLS abilitata ma NON forzata \u2192 il proprietario (e le RPC che eseguono come owner) la superano; la protezione nelle RPC sono i controlli espliciti",
+   "status": "PASS",
+   "detail": "true/false"
+  },
+  {
+   "section": "R1-ruoli-grant",
+   "label": "prova: il ruolo owner legge la tabella senza policy (bypass da propriet\u00e0), conferma della nota precedente",
+   "status": "PASS",
+   "detail": "0"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "backend (jwt role + SET ROLE + jti valido) \u2192 ammesso",
+   "status": "PASS",
+   "detail": "200 {'ok': True}"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "authenticated proprietario A \u2192 respinto 403 (nessun EXECUTE)",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'permission denied for function u2_role_probe_internal'}"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "authenticated con user_metadata.role=admin \u2192 respinto 403 (nessun EXECUTE)",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'permission denied for function u2_role_probe_internal'}"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "anon \u2192 respinto 401 (nessun EXECUTE)",
+   "status": "PASS",
+   "detail": "401 {'code': '42501', 'details': None, 'hint': None, 'message': 'permission denied for function u2_role_probe_internal'}"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "service_role via PostgREST \u2192 403 42501 (EXECUTE revocato anche a service_role)",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'permission denied for function u2_role_probe_internal'}"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "solo la riga del backend esiste (r1); nessun insert dai respinti",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "claims falsificati (role backend nel JWT) ma SET ROLE authenticated \u2192 permission denied (grant), prima ancora del controllo interno",
+   "status": "PASS",
+   "detail": "permission denied for function u2_role_probe_internal"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "SET ROLE backend ma claims senza role backend \u2192 respinto dal controllo interno (secondo segnale)",
+   "status": "PASS",
+   "detail": "backend credential required (jwt role)"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "chiave backend con jti scaduto (not_after) \u2192 403",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'backend key unknown, revoked or expired'}"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "jti sconosciuto \u2192 403",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'backend key unknown, revoked or expired'}"
+  },
+  {
+   "section": "R2-caller-check-PostgREST",
+   "label": "JWT backend senza jti \u2192 403",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'backend key unknown, revoked or expired'}"
+  },
+  {
+   "section": "R3-revoca-credenziale",
+   "label": "revoca per jti (allowlist) \u2192 il token ancora valido crittograficamente \u00e8 respinto subito",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'backend key unknown, revoked or expired'}"
+  },
+  {
+   "section": "R3-revoca-credenziale",
+   "label": "ripristino allowlist \u2192 ammesso",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "R3-revoca-credenziale",
+   "label": "revoca dell\u2019appartenenza a authenticator \u2192 PostgREST non pu\u00f2 assumere il ruolo: tutti i token backend inutilizzabili",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'permission denied to set role \"gptour_semantic_backend\"'}"
+  },
+  {
+   "section": "R3-revoca-credenziale",
+   "label": "ripristino appartenenza \u2192 ammesso",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "R3-revoca-credenziale",
+   "label": "exp JWT scaduto \u2192 401 (ma un token precedente non viene invalidato da un nuovo exp: per questo esiste la allowlist jti)",
+   "status": "PASS",
+   "detail": "401"
+  },
+  {
+   "section": "R4-proiezioni-ownership",
+   "label": "proiezione: insieme ESATTO di chiavi di contratto, nessun lease/context/output",
+   "status": "PASS",
+   "detail": "200 {'body': '{\"v\":1}', 'status': 'done', 'httpStatus': 200, 'responseExpiresAt': '2026-10-20T11:56:28.464917+00:00'}"
+  },
+  {
+   "section": "R4-proiezioni-ownership",
+   "label": "caller B su request di A \u2192 not found non enumerante (controllo esplicito di ownership nella RPC, non RLS)",
+   "status": "PASS",
+   "detail": "404 {'code': 'PT404', 'details': None, 'hint': None, 'message': 'not found'}"
+  },
+  {
+   "section": "R4-proiezioni-ownership",
+   "label": "response_expires_at raggiunta \u2192 not found (scadenza applicata nella lettura)",
+   "status": "PASS",
+   "detail": "404 {'code': 'PT404', 'details': None, 'hint': None, 'message': 'not found'}"
+  },
+  {
+   "section": "R4-proiezioni-ownership",
+   "label": "helper (owner=postgres): A non abilitato in Fase 6 \u2192 false",
+   "status": "PASS",
+   "detail": "false"
+  },
+  {
+   "section": "R4-proiezioni-ownership",
+   "label": "helper: A abilitato \u2192 true; B non abilitato \u2192 false; A per agente B \u2192 false",
+   "status": "PASS",
+   "detail": "true/false/false"
+  },
+  {
+   "section": "R4-proiezioni-ownership",
+   "label": "NEGATIVO DIMOSTRATIVO: stesso helper owned da gptour_semantic_owner con soli grant di colonna \u2192 false (RLS di profiles applicata al non-proprietario, auth.uid() NULL)",
+   "status": "PASS",
+   "detail": "false"
+  },
+  {
+   "section": "R4-proiezioni-ownership",
+   "label": "lettura con autorizzazione attuale valida \u2192 200",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "R4-proiezioni-ownership",
+   "label": "accesso revocato (kill-switch Fase 6) \u2192 anche il replay della ricevuta \u00e8 negato",
+   "status": "PASS",
+   "detail": "404 {'code': 'PT404', 'details': None, 'hint': None, 'message': 'not found'}"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend su customers \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table customers"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend su profiles \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table profiles"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend su tabaccherie \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table tabaccherie"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend su agent_zones \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table agent_zones"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend su gptour_orchestrator_sessions \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_orchestrator_sessions"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend su gptour_orchestrator_user_access \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_orchestrator_user_access"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend via HTTP su /customers \u2192 negato",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend su RPC CRM ai_tour_catalog_area \u2192 permission denied (le letture CRM restano con JWT utente)",
+   "status": "PASS",
+   "detail": "permission denied for function ai_tour_catalog_area"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend su RPC CRM gptour_orchestrator_my_access \u2192 permission denied (le letture CRM restano con JWT utente)",
+   "status": "PASS",
+   "detail": "permission denied for function gptour_orchestrator_my_access"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "backend sulla tabella interna \u2192 permission denied (solo RPC)",
+   "status": "PASS",
+   "detail": "permission denied for schema u2_role_probe"
+  },
+  {
+   "section": "R5-backend-senza-CRM",
+   "label": "owner su customers \u2192 permission denied (grant limitati a profiles/user_access, colonne)",
+   "status": "PASS",
+   "detail": "permission denied for table customers"
+  },
+  {
+   "section": "R6-client-tabelle-interne",
+   "label": "authenticated A: GET tabella interna (schema non esposto / nessun grant) \u2192 404/404",
+   "status": "PASS",
+   "detail": "404 404"
+  },
+  {
+   "section": "R6-client-tabelle-interne",
+   "label": "service_role: GET tabella interna (schema non esposto / nessun grant) \u2192 404/404",
+   "status": "PASS",
+   "detail": "404 404"
+  },
+  {
+   "section": "R6-client-tabelle-interne",
+   "label": "proprietario A: INSERT diretto \u2192 permission denied (schema)",
+   "status": "PASS",
+   "detail": "permission denied for schema u2_role_probe"
+  },
+  {
+   "section": "R6-client-tabelle-interne",
+   "label": "proprietario A: UPDATE diretto di llm_output \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for schema u2_role_probe"
+  },
+  {
+   "section": "R6-client-tabelle-interne",
+   "label": "service_role: UPDATE diretto \u2192 permission denied (privilegio revocato; NON prova il trigger)",
+   "status": "PASS",
+   "detail": "permission denied for schema u2_role_probe"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "writer (LAB): context NULL\u2192valore mentre pending \u2192 ammesso (ha UPDATE: il trigger decide)",
+   "status": "PASS",
+   "detail": "pending"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "writer: context valore\u2192altro valore \u2192 RIFIUTO DEL TRIGGER (U2W04), non permission denied",
+   "status": "PASS",
+   "detail": "context is write-once"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "writer: context\u2192NULL mentre pending \u2192 rifiuto trigger",
+   "status": "PASS",
+   "detail": "context cleared only at finalization"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "writer: llm_output NULL\u2192valore mentre pending \u2192 ammesso",
+   "status": "PASS",
+   "detail": "pending"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "writer: llm_output sostituito \u2192 rifiuto trigger (U2W05)",
+   "status": "PASS",
+   "detail": "output is write-once"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "writer: response senza transizione pending\u2192done \u2192 rifiuto trigger (U2W06)",
+   "status": "PASS",
+   "detail": "response only at pending->done"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "finalizzazione: pending\u2192done con risposta e cancellazione di context/llm_output nello stesso UPDATE \u2192 ammessa",
+   "status": "PASS",
+   "detail": "done"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "dopo done: llm_output NULL\u2192valore \u2192 rifiuto trigger (nessuna sostituzione post-finalizzazione)",
+   "status": "PASS",
+   "detail": "output after finalization"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "dopo done: response sostituita \u2192 rifiuto trigger",
+   "status": "PASS",
+   "detail": "response is write-once"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "tombstone prima di response_expires_at \u2192 rifiuto trigger",
+   "status": "PASS",
+   "detail": "response cleared only at expiry tombstone"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "tombstone dopo response_expires_at: body\u2192NULL con done\u2192expired \u2192 ammesso; http_status conservato",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "expired\u2192pending \u2192 rifiuto trigger (U2W01)",
+   "status": "PASS",
+   "detail": "status cannot return to pending"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "done\u2192pending \u2192 rifiuto trigger",
+   "status": "PASS",
+   "detail": "status cannot return to pending"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "budget >2 \u2192 rifiuto trigger (U2W03)",
+   "status": "PASS",
+   "detail": "budget monotonic, max 2"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "owner riscritto \u2192 rifiuto trigger (U2W02)",
+   "status": "PASS",
+   "detail": "owner immutable"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "DELETE \u2192 rifiuto trigger (U2W07) anche per chi ha il privilegio DELETE",
+   "status": "PASS",
+   "detail": "rows are never deleted by the application"
+  },
+  {
+   "section": "R7-trigger-vs-permission",
+   "label": "controllo: service_role fallisce per PRIVILEGIO, non per trigger \u2014 la prova del trigger \u00e8 quella del ruolo writer",
+   "status": "PASS",
+   "detail": "permission denied for schema u2_role_probe"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "appartenenze leggibili: authenticator \u00e8 MEMBRO dei ruoli anon/authenticated/service_role/backend (come hosted); anon/authenticated non sono mai membri di authenticator; owner e writer senza membri",
+   "status": "PASS",
+   "detail": "[{'ruolo_concesso': 'anon', 'membro': 'authenticator', 'admin_option': 'false'}, {'ruolo_concesso': 'authenticated', 'membro': 'authenticator', 'admin_option': 'false'}, {'ruolo_concesso': 'gptour_sem"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "nessun ruolo ha authenticator come ruolo_concesso (nessuno \u00e8 membro di authenticator)",
+   "status": "PASS",
+   "detail": "[{'ruolo_concesso': 'anon', 'membro': 'authenticator', 'admin_option': 'false'}, {'ruolo_concesso': 'authenticated', 'membro': 'authenticator', 'admin_option': 'false'}, {'ruolo_concesso': 'gptour_sem"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "nessuna appartenenza con ADMIN OPTION",
+   "status": "PASS",
+   "detail": "[{'ruolo_concesso': 'anon', 'membro': 'authenticator', 'admin_option': 'false'}, {'ruolo_concesso': 'authenticated', 'membro': 'authenticator', 'admin_option': 'false'}, {'ruolo_concesso': 'gptour_sem"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "helper adottato: owner=ruolo migratore, SECURITY DEFINER, search_path vuoto, ritorna SOLO boolean(uuid,uuid)",
+   "status": "PASS",
+   "detail": "{\"owner\": \"postgres\", \"security_definer\": \"true\", \"proconfig\": \"search_path=\\\"\\\"\", \"return_type\": \"boolean\", \"arguments\": \"p_uid uuid, p_agent_id uuid\", \"acl\": \"postgres=X/postgres;gptour_semantic_own"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "ACL helper: EXECUTE solo owner (+ proprietario postgres); nessun PUBLIC/anon/authenticated/service_role/backend",
+   "status": "PASS",
+   "detail": "postgres=X/postgres;gptour_semantic_owner=X/postgres"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "NEGATIVO: il ruolo backend non pu\u00f2 chiamare l\u2019helper direttamente (psql)",
+   "status": "PASS",
+   "detail": "permission denied for function u2_role_probe_is_authorized"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "NEGATIVO: helper via PostgREST con credenziale backend \u2192 403 42501",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'permission denied for function u2_role_probe_is_authorized'}"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "NEGATIVO: helper via PostgREST con JWT utente \u2192 403",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "owner: profiles.email (colonna non concessa) \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table profiles"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "owner: profiles.full_name \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table profiles"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "owner: user_access.note \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_orchestrator_user_access"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "owner: customers \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table customers"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "owner: appointments \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table appointments"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "owner attraverso l\u2019helper ottiene solo un booleano (uid sconosciuto \u2192 false), nessun dato CRM",
+   "status": "PASS",
+   "detail": "false"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "allowlist jti: owner=gptour_semantic_owner, nessun grant a backend/authenticated",
+   "status": "PASS",
+   "detail": "gptour_semantic_owner|gptour_semantic_owner=arwdDxt/gptour_semantic_owner"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "NEGATIVO: il backend non pu\u00f2 inserire nuovi jti (psql)",
+   "status": "PASS",
+   "detail": "permission denied for schema u2_role_probe"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "NEGATIVO: il backend non pu\u00f2 riattivare jti revocati",
+   "status": "PASS",
+   "detail": "permission denied for schema u2_role_probe"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "NEGATIVO: allowlist non raggiungibile via PostgREST (schema non esposto)",
+   "status": "PASS",
+   "detail": "404"
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "nessuna funzione della sonda scrive la allowlist: il backend non pu\u00f2 autorizzarsi nuovi token tramite RPC",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "nessun jti \"rogue\" inserito",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "R8-estrazioni-helper-allowlist",
+   "label": "controllo HTTP: nessuna creazione (status \u2260 201)",
+   "status": "PASS",
+   "detail": "404"
+  }
+ ],
+ "extraction": {
+  "appartenenze_ruoli": [
+   {
+    "ruolo_concesso": "anon",
+    "membro": "authenticator",
+    "admin_option": "false"
+   },
+   {
+    "ruolo_concesso": "authenticated",
+    "membro": "authenticator",
+    "admin_option": "false"
+   },
+   {
+    "ruolo_concesso": "gptour_semantic_backend",
+    "membro": "authenticator",
+    "admin_option": "false"
+   },
+   {
+    "ruolo_concesso": "service_role",
+    "membro": "authenticator",
+    "admin_option": "false"
+   }
+  ],
+  "helper": {
+   "u2_role_probe_is_authorized": {
+    "owner": "postgres",
+    "security_definer": "true",
+    "proconfig": "search_path=\"\"",
+    "return_type": "boolean",
+    "arguments": "p_uid uuid, p_agent_id uuid",
+    "acl": "postgres=X/postgres;gptour_semantic_owner=X/postgres",
+    "definition": "CREATE OR REPLACE FUNCTION public.u2_role_probe_is_authorized(p_uid uuid, p_agent_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n  select exists (\n    select 1 from public.profiles p\n    where p.id = p_uid and p.is_active and p.role in ('agent','admin','admincustom','supervisor')\n      and (p_agent_id = p_uid or p.role in ('admin','admincustom'))\n  ) and coalesce((select a.enabled from public.gptour_orchestrator_user_access a where a.user_id = p_uid), false)\n$function$"
+   },
+   "u2_role_probe_is_authorized_ownerrole": {
+    "owner": "gptour_semantic_owner",
+    "security_definer": "true",
+    "proconfig": "search_path=\"\"",
+    "return_type": "boolean",
+    "arguments": "p_uid uuid, p_agent_id uuid",
+    "acl": "gptour_semantic_owner=X/gptour_semantic_owner",
+    "definition": "CREATE OR REPLACE FUNCTION public.u2_role_probe_is_authorized_ownerrole(p_uid uuid, p_agent_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n  select exists (\n    select 1 from public.profiles p\n    where p.id = p_uid and p.is_active and p.role in ('agent','admin','admincustom','supervisor')\n      and (p_agent_id = p_uid or p.role in ('admin','admincustom'))\n  ) and coalesce((select a.enabled from public.gptour_orchestrator_user_access a where a.user_id = p_uid), false)\n$function$"
+   }
+  },
+  "allowlist": {
+   "table": "u2_role_probe.backend_keys",
+   "owner_and_acl": "gptour_semantic_owner|gptour_semantic_owner=arwdDxt/gptour_semantic_owner",
+   "gestione": "solo il ruolo migratore/DBA tramite migration o runbook operativo; nessuna RPC backend scrive la allowlist"
+  }
+ }
+}

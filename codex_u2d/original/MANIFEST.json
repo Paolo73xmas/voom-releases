@@ -1,0 +1,893 @@
+{
+ "delivery": "U2-d FINAL \u2014 handler gptour-semantic-v2 + planner-core D3(a) + deterministic revalidation (lab only: L1+L2+browser+entrypoint; L3 excluded) + full untracked tree",
+ "branch": "feature/gptour-semantic-interpreter",
+ "base_commit": "259ec92d",
+ "protected_base": {
+  "original": "47b38f9561c4420ac09a894697144a63f848e98877039e011cff4ee6c5d7d30f",
+  "rev4": "0ef218f48851515a51c8d463d0c0397959998cd8a1291c61c06436ddcfe8bc67",
+  "d3a_current": "041f2bfa00446526951e79689e2fab9a61276e29b0282ec38e3d29a21b036d88"
+ },
+ "generated_utc": "2026-10-14T06:24:07Z",
+ "files": [
+  {
+   "path": "docs/gptour-semantic/PHASE_U2_PLAN.md",
+   "sha256": "a0b429bf51431777c5c531149f6aa0b022d317535ef52d007b9049a2ae214701",
+   "bytes": 60532
+  },
+  {
+   "path": "docs/gptour-semantic/PROTECTED_BASE_MANIFEST.md",
+   "sha256": "9edf0c07325e6da8af720ee4c7a05b621e7ea17bd3dc4d1ed123d66a059c66d0",
+   "bytes": 10123
+  },
+  {
+   "path": "docs/gptour-semantic/U2_0_A_README.md",
+   "sha256": "6f30fe62892f814e2375f884d3a84fd2d0c42628e558c002a8ffb497090627d7",
+   "bytes": 6830
+  },
+  {
+   "path": "docs/gptour-semantic/U2_0_A_RESULTS.md",
+   "sha256": "a258844ea2dc1f6e4b8ed86dcaf3937ab47a6b96bcacb0af462fa9cb13c9cccb",
+   "bytes": 5551
+  },
+  {
+   "path": "docs/gptour-semantic/U2_0_SCHEMA_REPLAY_REPORT.md",
+   "sha256": "a963db2576aa8e8df62772ff4ad8a80782d2c7b47a563d0c07bb1dd8cf76b7b8",
+   "bytes": 20516
+  },
+  {
+   "path": "docs/gptour-semantic/U2_B_PRIVILEGE_MODEL.md",
+   "sha256": "8b2e92bf507d956fa8037124563b1bed624ad7f64511d6f2e273582c5dcf0527",
+   "bytes": 11557
+  },
+  {
+   "path": "docs/gptour-semantic/U2_B_RESULTS.md",
+   "sha256": "c6ab8f2d561bf01dd84029aa5c52b9d03aee426864d2b47f030ce49c4016276e",
+   "bytes": 12797
+  },
+  {
+   "path": "docs/gptour-semantic/U2_C_RESULTS.md",
+   "sha256": "11f4acd27ee47179fa5d3a696c18a6dcdd8f5955e7e6c7022fd3f210557a49b3",
+   "bytes": 18543
+  },
+  {
+   "path": "docs/gptour-semantic/U2_C_SCOPE.md",
+   "sha256": "91c1931943845afb15cbc8b6674e5628a8a9424708ed4a52d289874e9648fbb6",
+   "bytes": 15095
+  },
+  {
+   "path": "docs/gptour-semantic/U2_C_TEXTUAL_REFUSAL_PROPOSAL.md",
+   "sha256": "927085381826b08e88117631a1a0059d58aff6ffb02e8f669a7e75ebb3597e96",
+   "bytes": 9406
+  },
+  {
+   "path": "docs/gptour-semantic/U2_D_RESULTS.md",
+   "sha256": "754c462930a8f59a2233d0b4b034e0c8d344942f84eee36d6e7be6f0ccdecd76",
+   "bytes": 13366
+  },
+  {
+   "path": "docs/gptour-semantic/U2_D_SCOPE.md",
+   "sha256": "dda7f2b1fc8e355e13f18cdf66e4bcc5a8cf6447b0f7373e54ed38ec6e064fed",
+   "bytes": 7767
+  },
+  {
+   "path": "docs/gptour-semantic/U2_D_VERIFICATION.md",
+   "sha256": "a90147ad812baec894a0ff58bda699a3be6f15da4a6617b0d4f731654c3d02a6",
+   "bytes": 7442
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-planner-core/planner.ts",
+   "sha256": "ae2b46d6a30d0f149481b388bb937d69ee010e077fbecaf5f268678f087b076b",
+   "bytes": 23588
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/canonical.ts",
+   "sha256": "7486abd4daf7691294738cd34729d4329d63a370761b66ac15095ad4135e3f4b",
+   "bytes": 923
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/infeasible-gate.ts",
+   "sha256": "3c4df4fd1feead1275c9f63d4e91c0181d0e8210befe6f398970ebeee7d11a3b",
+   "bytes": 4856
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/interpretive-context.ts",
+   "sha256": "892ced1a6bdc03f1f13d764f8d31897250f1d1a142d6ac50dbaf6d377b4c1828",
+   "bytes": 1258
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/lease.ts",
+   "sha256": "190e5160a166d6c4561d2b313d4ed54d415da6318666fb26b1566e8770aaed73",
+   "bytes": 1511
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/llm-gate.ts",
+   "sha256": "8bddb85fb18cd852a1dddf325c7eab34a56f19158cb790dc4e5bedf11f58c999",
+   "bytes": 3593
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/ports.ts",
+   "sha256": "bfd16560890a39e0ffe71570d35cc26b34e024a0b344c4d20b2387e8e39aa418",
+   "bytes": 3598
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/refused-consent.ts",
+   "sha256": "6de690dd66f9fa774dba4012e4d9d5f7caf5235aa9d252b64289697805a6e038",
+   "bytes": 3802
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/responses.ts",
+   "sha256": "c5d55fdd2c7d57c93154d62f1aa3522711667ceafd7e91f80636eaf8b42a01bd",
+   "bytes": 4434
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/session-state.ts",
+   "sha256": "d2bbbe8c854325d6c4c8c67fd51d9fa4569542cceb01cce1878f99170fc0184a",
+   "bytes": 2217
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/store-memory.ts",
+   "sha256": "1fdadfa8acad65b8aaefe51c631331fae346d559224bea284ed23457e077841f",
+   "bytes": 13522
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/store-port.ts",
+   "sha256": "d0f8dbb0adab7d01a7bdaf6230db53d4e75e011bc5cc8fc499677c83640d33b5",
+   "bytes": 4237
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/store-postgrest.ts",
+   "sha256": "e587c16dfa14c3053b35aa1e9a86b5fdbe1afd1957f177234d9668fb2c2104e6",
+   "bytes": 2894
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-runtime/turn.ts",
+   "sha256": "f0ddf4846763d7599de15bd6dbe5503090f9c1767057915eb9037211934bdb74",
+   "bytes": 19397
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/action-validation.ts",
+   "sha256": "1e7ea73f44cee838259912f02589a9d58d49e04c08ebd4fa497c156dd6a1caa3",
+   "bytes": 1643
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/bridge.ts",
+   "sha256": "acf37177d52c94ba2886289869bb96660948a57528d92d6cf26c194a3e22b50a",
+   "bytes": 3430
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/checks.ts",
+   "sha256": "ae078d7ae513f34eb9d708d6547908959e776a2c5f985c987e211ef28f6f4b08",
+   "bytes": 2846
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/context.ts",
+   "sha256": "4b6659d7a1b6fe3155526c230dd0bd815224f827ab5d761e91ed025b396bc55b",
+   "bytes": 1755
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/contract.ts",
+   "sha256": "d5ebb2918640ae27fe3685dd88268a6a194d581767499dbfe28077d6f8290a69",
+   "bytes": 6623
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/errors.ts",
+   "sha256": "da4878043f2791ad72d64195802817e212a1d8736c64d72e0043a704de9febd0",
+   "bytes": 3088
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/index.ts",
+   "sha256": "53a3614635382bf868630926f487bbfb9c42f0ce5999c388798cb0edd6f5633c",
+   "bytes": 233
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/public-projection.ts",
+   "sha256": "3e3e1db5137dfa82438c593842421241626f0c89889f5193d4498f46d1533ae7",
+   "bytes": 2663
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/response-validation.ts",
+   "sha256": "42906e999bec090c298fd9f85aba5fce4478fcaccc11939d75a98e6695bb9341",
+   "bytes": 14966
+  },
+  {
+   "path": "supabase/functions/_shared/gptour-semantic-transport/validation.ts",
+   "sha256": "07097797361ff26b8f2bb12f96f2048d3db84cf30e455d65c0dd425184676103",
+   "bytes": 3093
+  },
+  {
+   "path": "supabase/functions/gptour-semantic-v2/adapters/catalog-postgrest.ts",
+   "sha256": "e3c12f003a2cfe96bcec5e5f3277051351860773e2819cfb293a0f2c8eea541a",
+   "bytes": 1860
+  },
+  {
+   "path": "supabase/functions/gptour-semantic-v2/adapters/planner-core.ts",
+   "sha256": "9fe3e178cfad7d9f5776e728c0fbc87d3f3159d3c6c832b4192ee01aa6e45b09",
+   "bytes": 3906
+  },
+  {
+   "path": "supabase/functions/gptour-semantic-v2/adapters/revalidation.ts",
+   "sha256": "a175f0849221345eb22e00163c0a22c0236e4742ac4b4587d4566dcfccc8b74d",
+   "bytes": 1434
+  },
+  {
+   "path": "supabase/functions/gptour-semantic-v2/auth.ts",
+   "sha256": "21549ae994afa2a454f4f0254bba2407c7f35be2deb74ec55a91fe73645b9c77",
+   "bytes": 2069
+  },
+  {
+   "path": "supabase/functions/gptour-semantic-v2/env.ts",
+   "sha256": "f76c3d002bcbbf9055da5e6362503f69941596287d7575e629ee54d9872d8fcf",
+   "bytes": 1532
+  },
+  {
+   "path": "supabase/functions/gptour-semantic-v2/handler.ts",
+   "sha256": "0c31469ff47e135c1ba85e0f9aa41e77362673be56bf1957e1b2dc3f93c65822",
+   "bytes": 4468
+  },
+  {
+   "path": "supabase/functions/gptour-semantic-v2/index.ts",
+   "sha256": "0442edb0a812979d0ff7112ea4797ec515e99afc8986dea769f7b5ea4df51ebe",
+   "bytes": 3419
+  },
+  {
+   "path": "supabase/orchestrator-pending/u2b/01_semantic_migration.sql",
+   "sha256": "002ee97d9fc2d1287cdc8cefdf8d48872708cc74fceba311543776f2946a3bc6",
+   "bytes": 44297
+  },
+  {
+   "path": "supabase/orchestrator-pending/u2b/README.md",
+   "sha256": "8612810dcb68716d9b575a3b647310d040000cf930b5f83431731645f76b438d",
+   "bytes": 7226
+  },
+  {
+   "path": "tests/gptour-orchestrator/golden/golden_v7_reference.json",
+   "sha256": "a43b9cd144c6cc6084e15041cbc15f29c3619bd8af4541279824647ff2c98665",
+   "bytes": 370389
+  },
+  {
+   "path": "tests/gptour-orchestrator/golden_v7.sh",
+   "sha256": "00b10446b4a3d09505983f99ff173c639578dd37934308fcea5b856ef01cd900",
+   "bytes": 948
+  },
+  {
+   "path": "tests/gptour-orchestrator/golden_v7.ts",
+   "sha256": "2f29b40e17ca5fb1aad403d8280bb592bccdce051dc79715a189f34a3ffa7d83",
+   "bytes": 8070
+  },
+  {
+   "path": "tests/gptour-semantic/SF_decline_consent.unit.ts",
+   "sha256": "5fc299315bebb0999c4c33769c088b4774818d08116cee13e4ab35d13dbcd359",
+   "bytes": 7448
+  },
+  {
+   "path": "tests/gptour-semantic/u2/DELIVERY_README.md",
+   "sha256": "35601f34f8ff45d24dd77a2a9d4d7c2b4920f566f38fb7adcac716c020efe441",
+   "bytes": 3331
+  },
+  {
+   "path": "tests/gptour-semantic/u2/bridge.unit.ts",
+   "sha256": "2bb0eaeacfe87844c102a9ea082d3716de3f1f02d52830d15ba9590a082667e2",
+   "bytes": 6810
+  },
+  {
+   "path": "tests/gptour-semantic/u2/build_delivery.py",
+   "sha256": "012f715236aa4b554064f41d4d07cdb08505b9123e084e972b7e63efe5ae231c",
+   "bytes": 7503
+  },
+  {
+   "path": "tests/gptour-semantic/u2/contract.unit.ts",
+   "sha256": "073420d0008ef2fc063cb60a820390fcc2ba2c224b088468a1830738b1189c85",
+   "bytes": 9459
+  },
+  {
+   "path": "tests/gptour-semantic/u2/edge_receipt_negative.unit.ts",
+   "sha256": "1ecd6bd9ecb2ea1185fa53a9cdabd971e81def4b47d294bbab1a425a2bb37050",
+   "bytes": 3162
+  },
+  {
+   "path": "tests/gptour-semantic/u2/golden-cases.ts",
+   "sha256": "57965e5a0d20e04624420c8babb4375eca82677d644750e067f0bcbe54aeb429",
+   "bytes": 6403
+  },
+  {
+   "path": "tests/gptour-semantic/u2/install_postgrest.py",
+   "sha256": "67a3a9d6a8461e30dc080b3bf52779abbc92caa4912a7a5ad849dbebf6a041df",
+   "bytes": 2342
+  },
+  {
+   "path": "tests/gptour-semantic/u2/lab_common.py",
+   "sha256": "fecfbb245b6cb67f1fc0c2e5e7df1ca12402cc7fc37dc695bdb4337d9e368abc",
+   "bytes": 2754
+  },
+  {
+   "path": "tests/gptour-semantic/u2/local_bootstrap.sql",
+   "sha256": "e32c248b0ec8e038477bcbc57803d2286a62a396d0d6e5f4902c8b4ea6482a83",
+   "bytes": 2451
+  },
+  {
+   "path": "tests/gptour-semantic/u2/local_down.py",
+   "sha256": "ab6e73f0992dc4ca8314082e32d03cbf028dbb1d2f3551d023a9cbec20b2eed5",
+   "bytes": 1244
+  },
+  {
+   "path": "tests/gptour-semantic/u2/local_down.sh",
+   "sha256": "310912e729b787bcfa214a37fcfc212f8392cdcc411b9590e9447b17587e3b80",
+   "bytes": 179
+  },
+  {
+   "path": "tests/gptour-semantic/u2/local_up.py",
+   "sha256": "f377016c07b25a31cce1066d52e2e728970c24f2b7e6e1baa6d0449d7ca73d32",
+   "bytes": 4087
+  },
+  {
+   "path": "tests/gptour-semantic/u2/local_up.sh",
+   "sha256": "69810757009f489855abb12a2d5ab20ae14ef3877cc8a2cc26601a8ec6815ce7",
+   "bytes": 196
+  },
+  {
+   "path": "tests/gptour-semantic/u2/local_verify.py",
+   "sha256": "d87942616b5948cbdbc0a7353f64af3d6795659ea7940580f06f03ebd9a09ac9",
+   "bytes": 4535
+  },
+  {
+   "path": "tests/gptour-semantic/u2/local_verify.sh",
+   "sha256": "9405af2d5ebf2e0808bd7f8c094397d34946443aab53f11720a54270bba18a16",
+   "bytes": 176
+  },
+  {
+   "path": "tests/gptour-semantic/u2/run_contract.sh",
+   "sha256": "f9b68c8ba144396c44c29117b32858a47a2046f32eeddf70cb0e77ebdea9e26f",
+   "bytes": 940
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/evidence/GIT_STATUS.txt",
+   "sha256": "913f20261373eb531bdbd0d5aca31c72ddf737780acb7cff95f9ecfb5c43840b",
+   "bytes": 644
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/evidence/U1_V7_BASE.sha256",
+   "sha256": "b4ca6e7df2ce52306d187a1d57c31ce48b40b068e8c9bcf8dbdc5d366b0a2eec",
+   "bytes": 5004
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/evidence/console_summary.txt",
+   "sha256": "1bd2d1c19f24178edb033f56ce54c494bd3a13f5b9637f1771648b7081d5aad3",
+   "bytes": 4228
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/evidence/replay_report.json",
+   "sha256": "41cba4601cdbc28257ecf40db4d16d295fd0f88e0e77b9523e11c91eba45adfb",
+   "bytes": 33297
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/evidence/role_probe_extraction.md",
+   "sha256": "4ba42853a5e0b132c645c7bbfab1ae0e64df727bacc4f55db8938efb39bae82c",
+   "bytes": 2431
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/evidence/role_probe_removal_verification.txt",
+   "sha256": "ea217e298582af34909603b2edc0a1075df61107b09f00f96e5f3a57ee9ae65c",
+   "bytes": 472
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/evidence/role_probe_report.json",
+   "sha256": "2ecbc2f7e8a793474528a9632bb57795a0558085661d443a42daa7dd879c27e1",
+   "bytes": 22505
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/evidence/role_probe_run.log",
+   "sha256": "5a52bb292627c9f9b755b16cf05c482b01a41366fbb8d3975835b748b97c82d5",
+   "bytes": 9253
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/evidence/verify_report.json",
+   "sha256": "637901e42fc74b0cdb34749641f68a424ffa443ec5b7be79d202d4db4034c6ed",
+   "bytes": 20915
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/fixture.sql",
+   "sha256": "a15419d71d3647727f39dc8b5289f53fb53674bfe1c40fe36085dd3403c1d7b0",
+   "bytes": 8157
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/gen_baseline.py",
+   "sha256": "f57f47331432e6d119f2d0405f628859677847518689f28fd8a427a23b563673",
+   "bytes": 6964
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/local_env.sql",
+   "sha256": "b2325411fb963aab987cab5213d93f583afb60764249b2c4b606a6dc3dd9cb26",
+   "bytes": 3164
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/replay_common.py",
+   "sha256": "233a8883fe478c420b31b9a8cfde2216db4a20f6457c9ce434caf1d377f56e01",
+   "bytes": 2041
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/replay_down.py",
+   "sha256": "cc14cec15dacaa44aef62598e2ed94f477b5cb0046f372b16db1466a8d34956b",
+   "bytes": 853
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/replay_down.sh",
+   "sha256": "4fd0f1c592a8e792cf5030f52648557ba9502afb328deb2e8b3c41d6b06d1a25",
+   "bytes": 275
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/replay_set.txt",
+   "sha256": "10a408c4fd7362414a6da4b1064fd9df6b2b2642a568fc918a46a4a745588866",
+   "bytes": 4806
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/replay_up.py",
+   "sha256": "fd8855a0c2e58cf7de5a3c3fd92fab64cd69f78c6f071bd49db9ec17b3a8763c",
+   "bytes": 13716
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/replay_up.sh",
+   "sha256": "9118c8df23e5d1f7fb595066c12dd7a36c5025c2757683b4d5d3709d055ecec6",
+   "bytes": 201
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/replay_verify.py",
+   "sha256": "887bc5473c7518d66c0fd9c07325fa56ce579333cecd1ee48c01a74a27494d2f",
+   "bytes": 34009
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/replay_verify.sh",
+   "sha256": "2cafcab6851c2421e77275ac51ed952ad5c0649fd8c16dca02198ce4e7458b21",
+   "bytes": 181
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/replay_verify_lib.py",
+   "sha256": "e12a1b3a351c264d0b369e93d2d21c938f315e70db2af371dc7aba51ae65b865",
+   "bytes": 2272
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/role_model_probe/COMMANDS.md",
+   "sha256": "d03c890e67d1e543a6f544ba81f378d1d71600fb3f0c6b7217bf1a557d67e95d",
+   "bytes": 1467
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/role_model_probe/probe.sql",
+   "sha256": "d7ec5da38e8a942822594eac7fd5796d4d0c00f1ddf4924d5e7d25beb5c55972",
+   "bytes": 13786
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/role_model_probe/probe_down.sql",
+   "sha256": "7aa4a3642f362e943f1bf8766f33f27f67a414f4524340011ca9ec383d953855",
+   "bytes": 1143
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/role_model_probe/probe_run.sh",
+   "sha256": "71925c69d64091c3ed0fe81f6c55e4d86dc7d318646cdeac88db9c5c4519d45d",
+   "bytes": 773
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/role_model_probe/probe_verify.py",
+   "sha256": "03812bd5f05042745c6f987882183fb53635613ff4ae096edab2156ed764ce8b",
+   "bytes": 28546
+  },
+  {
+   "path": "tests/gptour-semantic/u2/schema_replay/views_shim.sql",
+   "sha256": "1850405b5ced49eae246aa26fc988708407a559a4fc6a2e7311af9f8273eafef",
+   "bytes": 572
+  },
+  {
+   "path": "tests/gptour-semantic/u2/transport-goldens-1.2.json",
+   "sha256": "31cf4b34159a41fe199d0e8955fd63efcf0d862031034b2373280be17ff174cb",
+   "bytes": 48569
+  },
+  {
+   "path": "tests/gptour-semantic/u2/transport-goldens.json",
+   "sha256": "07e10a08121f2ea825ddc5fd8f9f58c12f8fcc258f839d44cb6b568f6cd39c05",
+   "bytes": 43851
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/contract_bridge.unit.ts",
+   "sha256": "02d6ce118bba46199a365fe7b525d7bd5ffbc5f6bc19d876fe5e6f7239390f8f",
+   "bytes": 4891
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/evidence/replay_after_u2b.log",
+   "sha256": "1ae37ec7e2da6bd41139dc65653174e10a8019beb55a01c0ec4a070d3c92cbfd",
+   "bytes": 9414
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/evidence/u1_node_after_u2b.log",
+   "sha256": "06120e4568f81da34632d3a12cbd5ef6e9b994331e00c2e87efa659282e0c832",
+   "bytes": 176
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/evidence/u2_contract_after_u2b.log",
+   "sha256": "f403a6ecda52bee8a20a46ed06092c0e770d56cfb3ae4d2fd450ef846f0adc57",
+   "bytes": 1623
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/evidence/u2b_contract_export.json",
+   "sha256": "aff7548567e8a617db3087bfa7d708edb78fd687e59444a6026a887624fc3840",
+   "bytes": 11246
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/evidence/u2b_fresh_cluster.log",
+   "sha256": "e4713f5caea7583c098ed59150528a1ce9137ad79f86c7fefa447b6ccccbcd6e",
+   "bytes": 1354
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/evidence/u2b_inventory.txt",
+   "sha256": "fe434fcdca101d5cbf76cd14c0fa41dd10b60bdb7c8cb59313f8c4ea44aa2791",
+   "bytes": 7748
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/evidence/u2b_report.json",
+   "sha256": "439348c2e191786e9dddf50678798eeb79f247c7bb30cfa80cb1f1bc30b434c3",
+   "bytes": 40701
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/evidence/u2b_run.log",
+   "sha256": "b28ffdba169253c7b0bc491cb9b1d60bc3c2ddfc6bb6588221a536ba317396d0",
+   "bytes": 21007
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/run_u2b.sh",
+   "sha256": "669976388de0140d5b7bde237d333fda751374371ed0ceb43d570af7644092a5",
+   "bytes": 1190
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2b/verify_u2b.py",
+   "sha256": "6f2cfdfdf2253c54b69a4ce31782b977f99dee26aebff6a50ce3ea8754ee8415",
+   "bytes": 75955
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/conformance.unit.ts",
+   "sha256": "a07e891cdf1fb4b07d246d753c303b36222e9a347d57c56aa9f3c4bc51f4bf15",
+   "bytes": 10191
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/evidence/replay_after_u2c.log",
+   "sha256": "9fa25829c097aa66b8828fe35caf281b0bb034d5c2eee954957d93e64a241c0f",
+   "bytes": 9421
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/evidence/u1_after_u2c.log",
+   "sha256": "4cfb83bc947f3b31ddc60fecd7dc1a433a8e17182001af430e3ca80f94b83664",
+   "bytes": 760
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/evidence/u2a_after_u2c.log",
+   "sha256": "0069301461b6931545f2dec87b8f142e357906392c45e95e39e570d89c81c9b7",
+   "bytes": 1627
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/evidence/u2b_after_u2c.log",
+   "sha256": "cbbe678c5c83efad6328b3c02826dc13ce699a90ecc787b87715833742bbe973",
+   "bytes": 21107
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/evidence/u2c_report.json",
+   "sha256": "c2c6797769b71905549814b2fc851e9ccb2ada8842a28dc779ed1cbfd09d75a7",
+   "bytes": 671
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/evidence/u2c_run.log",
+   "sha256": "180118b419d2d98f1230732839818f985dd946beae708a173227211f6bdb3c4a",
+   "bytes": 31396
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/harness.ts",
+   "sha256": "953a760f7648f192d4fd7b327fa047da46a674754f5c2e712e5b80f7b0016b05",
+   "bytes": 11091
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/interruptions.unit.ts",
+   "sha256": "7d7aa7e89f0be2639b658c5f59e2cad89067d5d03b41889e1ae1c033199b96f9",
+   "bytes": 15830
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/lab_u2c.py",
+   "sha256": "dca1ee5dbc588a38f9c904b298f93c2f5eb00cfb1e7e70579bf00bb102ea6436",
+   "bytes": 3169
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/run_u2c.sh",
+   "sha256": "d5dbcc9987039e1fc55680e2bd0f5ffc6aeb815f7f05aed02e15155c577d2986",
+   "bytes": 744
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/turn.unit.ts",
+   "sha256": "5db524cb5cad5d2da4262a172aa5263f445eca4ad0bd2190de72ec2644f219b1",
+   "bytes": 45574
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2c/validator.unit.ts",
+   "sha256": "1b03835430570a0f0380d15b5711ddddc0edec1966c20a92d384eff698d45c52",
+   "bytes": 4094
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/auth_cors.unit.ts",
+   "sha256": "9ba8f5b63ae364d13649df9cabe8b293674e27dd5f4b509fd45722bd4bd313db",
+   "bytes": 10024
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/cors_browser.py",
+   "sha256": "73e200122679555e88040509e5422373ed91e4a5cc87ef1cad606733480c35b0",
+   "bytes": 6071
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/cors_browser_report.json",
+   "sha256": "add5739a2b43998a54afed3b8363c1a88c4b4eee0b66212558c474272ea6b7d6",
+   "bytes": 2662
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/d3a/golden_v7_run.log",
+   "sha256": "cdd97fecf4f4708004c2797b64c45af3ea4360f80b0f62f44a20735c16e51f83",
+   "bytes": 780
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/d3a/orchestrator_d3a.diff",
+   "sha256": "67d853f27a9852f3fc969040f488b98cf9c82263650c4e489d1743204e78167e",
+   "bytes": 24402
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/d3a/v7_suite_after.log",
+   "sha256": "3fad2c7ccbaaf89c3b6eaaa2fbfd6f82281d9f82aec66c7e6df14aa93f3a1480",
+   "bytes": 611
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/d3a/v7_suite_before.log",
+   "sha256": "ecc404915f86627db55794ed6aa6204746aeee6097db813ce18656b7fd9f9a74",
+   "bytes": 611
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/entrypoint_report.json",
+   "sha256": "d3bca0c795a888296aacc336d8c238bacd33e52c68c8611935f38046b19270b2",
+   "bytes": 2580
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/cors_browser_report.json",
+   "sha256": "add5739a2b43998a54afed3b8363c1a88c4b4eee0b66212558c474272ea6b7d6",
+   "bytes": 2662
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/entrypoint_report.json",
+   "sha256": "3d9892bbe90f4a3adc47f629c3e0bb56ba73e7271927d20cb80383b58bd0509d",
+   "bytes": 2580
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/final_status.json",
+   "sha256": "4ffa08e940d57d64c92776c383ab00ac6ae9534e5be70580315ebcda80adc0ff",
+   "bytes": 1655
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/protected_files.json",
+   "sha256": "32932399bd0a517d818b2cf0b1b34a263a0f8fb0eeaff78ce750b515a7306298",
+   "bytes": 17811
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/protected_files.log",
+   "sha256": "cfe5a778cfe59c2c6c01a12073f86607d4b5ce5fd94f335fe47bb19b6fba9ab8",
+   "bytes": 1242
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/schema_replay.log",
+   "sha256": "6b329da554dbd7c316bc9e6ab9389bd6603d4320356c2b8e36d77665d29bc0c0",
+   "bytes": 9409
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/tool_versions.log",
+   "sha256": "1a52d006c3986d38fe930fadcc436fbf89364f2bc6fe458e2d3f248b3267cd0d",
+   "bytes": 1633
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/u1_deno.log",
+   "sha256": "3ab61f0b9f63983f4a9b910f885dca38280d6641f2b7f9b1cdc6a6aaacb0012d",
+   "bytes": 856
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/u2a_transport.log",
+   "sha256": "1f9b8e9c9a314470de628e59edb9db4cf6cb1dc361ff7c118ff8c6b3e64fb3d3",
+   "bytes": 1618
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/u2b_sql.log",
+   "sha256": "5bef442de4b17b2dc4db2a5cb1afaf1292fd98afe3e43c9cdde322439d933929",
+   "bytes": 21098
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/u2c_regression.log",
+   "sha256": "61047503eb67d56d53d8ce79b6b035823e1633155d4e12495efebfef48683c28",
+   "bytes": 30241
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/u2d_all.log",
+   "sha256": "c77e2e27ed69cdc42c8e9f95628ea95afab8725b38a0e4332e56f3a80b0e0c6b",
+   "bytes": 10985
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/v7_edge_check.log",
+   "sha256": "9ac50a6bba9e3de97d7aa50b8ef877fd5d13d49f8d8bc0030cbfa172d9742625",
+   "bytes": 67
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/final/v7_golden_and_suite.log",
+   "sha256": "e2f8fb20aeba5944a54fa700ffa2467fe9725c55196e9485f5a96e21f7fbbeda",
+   "bytes": 751
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/u2d_report.json",
+   "sha256": "6fde6e7939d79dda692f7f500f347eee246ad71f85a57c88472757be4f5232e8",
+   "bytes": 405
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/evidence/u2d_run.log",
+   "sha256": "8f4e4058605d73314a89c4ef19283e395061fb98033345d0db9430b9df0e0427",
+   "bytes": 9899
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/final_verify.sh",
+   "sha256": "042c0384319de901ba0a021a3c7597a06fc64e388b8e38b95709ada2fd13e7ed",
+   "bytes": 3659
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/handler.unit.ts",
+   "sha256": "1c0113543c52704dbb6c637d55c89de8143130a00bfacf2d5ab36ae85539adc5",
+   "bytes": 14988
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/kit/semantic-1.2-kit-l2.json",
+   "sha256": "7b9f3a37b344d9f03355cc8054ad8c33ea964d0d60deed2cba710af7e56ab461",
+   "bytes": 16022
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/kit/semantic-1.2-kit.json",
+   "sha256": "d2bb718ca9366b4d5cbcef4b70386e77f4606698542c223be68a5a3a52fbe7d0",
+   "bytes": 16019
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/lab_entrypoint.py",
+   "sha256": "49a65d60a104d17d21ced3de315d87c96f33a6880a35ca8a437bb46b42ba691b",
+   "bytes": 10048
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/lab_serve.ts",
+   "sha256": "a00d289fba1ea0e0d8a36cecd259b0d723c2ad8489044fdcddb48fa6f2ee8b1d",
+   "bytes": 2153
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/lab_u2d.py",
+   "sha256": "a01329e24ebe993368e5c2f7a8f9b933b2a8af8ce77673a0ae670aeed3b5d84d",
+   "bytes": 4778
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/package_u2d.py",
+   "sha256": "635ade008b8989ea79763fd33b9bc9f06ed8c0ddc6ebe89b8985ba00e55d920d",
+   "bytes": 6781
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/planner_core.unit.ts",
+   "sha256": "23d6d3c14d03c00dc55ecff55941480301ddc260517c1916e14a658b3d72a6f0",
+   "bytes": 10983
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/revalidation.unit.ts",
+   "sha256": "047d64f4b472f657691314d44b55e892938e32f20fc34308730ab0c0e0066965",
+   "bytes": 8566
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/run_u2d.sh",
+   "sha256": "097e6980568f1dfb8568c88deccd8db4db1b6c8e7d69e46555897bd742902364",
+   "bytes": 1231
+  },
+  {
+   "path": "tests/gptour-semantic/u2/u2d/verify_protected.py",
+   "sha256": "03b53c5e36a21a17531d04738842eb9198ede4571803fa3049bc71ce315cb10e",
+   "bytes": 3653
+  },
+  {
+   "path": "tests/gptour-semantic/u2/write_goldens.ts",
+   "sha256": "e4f6d22f7f1d61479e46cf21c7a8761a43e71fe96170be4eea87a462072fce24",
+   "bytes": 458
+  },
+  {
+   "path": "u1_modified_tracked/supabase/functions/_shared/gptour-semantic/apply.ts",
+   "sha256": "d43e3d76a06e2fcc6712a855f7854802ebf9407b2decd54e099172b95d2cd72d",
+   "bytes": 28230
+  },
+  {
+   "path": "u1_modified_tracked/supabase/functions/_shared/gptour-semantic/contract.ts",
+   "sha256": "b7af222af5b866956f40a6098fb34834c7b90551d3dee6b1108e929933626363",
+   "bytes": 8992
+  },
+  {
+   "path": "u1_modified_tracked/supabase/functions/_shared/gptour-semantic/interpreter.ts",
+   "sha256": "d0d33dd272682e55843c6fe1e175af5203704f5f5307c9bfa508684c6f4886f9",
+   "bytes": 18125
+  },
+  {
+   "path": "u1_modified_tracked/supabase/functions/_shared/gptour-semantic/prompt.ts",
+   "sha256": "10286498fd38a3ec25d362b811392d86b83cabf221a02bf0d401e32ec145b9ac",
+   "bytes": 6339
+  },
+  {
+   "path": "u1_modified_tracked/supabase/functions/_shared/gptour-semantic/schema.ts",
+   "sha256": "d282a454df94805b36d48a6dc4261d3907056c6bbd776f85834a9c193c945cea",
+   "bytes": 5929
+  },
+  {
+   "path": "v7_modified_tracked/supabase/functions/_shared/gptour-orchestrator/orchestrator.ts",
+   "sha256": "3d94f2c9ca3c3adedce10ed3aff2a4bd34b99d74ca6404d1075f7babdb45164c",
+   "bytes": 22762
+  },
+  {
+   "path": "u1_decline_consent.diff",
+   "sha256": "dc99e8637652ad341068c7f96e51c12cc9529b0f16016923f6682bf3a64879b9",
+   "bytes": 9053
+  },
+  {
+   "path": "v7_d3a_planner_extraction.diff",
+   "sha256": "67d853f27a9852f3fc969040f488b98cf9c82263650c4e489d1743204e78167e",
+   "bytes": 24402
+  },
+  {
+   "path": "qa/iteration_64.json",
+   "sha256": "50dec08907519c45abb726768b0d9d5c9efc40f596952a7528836673ca352a72",
+   "bytes": 4545
+  },
+  {
+   "path": "qa/iteration_65.json",
+   "sha256": "dba18898ac3e8d01755cba6030e2416c9c3693c66762889e289917ff152534a3",
+   "bytes": 6259
+  },
+  {
+   "path": "qa/iteration_66.json",
+   "sha256": "e0166692bc8029fb17da9e2dd7b248c5ea4b0abe3ab947b41232b97b62d5841f",
+   "bytes": 10483
+  },
+  {
+   "path": "qa/iteration_67.json",
+   "sha256": "1aa2a5c06c534e9811d6aa36c53df11b6777d3ae2660029db85cefe1f949b241",
+   "bytes": 4119
+  },
+  {
+   "path": "qa/iteration_68.json",
+   "sha256": "09dc228e5e1c8e6150c2db7ffb9275f8659440bcf46610fc66d424838e7f095d",
+   "bytes": 4062
+  },
+  {
+   "path": "qa/iteration_69.json",
+   "sha256": "9e18ceff436266e24b02018d19ba080bd35d79d99075df3b0ff2c73899aea757",
+   "bytes": 6320
+  },
+  {
+   "path": "qa/iteration_70.json",
+   "sha256": "6ae5620cfdf40fca8b2ceb0c74c5636fe03482d71fe8c831f348d0e4b7c35113",
+   "bytes": 5669
+  },
+  {
+   "path": "qa/iteration_71.json",
+   "sha256": "2ec780b7cf8784e13121b913a83b439cdfcff2ccad041a619ae1342813fe47e6",
+   "bytes": 6944
+  },
+  {
+   "path": "qa/iteration_72.json",
+   "sha256": "3ac719c1f9f09c7660aad36a9402cd9b1fd66dd2d4f7bcd63e6e8fa499bb568f",
+   "bytes": 10256
+  },
+  {
+   "path": "qa/iteration_73.json",
+   "sha256": "a5d8acb98edbc3e9fbf703cb90b00f2f67c38e1630217908fa846cc2818f5cd4",
+   "bytes": 8339
+  },
+  {
+   "path": "qa/iteration_74.json",
+   "sha256": "7761fcd68dc188e009c540e635ca8b4d932727124935c78a97d4d54749bc8f1e",
+   "bytes": 5261
+  },
+  {
+   "path": "qa/iteration_75.json",
+   "sha256": "8265967dfc83a00fec455359659697ca02f3a28594d2fcdfbeb62525fb159b8b",
+   "bytes": 7459
+  }
+ ]
+}

@@ -1,0 +1,54 @@
+VERIFICA ESTERNA CODEX — 14 ottobre 2026
+Esito: approvazione finale sospesa; correzioni e verifica completa ancora necessarie.
+
+ARCHIVIO
+gptour_u2d_final_delivery.zip: 526622 byte.
+SHA-256: 0f347f3eba425e9cc4933750a0f0c616bf3e2149448b390977fa9f2bbc5c5df9.
+176 file nel manifest: dimensioni e hash tutti corrispondenti.
+178 file effettivi: i 176 elencati più MANIFEST.json e README_DELIVERY.txt.
+Non sono stati modificati i sorgenti consegnati né utilizzati servizi reali.
+
+RILIEVI DA CORREGGERE
+
+1. [P2] Errori di lettura/decodifica del catalogo non recuperabili e settings malformati accettati.
+File: supabase/functions/gptour-semantic-v2/adapters/catalog-postgrest.ts:5-9,13-15,20-22.
+La protezione copre fetch() e status HTTP, ma non res.json() o la forma del risultato.
+Prove indipendenti eseguite sul sorgente originale con fetch sintetico:
+- HTTP 200 con JSON malformato: SyntaxError, non DependencyError.
+- HTTP 200 con oggetto {} anziché array: TypeError in loc.map.
+- interruzione del body dopo la ricezione degli header: TypeError, non DependencyError.
+- settings con {}: restituisce null anziché segnalare la risposta invalida.
+Conseguenza dedotta dal runtime turn.ts: i primi tre errori, durante il caricamento iniziale del contesto, arrivano al ramo finishError('internal_error'), invece di release('dependency_unavailable'). Il guasto viene finalizzato anziché lasciare il recupero previsto con lo stesso requestId. Durante la rivalidazione makeRevalidation intercetta invece l'errore: il difetto riguarda il caricamento iniziale. I settings malformati diventano 'giorni lavorativi sconosciuti', disabilitando il controllo che dipende da ctx.workingDays.
+Correzione: validare array e campi, intercettare anche lettura/decodifica del body e tradurre i guasti delle porte in DependencyError appropriato; distinguere array vuoto valido da risposta invalida. Aggiungere test di recupero attraverso il runtime.
+
+2. [P2] Eccezioni CRM/routing del planner possono uscire senza classificazione recuperabile.
+File: supabase/functions/gptour-semantic-v2/adapters/planner-core.ts:34-41.
+Riscontro statico: loadSettings è protetto e mapOutcome traduce gli esiti blocked/failed, ma la chiamata planTour non normalizza le eccezioni delle porte. Nel core, loadCandidates, loadPurchases, loadAgenda e routing.geometry possono propagare un Error ordinario; solo alcuni altri percorsi hanno catch dedicati. Un'eccezione di rete da queste chiamate salta mapOutcome e nel runtime finisce come internal_error terminale.
+Correzione: normalizzare le eccezioni al confine delle singole porte nell'adapter U2-d, preservando DependencyError già classificati e senza mascherare difetti di programmazione. Conservare la semantica v7. Provare guasto e recupero con stesso requestId per ciascuna porta, inclusa geometry.
+Limite: percorso non rieseguito integralmente qui, poiché mancano moduli della baseline; non presentato come fallimento osservato della suite originale.
+
+3. [P2] Diagnostica accumulata senza limite nell'handler.
+File: supabase/functions/gptour-semantic-v2/handler.ts:18-20.
+Riscontro statico: diag ha default [] catturato dalla closure; ogni richiesta esegue diag.push(d), anche prima di autenticazione e controllo Origin. L'entrypoint non passa un collector, quindi mantiene comunque tutti gli oggetti per tutta la vita dell'handler. Un processo persistente accumula memoria proporzionalmente alle richieste.
+Correzione: rendere il collector opzionale e registrare solo quando esplicitamente fornito per i test, oppure usare un buffer limitato. Verificare richieste ripetute senza crescita del collector di default.
+
+VERIFICHE ESEGUITE DA CODEX
+- Integrità archivio e tutti i 176 file manifest: PASS.
+- Confronto con consegna 2: file TypeScript preesistenti cambiati = index.ts, runtime/ports.ts, runtime/turn.ts; presenti i nuovi adapter/test di rivalidazione.
+- 25 controlli indipendenti con Node v22.16.0, esecuzione TypeScript tramite --experimental-transform-types: 21 PASS, 4 FAIL, tutti i FAIL relativi al rilievo 1.
+- Passano i casi provati di JWT, parsing Origin, motore/catalogo invariato o cambiato e guasto della porta durante la rivalidazione.
+- Nessuna chiamata di rete nei probe; fetch sostituito soltanto nel processo di test.
+- verify_protected.py eseguito: fallisce con 'not a git repository'.
+
+VERIFICHE NON RIPRODOTTE
+final_verify.sh, suite Deno, browser Chromium, SQL/PostgREST/RLS e golden v7 non rieseguiti: mancano repository VOOM alla baseline 259ec92d e strumenti Deno/Bash/PostgreSQL/PostgREST nel PATH. Lo ZIP è una consegna da sovrapporre al repository, non un albero autonomo: mancano dipendenze U1/v7 e harness. I file modificati U1/v7 si trovano inoltre nelle cartelle *_modified_tracked; per una ricostruzione occorre esplicitare la loro applicazione ai percorsi canonici.
+Le 9 suite verdi in evidence/final/final_status.json e le revisioni iteration_74/75 sono evidenze del produttore, non risultati ottenuti da Codex. Non è possibile certificare qui la baseline originale, i 40 file protetti o l'equivalenza golden.
+
+REQUISITI PER CHIUDERE LA VERIFICA
+Correggere i tre rilievi, aggiungere regressioni mirate, rieseguire tutte le suite pertinenti sulla versione finale. Fornire una baseline accessibile o un pacchetto locale completo dei moduli e dei test necessari, con istruzioni di ricostruzione e dipendenze riproducibili. Consegnare nuovo manifest, hash e log. Nessuna integrazione L3 o deploy è necessaria per queste correzioni.
+Stato mantenuto: in attesa di correzioni/verifica completa; non user-confirmed.
+
+RIPRODUZIONE DEI PROBE ALLEGATI
+Estrarre l'archivio originale nella directory 'final' accanto a probes.mjs.
+Con Node 22.16.0: node --experimental-transform-types probes.mjs
+Il comando scrive probe-results.json e termina con exit code 1 quando trova i difetti descritti. Non equivale a deno check né alle suite originali. Non richiede credenziali o rete.

@@ -1,0 +1,14 @@
+# git status (branch, tracked changes, untracked) — 2026-10-13T13:51:19Z, HEAD 259ec92d
+## feature/gptour-semantic-interpreter
+?? docs/gptour-semantic/PHASE_U2_PLAN.md
+?? docs/gptour-semantic/U2_0_A_README.md
+?? docs/gptour-semantic/U2_0_A_RESULTS.md
+?? docs/gptour-semantic/U2_0_SCHEMA_REPLAY_REPORT.md
+?? docs/gptour-semantic/U2_B_PRIVILEGE_MODEL.md
+?? docs/gptour-semantic/U2_B_RESULTS.md
+?? docs/gptour-semantic/U2_C_SCOPE.md
+?? supabase/functions/_shared/gptour-semantic-runtime/
+?? supabase/functions/_shared/gptour-semantic-transport/
+?? supabase/orchestrator-pending/u2b/
+?? tests/gptour-semantic/u2/
+# tracked diff vs 259ec92d: rc=0

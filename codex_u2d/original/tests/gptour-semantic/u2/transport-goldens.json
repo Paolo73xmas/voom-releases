@@ -1,0 +1,1649 @@
+[
+  {
+    "name": "capabilities",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "capabilities",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "enabled": false,
+      "operations": [
+        "capabilities",
+        "create_session",
+        "turn",
+        "get_state",
+        "get_request",
+        "get_plan"
+      ]
+    }
+  },
+  {
+    "name": "create_session",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "create_session",
+      "contractVersion": "semantic-1.1",
+      "state": {
+        "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "sessionRevision": 0,
+        "criteria": {
+          "schema": 1,
+          "segments": [],
+          "area": null,
+          "dates": [],
+          "startTime": null,
+          "endTime": null,
+          "revenue": null,
+          "project": null,
+          "coverage": "selection",
+          "maxDays": null,
+          "overflowPolicy": null,
+          "lodging": null,
+          "followUpsMode": "consider",
+          "stops": {
+            "required": [],
+            "excluded": []
+          },
+          "followUps": [],
+          "rescheduleProposals": [],
+          "consents": []
+        },
+        "question": null,
+        "openQuestions": [],
+        "openQuestionCount": 0,
+        "notices": [],
+        "gate": null,
+        "expiresAt": "2026-10-22T21:59:00Z",
+        "contractVersion": "semantic-1.1",
+        "engineVersion": "gptour-semantic-transport/u2-a",
+        "context": {
+          "departure": null,
+          "departureSource": null,
+          "acquiredAt": null,
+          "gps": null,
+          "lastPlanId": null,
+          "planRevision": null
+        }
+      }
+    }
+  },
+  {
+    "name": "get_state",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "get_state",
+      "contractVersion": "semantic-1.1",
+      "state": {
+        "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "sessionRevision": 1,
+        "criteria": {
+          "schema": 1,
+          "segments": [],
+          "area": null,
+          "dates": [],
+          "startTime": null,
+          "endTime": null,
+          "revenue": null,
+          "project": null,
+          "coverage": "selection",
+          "maxDays": null,
+          "overflowPolicy": null,
+          "lodging": null,
+          "followUpsMode": "consider",
+          "stops": {
+            "required": [],
+            "excluded": []
+          },
+          "followUps": [],
+          "rescheduleProposals": [],
+          "consents": []
+        },
+        "question": null,
+        "openQuestions": [],
+        "openQuestionCount": 0,
+        "notices": [],
+        "gate": null,
+        "expiresAt": "2026-10-22T21:59:00Z",
+        "contractVersion": "semantic-1.1",
+        "engineVersion": "gptour-semantic-transport/u2-a",
+        "context": {
+          "departure": null,
+          "departureSource": null,
+          "acquiredAt": null,
+          "gps": null,
+          "lastPlanId": null,
+          "planRevision": null
+        }
+      }
+    }
+  },
+  {
+    "name": "get_plan",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "get_plan",
+      "contractVersion": "semantic-1.1",
+      "plan": {
+        "planId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "sessionRevision": 1,
+        "engineVersion": "MOCKED-planner",
+        "contractVersion": "1.0",
+        "generatedAt": "2026-10-15T21:59:00Z",
+        "date": "2026-10-16",
+        "startMin": 480,
+        "finishMin": 480,
+        "endMin": 1080,
+        "departure": {
+          "lat": 45,
+          "lng": 9
+        },
+        "returnTo": null,
+        "stops": [],
+        "totals": {
+          "driveMin": 0,
+          "visitMin": 0,
+          "waitMin": 0,
+          "breakMin": 0,
+          "returnMin": 0,
+          "totalMin": 0,
+          "availableMin": 600,
+          "bufferMin": 0,
+          "totalKm": 0
+        },
+        "geometry": [],
+        "verification": "estimated_routing",
+        "snapshotRef": "MOCKED-not-a-real-plan",
+        "selectionReasons": {
+          "selected": [],
+          "excluded": []
+        },
+        "warnings": [
+          "MOCKED"
+        ],
+        "dependsOnPendingChanges": []
+      },
+      "expiresAt": "2026-10-22T21:59:00Z",
+      "isCurrentRevision": true
+    }
+  },
+  {
+    "name": "receipt_not_found",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "get_request",
+      "contractVersion": "semantic-1.1",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "receipt": {
+        "status": "not_found",
+        "processingExpired": false,
+        "recoverable": false,
+        "processingDeadline": null,
+        "responseExpiresAt": null,
+        "retryAfterMs": null,
+        "originalHttpStatus": null,
+        "response": null
+      }
+    }
+  },
+  {
+    "name": "receipt_pending",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "get_request",
+      "contractVersion": "semantic-1.1",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "receipt": {
+        "status": "pending",
+        "processingExpired": false,
+        "recoverable": true,
+        "processingDeadline": "2026-10-15T22:04:00Z",
+        "responseExpiresAt": "2026-10-22T21:59:00Z",
+        "retryAfterMs": 1000,
+        "originalHttpStatus": null,
+        "response": null
+      }
+    }
+  },
+  {
+    "name": "receipt_done",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "get_request",
+      "contractVersion": "semantic-1.1",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "receipt": {
+        "status": "done",
+        "processingExpired": false,
+        "recoverable": false,
+        "processingDeadline": null,
+        "responseExpiresAt": "2026-10-22T21:59:00Z",
+        "retryAfterMs": null,
+        "originalHttpStatus": 503,
+        "response": {
+          "operation": "turn",
+          "contractVersion": "semantic-1.1",
+          "engineVersion": "gptour-semantic-transport/u2-a",
+          "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "sessionRevision": null,
+          "outcome": "committed",
+          "errorCode": "llm_budget_exhausted",
+          "retryableSameRequest": false,
+          "nextAction": "confirm_new_turn",
+          "retryAfterMs": null,
+          "acceptedAt": "2026-10-15T21:59:00Z",
+          "responseExpiresAt": "2026-10-22T21:59:00Z",
+          "result": null,
+          "gate": null,
+          "plan": null,
+          "openQuestions": [],
+          "openQuestionCount": 0,
+          "notApplied": [],
+          "dataQuality": null
+        }
+      }
+    }
+  },
+  {
+    "name": "receipt_expired",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "get_request",
+      "contractVersion": "semantic-1.1",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "receipt": {
+        "status": "expired",
+        "processingExpired": false,
+        "recoverable": false,
+        "processingDeadline": null,
+        "responseExpiresAt": "2026-10-22T21:59:00Z",
+        "retryAfterMs": null,
+        "originalHttpStatus": null,
+        "response": null
+      }
+    }
+  },
+  {
+    "name": "receipt_pending_expired",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "get_request",
+      "contractVersion": "semantic-1.1",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "receipt": {
+        "status": "pending",
+        "processingExpired": true,
+        "recoverable": false,
+        "processingDeadline": "2026-10-15T22:04:00Z",
+        "responseExpiresAt": "2026-10-22T21:59:00Z",
+        "retryAfterMs": null,
+        "originalHttpStatus": null,
+        "response": null
+      }
+    }
+  },
+  {
+    "name": "gate_pending_question",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": 1,
+      "outcome": "committed",
+      "errorCode": null,
+      "retryableSameRequest": false,
+      "nextAction": "none",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": {
+        "contractVersion": "semantic-1.1",
+        "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "status": "updated",
+        "revision": 1,
+        "criteria": {
+          "schema": 1,
+          "segments": [],
+          "area": null,
+          "dates": [],
+          "startTime": null,
+          "endTime": null,
+          "revenue": null,
+          "project": null,
+          "coverage": "selection",
+          "maxDays": null,
+          "overflowPolicy": null,
+          "lodging": null,
+          "followUpsMode": "consider",
+          "stops": {
+            "required": [],
+            "excluded": []
+          },
+          "followUps": [],
+          "rescheduleProposals": [],
+          "consents": []
+        },
+        "changed": [],
+        "applied": [],
+        "rejected": [],
+        "question": {
+          "id": "q1",
+          "kind": "unclear",
+          "text": "MOCKED question",
+          "options": []
+        },
+        "errorCode": null,
+        "message": "MOCKED response",
+        "notices": [],
+        "diagnostics": {
+          "interpreter": "none",
+          "llmCalls": 0,
+          "model": null,
+          "ms": 0
+        }
+      },
+      "gate": "pending_question",
+      "plan": null,
+      "openQuestions": [
+        {
+          "id": "q1",
+          "kind": "unclear",
+          "text": "MOCKED question",
+          "options": []
+        }
+      ],
+      "openQuestionCount": 1,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "gate_blocked",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": 1,
+      "outcome": "committed",
+      "errorCode": null,
+      "retryableSameRequest": false,
+      "nextAction": "none",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": {
+        "contractVersion": "semantic-1.1",
+        "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "status": "updated",
+        "revision": 1,
+        "criteria": {
+          "schema": 1,
+          "segments": [],
+          "area": null,
+          "dates": [],
+          "startTime": null,
+          "endTime": null,
+          "revenue": null,
+          "project": null,
+          "coverage": "selection",
+          "maxDays": null,
+          "overflowPolicy": null,
+          "lodging": null,
+          "followUpsMode": "consider",
+          "stops": {
+            "required": [],
+            "excluded": []
+          },
+          "followUps": [],
+          "rescheduleProposals": [],
+          "consents": []
+        },
+        "changed": [],
+        "applied": [],
+        "rejected": [],
+        "question": {
+          "id": "q1",
+          "kind": "unclear",
+          "text": "MOCKED question",
+          "options": []
+        },
+        "errorCode": null,
+        "message": "MOCKED response",
+        "notices": [],
+        "diagnostics": {
+          "interpreter": "none",
+          "llmCalls": 0,
+          "model": null,
+          "ms": 0
+        }
+      },
+      "gate": "blocked",
+      "plan": null,
+      "openQuestions": [
+        {
+          "id": "q1",
+          "kind": "unclear",
+          "text": "MOCKED question",
+          "options": []
+        }
+      ],
+      "openQuestionCount": 1,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "gate_needs_consent",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": 1,
+      "outcome": "committed",
+      "errorCode": null,
+      "retryableSameRequest": false,
+      "nextAction": "none",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": {
+        "contractVersion": "semantic-1.1",
+        "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "status": "updated",
+        "revision": 1,
+        "criteria": {
+          "schema": 1,
+          "segments": [],
+          "area": null,
+          "dates": [],
+          "startTime": null,
+          "endTime": null,
+          "revenue": null,
+          "project": null,
+          "coverage": "selection",
+          "maxDays": null,
+          "overflowPolicy": null,
+          "lodging": null,
+          "followUpsMode": "consider",
+          "stops": {
+            "required": [],
+            "excluded": []
+          },
+          "followUps": [],
+          "rescheduleProposals": [],
+          "consents": []
+        },
+        "changed": [],
+        "applied": [],
+        "rejected": [],
+        "question": {
+          "id": "q1",
+          "kind": "unclear",
+          "text": "MOCKED question",
+          "options": []
+        },
+        "errorCode": null,
+        "message": "MOCKED response",
+        "notices": [],
+        "diagnostics": {
+          "interpreter": "none",
+          "llmCalls": 0,
+          "model": null,
+          "ms": 0
+        }
+      },
+      "gate": "needs_consent",
+      "plan": null,
+      "openQuestions": [
+        {
+          "id": "q1",
+          "kind": "unclear",
+          "text": "MOCKED question",
+          "options": []
+        }
+      ],
+      "openQuestionCount": 1,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "gate_planned",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": 1,
+      "outcome": "committed",
+      "errorCode": null,
+      "retryableSameRequest": false,
+      "nextAction": "none",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": {
+        "contractVersion": "semantic-1.1",
+        "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "status": "updated",
+        "revision": 1,
+        "criteria": {
+          "schema": 1,
+          "segments": [],
+          "area": null,
+          "dates": [],
+          "startTime": null,
+          "endTime": null,
+          "revenue": null,
+          "project": null,
+          "coverage": "selection",
+          "maxDays": null,
+          "overflowPolicy": null,
+          "lodging": null,
+          "followUpsMode": "consider",
+          "stops": {
+            "required": [],
+            "excluded": []
+          },
+          "followUps": [],
+          "rescheduleProposals": [],
+          "consents": []
+        },
+        "changed": [],
+        "applied": [],
+        "rejected": [],
+        "question": null,
+        "errorCode": null,
+        "message": "MOCKED response",
+        "notices": [],
+        "diagnostics": {
+          "interpreter": "none",
+          "llmCalls": 0,
+          "model": null,
+          "ms": 0
+        }
+      },
+      "gate": "planned",
+      "plan": {
+        "planId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "sessionRevision": 1,
+        "engineVersion": "MOCKED-planner",
+        "contractVersion": "1.0",
+        "generatedAt": "2026-10-15T21:59:00Z",
+        "date": "2026-10-16",
+        "startMin": 480,
+        "finishMin": 480,
+        "endMin": 1080,
+        "departure": {
+          "lat": 45,
+          "lng": 9
+        },
+        "returnTo": null,
+        "stops": [],
+        "totals": {
+          "driveMin": 0,
+          "visitMin": 0,
+          "waitMin": 0,
+          "breakMin": 0,
+          "returnMin": 0,
+          "totalMin": 0,
+          "availableMin": 600,
+          "bufferMin": 0,
+          "totalKm": 0
+        },
+        "geometry": [],
+        "verification": "estimated_routing",
+        "snapshotRef": "MOCKED-not-a-real-plan",
+        "selectionReasons": {
+          "selected": [],
+          "excluded": []
+        },
+        "warnings": [
+          "MOCKED"
+        ],
+        "dependsOnPendingChanges": []
+      },
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_invalid_request",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "invalid_request",
+      "retryableSameRequest": false,
+      "nextAction": "correct_request",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_unsupported_contract",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "unsupported_contract",
+      "retryableSameRequest": false,
+      "nextAction": "update_client",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_unauthenticated",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "unauthenticated",
+      "retryableSameRequest": false,
+      "nextAction": "authenticate",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_pilot_not_enabled",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "pilot_not_enabled",
+      "retryableSameRequest": false,
+      "nextAction": "restore_access",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_forbidden_agent",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "forbidden_agent",
+      "retryableSameRequest": false,
+      "nextAction": "restore_access",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_forbidden_session",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "forbidden_session",
+      "retryableSameRequest": false,
+      "nextAction": "restore_access",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_agent_mismatch",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "agent_mismatch",
+      "retryableSameRequest": false,
+      "nextAction": "restore_access",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_service_disabled",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "service_disabled",
+      "retryableSameRequest": false,
+      "nextAction": "get_request",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_access_unavailable",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "access_unavailable",
+      "retryableSameRequest": true,
+      "nextAction": "retry_same_request",
+      "retryAfterMs": 1000,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_session_unavailable",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "expired",
+      "errorCode": "session_unavailable",
+      "retryableSameRequest": false,
+      "nextAction": "create_session_and_confirm",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_request_id_reused",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "request_id_reused",
+      "retryableSameRequest": false,
+      "nextAction": "get_request",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_request_in_progress",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "recoverable",
+      "errorCode": "request_in_progress",
+      "retryableSameRequest": true,
+      "nextAction": "get_request",
+      "retryAfterMs": 1000,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_lease_lost",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "recoverable",
+      "errorCode": "lease_lost",
+      "retryableSameRequest": true,
+      "nextAction": "get_request",
+      "retryAfterMs": 1000,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_revision_conflict",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "committed",
+      "errorCode": "revision_conflict",
+      "retryableSameRequest": false,
+      "nextAction": "get_state_and_confirm",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_unknown_question",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "committed",
+      "errorCode": "unknown_question",
+      "retryableSameRequest": false,
+      "nextAction": "get_state_and_confirm",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_context_changed",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "committed",
+      "errorCode": "context_changed",
+      "retryableSameRequest": false,
+      "nextAction": "get_state_and_confirm",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_engine_changed",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "committed",
+      "errorCode": "engine_changed",
+      "retryableSameRequest": false,
+      "nextAction": "get_state_and_confirm",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_llm_retryable",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "recoverable",
+      "errorCode": "llm_retryable",
+      "retryableSameRequest": true,
+      "nextAction": "retry_same_request",
+      "retryAfterMs": 1000,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_llm_budget_exhausted",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "committed",
+      "errorCode": "llm_budget_exhausted",
+      "retryableSameRequest": false,
+      "nextAction": "confirm_new_turn",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_llm_invalid_output",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "committed",
+      "errorCode": "llm_invalid_output",
+      "retryableSameRequest": false,
+      "nextAction": "confirm_new_turn",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_llm_unavailable",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "committed",
+      "errorCode": "llm_unavailable",
+      "retryableSameRequest": false,
+      "nextAction": "confirm_new_turn",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_dependency_unavailable",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "recoverable",
+      "errorCode": "dependency_unavailable",
+      "retryableSameRequest": true,
+      "nextAction": "retry_same_request",
+      "retryAfterMs": 1000,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_storage_retryable",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "recoverable",
+      "errorCode": "storage_retryable",
+      "retryableSameRequest": true,
+      "nextAction": "get_request",
+      "retryAfterMs": 1000,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_outcome_unknown",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "unknown",
+      "errorCode": "outcome_unknown",
+      "retryableSameRequest": true,
+      "nextAction": "get_request",
+      "retryAfterMs": 1000,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_internal_error",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "committed",
+      "errorCode": "internal_error",
+      "retryableSameRequest": false,
+      "nextAction": "contact_support",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_processing_expired",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "committed",
+      "errorCode": "processing_expired",
+      "retryableSameRequest": false,
+      "nextAction": "get_state_and_confirm",
+      "retryAfterMs": null,
+      "acceptedAt": "2026-10-15T21:59:00Z",
+      "responseExpiresAt": "2026-10-22T21:59:00Z",
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_request_expired",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "expired",
+      "errorCode": "request_expired",
+      "retryableSameRequest": false,
+      "nextAction": "get_state_and_confirm",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  },
+  {
+    "name": "error_plan_unavailable",
+    "simulatedDependencies": [
+      "auth",
+      "storage",
+      "lease",
+      "budget",
+      "CRM",
+      "planner"
+    ],
+    "response": {
+      "operation": "turn",
+      "contractVersion": "semantic-1.1",
+      "engineVersion": "gptour-semantic-transport/u2-a",
+      "sessionId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "requestId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "sessionRevision": null,
+      "outcome": "not_accepted",
+      "errorCode": "plan_unavailable",
+      "retryableSameRequest": false,
+      "nextAction": "confirm_new_turn",
+      "retryAfterMs": null,
+      "acceptedAt": null,
+      "responseExpiresAt": null,
+      "result": null,
+      "gate": null,
+      "plan": null,
+      "openQuestions": [],
+      "openQuestionCount": 0,
+      "notApplied": [],
+      "dataQuality": null
+    }
+  }
+]

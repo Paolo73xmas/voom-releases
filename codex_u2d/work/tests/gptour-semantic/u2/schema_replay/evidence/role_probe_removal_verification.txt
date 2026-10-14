@@ -1,0 +1,9 @@
+-- verifica rimozione sonda (dopo probe_down.sql)
+ruoli residui: 0
+schema u2_role_probe residuo: 0
+funzioni u2_role_probe_* residue: 0
+appartenenze di authenticator residue (ruolo_concesso): anon,authenticated,service_role
+grant residui su profiles/user_access per owner: 0
+righe gptour_orchestrator_user_access residue: 0
+policy residue schema public: 566
+REPLAY_VERIFY DONE checks=111 pass=111 fail=0; JWT/Auth SYNTHETIC, schema/policy/RPC REAL (replay), data SYNTHETIC

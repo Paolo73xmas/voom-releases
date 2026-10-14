@@ -1,0 +1,15 @@
+{
+ "generated_at_utc": "2026-10-14T05:20:11Z",
+ "level": "L2 (real local SQL/RPC via PostgREST; lab-only catalog/settings tables with RLS; LLM/planner/routing MOCKED)",
+ "handler": {
+  "rc": 0,
+  "summary": "U2D HANDLER[postgrest] DONE checks=23 pass=23 fail=0; LLM/planner/catalog/revalidation MOCKED"
+ },
+ "rls_user_B_sees": [
+  {
+   "name": "Torino"
+  }
+ ],
+ "lab_tables_dropped": true,
+ "pass": true
+}

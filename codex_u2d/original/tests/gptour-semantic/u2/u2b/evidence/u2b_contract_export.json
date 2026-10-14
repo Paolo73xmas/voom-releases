@@ -1,0 +1,126 @@
+{
+ "generated_at_utc": "2026-10-13T13:51:02Z",
+ "contractVersion": "semantic-1.1",
+ "sessionId": "71ffaa42-0af3-486a-b30d-f8e6b2743929",
+ "terminalBodies": [
+  {
+   "name": "committed_with_plan",
+   "httpStatus": 200,
+   "errorCode": null,
+   "finalRevision": 1,
+   "planId": "735e0f65-fe80-40e6-bc95-c81ef2b740b6",
+   "requestId": "8f9e6900-a3c8-4522-8b3c-c7dffa310867",
+   "responseBody": "{\"gate\": \"planned\", \"plan\": {\"date\": \"2026-10-16\", \"stops\": [], \"endMin\": 1080, \"planId\": \"735e0f65-fe80-40e6-bc95-c81ef2b740b6\", \"totals\": {\"totalKm\": 0, \"waitMin\": 0, \"breakMin\": 0, \"driveMin\": 0, \"totalMin\": 0, \"visitMin\": 0, \"bufferMin\": 0, \"returnMin\": 0, \"availableMin\": 600}, \"geometry\": [], \"returnTo\": null, \"startMin\": 480, \"warnings\": [\"MOCKED\"], \"departure\": {\"lat\": 45, \"lng\": 9}, \"finishMin\": 480, \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"generatedAt\": \"2026-10-15T21:59:00Z\", \"snapshotRef\": \"MOCKED-not-a-real-plan\", \"verification\": \"estimated_routing\", \"engineVersion\": \"MOCKED-planner\", \"contractVersion\": \"1.0\", \"sessionRevision\": 1, \"selectionReasons\": {\"excluded\": [], \"selected\": []}, \"dependsOnPendingChanges\": []}, \"result\": {\"status\": \"updated\", \"applied\": [], \"changed\": [], \"message\": \"MOCKED response\", \"notices\": [], \"criteria\": {\"area\": null, \"dates\": [], \"stops\": {\"excluded\": [], \"required\": []}, \"schema\": 1, \"endTime\": null, \"lodging\": null, \"maxDays\": null, \"project\": null, \"revenue\": null, \"consents\": [], \"coverage\": \"selection\", \"segments\": [], \"followUps\": [], \"startTime\": null, \"followUpsMode\": \"consider\", \"overflowPolicy\": null, \"rescheduleProposals\": []}, \"question\": null, \"rejected\": [], \"revision\": 1, \"errorCode\": null, \"requestId\": \"8f9e6900-a3c8-4522-8b3c-c7dffa310867\", \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"diagnostics\": {\"ms\": 0, \"model\": null, \"llmCalls\": 0, \"interpreter\": \"none\"}, \"contractVersion\": \"semantic-1.1\"}, \"outcome\": \"committed\", \"errorCode\": null, \"operation\": \"turn\", \"requestId\": \"8f9e6900-a3c8-4522-8b3c-c7dffa310867\", \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"acceptedAt\": \"2026-10-13T13:51:01.629Z\", \"nextAction\": \"none\", \"notApplied\": [], \"dataQuality\": null, \"retryAfterMs\": null, \"engineVersion\": \"gptour-semantic-transport/u2-a\", \"openQuestions\": [], \"contractVersion\": \"semantic-1.1\", \"sessionRevision\": 1, \"openQuestionCount\": 0, \"responseExpiresAt\": \"2026-10-20T13:51:01.629Z\", \"retryableSameRequest\": false}"
+  },
+  {
+   "name": "committed_without_plan",
+   "httpStatus": 200,
+   "errorCode": null,
+   "finalRevision": 2,
+   "planId": null,
+   "requestId": "ce237e8a-9aab-40c1-9ea1-6b676c975499",
+   "responseBody": "{\"gate\": \"pending_question\", \"plan\": null, \"result\": {\"status\": \"needs_clarification\", \"applied\": [], \"changed\": [], \"message\": \"MOCKED response\", \"notices\": [], \"criteria\": {\"area\": null, \"dates\": [], \"stops\": {\"excluded\": [], \"required\": []}, \"schema\": 1, \"endTime\": null, \"lodging\": null, \"maxDays\": null, \"project\": null, \"revenue\": null, \"consents\": [], \"coverage\": \"selection\", \"segments\": [], \"followUps\": [], \"startTime\": null, \"followUpsMode\": \"consider\", \"overflowPolicy\": null, \"rescheduleProposals\": []}, \"question\": {\"id\": \"q1\", \"kind\": \"unclear\", \"text\": \"Quale area?\", \"options\": []}, \"rejected\": [], \"revision\": 2, \"errorCode\": null, \"requestId\": \"ce237e8a-9aab-40c1-9ea1-6b676c975499\", \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"diagnostics\": {\"ms\": 0, \"model\": null, \"llmCalls\": 0, \"interpreter\": \"none\"}, \"contractVersion\": \"semantic-1.1\"}, \"outcome\": \"committed\", \"errorCode\": null, \"operation\": \"turn\", \"requestId\": \"ce237e8a-9aab-40c1-9ea1-6b676c975499\", \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"acceptedAt\": \"2026-10-13T13:51:01.909Z\", \"nextAction\": \"none\", \"notApplied\": [], \"dataQuality\": null, \"retryAfterMs\": null, \"engineVersion\": \"gptour-semantic-transport/u2-a\", \"openQuestions\": [{\"id\": \"q1\", \"kind\": \"unclear\", \"text\": \"Quale area?\", \"options\": []}], \"contractVersion\": \"semantic-1.1\", \"sessionRevision\": 2, \"openQuestionCount\": 1, \"responseExpiresAt\": \"2026-10-20T13:51:01.909Z\", \"retryableSameRequest\": false}"
+  },
+  {
+   "name": "committed_after_fault_retry",
+   "httpStatus": 200,
+   "errorCode": null,
+   "finalRevision": 3,
+   "planId": "b3dabd3e-9ec0-4e2f-9838-b68ee8e0e88c",
+   "requestId": "f49792f9-2d86-4e20-9df6-b183c460cc6f",
+   "responseBody": "{\"gate\": \"planned\", \"plan\": {\"date\": \"2026-10-16\", \"stops\": [], \"endMin\": 1080, \"planId\": \"b3dabd3e-9ec0-4e2f-9838-b68ee8e0e88c\", \"totals\": {\"totalKm\": 0, \"waitMin\": 0, \"breakMin\": 0, \"driveMin\": 0, \"totalMin\": 0, \"visitMin\": 0, \"bufferMin\": 0, \"returnMin\": 0, \"availableMin\": 600}, \"geometry\": [], \"returnTo\": null, \"startMin\": 480, \"warnings\": [\"MOCKED\"], \"departure\": {\"lat\": 45, \"lng\": 9}, \"finishMin\": 480, \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"generatedAt\": \"2026-10-15T21:59:00Z\", \"snapshotRef\": \"MOCKED-not-a-real-plan\", \"verification\": \"estimated_routing\", \"engineVersion\": \"MOCKED-planner\", \"contractVersion\": \"1.0\", \"sessionRevision\": 3, \"selectionReasons\": {\"excluded\": [], \"selected\": []}, \"dependsOnPendingChanges\": []}, \"result\": {\"status\": \"updated\", \"applied\": [], \"changed\": [], \"message\": \"MOCKED response\", \"notices\": [], \"criteria\": {\"area\": null, \"dates\": [], \"stops\": {\"excluded\": [], \"required\": []}, \"schema\": 1, \"endTime\": null, \"lodging\": null, \"maxDays\": null, \"project\": null, \"revenue\": null, \"consents\": [], \"coverage\": \"selection\", \"segments\": [], \"followUps\": [], \"startTime\": null, \"followUpsMode\": \"consider\", \"overflowPolicy\": null, \"rescheduleProposals\": []}, \"question\": null, \"rejected\": [], \"revision\": 3, \"errorCode\": null, \"requestId\": \"f49792f9-2d86-4e20-9df6-b183c460cc6f\", \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"diagnostics\": {\"ms\": 0, \"model\": null, \"llmCalls\": 0, \"interpreter\": \"none\"}, \"contractVersion\": \"semantic-1.1\"}, \"outcome\": \"committed\", \"errorCode\": null, \"operation\": \"turn\", \"requestId\": \"f49792f9-2d86-4e20-9df6-b183c460cc6f\", \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"acceptedAt\": \"2026-10-13T13:51:01.926Z\", \"nextAction\": \"none\", \"notApplied\": [], \"dataQuality\": null, \"retryAfterMs\": null, \"engineVersion\": \"gptour-semantic-transport/u2-a\", \"openQuestions\": [], \"contractVersion\": \"semantic-1.1\", \"sessionRevision\": 3, \"openQuestionCount\": 0, \"responseExpiresAt\": \"2026-10-20T13:51:01.926Z\", \"retryableSameRequest\": false}"
+  },
+  {
+   "name": "processing_expired_sql",
+   "httpStatus": 503,
+   "errorCode": "processing_expired",
+   "finalRevision": 3,
+   "planId": null,
+   "requestId": "48f27bec-45c0-40af-97ce-e4cfbf4b1880",
+   "responseBody": "{\"gate\": null, \"plan\": null, \"result\": null, \"outcome\": \"committed\", \"errorCode\": \"processing_expired\", \"operation\": \"turn\", \"requestId\": \"48f27bec-45c0-40af-97ce-e4cfbf4b1880\", \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"acceptedAt\": \"2026-10-13T13:51:02.268Z\", \"nextAction\": \"get_state_and_confirm\", \"notApplied\": [], \"dataQuality\": null, \"retryAfterMs\": null, \"engineVersion\": \"gptour-semantic-transport/u2-a\", \"openQuestions\": [], \"contractVersion\": \"semantic-1.1\", \"sessionRevision\": 3, \"openQuestionCount\": 0, \"responseExpiresAt\": \"2026-10-20T13:51:02.268Z\", \"retryableSameRequest\": false}"
+  },
+  {
+   "name": "revision_conflict_sql",
+   "httpStatus": 409,
+   "errorCode": "revision_conflict",
+   "finalRevision": 4,
+   "planId": null,
+   "requestId": "9f75eca8-8c05-4763-ad86-f310080f2862",
+   "responseBody": "{\"gate\": null, \"plan\": null, \"result\": null, \"outcome\": \"committed\", \"errorCode\": \"revision_conflict\", \"operation\": \"turn\", \"requestId\": \"9f75eca8-8c05-4763-ad86-f310080f2862\", \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"acceptedAt\": \"2026-10-13T13:51:02.360Z\", \"nextAction\": \"get_state_and_confirm\", \"notApplied\": [], \"dataQuality\": null, \"retryAfterMs\": null, \"engineVersion\": \"gptour-semantic-transport/u2-a\", \"openQuestions\": [], \"contractVersion\": \"semantic-1.1\", \"sessionRevision\": 4, \"openQuestionCount\": 0, \"responseExpiresAt\": \"2026-10-20T13:51:02.360Z\", \"retryableSameRequest\": false}"
+  },
+  {
+   "name": "finish_error_handler",
+   "httpStatus": 503,
+   "errorCode": "llm_unavailable",
+   "finalRevision": 3,
+   "planId": null,
+   "requestId": "1628ea17-cac1-40c9-a00a-9cd00a814701",
+   "responseBody": "{\"gate\": null, \"plan\": null, \"result\": null, \"outcome\": \"committed\", \"errorCode\": \"llm_unavailable\", \"operation\": \"turn\", \"requestId\": \"1628ea17-cac1-40c9-a00a-9cd00a814701\", \"sessionId\": \"71ffaa42-0af3-486a-b30d-f8e6b2743929\", \"acceptedAt\": \"2026-10-13T13:51:02.334Z\", \"nextAction\": \"confirm_new_turn\", \"notApplied\": [], \"dataQuality\": null, \"retryAfterMs\": null, \"engineVersion\": \"gptour-semantic-transport/u2-a\", \"openQuestions\": [], \"contractVersion\": \"semantic-1.1\", \"sessionRevision\": 3, \"openQuestionCount\": 0, \"responseExpiresAt\": \"2026-10-20T13:51:02.334Z\", \"retryableSameRequest\": false}"
+  }
+ ],
+ "sqlPolicies": {
+  "processing_expired": {
+   "outcome": "committed",
+   "httpStatus": 503,
+   "nextAction": "get_state_and_confirm",
+   "userConfirmation": true,
+   "retryableSameRequest": false
+  },
+  "revision_conflict": {
+   "outcome": "committed",
+   "httpStatus": 409,
+   "nextAction": "get_state_and_confirm",
+   "userConfirmation": true,
+   "retryableSameRequest": false
+  }
+ },
+ "sqlPolicyUnknownIsNull": true,
+ "getPlan": {
+  "plan": {
+   "date": "2026-10-16",
+   "stops": [],
+   "endMin": 1080,
+   "planId": "ee10d434-2e90-437b-bf31-6efee04c2166",
+   "totals": {
+    "totalKm": 0,
+    "waitMin": 0,
+    "breakMin": 0,
+    "driveMin": 0,
+    "totalMin": 0,
+    "visitMin": 0,
+    "bufferMin": 0,
+    "returnMin": 0,
+    "availableMin": 600
+   },
+   "geometry": [],
+   "returnTo": null,
+   "startMin": 480,
+   "warnings": [
+    "MOCKED"
+   ],
+   "departure": {
+    "lat": 45,
+    "lng": 9
+   },
+   "finishMin": 480,
+   "sessionId": "71ffaa42-0af3-486a-b30d-f8e6b2743929",
+   "generatedAt": "2026-10-15T21:59:00Z",
+   "snapshotRef": "MOCKED-not-a-real-plan",
+   "verification": "estimated_routing",
+   "engineVersion": "MOCKED-planner",
+   "contractVersion": "1.0",
+   "sessionRevision": 4,
+   "selectionReasons": {
+    "excluded": [],
+    "selected": []
+   },
+   "dependsOnPendingChanges": []
+  },
+  "planId": "ee10d434-2e90-437b-bf31-6efee04c2166",
+  "createdAt": "2026-10-13T13:51:02.356Z",
+  "expiresAt": "2026-11-12T13:51:02.355Z",
+  "sessionId": "71ffaa42-0af3-486a-b30d-f8e6b2743929",
+  "planRevision": 4
+ },
+ "cachedReplayIdentical": true
+}

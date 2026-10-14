@@ -1,0 +1,99 @@
+{
+ "generated_at_utc": "2026-10-14T06:17:35Z",
+ "browser": "chromium (playwright)",
+ "allowed_origin": "http://127.0.0.1:50177",
+ "other_origin": "http://127.0.0.1:46647",
+ "api": "http://127.0.0.1:44065/gptour-semantic-v2",
+ "results": {
+  "allowed": {
+   "capabilities": {
+    "status": 200,
+    "body": {
+     "operation": "capabilities",
+     "contractVersion": "semantic-1.2",
+     "engineVersion": "gptour-semantic-runtime/u2-c",
+     "operations": [
+      "capabilities",
+      "create_session",
+      "turn",
+      "get_state",
+      "get_request",
+      "get_plan"
+     ],
+     "enabled": true,
+     "supportedVersions": [
+      "semantic-1.2"
+     ],
+     "previousVersions": [
+      "semantic-1.1"
+     ]
+    }
+   },
+   "expired_jwt": {
+    "status": 401,
+    "body": {
+     "ingress": "unauthorized",
+     "correlationId": "3b31a3af-49af-4220-a0e4-07a7ad47f408"
+    }
+   },
+   "invalid_json": {
+    "status": 400,
+    "body": {
+     "operation": "turn",
+     "contractVersion": "semantic-1.2",
+     "engineVersion": "gptour-semantic-runtime/u2-c",
+     "sessionId": null,
+     "requestId": null,
+     "sessionRevision": null,
+     "outcome": "not_accepted",
+     "errorCode": "invalid_request",
+     "retryableSameRequest": false,
+     "nextAction": "correct_request",
+     "retryAfterMs": null,
+     "acceptedAt": null,
+     "responseExpiresAt": null,
+     "result": null,
+     "gate": null,
+     "plan": null,
+     "openQuestions": [],
+     "openQuestionCount": 0,
+     "notApplied": [],
+     "dataQuality": null,
+     "correlationId": "f7e2db62-cfc7-4c5f-a164-142e3733456d"
+    }
+   }
+  },
+  "other": {
+   "capabilities": {
+    "error": "TypeError: Failed to fetch"
+   },
+   "expired_jwt": {
+    "error": "TypeError: Failed to fetch"
+   },
+   "invalid_json": {
+    "error": "TypeError: Failed to fetch"
+   }
+  }
+ },
+ "handler_requests": [
+  "REQ OPTIONS http://127.0.0.1:50177 204",
+  "REQ POST http://127.0.0.1:50177 200",
+  "REQ POST http://127.0.0.1:50177 401",
+  "REQ POST http://127.0.0.1:50177 400",
+  "REQ OPTIONS http://127.0.0.1:46647 403",
+  "REQ OPTIONS http://127.0.0.1:46647 403",
+  "REQ OPTIONS http://127.0.0.1:46647 403"
+ ],
+ "checks": {
+  "preflight_sent_from_allowed_origin": true,
+  "allowed_capabilities_200_readable": true,
+  "allowed_error_401_readable": true,
+  "allowed_contract_error_400_readable": true,
+  "allowed_posts_reached_handler_after_preflight": true,
+  "other_origin_preflight_refused_403": true,
+  "other_origin_all_fetches_blocked_by_browser": true,
+  "other_origin_no_post_reached_handler": true
+ },
+ "pass": true,
+ "note": "JWT/secret synthetic per run; memory store; LLM/planner MOCKED; no remote access"
+}

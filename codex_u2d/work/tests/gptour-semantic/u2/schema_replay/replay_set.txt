@@ -1,0 +1,73 @@
+# Real SQL sources replayed UNCHANGED on the local lab, in this order (repo-relative paths). Lines starting with # are comments.
+# Layer A (preceded by docs/backup production snapshot 2026-03-24 applied by replay_up.py): migrations dated after the snapshot.
+# Closure: RLS/privilege changes on core CRM tables + GPTour/ai_tour chain + tabaccherie/customers columns it uses + Fase 4B + Fase 6.
+?supabase/migrations/20260506_enable_rls_15_tables.sql # EXPECTED: references supplier_orders.created_by/branch_id absent from the 2026-09-06 type snapshot; none of its 35 policies appear in 20260722_turbo_rls_initplan (full policy regeneration), so it is presumably not live (rollback file exists). Whole file is one transaction: nothing applied locally.
+# NOTE: same-day files reordered on purpose: supplier_team_members_rls defines my_supplier_ids() required by supplier_rls_perf_guard.
+supabase/migrations/20260721_supplier_team_members_rls.sql
+supabase/migrations/20260721_supplier_rls_perf_guard.sql
+supabase/migrations/20260722_customers_supplier_update_rls.sql
+supabase/migrations/20260722_drop_duplicate_policies.sql
+supabase/migrations/20260722_turbo_rls_initplan.sql
+?supabase/migrations/20260728_fix_views_security_invoker.sql # EXPECTED: ALTER VIEW on hosted views (visit_routes_with_stats, ...) whose definitions are not versioned in the repository.
+supabase/migrations/20260812_security_rls_hardening.sql
+supabase/migrations/20260819_profiles_privilege_hardening.sql
+supabase/migrations/20260821_ai_tour.sql
+supabase/migrations/20260822_ai_tour_free_tabaccherie.sql
+supabase/migrations/20260823_ai_tour_free_territorio.sql
+supabase/migrations/20260824_ai_tour_geocode_db.sql
+supabase/migrations/20260825_ai_tour_live.sql
+supabase/migrations/20260826_ai_tour_week.sql
+supabase/migrations/20260828_ai_tour_never_visited.sql
+supabase/migrations/20260829_ai_tour_monitoring_realtime.sql
+supabase/migrations/20260830_ai_tour_agent_position.sql
+supabase/migrations/20260831_ai_tour_team_positions.sql
+supabase/migrations/20260901_admin_merge_customers.sql
+supabase/migrations/20260902_ai_tour_learned_durations.sql
+supabase/migrations/20260902_follow_up_stops.sql
+supabase/migrations/20260902_merge_customer_tabaccheria.sql
+supabase/migrations/20260905_ai_tour_buffer_max.sql
+supabase/migrations/20260906_ai_tour_never_visited_stato.sql
+supabase/migrations/20260906_secfix_db04_tabaccherie_ricerca.sql
+supabase/migrations/20260907_ai_tour_free_tabaccherie_perf.sql
+supabase/migrations/20260908_ai_tour_orphan_order_history.sql
+supabase/migrations/20260910_ai_tour_branch_admin.sql
+supabase/migrations/20260911_agent_zones_alias.sql
+supabase/migrations/20260912_ai_tour_recalc_guard.sql
+supabase/migrations/20260913_ai_tour_reassign_orphan.sql
+supabase/migrations/20260914_ai_tour_reassignment_history.sql
+supabase/migrations/20260915_ai_tour_esito_contacts_status.sql
+supabase/migrations/20260916_orphan_a_visit_clears.sql
+supabase/migrations/20260917_ai_tour_vehicle_costs.sql
+supabase/migrations/20260919_orphan_reassign_protection.sql
+supabase/migrations/20260920_tabaccherie_customer_link_sync.sql
+supabase/migrations/20260922_customer_visit_slots.sql
+supabase/migrations/20260923_zone_transfer.sql
+supabase/migrations/20260925_ai_tour_positions_prefer_gps.sql
+supabase/migrations/20260926_live_tour_ops.sql
+supabase/migrations/20260928_customer_excluded_days.sql
+supabase/migrations/20260929_agent_stamina_replay.sql
+supabase/migrations/20260929_ai_tour_contact_stats.sql
+supabase/migrations/20260929_ai_tour_max_daily_buffer.sql
+supabase/migrations/20260930_ai_tour_contact_stats_secure.sql
+supabase/migrations/20260930_lunch_break.sql
+supabase/migrations/20261001_ai_tour_reschedule_follow_up.sql
+supabase/migrations/20261004_ai_tours_area_filter.sql
+supabase/migrations/20261005_no_interest_block.sql
+supabase/migrations/20261006_tabaccherie_bbox.sql
+supabase/migrations/20261007_agent_zones_parent.sql
+supabase/migrations/20261008_polar_centers.sql
+supabase/migrations/20261009_jivea_substitutions.sql
+supabase/migrations/20261010_jivea_customers_read.sql
+supabase/migrations/20261012_vat_duplicate_guard.sql
+supabase/migrations/20261013_save_tours_batch.sql
+supabase/migrations/20261014_customer_verification_requests.sql
+supabase/migrations/20261015_customer_verification_subject.sql
+supabase/migrations/20261016_tabaccherie_chiusa.sql
+supabase/migrations/20261022_ai_tour_brief_memory.sql
+supabase/migrations/20261025_agent_zones_branch_admin.sql
+supabase/migrations/20261026_ai_tour_settings_defaults.sql
+supabase/migrations/20261027_ai_tour_new_points.sql
+supabase/migrations/20261028_ai_tour_new_points_lookup_perf.sql
+supabase/migrations/20261029_gptour_catalog_scope.sql
+supabase/orchestrator-pending/phase4b/01_migration.sql
+supabase/orchestrator-pending/phase6/01_access_migration.sql

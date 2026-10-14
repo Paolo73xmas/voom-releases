@@ -1,0 +1,432 @@
+{
+ "baseline": "259ec92d",
+ "protected_files": 40,
+ "cumulative_sha256": "041f2bfa00446526951e79689e2fab9a61276e29b0282ec38e3d29a21b036d88",
+ "cumulative_matches": [
+  "d3a_planner_extraction"
+ ],
+ "known_cumulative": {
+  "original_259ec92d": "47b38f9561c4420ac09a894697144a63f848e98877039e011cff4ee6c5d7d30f",
+  "rev4_decline_consent": "0ef218f48851515a51c8d463d0c0397959998cd8a1291c61c06436ddcfe8bc67",
+  "d3a_planner_extraction": "041f2bfa00446526951e79689e2fab9a61276e29b0282ec38e3d29a21b036d88"
+ },
+ "modified": [
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/orchestrator.ts",
+   "base_sha256": "79a94dd356b8bb04c5d69cd7287a1055e1417e329c513b08595893ee0e343217",
+   "current_sha256": "3d94f2c9ca3c3adedce10ed3aff2a4bd34b99d74ca6404d1075f7babdb45164c",
+   "bytes_base": 42292,
+   "bytes_current": 22762,
+   "status": "MODIFICATO",
+   "authorization": "D3(a) estrazione planner in _shared/gptour-planner-core/planner.ts (wrapper v7; golden v7 identici) \u2014 autorizzazione proprietario U2-d"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/apply.ts",
+   "base_sha256": "0fabde08adc7f96627f252363efcf9edff31f3d849f9a52620f509cd4b02fc4e",
+   "current_sha256": "d43e3d76a06e2fcc6712a855f7854802ebf9407b2decd54e099172b95d2cd72d",
+   "bytes_base": 27609,
+   "bytes_current": 28230,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/contract.ts",
+   "base_sha256": "9148167fb40cd46641c56cc567ff73ff8b70a4c5fe42a57bd8ef3449175b5860",
+   "current_sha256": "b7af222af5b866956f40a6098fb34834c7b90551d3dee6b1108e929933626363",
+   "bytes_base": 8925,
+   "bytes_current": 8992,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/interpreter.ts",
+   "base_sha256": "44cd3ab24e44df37584b664271df49ccf35923b041b13c7b7a34e0db22bf1cda",
+   "current_sha256": "d0d33dd272682e55843c6fe1e175af5203704f5f5307c9bfa508684c6f4886f9",
+   "bytes_base": 16682,
+   "bytes_current": 18125,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/prompt.ts",
+   "base_sha256": "093bb385402c6b8a265acfa0bdbd5e957a6c50502e750cf500e8514a80e5d1a5",
+   "current_sha256": "10286498fd38a3ec25d362b811392d86b83cabf221a02bf0d401e32ec145b9ac",
+   "bytes_base": 5942,
+   "bytes_current": 6339,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/schema.ts",
+   "base_sha256": "3402a7a4c1c05a821251c114d1ff2f075f0d85f0f3acc75b02892c3aa7c1d1dd",
+   "current_sha256": "d282a454df94805b36d48a6dc4261d3907056c6bbd776f85834a9c193c945cea",
+   "bytes_base": 5910,
+   "bytes_current": 5929,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  }
+ ],
+ "unauthorized": [],
+ "files": [
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/adapters/external.ts",
+   "base_sha256": "d390c8b37b5fc0e77c8e98e157e5d6571af8314ff2b473b2d832898281665982",
+   "current_sha256": "d390c8b37b5fc0e77c8e98e157e5d6571af8314ff2b473b2d832898281665982",
+   "bytes_base": 10970,
+   "bytes_current": 10970,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/adapters/memory.ts",
+   "base_sha256": "3650f6ae9256824632fb4c1347a6176529a9ed40fdabf86b097a5aca10d7659d",
+   "current_sha256": "3650f6ae9256824632fb4c1347a6176529a9ed40fdabf86b097a5aca10d7659d",
+   "bytes_base": 9699,
+   "bytes_current": 9699,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/adapters/province-it.ts",
+   "base_sha256": "5ec60d6854a254f08b065c6af0166d9588e49ad21507f811bc4f7566687614b4",
+   "current_sha256": "5ec60d6854a254f08b065c6af0166d9588e49ad21507f811bc4f7566687614b4",
+   "bytes_base": 1583,
+   "bytes_current": 1583,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/adapters/supabase-crm.ts",
+   "base_sha256": "64b91edff73c5c46db6b1e3ee8d0924bae5c4f851372b6684fda93f04567c3e2",
+   "current_sha256": "64b91edff73c5c46db6b1e3ee8d0924bae5c4f851372b6684fda93f04567c3e2",
+   "bytes_base": 12852,
+   "bytes_current": 12852,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/adapters/supabase-store.ts",
+   "base_sha256": "89caa385d99eaf18ce655a341d53767cb0e49573352b12b20193e5f52b5780fc",
+   "current_sha256": "89caa385d99eaf18ce655a341d53767cb0e49573352b12b20193e5f52b5780fc",
+   "bytes_base": 3471,
+   "bytes_current": 3471,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/agenda.ts",
+   "base_sha256": "a68981e2e4227b77e10e1377e2aa11d2cea16479712f435b6b7faabc49036570",
+   "current_sha256": "a68981e2e4227b77e10e1377e2aa11d2cea16479712f435b6b7faabc49036570",
+   "bytes_base": 2392,
+   "bytes_current": 2392,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/commercial.ts",
+   "base_sha256": "dd333261546998eec6f3d5b72fd85e48942408f1f9c0d53d67ad60229d3cc4ba",
+   "current_sha256": "dd333261546998eec6f3d5b72fd85e48942408f1f9c0d53d67ad60229d3cc4ba",
+   "bytes_base": 3814,
+   "bytes_current": 3814,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/contract.ts",
+   "base_sha256": "ce79bf47060246be10fccb42d4db6f570386df841ddbcfd37d5520649e9367a0",
+   "current_sha256": "ce79bf47060246be10fccb42d4db6f570386df841ddbcfd37d5520649e9367a0",
+   "bytes_base": 7617,
+   "bytes_current": 7617,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/geo.ts",
+   "base_sha256": "6b0b429c5d46b4c9ecec3fc7355b8a4d6727e0daa5d85a062ce4a7a67a73a91c",
+   "current_sha256": "6b0b429c5d46b4c9ecec3fc7355b8a4d6727e0daa5d85a062ce4a7a67a73a91c",
+   "bytes_base": 5767,
+   "bytes_current": 5767,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/interpret.ts",
+   "base_sha256": "098fc4e8383a4a0d901e6ba73696f1410d29053975d48a9bafc5b15a8347bc99",
+   "current_sha256": "098fc4e8383a4a0d901e6ba73696f1410d29053975d48a9bafc5b15a8347bc99",
+   "bytes_base": 10905,
+   "bytes_current": 10905,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/multiday.ts",
+   "base_sha256": "b369afd2fa4e53f9a43219e7bae2a1a91e2a96a1f3f0c42be129148259b64330",
+   "current_sha256": "b369afd2fa4e53f9a43219e7bae2a1a91e2a96a1f3f0c42be129148259b64330",
+   "bytes_base": 8029,
+   "bytes_current": 8029,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/orchestrator.ts",
+   "base_sha256": "79a94dd356b8bb04c5d69cd7287a1055e1417e329c513b08595893ee0e343217",
+   "current_sha256": "3d94f2c9ca3c3adedce10ed3aff2a4bd34b99d74ca6404d1075f7babdb45164c",
+   "bytes_base": 42292,
+   "bytes_current": 22762,
+   "status": "MODIFICATO",
+   "authorization": "D3(a) estrazione planner in _shared/gptour-planner-core/planner.ts (wrapper v7; golden v7 identici) \u2014 autorizzazione proprietario U2-d"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/ports.ts",
+   "base_sha256": "d9c7de61255148e81f1b4379fab1b8a8ad79c09dc1990e7072754ea478ee66a0",
+   "current_sha256": "d9c7de61255148e81f1b4379fab1b8a8ad79c09dc1990e7072754ea478ee66a0",
+   "bytes_base": 5639,
+   "bytes_current": 5639,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/routing.ts",
+   "base_sha256": "416f81c159f15d715442825d9348d76e4d2ec2376711551ef23df964fa6d77c1",
+   "current_sha256": "416f81c159f15d715442825d9348d76e4d2ec2376711551ef23df964fa6d77c1",
+   "bytes_base": 8573,
+   "bytes_current": 8573,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-orchestrator/time.ts",
+   "base_sha256": "552f4b04170576f7eee9c3ed14b9065fa4957bf67e7c22c07209ec6d8dc3c3ed",
+   "current_sha256": "552f4b04170576f7eee9c3ed14b9065fa4957bf67e7c22c07209ec6d8dc3c3ed",
+   "bytes_base": 5435,
+   "bytes_current": 5435,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/apply.ts",
+   "base_sha256": "0fabde08adc7f96627f252363efcf9edff31f3d849f9a52620f509cd4b02fc4e",
+   "current_sha256": "d43e3d76a06e2fcc6712a855f7854802ebf9407b2decd54e099172b95d2cd72d",
+   "bytes_base": 27609,
+   "bytes_current": 28230,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/contract.ts",
+   "base_sha256": "9148167fb40cd46641c56cc567ff73ff8b70a4c5fe42a57bd8ef3449175b5860",
+   "current_sha256": "b7af222af5b866956f40a6098fb34834c7b90551d3dee6b1108e929933626363",
+   "bytes_base": 8925,
+   "bytes_current": 8992,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/interpreter.ts",
+   "base_sha256": "44cd3ab24e44df37584b664271df49ccf35923b041b13c7b7a34e0db22bf1cda",
+   "current_sha256": "d0d33dd272682e55843c6fe1e175af5203704f5f5307c9bfa508684c6f4886f9",
+   "bytes_base": 16682,
+   "bytes_current": 18125,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/openai-port.ts",
+   "base_sha256": "74e496d7d4cd790139fa2afee4601076eb51f9e61729fba2d44ef14e9514ea86",
+   "current_sha256": "74e496d7d4cd790139fa2afee4601076eb51f9e61729fba2d44ef14e9514ea86",
+   "bytes_base": 1578,
+   "bytes_current": 1578,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/projection.ts",
+   "base_sha256": "1713f4a839d7b99fda3143030ecd229f008661b50818b2b6f902a37d17612dea",
+   "current_sha256": "1713f4a839d7b99fda3143030ecd229f008661b50818b2b6f902a37d17612dea",
+   "bytes_base": 9287,
+   "bytes_current": 9287,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/prompt.ts",
+   "base_sha256": "093bb385402c6b8a265acfa0bdbd5e957a6c50502e750cf500e8514a80e5d1a5",
+   "current_sha256": "10286498fd38a3ec25d362b811392d86b83cabf221a02bf0d401e32ec145b9ac",
+   "bytes_base": 5942,
+   "bytes_current": 6339,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  },
+  {
+   "file": "supabase/functions/_shared/gptour-semantic/schema.ts",
+   "base_sha256": "3402a7a4c1c05a821251c114d1ff2f075f0d85f0f3acc75b02892c3aa7c1d1dd",
+   "current_sha256": "d282a454df94805b36d48a6dc4261d3907056c6bbd776f85834a9c193c945cea",
+   "bytes_base": 5910,
+   "bytes_current": 5929,
+   "status": "MODIFICATO",
+   "authorization": "rev.4 decline_consent (U1 semantic-1.0.1) \u2014 autorizzazione proprietario 2026-10-13"
+  },
+  {
+   "file": "supabase/functions/gptour-orchestrator/handler.ts",
+   "base_sha256": "28186fcac5be38200ace96b19e2afd50fe5a569a658f812f9eb01fa2da8ff0f7",
+   "current_sha256": "28186fcac5be38200ace96b19e2afd50fe5a569a658f812f9eb01fa2da8ff0f7",
+   "bytes_base": 5066,
+   "bytes_current": 5066,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "supabase/functions/gptour-orchestrator/index.ts",
+   "base_sha256": "20bdf488c07bbf6ca341e8b0f1747ce158c1c3a278a84d1084051c1b36d46a08",
+   "current_sha256": "20bdf488c07bbf6ca341e8b0f1747ce158c1c3a278a84d1084051c1b36d46a08",
+   "bytes_base": 337,
+   "bytes_current": 337,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/SA_semantic.unit.ts",
+   "base_sha256": "90d474ad9307025775a7fd08d3c436e21ba8472d7993ee9b7fe05c968f3e938b",
+   "current_sha256": "90d474ad9307025775a7fd08d3c436e21ba8472d7993ee9b7fe05c968f3e938b",
+   "bytes_base": 31036,
+   "bytes_current": 31036,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/SB_llm_smoke.sh",
+   "base_sha256": "c48635382f2e740d424ee99e13c7be15ed8075051718a8fcc4d2399ef8bb84f0",
+   "current_sha256": "c48635382f2e740d424ee99e13c7be15ed8075051718a8fcc4d2399ef8bb84f0",
+   "bytes_base": 350,
+   "bytes_current": 350,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/SB_llm_smoke.ts",
+   "base_sha256": "c35c460c8daa4ae92c5a6bfd81bfa5f25e5b5be199f231c7cdb370c5b6e46bdd",
+   "current_sha256": "c35c460c8daa4ae92c5a6bfd81bfa5f25e5b5be199f231c7cdb370c5b6e46bdd",
+   "bytes_base": 8454,
+   "bytes_current": 8454,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/SC_regression.unit.ts",
+   "base_sha256": "9dc277e950ef838b67b9901c32a9036d32884d08b6e45f851edcb78a77da9edc",
+   "current_sha256": "9dc277e950ef838b67b9901c32a9036d32884d08b6e45f851edcb78a77da9edc",
+   "bytes_base": 15160,
+   "bytes_current": 15160,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/SD_regression.unit.ts",
+   "base_sha256": "e1d8fb0e95ea9c49ad8fd78d6804be3cf579e03e6fa99b319bcdfe2c58f01b49",
+   "current_sha256": "e1d8fb0e95ea9c49ad8fd78d6804be3cf579e03e6fa99b319bcdfe2c58f01b49",
+   "bytes_base": 11591,
+   "bytes_current": 11591,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/SE_regression.unit.ts",
+   "base_sha256": "f16a255b5040caec40713c0f484284a3e9201de88afb39be554a7cb1c654f28f",
+   "current_sha256": "f16a255b5040caec40713c0f484284a3e9201de88afb39be554a7cb1c654f28f",
+   "bytes_base": 7733,
+   "bytes_current": 7733,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/fixtures.ts",
+   "base_sha256": "c5cb222628524d0fef1023bc8bdb0560f7f3dae24c7daad0b5403c11f5631885",
+   "current_sha256": "c5cb222628524d0fef1023bc8bdb0560f7f3dae24c7daad0b5403c11f5631885",
+   "bytes_base": 4002,
+   "bytes_current": 4002,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/llm_bridge.py",
+   "base_sha256": "521212e16bd60e189e98d3fa345a95c1a3f3cc76e8eef6ba0b7939fd19c390bc",
+   "current_sha256": "521212e16bd60e189e98d3fa345a95c1a3f3cc76e8eef6ba0b7939fd19c390bc",
+   "bytes_base": 803,
+   "bytes_current": 803,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/repro/REPRO_post_fix.ts",
+   "base_sha256": "5d22aaee2ab69d2882f38648bb8e87e116f72373d9e7d7fd509de08542cfb949",
+   "current_sha256": "5d22aaee2ab69d2882f38648bb8e87e116f72373d9e7d7fd509de08542cfb949",
+   "bytes_base": 2139,
+   "bytes_current": 2139,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/repro/REPRO_pre_fix.ts",
+   "base_sha256": "795d8bff3d4154355d92b167127573d14d53f1902121b8e5ab1ebd10db3362ed",
+   "current_sha256": "795d8bff3d4154355d92b167127573d14d53f1902121b8e5ab1ebd10db3362ed",
+   "bytes_base": 2127,
+   "bytes_current": 2127,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/repro/REPRO_u13.ts",
+   "base_sha256": "74b55ecde777ccc585176b8bf806f0fcc14a147e22a6c61b8ad55f6a801fa364",
+   "current_sha256": "74b55ecde777ccc585176b8bf806f0fcc14a147e22a6c61b8ad55f6a801fa364",
+   "bytes_base": 1471,
+   "bytes_current": 1471,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/repro/REPRO_u14_post.ts",
+   "base_sha256": "b2433fd2ee893b190d5a24dd1464f15608774c3783bec162320ea3f718907493",
+   "current_sha256": "b2433fd2ee893b190d5a24dd1464f15608774c3783bec162320ea3f718907493",
+   "bytes_base": 1267,
+   "bytes_current": 1267,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/repro/REPRO_u14_pre.ts",
+   "base_sha256": "30a8e1b55c27e1ec5a43b32014cc90c04247d21c7d4ddada05d07e31ac47882b",
+   "current_sha256": "30a8e1b55c27e1ec5a43b32014cc90c04247d21c7d4ddada05d07e31ac47882b",
+   "bytes_base": 1310,
+   "bytes_current": 1310,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/run_all.sh",
+   "base_sha256": "96ce2a4dae04ee1f4e1c7467e98338c03ef5e33ff6f2c30aaa0501bc85a0d40b",
+   "current_sha256": "96ce2a4dae04ee1f4e1c7467e98338c03ef5e33ff6f2c30aaa0501bc85a0d40b",
+   "bytes_base": 568,
+   "bytes_current": 568,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/run_deno.sh",
+   "base_sha256": "0ca3d485361bbb335afa1e4fd7723db6d9076e60a87b27af09422530c8d7ae51",
+   "current_sha256": "0ca3d485361bbb335afa1e4fd7723db6d9076e60a87b27af09422530c8d7ae51",
+   "bytes_base": 593,
+   "bytes_current": 593,
+   "status": "INVARIATO",
+   "authorization": null
+  },
+  {
+   "file": "tests/gptour-semantic/tsconfig.json",
+   "base_sha256": "156b815ed8729f6c69bead8fce680ad2f12319ec764a2329425c15c18d2b1f91",
+   "current_sha256": "156b815ed8729f6c69bead8fce680ad2f12319ec764a2329425c15c18d2b1f91",
+   "bytes_base": 441,
+   "bytes_current": 441,
+   "status": "INVARIATO",
+   "authorization": null
+  }
+ ]
+}

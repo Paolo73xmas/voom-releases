@@ -1,0 +1,101 @@
+diff --git a/supabase/functions/_shared/gptour-semantic/apply.ts b/supabase/functions/_shared/gptour-semantic/apply.ts
+index b788fc9c..3c994316 100644
+--- a/supabase/functions/_shared/gptour-semantic/apply.ts
++++ b/supabase/functions/_shared/gptour-semantic/apply.ts
+@@ -23,7 +23,7 @@ export function slotOf(op: Operation): string {
+   if (['add_segment', 'replace_segments', 'remove_segment'].includes(op.op) || (op.op === 'clear' && ['segments', 'purchase_filter', 'visit_filter'].includes(op.field ?? ''))) return 'segments';
+   if (op.op === 'require_stop' || op.op === 'exclude_stop' || (op.op === 'clear' && op.field === 'stops')) return 'stops';
+   if (op.op === 'follow_up' || op.op === 'propose_reschedule' || (op.op === 'clear' && op.field === 'follow_ups')) return 'events';
+-  if (op.op === 'grant_consent') return `consent:${op.consent}`;
++  if (op.op === 'grant_consent' || op.op === 'decline_consent') return `consent:${op.consent}`;
+   const f = op.field ?? '';
+   return `f:${f.startsWith('revenue') ? 'revenue' : f.startsWith('lodging') ? 'lodging' : f}`;
+ }
+@@ -218,6 +218,13 @@ export function applyOperations(prev: SemanticCriteria, items: SourcedOp[], ctx:
+         if (k === 'extra_days' && days) c.maxDays = days;
+         break;
+       }
++      case 'decline_consent': {
++        // Rifiuto esplicito di una PROPOSTA pendente dello stesso tipo: nessuna modifica ai criteri, nessun consenso. L'interprete scarta a monte
++        // (senza chiudere la domanda) i rifiuti con citazione assente, tipo diverso, senza domanda o in conflitto con grant_consent.
++        const k = op.consent;
++        if (!k || !(ctx.pending?.kind === 'consent' && ctx.pending.consentKind === k)) { issue(i, 'invalid_value', 'A quale autorizzazione ti riferisci?', 'rifiuto non riferito a una domanda di consenso pendente'); break; }
++        break;
++      }
+       default: issue(i, 'invalid_value', 'Operazione non riconosciuta.', `op sconosciuta ${(op as Operation).op}`);
+     }
+     if (issues.length === before) applied.push(op);
+diff --git a/supabase/functions/_shared/gptour-semantic/contract.ts b/supabase/functions/_shared/gptour-semantic/contract.ts
+index e601b783..8d02d6e8 100644
+--- a/supabase/functions/_shared/gptour-semantic/contract.ts
++++ b/supabase/functions/_shared/gptour-semantic/contract.ts
+@@ -1,6 +1,6 @@
+-// GPTour — contratto semantico condiviso Web/App (versione "semantic-1.0").
++// GPTour — contratto semantico condiviso Web/App (versione "semantic-1.0.1": 1.0 + operazione additiva decline_consent).
+ // L'LLM produce SOLO operazioni sui criteri; il server le valida e le applica. Nessuna dipendenza runtime.
+-export const SEMANTIC_CONTRACT_VERSION = 'semantic-1.0';
++export const SEMANTIC_CONTRACT_VERSION = 'semantic-1.0.1';
+ export const SEMANTIC_TIMEZONE = 'Europe/Rome';
+ 
+ export type Category = 'client' | 'prospect' | 'orphan' | 'free' | 'never';
+@@ -71,7 +71,7 @@ export interface PendingQuestion extends PublicQuestion { deferred: SourcedOp[]
+   previous?: PendingQuestion | null }
+ 
+ export type OpName = 'set' | 'clear' | 'add_segment' | 'replace_segments' | 'remove_segment' | 'add_locality' | 'remove_locality' | 'replace_area'
+-  | 'require_stop' | 'exclude_stop' | 'follow_up' | 'propose_reschedule' | 'grant_consent' | 'reset_all';
++  | 'require_stop' | 'exclude_stop' | 'follow_up' | 'propose_reschedule' | 'grant_consent' | 'decline_consent' | 'reset_all';
+ export type SetField = 'dates' | 'start_time' | 'end_time' | 'revenue_min' | 'revenue_max' | 'project' | 'coverage' | 'max_days' | 'overflow_policy'
+   | 'lodging_mode' | 'lodging_max_km' | 'follow_ups_mode' | 'allow_nearby';
+ export type ClearField = 'segments' | 'purchase_filter' | 'visit_filter' | 'revenue' | 'area' | 'dates' | 'start_time' | 'end_time' | 'project'
+diff --git a/supabase/functions/_shared/gptour-semantic/interpreter.ts b/supabase/functions/_shared/gptour-semantic/interpreter.ts
+index e4d01939..7cec0ba0 100644
+--- a/supabase/functions/_shared/gptour-semantic/interpreter.ts
++++ b/supabase/functions/_shared/gptour-semantic/interpreter.ts
+@@ -122,6 +122,20 @@ export async function interpretTurn(req: SemanticRequest, prev: SemanticState, c
+     state.pendingQuestion = q;
+     return done(result('needs_clarification', q.text, { question: publicQ(q), rejected: dropped }));
+   }
++  // decline_consent (semantic-1.0.1): accettata SOLO con citazione presente, domanda di consenso pendente in cima dello stesso tipo e senza grant_consent
++  // dello stesso tipo nello stesso output. Altrimenti viene scartata SENZA chiudere la domanda originale (né consenso né rifiuto registrati).
++  const pend = prev.pendingQuestion;
++  const declineOk = (x: SourcedOp) => evidenceOk(x.op, message) && pend?.kind === 'consent' && !!x.op.consent && pend.consentKind === x.op.consent
++    && !llmItems.some((y) => y.op.op === 'grant_consent' && y.op.consent === x.op.consent);
++  const conflicted = new Set(llmItems.filter((x) => x.op.op === 'decline_consent').map((x) => x.op.consent));
++  const rejectedConsent = llmItems.filter((x) => (x.op.op === 'decline_consent' && !declineOk(x)) || (x.op.op === 'grant_consent' && conflicted.has(x.op.consent)));
++  if (rejectedConsent.length) {
++    const kept = llmItems.filter((x) => !rejectedConsent.includes(x));
++    const dropped = rejectedConsent.map((x) => ({ op: x.op.op, reason: x.op.op === 'grant_consent' ? 'consenso e rifiuto nello stesso messaggio' : !evidenceOk(x.op, message) ? `citazione non presente nel messaggio: «${x.op.evidence}»` : 'rifiuto non riferito alla domanda di consenso pendente (tipo o domanda non corrispondenti)' }));
++    const out = kept.length ? route(kept) : commit([], {}, 'side');
++    out.result.rejected = [...dropped, ...out.result.rejected];
++    return out;
++  }
+   return route(llmItems);
+ 
+   function handleAction(a: SemanticAction): TurnOutcome {
+diff --git a/supabase/functions/_shared/gptour-semantic/prompt.ts b/supabase/functions/_shared/gptour-semantic/prompt.ts
+index 54cce7b5..4a16ab8b 100644
+--- a/supabase/functions/_shared/gptour-semantic/prompt.ts
++++ b/supabase/functions/_shared/gptour-semantic/prompt.ts
+@@ -30,7 +30,8 @@ export function buildSystemPrompt(p: PromptInput): string {
+     '- require_stop / exclude_stop: refId = key di una TAPPA NOTA (oppure null) e mention = nome citato.',
+     '- follow_up: refId = id di un EVENTO IN AGENDA, mention = nome citato, decision "include"|"exclude".',
+     '- propose_reschedule: proposta di spostare un evento (refId, mention, proposedDate). È solo una PROPOSTA, non una modifica confermata.',
+-    '- grant_consent: consent ∈ extra_days, non_working_day, exceed_end_time, outside_territory. SOLO se la DOMANDA PENDENTE chiede quel consenso e l\'agente acconsente in modo esplicito. Mai dedurlo.',
++    '- grant_consent: consent ∈ extra_days, non_working_day, exceed_end_time, outside_territory. SOLO se la DOMANDA PENDENTE chiede quel consenso e l\'agente acconsente in modo esplicito. Mai dedurlo. Mai insieme a decline_consent dello stesso tipo.',
++    '- decline_consent: consent ∈ extra_days, non_working_day, exceed_end_time, outside_territory. SOLO se la DOMANDA PENDENTE chiede quel consenso e l\'agente lo RIFIUTA esplicitamente ("no", "no grazie", "non includerla"). Una negazione riferita ad altro ("no, togli Monza") NON è decline_consent: usa l\'operazione pertinente. Mai dedurlo.',
+     '- reset_all: solo se l\'agente chiede di ricominciare da capo.',
+     'REGOLE: "tutte le tipologie" ≠ "tutti i punti" (= set coverage all_matching). "solo una giornata" = set max_days 1. "se non entrano chiedimi" = set overflow_policy ask (NON è un consenso). Acquisti ≠ visite. Date relative ⇒ data assoluta dal calendario sopra.',
+     'Se qualcosa è ambiguo o manca, NON indovinare: restituisci operations=[] oppure solo le operazioni certe e clarification={reason, question in italiano}. Se il messaggio non riguarda il giro: operations=[] e clarification reason "unrelated".',
+diff --git a/supabase/functions/_shared/gptour-semantic/schema.ts b/supabase/functions/_shared/gptour-semantic/schema.ts
+index faac63cd..7b576110 100644
+--- a/supabase/functions/_shared/gptour-semantic/schema.ts
++++ b/supabase/functions/_shared/gptour-semantic/schema.ts
+@@ -2,7 +2,7 @@
+ import { CATEGORIES, CONSENT_KINDS, type LlmOutput, type Operation } from './contract.ts';
+ 
+ const OPS = ['set', 'clear', 'add_segment', 'replace_segments', 'remove_segment', 'add_locality', 'remove_locality', 'replace_area',
+-  'require_stop', 'exclude_stop', 'follow_up', 'propose_reschedule', 'grant_consent', 'reset_all'] as const;
++  'require_stop', 'exclude_stop', 'follow_up', 'propose_reschedule', 'grant_consent', 'decline_consent', 'reset_all'] as const;
+ const FIELDS = ['dates', 'start_time', 'end_time', 'revenue_min', 'revenue_max', 'project', 'coverage', 'max_days', 'overflow_policy',
+   'lodging_mode', 'lodging_max_km', 'follow_ups_mode', 'allow_nearby', 'segments', 'purchase_filter', 'visit_filter', 'revenue', 'area',
+   'lodging', 'stops', 'follow_ups'] as const;

@@ -1,0 +1,86 @@
+{
+ "generated_at_utc": "2026-10-14T06:22:05Z",
+ "entrypoint": "supabase/functions/gptour-semantic-v2/index.ts (Deno.serve, local listener)",
+ "startup_banner": [
+  "gptour-semantic-v2 start: enabled=true pilotUids=1 corsOrigins=1 deps={store:postgrest, catalog:lab-tables, revalidation:DETERMINISTIC(engine+catalogHash), llm:NOT_WIRED, planner:NOT_WIRED}"
+ ],
+ "lab_configuration": {
+  "store": "local PostgREST over U2-b SQL replay (synthetic backend JWT)",
+  "catalog_settings": "lab tables (RLS, user JWT)",
+  "user_jwt_secret": "synthetic (lab)",
+  "llm": "NOT WIRED (L3)",
+  "planner": "NOT WIRED (L3)",
+  "revalidation": "DETERMINISTIC (engine version + catalog hash re-read with user JWT)",
+  "cors_origin": "http://127.0.0.1:4173"
+ },
+ "real_links_excluded": [
+  "Supabase hosted JWT secret",
+  "hosted PostgREST / GPTOUR_SEMANTIC_BACKEND_KEY",
+  "CRM catalog",
+  "OSRM",
+  "LLM provider",
+  "Web/Mobile apps"
+ ],
+ "receipt": {
+  "status": "done",
+  "processingExpired": false,
+  "recoverable": false,
+  "processingDeadline": null,
+  "responseExpiresAt": "2026-10-21T06:22:05.796Z",
+  "retryAfterMs": null,
+  "originalHttpStatus": 503,
+  "response": {
+   "gate": null,
+   "plan": null,
+   "result": null,
+   "outcome": "committed",
+   "errorCode": "llm_unavailable",
+   "operation": "turn",
+   "requestId": "b9551f5e-d679-4512-a6de-a67a61c89a3a",
+   "sessionId": "418edc85-79dd-4a1a-9d01-b6715060d8c2",
+   "acceptedAt": "2026-10-14T06:22:05.796Z",
+   "nextAction": "confirm_new_turn",
+   "notApplied": [],
+   "dataQuality": null,
+   "retryAfterMs": null,
+   "correlationId": "9a9ee690-c57b-4592-a075-600cc49101d7",
+   "engineVersion": "gptour-semantic-v2/u2-d",
+   "openQuestions": [],
+   "contractVersion": "semantic-1.2",
+   "sessionRevision": 0,
+   "openQuestionCount": 0,
+   "responseExpiresAt": "2026-10-21T06:22:05.796Z",
+   "retryableSameRequest": false
+  }
+ },
+ "responses": {
+  "get": 405,
+  "preflight": 204,
+  "preflight_other": 403,
+  "no_jwt": 401,
+  "malformed_jwt": 401,
+  "pilot": 403,
+  "capabilities": 200,
+  "create_session": 201,
+  "turn": [
+   503,
+   "llm_unavailable"
+  ],
+  "get_request": 200
+ },
+ "checks": {
+  "started_with_lab_banner": true,
+  "get_405": true,
+  "preflight_204_allowed_origin": true,
+  "preflight_403_other_origin": true,
+  "no_jwt_401": true,
+  "malformed_jwt_401": true,
+  "outside_pilot_403": true,
+  "capabilities_200_with_cors": true,
+  "create_session_201_real_local_sql": true,
+  "turn_llm_not_wired_503_no_fake_plan": true,
+  "get_request_done_llm_unavailable_no_fake_result": true
+ },
+ "pass": true,
+ "proc_exit": -15
+}

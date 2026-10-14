@@ -1,0 +1,111 @@
+{
+  "runtime": "v22.16.0",
+  "checks": 25,
+  "passed": 21,
+  "results": [
+    {
+      "name": "valid JWT",
+      "result": "pass"
+    },
+    {
+      "name": "malformed JWT null",
+      "result": "pass"
+    },
+    {
+      "name": "malformed JWT ",
+      "result": "pass"
+    },
+    {
+      "name": "malformed JWT a.b",
+      "result": "pass"
+    },
+    {
+      "name": "malformed JWT a.b.c.d",
+      "result": "pass"
+    },
+    {
+      "name": "malformed JWT !!!.e30.AA",
+      "result": "pass"
+    },
+    {
+      "name": "malformed JWT eyJhbGciOiJIUzI1Ni",
+      "result": "pass"
+    },
+    {
+      "name": "malformed JWT W10.eyJzdWIiOiIxMT",
+      "result": "pass"
+    },
+    {
+      "name": "wrong signature",
+      "result": "pass"
+    },
+    {
+      "name": "expired JWT",
+      "result": "pass"
+    },
+    {
+      "name": "invalid sub",
+      "result": "pass"
+    },
+    {
+      "name": "invalid exp",
+      "result": "pass"
+    },
+    {
+      "name": "wrong alg",
+      "result": "pass"
+    },
+    {
+      "name": "origin wildcard literal rejected",
+      "result": "pass"
+    },
+    {
+      "name": "origin path rejected",
+      "result": "pass"
+    },
+    {
+      "name": "valid origin",
+      "result": "pass"
+    },
+    {
+      "name": "revalidation unchanged",
+      "result": "pass"
+    },
+    {
+      "name": "revalidation engine change",
+      "result": "pass"
+    },
+    {
+      "name": "revalidation catalog change",
+      "result": "pass"
+    },
+    {
+      "name": "revalidation load fault recoverable",
+      "result": "pass"
+    },
+    {
+      "name": "catalog HTTP 503 recoverable",
+      "result": "pass"
+    },
+    {
+      "name": "catalog malformed JSON recoverable",
+      "result": "fail",
+      "error": "The error is expected to be an instance of \"DependencyError\". Received \"SyntaxError\"\n\nError message:\n\nUnexpected token 'o', \"not-json\" is not valid JSON"
+    },
+    {
+      "name": "catalog invalid shape recoverable",
+      "result": "fail",
+      "error": "The error is expected to be an instance of \"DependencyError\". Received \"TypeError\"\n\nError message:\n\nloc.map is not a function"
+    },
+    {
+      "name": "settings invalid shape must not silently become unknown",
+      "result": "fail",
+      "error": "Missing expected rejection (DependencyError)."
+    },
+    {
+      "name": "catalog interrupted response body recoverable",
+      "result": "fail",
+      "error": "The error is expected to be an instance of \"DependencyError\". Received \"TypeError\"\n\nError message:\n\nsynthetic interrupted body stream"
+    }
+  ]
+}

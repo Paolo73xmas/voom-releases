@@ -1,0 +1,62 @@
+# Console output captured from the final executions (2026-10-13 UTC, pod aarch64; PostgreSQL 15.19 + PostGIS 3.3.2 + PostgREST 16.2 local only)
+## replay_up.sh (fresh cluster)
+REPLAY_UP DONE pg=15.19 (Debian 15.19-0+deb12u1) postgis=3.3.2 snapshot[functions=146/146 trigger_functions=58/58 indexes=629/632 triggers=111/111 rls_policies=480/480] baseline_tables=193 real_files=69 pass1=67 pass2=64 fixture=PASS tables=210 policies=566
+EXPECTED_LOCAL_FAIL supabase/migrations/20260506_enable_rls_15_tables.sql :: column "created_by" does not exist
+EXPECTED_LOCAL_FAIL supabase/migrations/20260728_fix_views_security_invoker.sql :: relation "public.visit_routes_with_stats" does not exist
+NOT_RERUNNABLE supabase/migrations/20260812_security_rls_hardening.sql :: policy "backoffice_only" for table "customers_backup_20251212_004041" already exists
+NOT_RERUNNABLE supabase/migrations/20260915_ai_tour_esito_contacts_status.sql :: cannot change return type of existing function
+NOT_RERUNNABLE supabase/migrations/20261008_polar_centers.sql :: policy "polar_centers_admin_all" for table "ai_tour_polar_centers" already exists
+
+## replay_verify.sh (x3: fresh, re-run on same lab, after stop/restart)
+REPLAY_VERIFY DONE checks=93 pass=93 fail=0; JWT/Auth SYNTHETIC, schema/policy/RPC REAL (replay), data SYNTHETIC
+
+## U1 Node (tests/gptour-semantic/run_all.sh)
+SA_semantic DONE checks=129 fail=0
+SC_regression DONE checks=43 fail=0
+SD_regression DONE checks=39 fail=0
+SE_regression DONE checks=21 fail=0
+SEMANTIC SUITES DONE fail=0
+
+## U2 contract Node+Deno (tests/gptour-semantic/u2/run_contract.sh)
+U2_CONTRACT DONE checks=368 fail=0 goldens=41 MOCKED downstream
+U2_CONTRACT DONE checks=368 fail=0 goldens=41 MOCKED downstream
+U2_BRIDGE DONE checks=31 fail=0; no persistence/planner/provider
+U2_BRIDGE DONE checks=31 fail=0; no persistence/planner/provider
+U2_EDGE_NEGATIVE DONE checks=10 fail=0
+U2_EDGE_NEGATIVE DONE checks=10 fail=0
+U2 CONTRACT NODE+DENO DONE fail=0 (no network permission)
+
+## U1 under Deno 2.9.7 + deno check
+SA_semantic DONE checks=129 fail=0
+SC_regression DONE checks=43 fail=0
+SD_regression DONE checks=39 fail=0
+SE_regression DONE checks=21 fail=0
+DENO CHECK OK
+
+## Pre-existing v7 SQL dry-runs on PG15 (K_rls_local, T_sql_4b_dryrun, V6_sql_phase6_dryrun)
+PASS cascade (manutenzione via SQL del proprietario): cancellando la sessione spariscono piani e richieste
+RLS_LOCAL DONE fail=0
+SQL_4B_DRYRUN DONE fail=0
+V6_sql_phase6_dryrun: PG15 pass=29 fail=0
+
+## QA indipendente: /app/test_reports/iteration_65.json (root separato /tmp/voom-u2-replay-qa) — T1..T9 PASS; 5 asserzioni irrigidite dopo il review, suite rieseguita:
+REPLAY_VERIFY DONE checks=93 pass=93 fail=0; JWT/Auth SYNTHETIC, schema/policy/RPC REAL (replay), data SYNTHETIC
+
+## Revisione 2 — sezione S7 (claim user_metadata.role='admin'), suite rieseguita due volte sullo stesso laboratorio:
+REPLAY_VERIFY DONE checks=111 pass=111 fail=0; JWT/Auth SYNTHETIC, schema/policy/RPC REAL (replay), data SYNTHETIC
+
+## Sonda modello dei ruoli (role_model_probe/probe_run.sh: apply → verify → remove), eseguita 3 volte:
+ROLE_PROBE DONE checks=64 pass=64 fail=0; credentials SYNTHETIC (lab secret), no production
+PROBE REMOVED  (residui: ruoli 0 / schema 0 / funzioni 0 / righe user_access 0)
+REPLAY_VERIFY DONE checks=111 pass=111 fail=0 (dopo la rimozione della sonda)
+
+## Sonda rev. 2 (R8: estrazioni appartenenze/helper/allowlist + negativi) — probe_run.sh eseguito 2 volte:
+ROLE_PROBE DONE checks=85 pass=85 fail=0; credentials SYNTHETIC (lab secret), no production
+PROBE REMOVED; verifica rimozione: ruoli 0, schema 0, funzioni 0, grant owner 0, user_access 0, appartenenze authenticator = anon,authenticated,service_role (legacy, invariate); REPLAY_VERIFY 111/111
+
+## U2-b (tests/gptour-semantic/u2/u2b/run_u2b.sh), esecuzioni finali:
+U2B MIGRATION PASS 1 (idempotent) / U2B MIGRATION PASS 2 (idempotent)
+U2B DONE checks=99 pass=99 fail=0; credentials SYNTHETIC, LLM/CRM/handler NOT involved   (x2)
+REPLAY_VERIFY DONE checks=111 pass=111 fail=0 (dopo U2-b)
+SEMANTIC SUITES DONE fail=0 (SA 129, SC 43, SD 39, SE 21) ; U2 CONTRACT NODE+DENO DONE fail=0 (368+31+10 per runtime)
+QA indipendente: /app/test_reports/iteration_66.json (T1-T7 PASS)

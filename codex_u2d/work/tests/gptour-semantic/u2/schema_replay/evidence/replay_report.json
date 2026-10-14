@@ -1,0 +1,691 @@
+{
+ "generated_at_utc": "2026-10-13T10:16:19Z",
+ "phases": {
+  "local_env": {
+   "file": "schema_replay/local_env.sql (SHIM)",
+   "status": "PASS",
+   "ms": 298
+  },
+  "baseline": {
+   "file": "generated baseline_from_types.sql (DERIVED)",
+   "status": "PASS",
+   "ms": 1000
+  },
+  "views_shim": {
+   "file": "schema_replay/views_shim.sql (SHIM)",
+   "status": "PASS",
+   "ms": 24
+  },
+  "replay_pass1": {
+   "total": 69,
+   "pass": 67,
+   "expected_local_failures": [
+    "supabase/migrations/20260506_enable_rls_15_tables.sql",
+    "supabase/migrations/20260728_fix_views_security_invoker.sql"
+   ],
+   "fail": []
+  },
+  "replay_pass2_rerun": {
+   "total": 69,
+   "pass": 64,
+   "not_rerunnable": [
+    {
+     "file": "supabase/migrations/20260812_security_rls_hardening.sql",
+     "error": "policy \"backoffice_only\" for table \"customers_backup_20251212_004041\" already exists"
+    },
+    {
+     "file": "supabase/migrations/20260915_ai_tour_esito_contacts_status.sql",
+     "error": "cannot change return type of existing function"
+    },
+    {
+     "file": "supabase/migrations/20261008_polar_centers.sql",
+     "error": "policy \"polar_centers_admin_all\" for table \"ai_tour_polar_centers\" already exists"
+    }
+   ]
+  },
+  "fixture": {
+   "file": "schema_replay/fixture.sql (SYNTHETIC DATA)",
+   "status": "PASS",
+   "ms": 57
+  }
+ },
+ "files": [
+  {
+   "file": "supabase/migrations/20260506_enable_rls_15_tables.sql",
+   "status": "FAIL",
+   "error": "column \"created_by\" does not exist",
+   "ms": 31,
+   "expected_local_failure": true
+  },
+  {
+   "file": "supabase/migrations/20260721_supplier_team_members_rls.sql",
+   "status": "PASS",
+   "ms": 52
+  },
+  {
+   "file": "supabase/migrations/20260721_supplier_rls_perf_guard.sql",
+   "status": "PASS",
+   "ms": 64
+  },
+  {
+   "file": "supabase/migrations/20260722_customers_supplier_update_rls.sql",
+   "status": "PASS",
+   "ms": 36
+  },
+  {
+   "file": "supabase/migrations/20260722_drop_duplicate_policies.sql",
+   "status": "PASS",
+   "ms": 30
+  },
+  {
+   "file": "supabase/migrations/20260722_turbo_rls_initplan.sql",
+   "status": "PASS",
+   "ms": 546
+  },
+  {
+   "file": "supabase/migrations/20260728_fix_views_security_invoker.sql",
+   "status": "FAIL",
+   "error": "relation \"public.visit_routes_with_stats\" does not exist",
+   "ms": 23,
+   "expected_local_failure": true
+  },
+  {
+   "file": "supabase/migrations/20260812_security_rls_hardening.sql",
+   "status": "PASS",
+   "ms": 46
+  },
+  {
+   "file": "supabase/migrations/20260819_profiles_privilege_hardening.sql",
+   "status": "PASS",
+   "ms": 33
+  },
+  {
+   "file": "supabase/migrations/20260821_ai_tour.sql",
+   "status": "PASS",
+   "ms": 108
+  },
+  {
+   "file": "supabase/migrations/20260822_ai_tour_free_tabaccherie.sql",
+   "status": "PASS",
+   "ms": 25
+  },
+  {
+   "file": "supabase/migrations/20260823_ai_tour_free_territorio.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20260824_ai_tour_geocode_db.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20260825_ai_tour_live.sql",
+   "status": "PASS",
+   "ms": 28
+  },
+  {
+   "file": "supabase/migrations/20260826_ai_tour_week.sql",
+   "status": "PASS",
+   "ms": 30
+  },
+  {
+   "file": "supabase/migrations/20260828_ai_tour_never_visited.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20260829_ai_tour_monitoring_realtime.sql",
+   "status": "PASS",
+   "ms": 26
+  },
+  {
+   "file": "supabase/migrations/20260830_ai_tour_agent_position.sql",
+   "status": "PASS",
+   "ms": 23
+  },
+  {
+   "file": "supabase/migrations/20260831_ai_tour_team_positions.sql",
+   "status": "PASS",
+   "ms": 25
+  },
+  {
+   "file": "supabase/migrations/20260901_admin_merge_customers.sql",
+   "status": "PASS",
+   "ms": 41
+  },
+  {
+   "file": "supabase/migrations/20260902_ai_tour_learned_durations.sql",
+   "status": "PASS",
+   "ms": 26
+  },
+  {
+   "file": "supabase/migrations/20260902_follow_up_stops.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20260902_merge_customer_tabaccheria.sql",
+   "status": "PASS",
+   "ms": 31
+  },
+  {
+   "file": "supabase/migrations/20260905_ai_tour_buffer_max.sql",
+   "status": "PASS",
+   "ms": 23
+  },
+  {
+   "file": "supabase/migrations/20260906_ai_tour_never_visited_stato.sql",
+   "status": "PASS",
+   "ms": 24
+  },
+  {
+   "file": "supabase/migrations/20260906_secfix_db04_tabaccherie_ricerca.sql",
+   "status": "PASS",
+   "ms": 25
+  },
+  {
+   "file": "supabase/migrations/20260907_ai_tour_free_tabaccherie_perf.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20260908_ai_tour_orphan_order_history.sql",
+   "status": "PASS",
+   "ms": 29
+  },
+  {
+   "file": "supabase/migrations/20260910_ai_tour_branch_admin.sql",
+   "status": "PASS",
+   "ms": 33
+  },
+  {
+   "file": "supabase/migrations/20260911_agent_zones_alias.sql",
+   "status": "PASS",
+   "ms": 24
+  },
+  {
+   "file": "supabase/migrations/20260912_ai_tour_recalc_guard.sql",
+   "status": "PASS",
+   "ms": 26
+  },
+  {
+   "file": "supabase/migrations/20260913_ai_tour_reassign_orphan.sql",
+   "status": "PASS",
+   "ms": 26
+  },
+  {
+   "file": "supabase/migrations/20260914_ai_tour_reassignment_history.sql",
+   "status": "PASS",
+   "ms": 25
+  },
+  {
+   "file": "supabase/migrations/20260915_ai_tour_esito_contacts_status.sql",
+   "status": "PASS",
+   "ms": 28
+  },
+  {
+   "file": "supabase/migrations/20260916_orphan_a_visit_clears.sql",
+   "status": "PASS",
+   "ms": 26
+  },
+  {
+   "file": "supabase/migrations/20260917_ai_tour_vehicle_costs.sql",
+   "status": "PASS",
+   "ms": 54
+  },
+  {
+   "file": "supabase/migrations/20260919_orphan_reassign_protection.sql",
+   "status": "PASS",
+   "ms": 26
+  },
+  {
+   "file": "supabase/migrations/20260920_tabaccherie_customer_link_sync.sql",
+   "status": "PASS",
+   "ms": 30
+  },
+  {
+   "file": "supabase/migrations/20260922_customer_visit_slots.sql",
+   "status": "PASS",
+   "ms": 33
+  },
+  {
+   "file": "supabase/migrations/20260923_zone_transfer.sql",
+   "status": "PASS",
+   "ms": 29
+  },
+  {
+   "file": "supabase/migrations/20260925_ai_tour_positions_prefer_gps.sql",
+   "status": "PASS",
+   "ms": 25
+  },
+  {
+   "file": "supabase/migrations/20260926_live_tour_ops.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20260928_customer_excluded_days.sql",
+   "status": "PASS",
+   "ms": 28
+  },
+  {
+   "file": "supabase/migrations/20260929_agent_stamina_replay.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20260929_ai_tour_contact_stats.sql",
+   "status": "PASS",
+   "ms": 25
+  },
+  {
+   "file": "supabase/migrations/20260929_ai_tour_max_daily_buffer.sql",
+   "status": "PASS",
+   "ms": 23
+  },
+  {
+   "file": "supabase/migrations/20260930_ai_tour_contact_stats_secure.sql",
+   "status": "PASS",
+   "ms": 28
+  },
+  {
+   "file": "supabase/migrations/20260930_lunch_break.sql",
+   "status": "PASS",
+   "ms": 26
+  },
+  {
+   "file": "supabase/migrations/20261001_ai_tour_reschedule_follow_up.sql",
+   "status": "PASS",
+   "ms": 39
+  },
+  {
+   "file": "supabase/migrations/20261004_ai_tours_area_filter.sql",
+   "status": "PASS",
+   "ms": 23
+  },
+  {
+   "file": "supabase/migrations/20261005_no_interest_block.sql",
+   "status": "PASS",
+   "ms": 26
+  },
+  {
+   "file": "supabase/migrations/20261006_tabaccherie_bbox.sql",
+   "status": "PASS",
+   "ms": 26
+  },
+  {
+   "file": "supabase/migrations/20261007_agent_zones_parent.sql",
+   "status": "PASS",
+   "ms": 35
+  },
+  {
+   "file": "supabase/migrations/20261008_polar_centers.sql",
+   "status": "PASS",
+   "ms": 31
+  },
+  {
+   "file": "supabase/migrations/20261009_jivea_substitutions.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20261010_jivea_customers_read.sql",
+   "status": "PASS",
+   "ms": 28
+  },
+  {
+   "file": "supabase/migrations/20261012_vat_duplicate_guard.sql",
+   "status": "PASS",
+   "ms": 49
+  },
+  {
+   "file": "supabase/migrations/20261013_save_tours_batch.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20261014_customer_verification_requests.sql",
+   "status": "PASS",
+   "ms": 61
+  },
+  {
+   "file": "supabase/migrations/20261015_customer_verification_subject.sql",
+   "status": "PASS",
+   "ms": 42
+  },
+  {
+   "file": "supabase/migrations/20261016_tabaccherie_chiusa.sql",
+   "status": "PASS",
+   "ms": 29
+  },
+  {
+   "file": "supabase/migrations/20261022_ai_tour_brief_memory.sql",
+   "status": "PASS",
+   "ms": 59
+  },
+  {
+   "file": "supabase/migrations/20261025_agent_zones_branch_admin.sql",
+   "status": "PASS",
+   "ms": 29
+  },
+  {
+   "file": "supabase/migrations/20261026_ai_tour_settings_defaults.sql",
+   "status": "PASS",
+   "ms": 31
+  },
+  {
+   "file": "supabase/migrations/20261027_ai_tour_new_points.sql",
+   "status": "PASS",
+   "ms": 56
+  },
+  {
+   "file": "supabase/migrations/20261028_ai_tour_new_points_lookup_perf.sql",
+   "status": "PASS",
+   "ms": 27
+  },
+  {
+   "file": "supabase/migrations/20261029_gptour_catalog_scope.sql",
+   "status": "PASS",
+   "ms": 31
+  },
+  {
+   "file": "supabase/orchestrator-pending/phase4b/01_migration.sql",
+   "status": "PASS",
+   "ms": 59
+  },
+  {
+   "file": "supabase/orchestrator-pending/phase6/01_access_migration.sql",
+   "status": "PASS",
+   "ms": 81
+  }
+ ],
+ "postgis_version": "3.3.2",
+ "postgres_version": "15.19 (Debian 15.19-0+deb12u1)",
+ "baseline": {
+  "tables": 193,
+  "skipped_created_by_replay": [
+   "ai_tour_events",
+   "ai_tour_fuel_prices",
+   "ai_tour_polar_centers",
+   "ai_tour_settings",
+   "ai_tour_stops",
+   "ai_tour_vehicle_settings",
+   "ai_tours",
+   "spatial_ref_sys",
+   "zz_customer_merge_backup"
+  ],
+  "fks": 244,
+  "fks_skipped": [
+   "activity_logs.activity_logs_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "activity_logs.activity_logs_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "activity_logs.activity_logs_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "agent_category_permissions.agent_category_permissions_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "agent_category_permissions.agent_category_permissions_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "agent_category_permissions.agent_category_permissions_category_id_fkey -> categories(id)",
+   "agent_contribution_days.agent_contribution_days_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "agent_contribution_days.agent_contribution_days_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "agent_contribution_settings.agent_contribution_settings_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "agent_contribution_settings.agent_contribution_settings_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "agent_zone_violations.agent_zone_violations_resolved_by_fkey -> supervisor_agents_map(agent_id)",
+   "agent_zone_violations.agent_zone_violations_resolved_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "agent_zone_violations.agent_zone_violations_violating_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "agent_zone_violations.agent_zone_violations_violating_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "agent_zones.agent_zones_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "agent_zones.agent_zones_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "app_4d4e73c9f0_visits.app_4d4e73c9f0_visits_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "app_4d4e73c9f0_visits.app_4d4e73c9f0_visits_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "app_4d4e73c9f0_visits.app_4d4e73c9f0_visits_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "app_4d4e73c9f0_visits.app_4d4e73c9f0_visits_followup_appointment_id_fkey -> customer_follow_ups_view(id)",
+   "app_ef2c98f92d_agent_commission_payments.fk_agent -> v_agents_basic(id)",
+   "app_ef2c98f92d_agent_commission_payments.fk_agent -> v_agents_dropdown(id)",
+   "app_ef2c98f92d_agent_commission_payments.fk_agent -> v_agents_simple_stats(id)",
+   "app_ef2c98f92d_agent_commission_payments.fk_agent -> v_agents_with_invoices_stats(id)",
+   "app_ef2c98f92d_agent_loans.fk_agent -> v_agents_basic(id)",
+   "app_ef2c98f92d_agent_loans.fk_agent -> v_agents_dropdown(id)",
+   "app_ef2c98f92d_agent_loans.fk_agent -> v_agents_simple_stats(id)",
+   "app_ef2c98f92d_agent_loans.fk_agent -> v_agents_with_invoices_stats(id)",
+   "app_ef2c98f92d_costs.app_ef2c98f92d_costs_agent_id_fkey -> v_agents_basic(id)",
+   "app_ef2c98f92d_costs.app_ef2c98f92d_costs_agent_id_fkey -> v_agents_dropdown(id)",
+   "app_ef2c98f92d_costs.app_ef2c98f92d_costs_agent_id_fkey -> v_agents_simple_stats(id)",
+   "app_ef2c98f92d_costs.app_ef2c98f92d_costs_agent_id_fkey -> v_agents_with_invoices_stats(id)",
+   "app_ef2c98f92d_costs.app_ef2c98f92d_costs_payment_id_fkey -> v_loan_payment_history(commission_payment_id)",
+   "app_ef2c98f92d_invoice_documents.app_ef2c98f92d_invoice_documents_agent_id_fkey -> v_agents_basic(id)",
+   "app_ef2c98f92d_invoice_documents.app_ef2c98f92d_invoice_documents_agent_id_fkey -> v_agents_dropdown(id)",
+   "app_ef2c98f92d_invoice_documents.app_ef2c98f92d_invoice_documents_agent_id_fkey -> v_agents_simple_stats(id)",
+   "app_ef2c98f92d_invoice_documents.app_ef2c98f92d_invoice_documents_agent_id_fkey -> v_agents_with_invoices_stats(id)",
+   "app_ef2c98f92d_loan_installments.fk_loan -> v_loan_details(loan_id)",
+   "app_ef2c98f92d_loan_payments.fk_commission_payment -> v_loan_payment_history(commission_payment_id)",
+   "app_ef2c98f92d_loan_payments.fk_installment -> v_installments_due_soon(installment_id)",
+   "app_ef2c98f92d_loan_payments.fk_loan_payment -> v_loan_details(loan_id)",
+   "app_ef2c98f92d_monitoring_agent_customers.app_ef2c98f92d_monitoring_agent_customers_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "app_ef2c98f92d_monitoring_agents.app_ef2c98f92d_monitoring_agents_agent_id_fkey -> v_agents_basic(id)",
+   "app_ef2c98f92d_monitoring_agents.app_ef2c98f92d_monitoring_agents_agent_id_fkey -> v_agents_dropdown(id)",
+   "app_ef2c98f92d_monitoring_agents.app_ef2c98f92d_monitoring_agents_agent_id_fkey -> v_agents_simple_stats(id)",
+   "app_ef2c98f92d_monitoring_agents.app_ef2c98f92d_monitoring_agents_agent_id_fkey -> v_agents_with_invoices_stats(id)",
+   "app_ef2c98f92d_paid_bos_commissions.fk_pbc_beneficiary_agent -> v_agents_basic(id)",
+   "app_ef2c98f92d_paid_bos_commissions.fk_pbc_beneficiary_agent -> v_agents_dropdown(id)",
+   "app_ef2c98f92d_paid_bos_commissions.fk_pbc_beneficiary_agent -> v_agents_simple_stats(id)",
+   "app_ef2c98f92d_paid_bos_commissions.fk_pbc_beneficiary_agent -> v_agents_with_invoices_stats(id)",
+   "app_ef2c98f92d_paid_bos_commissions.fk_pbc_payment -> v_loan_payment_history(commission_payment_id)",
+   "app_ef2c98f92d_paid_bos_commissions.fk_pbc_source_agent -> v_agents_basic(id)",
+   "app_ef2c98f92d_paid_bos_commissions.fk_pbc_source_agent -> v_agents_dropdown(id)",
+   "app_ef2c98f92d_paid_bos_commissions.fk_pbc_source_agent -> v_agents_simple_stats(id)",
+   "app_ef2c98f92d_paid_bos_commissions.fk_pbc_source_agent -> v_agents_with_invoices_stats(id)",
+   "app_ef2c98f92d_paid_direct_commissions.fk_pdc_agent -> v_agents_basic(id)",
+   "app_ef2c98f92d_paid_direct_commissions.fk_pdc_agent -> v_agents_dropdown(id)",
+   "app_ef2c98f92d_paid_direct_commissions.fk_pdc_agent -> v_agents_simple_stats(id)",
+   "app_ef2c98f92d_paid_direct_commissions.fk_pdc_agent -> v_agents_with_invoices_stats(id)",
+   "app_ef2c98f92d_paid_direct_commissions.fk_pdc_payment -> v_loan_payment_history(commission_payment_id)",
+   "appointments.appointments_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "appointments.appointments_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "appointments.appointments_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "branch_product_prices.branch_product_prices_product_id_fkey -> products_agent_view(id)",
+   "branch_product_suppliers.branch_product_suppliers_product_id_fkey -> products_agent_view(id)",
+   "branch_stock.branch_stock_product_id_fkey -> products_agent_view(id)",
+   "branch_stock_movements.branch_stock_movements_product_id_fkey -> products_agent_view(id)",
+   "branch_stock_reservations.branch_stock_reservations_product_id_fkey -> products_agent_view(id)",
+   "branch_transfer_prices.branch_transfer_prices_product_id_fkey -> products_agent_view(id)",
+   "cashback_config.fk_cashback_config_customer -> v_sync_discrepancies(customer_id)",
+   "cashback_product_rates.fk_cashback_product_rates_product -> products_agent_view(id)",
+   "cashback_transactions.fk_cashback_transactions_customer -> v_sync_discrepancies(customer_id)",
+   "cassaforte_payments.cassaforte_payments_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "cassaforte_payments.cassaforte_payments_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "commissions.commissions_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "commissions.commissions_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "commissions.commissions_supervisor_id_fkey -> supervisor_agents_map(agent_id)",
+   "commissions.commissions_supervisor_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "customer_follow_ups_archived.customer_follow_ups_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "customer_follow_ups_archived.customer_follow_ups_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "customer_follow_ups_archived.customer_follow_ups_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "customer_history.customer_history_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "customer_product_interests.customer_product_interests_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "customer_product_interests.customer_product_interests_product_id_fkey -> products_agent_view(id)",
+   "customers.customers_online_profile_id_fkey -> supervisor_agents_map(agent_id)",
+   "customers.customers_online_profile_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "electronic_invoices.electronic_invoices_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "fiscal_warehouses.fiscal_warehouses_category_id_fkey -> categories(id)",
+   "foreign_commissions.foreign_commissions_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "foreign_commissions.foreign_commissions_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "foreign_commissions.foreign_commissions_secondary_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "foreign_commissions.foreign_commissions_secondary_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "foreign_orders_payments.foreign_orders_payments_created_by_fkey -> supervisor_agents_map(agent_id)",
+   "foreign_orders_payments.foreign_orders_payments_created_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "incoming_order_items.incoming_order_items_product_id_fkey -> products_agent_view(id)",
+   "inspections.inspections_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "inspections.inspections_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "inspections.inspections_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "invoice_cassaforte_payments.invoice_cassaforte_payments_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "invoice_cassaforte_payments.invoice_cassaforte_payments_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "laservideo_agent_access.laservideo_agent_access_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "laservideo_agent_access.laservideo_agent_access_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "laservideo_agent_access.laservideo_agent_access_created_by_fkey -> supervisor_agents_map(agent_id)",
+   "laservideo_agent_access.laservideo_agent_access_created_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "laservideo_followups.laservideo_followups_assigned_to_fkey -> supervisor_agents_map(agent_id)",
+   "laservideo_followups.laservideo_followups_assigned_to_fkey -> supervisor_agents_map(supervisor_id)",
+   "laservideo_followups.laservideo_followups_created_by_fkey -> supervisor_agents_map(agent_id)",
+   "laservideo_followups.laservideo_followups_created_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "laservideo_kit_deliveries.laservideo_kit_deliveries_created_by_fkey -> supervisor_agents_map(agent_id)",
+   "laservideo_kit_deliveries.laservideo_kit_deliveries_created_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "laservideo_leads.laservideo_leads_agente_id_fkey -> supervisor_agents_map(agent_id)",
+   "laservideo_leads.laservideo_leads_agente_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "laservideo_sellups.laservideo_sellups_created_by_fkey -> supervisor_agents_map(agent_id)",
+   "laservideo_sellups.laservideo_sellups_created_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "laservideo_visits.laservideo_visits_agente_id_fkey -> supervisor_agents_map(agent_id)",
+   "laservideo_visits.laservideo_visits_agente_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "order_items.order_items_product_id_fkey -> products_agent_view(id)",
+   "orders.orders_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "orders.orders_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "orders.orders_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "orphan_claims.orphan_claims_current_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "orphan_claims.orphan_claims_current_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "orphan_claims.orphan_claims_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "orphan_claims.orphan_claims_previous_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "orphan_claims.orphan_claims_previous_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "orphan_claims.orphan_claims_requesting_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "orphan_claims.orphan_claims_requesting_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "orphan_claims.orphan_claims_reviewed_by_fkey -> supervisor_agents_map(agent_id)",
+   "orphan_claims.orphan_claims_reviewed_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "package_items.package_items_product_id_fkey -> products_agent_view(id)",
+   "permission_audit_log.permission_audit_log_changed_by_fkey -> supervisor_agents_map(agent_id)",
+   "permission_audit_log.permission_audit_log_changed_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "permission_audit_log.permission_audit_log_user_id_fkey -> supervisor_agents_map(agent_id)",
+   "permission_audit_log.permission_audit_log_user_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "permission_templates.permission_templates_created_by_fkey -> supervisor_agents_map(agent_id)",
+   "permission_templates.permission_templates_created_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "permission_templates.permission_templates_updated_by_fkey -> supervisor_agents_map(agent_id)",
+   "permission_templates.permission_templates_updated_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "product_categories.product_categories_parent_id_fkey -> categories(id)",
+   "product_links.product_links_product_id_estero_fkey -> products_agent_view(id)",
+   "product_links.product_links_product_id_italia_fkey -> products_agent_view(id)",
+   "product_macro_categories.product_macro_categories_product_id_fkey -> products_agent_view(id)",
+   "product_price_history.product_price_history_product_id_fkey -> products_agent_view(id)",
+   "products.products_category_id_fkey -> categories(id)",
+   "profiles.fk_profiles_agent_id -> v_agents_basic(id)",
+   "profiles.fk_profiles_agent_id -> v_agents_dropdown(id)",
+   "profiles.fk_profiles_agent_id -> v_agents_simple_stats(id)",
+   "profiles.fk_profiles_agent_id -> v_agents_with_invoices_stats(id)",
+   "profiles.profiles_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "profiles.profiles_supervisor_id_fkey -> supervisor_agents_map(agent_id)",
+   "profiles.profiles_supervisor_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "profiles.profiles_updated_by_fkey -> supervisor_agents_map(agent_id)",
+   "profiles.profiles_updated_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "route_template_stops.route_template_stops_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "sample_request_items.sample_request_items_product_id_fkey -> products_agent_view(id)",
+   "sample_requests.sample_requests_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "samples.samples_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "samples.samples_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "samples.samples_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "samples.samples_product_id_fkey -> products_agent_view(id)",
+   "security_audit_log.security_audit_log_user_id_fkey -> supervisor_agents_map(agent_id)",
+   "security_audit_log.security_audit_log_user_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "stock_movements.stock_movements_product_id_fkey -> products_agent_view(id)",
+   "stock_movements.stock_movements_user_id_fkey -> supervisor_agents_map(agent_id)",
+   "stock_movements.stock_movements_user_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "stock_reservations.stock_reservations_product_id_fkey -> products_agent_view(id)",
+   "substitution_items.substitution_items_original_product_id_fkey -> products_agent_view(id)",
+   "substitution_items.substitution_items_replacement_product_id_fkey -> products_agent_view(id)",
+   "substitutions.substitutions_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "supplier_order_items.supplier_order_items_product_id_fkey -> products_agent_view(id)",
+   "supplier_order_match_aliases.supplier_order_match_aliases_product_id_fkey -> products_agent_view(id)",
+   "supplier_user_permissions.supplier_user_permissions_section_key_fkey -> supplier_sections(section_key)",
+   "suppliers.suppliers_user_id_fkey -> supervisor_agents_map(agent_id)",
+   "suppliers.suppliers_user_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "tabaccherie.tabaccherie_agente_assegnato_id_fkey -> supervisor_agents_map(agent_id)",
+   "tabaccherie.tabaccherie_agente_assegnato_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "tabaccherie.tabaccherie_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "tabaccherie_duplicate.tabaccherie_duplicate_agente_assegnato_id_fkey -> supervisor_agents_map(agent_id)",
+   "tabaccherie_duplicate.tabaccherie_duplicate_agente_assegnato_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "tabaccherie_duplicate.tabaccherie_duplicate_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "tabaccherie_status.tabaccherie_status_assigned_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "tabaccherie_status.tabaccherie_status_assigned_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "tabaccherie_status.tabaccherie_status_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "user_category_permissions.user_category_permissions_category_id_fkey -> categories(id)",
+   "user_category_permissions.user_category_permissions_created_by_fkey -> supervisor_agents_map(agent_id)",
+   "user_category_permissions.user_category_permissions_created_by_fkey -> supervisor_agents_map(supervisor_id)",
+   "user_category_permissions.user_category_permissions_user_id_fkey -> supervisor_agents_map(agent_id)",
+   "user_category_permissions.user_category_permissions_user_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "visit_route_actions.fk_visit_route_actions_customer_id -> v_sync_discrepancies(customer_id)",
+   "visit_route_actions.visit_route_actions_agent_id_fkey -> supervisor_agents_map(agent_id)",
+   "visit_route_actions.visit_route_actions_agent_id_fkey -> supervisor_agents_map(supervisor_id)",
+   "visit_route_actions.visit_route_actions_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "visit_route_actions.visit_route_actions_route_id_fkey -> visit_routes_with_stats(id)",
+   "visit_route_history.visit_route_history_route_id_fkey -> visit_routes_with_stats(id)",
+   "visit_route_stops.visit_route_stops_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "visit_route_stops.visit_route_stops_route_id_fkey -> visit_routes_with_stats(id)",
+   "visits.visits_customer_id_fkey -> v_sync_discrepancies(customer_id)",
+   "whatsapp_contacts.whatsapp_contacts_customer_id_fkey -> v_sync_discrepancies(customer_id)"
+  ],
+  "heuristic_defaults": 547
+ },
+ "snapshot_2026_03_24": {
+  "functions": {
+   "file": "docs/backup/functions_backup_20260324_043722.sql",
+   "objects": 146,
+   "skipped_extension_owned": 754,
+   "applied": 146,
+   "already_present_pkey": 0,
+   "failed": 0,
+   "failures": {}
+  },
+  "trigger_functions": {
+   "file": "docs/backup/trigger_functions_backup_20260324_043722.sql",
+   "objects": 58,
+   "skipped_extension_owned": 0,
+   "applied": 58,
+   "already_present_pkey": 0,
+   "failed": 0,
+   "failures": {}
+  },
+  "indexes": {
+   "file": "docs/backup/indexes_backup_20260324_043722.sql",
+   "objects": 632,
+   "skipped_extension_owned": 0,
+   "applied": 629,
+   "already_present_pkey": 110,
+   "failed": 3,
+   "failures": {
+    "idx_supervisor_agents_map_agent": "relation \"public.supervisor_agents_map\" does not exist",
+    "idx_supervisor_agents_map_supervisor": "relation \"public.supervisor_agents_map\" does not exist",
+    "idx_supervisor_agents_map_unique": "relation \"public.supervisor_agents_map\" does not exist"
+   }
+  },
+  "triggers": {
+   "file": "docs/backup/triggers_backup_20260324_043722.sql",
+   "objects": 111,
+   "skipped_extension_owned": 0,
+   "applied": 111,
+   "already_present_pkey": 0,
+   "failed": 0,
+   "failures": {}
+  },
+  "rls_status": {
+   "file": "docs/backup/rls_status_backup_20260324_043722.sql",
+   "status": "FAIL",
+   "error": "relation \"public.tabaccherie_backup_20260115\" does not exist",
+   "ms": 80
+  },
+  "rls_policies": {
+   "file": "docs/backup/rls_policies_backup_20260324_043722.sql",
+   "objects": 480,
+   "skipped_extension_owned": 0,
+   "applied": 480,
+   "already_present_pkey": 0,
+   "failed": 0,
+   "failures": {}
+  }
+ },
+ "inventory": {
+  "tables_public": 210,
+  "tables_aitour_private": 1,
+  "views_aitour_private": 2,
+  "functions_public": 346,
+  "policies_public": 566,
+  "rls_enabled_tables": 108,
+  "gptour_tables": "gptour_orchestrator_access_audit,gptour_orchestrator_plans,gptour_orchestrator_requests,gptour_orchestrator_sessions,gptour_orchestrator_user_access",
+  "gptour_functions": "ai_tour_block_recalc_wipe,ai_tour_catalog_area,ai_tour_comune_centroid,ai_tour_contact_stats,ai_tour_customer_order_history,ai_tour_free_tabaccherie,ai_tour_geocoder_slot,ai_tour_learned_durations,ai_tour_no_interest_ids,ai_tour_operating_costs,ai_tour_order_stats,ai_tour_reassign_orphan,ai_tour_reassignment_history,ai_tour_refresh_customer_status,ai_tour_registry_availability,ai_tour_reschedule_follow_up,ai_tour_scope_candidates,ai_tour_stop_customer_contacts,ai_tour_team_positions,gptour_orchestrator_access_list,gptour_orchestrator_bulk_access,gptour_orchestrator_is_active_admin,gptour_orchestrator_my_access,gptour_orchestrator_set_access,gptour_orchestrator_supported_roles,save_tours_batch",
+  "security_definer_without_search_path": "public.st_estimatedextent,public.st_estimatedextent,public.st_estimatedextent,public.calculate_order_commissions,public.check_customer_proximity,public.check_sync_discrepancies,public.convert_prospect_to_client,public.create_followup_appointment,public.create_notification,public.enforce_immutable_profile_fields,public.exec_sql,public.get_agent_sellable_categories,public.get_agents_by_supervisor,public.get_current_supplier_user_email,public.get_user_role,public.get_customers_in_bounds,public.get_distinct_comuni,public.get_function_def,public.get_function_def_by_name,public.get_last_invoice_number,public.get_monitoring_order_detail,public.get_monitoring_orders,public.get_order_details_for_duplication,public.get_products_by_supplier,public.get_supplier_orders_with_details,public.has_permission,public.initialize_agent_permissions,public.is_customer_in_agent_zones,public.is_my_agent,public.is_supplier,public.is_supplier_for_order,public.list_stock_functions,public.list_triggers,public.log_security_event,public.mark_commission_as_paid,public.mark_supplier_order_picked_up,public.monitor_and_alert_sync,public.monitor_and_alert_sync,public.recalculate_commission_for_modified_order,public.refresh_agent_performance_metrics,public.refresh_all_materialized_views,public.refresh_customer_recall_status,public.refresh_supervisor_agents_map,public.set_user_role_claim,public.update_supplier_order_delivery,public.validate_order_products_have_suppliers,public.validate_warehouse_order_update,public.generate_order_number,public.log_audit,public.log_permission_change,public.notify_supplier_order_status_change,public.trigger_recalculate_commission_on_supplier_change,public.update_customer_last_order_date",
+  "baseline_fk_not_reconstructed": "product_links.product_links_product_id_estero_fkey :: foreign key constraint \"product_links_product_id_estero_fkey\" cannot be implemen | product_links.product_links_product_id_italia_fkey :: foreign key constraint \"product_links_product_id_italia_fkey\" cannot be implemen | supplier_orders.supplier_orders_shipping_carrier_fkey :: foreign key constraint \"supplier_orders_shipping_carrier_fkey\" cannot be impleme"
+ },
+ "restarted_without_reapply": 1
+}

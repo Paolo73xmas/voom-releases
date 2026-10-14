@@ -1,0 +1,37 @@
+{
+  "manifest_files": 176,
+  "total_files": 178,
+  "integrity_errors": [],
+  "changed_typescript_since_delivery2": [
+    "supabase/functions/gptour-semantic-v2/index.ts",
+    "supabase/functions/_shared/gptour-semantic-runtime/ports.ts",
+    "supabase/functions/_shared/gptour-semantic-runtime/turn.ts"
+  ],
+  "missing_relative_dependencies": [
+    "supabase\\functions\\_shared\\gptour-orchestrator\\adapters\\memory.ts",
+    "supabase\\functions\\_shared\\gptour-orchestrator\\agenda.ts",
+    "supabase\\functions\\_shared\\gptour-orchestrator\\commercial.ts",
+    "supabase\\functions\\_shared\\gptour-orchestrator\\contract.ts",
+    "supabase\\functions\\_shared\\gptour-orchestrator\\geo.ts",
+    "supabase\\functions\\_shared\\gptour-orchestrator\\multiday.ts",
+    "supabase\\functions\\_shared\\gptour-orchestrator\\ports.ts",
+    "supabase\\functions\\_shared\\gptour-orchestrator\\routing.ts",
+    "supabase\\functions\\_shared\\gptour-orchestrator\\time.ts",
+    "supabase\\functions\\_shared\\gptour-semantic\\apply.ts",
+    "supabase\\functions\\_shared\\gptour-semantic\\contract.ts",
+    "supabase\\functions\\_shared\\gptour-semantic\\interpreter.ts",
+    "supabase\\functions\\_shared\\gptour-semantic\\projection.ts",
+    "supabase\\functions\\_shared\\gptour-semantic\\prompt.ts",
+    "supabase\\functions\\_shared\\gptour-semantic\\schema.ts",
+    "tests\\gptour-orchestrator\\harness.ts",
+    "tests\\gptour-semantic\\fixtures.ts",
+    "u1_modified_tracked\\supabase\\functions\\_shared\\gptour-orchestrator\\time.ts",
+    "v7_modified_tracked\\supabase\\functions\\_shared\\gptour-orchestrator\\agenda.ts",
+    "v7_modified_tracked\\supabase\\functions\\_shared\\gptour-orchestrator\\commercial.ts",
+    "v7_modified_tracked\\supabase\\functions\\_shared\\gptour-orchestrator\\contract.ts",
+    "v7_modified_tracked\\supabase\\functions\\_shared\\gptour-orchestrator\\interpret.ts",
+    "v7_modified_tracked\\supabase\\functions\\_shared\\gptour-orchestrator\\ports.ts",
+    "v7_modified_tracked\\supabase\\functions\\_shared\\gptour-orchestrator\\time.ts",
+    "v7_modified_tracked\\supabase\\functions\\_shared\\gptour-planner-core\\planner.ts"
+  ]
+}

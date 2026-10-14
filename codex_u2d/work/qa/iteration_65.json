@@ -1,0 +1,36 @@
+{
+  "summary": "Independent re-execution of U2-0 SCHEMA_REPLAY QA on fresh lab root /tmp/voom-u2-replay-qa. All 9 requested tests (T1-T9) passed independently. replay_up prints exact snapshot counters (functions=146/146, trigger_functions=58/58, indexes=629/632, triggers=111/111, rls_policies=480/480, baseline_tables=193, real_files=69, pass1=67, fixture=PASS, tables=210, policies=566). Exactly the 2 EXPECTED_LOCAL_FAIL and 3 NOT_RERUNNABLE lines observed. replay_verify = 93/93 on first run, 93/93 on second run (re-runnable). Restart with KEEP=1 printed 'REPLAY_UP RESTARTED (schema not re-applied)' and verify was again 93/93. All independent psql spot-checks matched: pg_policies=566, 0 gptour_semantic tables, DELETE=f/SELECT=t for authenticated on gptour_orchestrator_sessions, customers rows A=10 B=3, ai_tour_catalog_area eligible=10 for A, 'Agente non autorizzato' when A requests B's catalog, triggers on customers=8 (>=5 OK). PostgREST HTTP: 401 unauth GET sessions, 404 for /rpc/gptour_semantic_claim. Regression suites: SA=129, SC=43, SD=39, SE=21 all fail=0; U2_CONTRACT=368, U2_BRIDGE=31, U2_EDGE_NEGATIVE=10 each printed twice (Node+Deno). git diff vs 259ec92d empty; no JWT/postgres URL secrets found in replay files or report. Cleanup replay_down removed /tmp/voom-u2-replay-qa; main-agent labs /tmp/voom-u2-replay and /tmp/voom-u2-lab preserved.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/voom-repo/tests/gptour-semantic/u2/schema_replay/replay_up.sh",
+    "/app/voom-repo/tests/gptour-semantic/u2/schema_replay/replay_verify.sh",
+    "/app/voom-repo/tests/gptour-semantic/u2/schema_replay/replay_verify.py",
+    "/app/voom-repo/tests/gptour-semantic/run_all.sh",
+    "/app/voom-repo/tests/gptour-semantic/u2/run_contract.sh"
+  ],
+  "action_items": [
+    "Consider tightening a few assertions in replay_verify.py (see critical_code_review_comments). Non-blocking; all evidence currently validates behavior correctly.",
+    "No code changes required; U2-0 schema_replay lab is reproducible and passes 93/93 both runs and after restart."
+  ],
+  "critical_code_review_comments": [
+    "replay_verify.py line 242 (S5): check((ok and out == '') or not ok, ..., 'A non si appropria della zona di B') -- accepts success-with-no-rows OR ANY failure, without matching the error reason. A failure for an unrelated reason (e.g. column rename, lock timeout) would still PASS silently. Recommend asserting either 0 rows returned when ok, or that the error message contains 'permission denied' / 'row-level security' / similar.",
+    "replay_verify.py line 252 (S5): check(not ok or out in ('', 'agent'), ..., 'A non pu\u00f2 auto-promuoversi admin') -- same pattern: accepts any failure or empty/agent return. If role was actually changed to 'admin' it rightly fails, but if the UPDATE errored for an unrelated reason (missing column, trigger exception unrelated to the hardening) it still passes. Should ideally require that if ok==True then out in ('', 'agent'), and if not ok then err contains an authz-related token.",
+    "replay_verify.py line 221 (S5): check(ids == set() or any(x.startswith('ERROR') for x in ids), ..., 'customers: anon nessuna riga o negato') -- accepts empty set OR any error (ids_as returns a one-element 'ERROR:' set on failure). Any unrelated SQL error would also pass. Low-risk because the anon negative path is also exercised via line 141 with explicit 'permission denied', but the assertion label implies a narrower contract than it enforces.",
+    "replay_verify.py line 285-286 (S6): accepts st in (401, 403, 404) for Fase 6 user_access via HTTP. 404 means the table is not exposed by PostgREST at all, whereas 401/403 would mean exposed but denied -- these are materially different security postures. Consider splitting into two separate checks or asserting the expected posture explicitly (per lab config the table is deliberately NOT in the PostgREST schema, so 404 is the intended answer).",
+    "replay_verify.py line 240 (S5): correctly disjoins 0-row delete vs 'permission denied'/'row-level' error (good pattern); the critique above suggests harmonizing lines 242/252 to this stricter style.",
+    "replay_verify.py line 184 (S4): 'non autorizzat' is a prefix match (catches 'non autorizzato' / 'Agente non autorizzato' / 'autorizzata'). Semantically fine but worth noting that line 183 uses the exact 'Agente non autorizzato' while 184/185 relax the match -- consider standardizing.",
+    "No lenient assertions were found that could cause the suite to report green on an actually failing security property; the issues above are tightening suggestions, not latent-bug risks."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "N/A (backend-only lab)"},
+  "test_credentials": "N/A - local synthetic lab; synthetic HS256 JWTs are built in-memory by replay_verify.py and never printed. JWT secret file is 0600 and was not read.",
+  "seed_data_creation": "Fixture replay_up applies tests/gptour-semantic/u2/schema_replay/fixture.sql (synthetic agents A/B/C/D/E, 13 customers, 8 tabaccherie, zones). Lab lives under /tmp/voom-u2-replay-qa and was removed in T9.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The schema_replay harness is fully reproducible from a cold start (~15s on this pod). Required env for scripts: U2_PG_BIN=/usr/lib/postgresql/15/bin, U2_PG_OS_USER=postgres, U2_POSTGREST_BIN=/opt/voom-u2/bin/postgrest, U2_DENO_BIN=/opt/deno/deno. Always use a dedicated U2_REPLAY_ROOT under /tmp (e.g. /tmp/voom-u2-replay-qa) to avoid clashing with main agent labs at /tmp/voom-u2-replay and /tmp/voom-u2-lab. replay_verify.sh/.py must be invoked with those env vars exported (sh wrapper fails fast on U2_PG_BIN unset). Use runuser -u postgres for direct psql over the unix socket at $U2_REPLAY_ROOT/socket on port lab.json['pg_port']; REST on 127.0.0.1 lab.json['rest_port']. git diff vs 259ec92d must stay empty.",
+  "rca of the issue": "No functional issues observed. T6 code-review findings above are non-blocking tightening recommendations against replay_verify.py."
+}

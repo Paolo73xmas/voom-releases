@@ -1,0 +1,55 @@
+{
+  "summary": "Backend-only U2-0/U2-a verification completed on /app/voom-repo with real local PostgreSQL15/PostgREST loopback lab and Deno/Node suites. Core suites PASS (U2 contract/bridge, local RLS verify, U1 232 checks), plus one new negative edge suite exposed 2 strict-response-validator defects.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "response validator (get_request receipt shape)",
+        "issue": "validateTransportResponse accepts receipt.status='pending' with processingExpired=false and recoverable=false; this violates strict recovery semantics for non-expired pending requests.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "response validator (turn metadata consistency)",
+        "issue": "validateTransportResponse accepts outcome='not_accepted' responses carrying acceptedAt/responseExpiresAt commit metadata; should be rejected for non-accepted requests.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/voom-repo/tests/gptour-semantic/u2/run_contract.sh",
+    "/app/voom-repo/tests/gptour-semantic/u2/local_up.sh",
+    "/app/voom-repo/tests/gptour-semantic/u2/local_verify.sh",
+    "/app/voom-repo/tests/gptour-semantic/u2/local_down.sh",
+    "/app/voom-repo/tests/gptour-semantic/run_all.sh",
+    "/app/voom-repo/tests/gptour-semantic/u2/edge_receipt_negative.unit.ts"
+  ],
+  "action_items": [
+    "In response-validation.ts consistency(), enforce pending receipt recoverable=true when processingExpired=false.",
+    "In response-validation.ts consistency(), reject acceptedAt/responseExpiresAt when outcome is not 'committed'.",
+    "After fix, rerun edge_receipt_negative.unit.ts + run_contract.sh to prevent strictness regressions."
+  ],
+  "critical_code_review_comments": [
+    "PHASE_U2_PLAN.md hash verified unchanged: a0b429bf51431777c5c531149f6aa0b022d317535ef52d007b9049a2ae214701.",
+    "git diff vs base 259ec92d on protected U1/v7 paths is empty (no changes under supabase/functions/_shared/gptour-semantic, supabase/functions/ai-tour-gptour, src/lib/aitour).",
+    "MOCKED flows are explicitly declared and consistent with tests: storage/lease/budget/planner/LLM app integrations are MOCKED in contract goldens; PG/PostgREST/RLS path is real local loopback only."
+  ],
+  "updated_files": [
+    "/app/voom-repo/tests/gptour-semantic/u2/edge_receipt_negative.unit.ts",
+    "/app/test_reports/iteration_64.json"
+  ],
+  "success_rate": {
+    "backend": "90%",
+    "frontend": "N/A (skip frontend)"
+  },
+  "test_credentials": "Read /app/memory/test_credentials.md U2 section only; used synthetic JWTs generated in-memory by local_verify.py; no production creds/tokens used.",
+  "seed_data_creation": "Only ephemeral synthetic lab fixtures under /tmp/voom-u2-lab via local_up.sh (A/B owner_probe rows). Lab was stopped with local_down.sh.",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "Executed real runs:\n1) bash tests/gptour-semantic/u2/run_contract.sh => PASS (Node+Deno, 368 contract + 31 bridge checks each runtime, 41 goldens).\n2) bash tests/gptour-semantic/u2/local_up.sh && bash tests/gptour-semantic/u2/local_verify.sh => PASS (23 checks incl JWT expiry/signature/audience negatives, role escalation denied, DELETE denied, 24 parallel reads exact isolation, no U2-b tables/RPC).\n3) bash tests/gptour-semantic/u2/local_up.sh twice => PASS idempotent startup.\n4) bash tests/gptour-semantic/u2/local_down.sh && local_up.sh && local_verify.sh => PASS stop/start repeatability.\n5) bash tests/gptour-semantic/run_all.sh => PASS U1 suites 232/232 (129+43+39+21).\n6) deno run tests/gptour-semantic/u2/edge_receipt_negative.unit.ts => FAIL (2 expected strict rejects currently accepted).",
+  "rca of the issue": "RCA-1: response-validation.ts consistency() only forces recoverable=false for processingExpired/not_found/expired and done, but never enforces recoverable=true for pending non-expired receipts; thus invalid pending state slips through validator.\nRCA-2: turn consistency only checks committed responses must include acceptedAt/responseExpiresAt, but lacks inverse check forbidding commit metadata on non-committed outcomes, allowing semantic leakage of acceptance metadata on not_accepted responses.\nRepro: run deno script /app/voom-repo/tests/gptour-semantic/u2/edge_receipt_negative.unit.ts; both assertions fail with current code."
+}

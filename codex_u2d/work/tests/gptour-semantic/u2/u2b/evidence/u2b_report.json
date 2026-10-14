@@ -1,0 +1,913 @@
+{
+ "generated_at_utc": "2026-10-13T13:51:02Z",
+ "checks": 151,
+ "pass": 151,
+ "results": [
+  {
+   "section": "B1-struttura-privilegi",
+   "label": "5 tabelle: owner gptour_semantic_owner, RLS abilitata",
+   "status": "PASS",
+   "detail": "gptour_semantic_backend_keys:gptour_semantic_owner:true,gptour_semantic_llm_invocations:gptour_semantic_owner:true,gptour_semantic_plans:gptour_semantic_owner:true,gptour_semantic_requests:gptour_semantic_owner:true,gpto"
+  },
+  {
+   "section": "B1-struttura-privilegi",
+   "label": "nessuna policy: deny-all per i non proprietari",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B1-struttura-privilegi",
+   "label": "nessun privilegio di tabella a PUBLIC/anon/authenticated/service_role/backend",
+   "status": "PASS",
+   "detail": "0"
+  },
+  {
+   "section": "B1-struttura-privilegi",
+   "label": "EXECUTE: 13 RPC solo backend; helper/trigger/lock/receipt/policy/ts/align a nessun ruolo PostgREST (27 funzioni)",
+   "status": "PASS",
+   "detail": "gptour_semantic_align_body:falsefalsefalsefalse,gptour_semantic_assert_backend:falsefalsefalsefalse,gptour_semantic_begin_llm:falsefalsefalsetrue,gptour_semantic_claim:falsefalsefalsetrue,gptour_semantic_commit_success:f"
+  },
+  {
+   "section": "B1-struttura-privilegi",
+   "label": "nessuna voce PUBLIC nelle ACL delle funzioni",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B1-struttura-privilegi",
+   "label": "tutte le SECURITY DEFINER con search_path fissato",
+   "status": "PASS",
+   "detail": "0"
+  },
+  {
+   "section": "B1-struttura-privilegi",
+   "label": "RPC/trigger owned da gptour_semantic_owner; helper owned dal ruolo migratore",
+   "status": "PASS",
+   "detail": "gptour_semantic_owner"
+  },
+  {
+   "section": "B1-struttura-privilegi",
+   "label": "appartenenze: solo gptour_semantic_backend \u2192 membro authenticator",
+   "status": "PASS",
+   "detail": "gptour_semantic_backend|authenticator"
+  },
+  {
+   "section": "B1-struttura-privilegi",
+   "label": "trigger: 4 guard UPDATE + 5 no-delete",
+   "status": "PASS",
+   "detail": "9"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "create_session \u2192 rev 0, id server-generated",
+   "status": "PASS",
+   "detail": "200 {'agentId': 'a0000000-0000-4000-8000-00000000000a', 'revision': 0, 'expiresAt': '2026-11-12T13:50:59.137Z', 'sessionId': 'b7bd0f97-45f1-45c9-88d5-fafaf9a877e0'}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "claim r1 \u2192 new, base_revision 0, budget 0",
+   "status": "PASS",
+   "detail": "200 {'body': None, 'token': 'f0c9ad6c-6ca5-43ce-ae87-2b32c0eb47cf', 'planId': None, 'status': 'pending', 'outcome': 'new', 'requestId': 'r1', 'acceptedAt': '2026-10-13T13:50:59.142Z', 'httpStatus': None, 'baseRevision': "
+  },
+  {
+   "section": "B2-flusso",
+   "label": "begin_llm prima di store_context \u2192 PT409 (contesto obbligatorio prima della riserva)",
+   "status": "PASS",
+   "detail": "409 {'code': 'PT409', 'details': None, 'hint': None, 'message': 'context must be stored before any reservation'}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "store_context (1\u00aa) \u2192 salvato",
+   "status": "PASS",
+   "detail": "200 {'ok': True, 'alreadyStored': False}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "store_context (2\u00aa, diverso) \u2192 alreadyStored, contenuto originale conservato",
+   "status": "PASS",
+   "detail": "200 {'ok': True, 'alreadyStored': True}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "begin_llm i1 \u2192 mayDispatch una sola volta; replay stessa invocationId \u2192 alreadyReserved, nessun incremento",
+   "status": "PASS",
+   "detail": "{'reserved': 1, 'mayDispatch': True, 'alreadyReserved': False} {'reserved': 1, 'mayDispatch': False, 'alreadyReserved': True}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "seconda riserva ammessa (2/2); terza rifiutata atomicamente",
+   "status": "PASS",
+   "detail": "{'reserved': 2, 'mayDispatch': True, 'alreadyReserved': False} {'reserved': 2, 'mayDispatch': False, 'budgetExhausted': True}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "store_llm senza riserva corrispondente \u2192 PT409",
+   "status": "PASS",
+   "detail": "409 {'code': 'PT409', 'details': None, 'hint': None, 'message': 'output without reservation'}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "store_llm (i2) \u2192 salvato",
+   "status": "PASS",
+   "detail": "200 {'ok': True, 'alreadyStored': False}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "secondo output \u2192 alreadyStored, primo conservato (write-once)",
+   "status": "PASS",
+   "detail": "200 {'ok': True, 'alreadyStored': True}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "output salvato \u2192 nessuna nuova riserva (zero invii al provider)",
+   "status": "PASS",
+   "detail": "{'reserved': 2, 'mayDispatch': False, 'outputStored': True}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "renew_lease \u2192 esteso entro la deadline",
+   "status": "PASS",
+   "detail": "200 {'ok': True, 'leaseUntil': '2026-10-13T13:51:44.25052+00:00', 'processingDeadline': '2026-10-13T13:55:59.142863+00:00'}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "commit_success \u2192 committed, rev 1, piano creato, ricevuta done 200",
+   "status": "PASS",
+   "detail": "200 {'body': '{\"gate\": \"planned\", \"plan\": {\"stops\": [\"t1\"], \"planId\": \"01d32a5f-50f8-444e-a28d-c2b6da06fe81\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"sessionRevision\": 1}, \"result\": null, \"outcome\": \"commit"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "body persistito: sessionRevision/plan.planId/plan.sessionRevision/acceptedAt/engineVersion stampati dal SQL",
+   "status": "PASS",
+   "detail": "{'stops': ['t1'], 'planId': '01d32a5f-50f8-444e-a28d-c2b6da06fe81', 'sessionId': 'b7bd0f97-45f1-45c9-88d5-fafaf9a877e0', 'sessionRevision': 1}"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "alla finalizzazione context/output/lease azzerati, budget conservato (2)",
+   "status": "PASS",
+   "detail": "done|\u2205|\u2205|\u2205|2"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "replay stesso requestId/hash \u2192 cached con body byte-identico e stesso planId, nessun token",
+   "status": "PASS",
+   "detail": "{'body': '{\"gate\": \"planned\", \"plan\": {\"stops\": [\"t1\"], \"planId\": \"01d32a5f-50f8-444e-a28d-c2b6da06fe81\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"sessionRevision\": 1}, \"result\": null, \"outcome\": \"committed\""
+  },
+  {
+   "section": "B2-flusso",
+   "label": "stesso requestId con hash diverso \u2192 reused, richiesta originale intatta",
+   "status": "PASS",
+   "detail": "{'body': '{\"gate\": \"planned\", \"plan\": {\"stops\": [\"t1\"], \"planId\": \"01d32a5f-50f8-444e-a28d-c2b6da06fe81\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"sessionRevision\": 1}, \"result\": null, \"outcome\": \"committed\""
+  },
+  {
+   "section": "B2-flusso",
+   "label": "get_request: insieme ESATTO delle chiavi (nessun lease/context/output/hash)",
+   "status": "PASS",
+   "detail": "{'body': '{\"gate\": \"planned\", \"plan\": {\"stops\": [\"t1\"], \"planId\": \"01d32a5f-50f8-444e-a28d-c2b6da06fe81\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"sessionRevision\": 1}, \"result\": null, \"outcome\": \"committed\""
+  },
+  {
+   "section": "B2-flusso",
+   "label": "get_state: rev 1, stato committato, lastPlanId + operational.lastPlanId/planRevision, chiavi esatte",
+   "status": "PASS",
+   "detail": "{'state': {'criteria': 'v1'}, 'agentId': 'a0000000-0000-4000-8000-00000000000a', 'revision': 1, 'expiresAt': '2026-11-12T13:50:59.254Z', 'sessionId': 'b7bd0f97-45f1-45c9-88d5-fafaf9a877e0', 'lastPlanId': '01d32a5f-50f8-4"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "get_plan: planRevision = revisione del commit; plan.planId/sessionId/sessionRevision stampati",
+   "status": "PASS",
+   "detail": "{'plan': {'stops': ['t1'], 'planId': '01d32a5f-50f8-444e-a28d-c2b6da06fe81', 'sessionId': 'b7bd0f97-45f1-45c9-88d5-fafaf9a877e0', 'sessionRevision': 1}, 'planId': '01d32a5f-50f8-444e-a28d-c2b6da06fe81', 'createdAt': '202"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "finish_error \u2192 solo la request \u00e8 done 503 (outcome = errorCode del body, sessionRevision stampata); sessione rev 1 e piani invariati (+0)",
+   "status": "PASS",
+   "detail": "{'body': '{\"gate\": null, \"plan\": null, \"result\": null, \"outcome\": \"committed\", \"errorCode\": \"llm_unavailable\", \"operation\": \"turn\", \"requestId\": \"e1\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"acceptedAt\": \"2"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "release_recoverable con backoff abnorme (10^9 ms) \u2192 next_retry_at limitato a \u226460 s e \u2264 deadline (valore server, non controllabile)",
+   "status": "PASS",
+   "detail": "{'ok': True, 'status': 'pending', 'nextRetryAt': '2026-10-13T13:51:59.363597+00:00'} true"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "release_recoverable \u2192 pending con next_retry_at; claim immediata \u2192 in_progress + retryAfterMs",
+   "status": "PASS",
+   "detail": "{'ok': True, 'status': 'pending', 'nextRetryAt': '2026-10-13T13:51:00.852224+00:00'} {'body': None, 'planId': None, 'status': 'pending', 'outcome': 'in_progress', 'requestId': 'rr', 'acceptedAt': '2026-10-13T13:50:59.348"
+  },
+  {
+   "section": "B2-flusso",
+   "label": "dopo il rilascio il vecchio token non scrive pi\u00f9 (lease rilasciato)",
+   "status": "PASS",
+   "detail": "409 {'code': 'PT409', 'details': None, 'hint': None, 'message': 'lease or deadline expired'}"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "proprietario A (authenticated): tutte le 13 RPC respinte (401/403)",
+   "status": "PASS",
+   "detail": "{'create_session': 403, 'claim': 403, 'renew_lease': 403, 'store_context': 403, 'begin_llm': 403, 'store_llm': 403, 'commit_success': 403, 'finish_error': 403, 'release_recoverable': 403, 'recover_work': 403, 'get_state'"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "A con user_metadata.role=admin: tutte le 13 RPC respinte (401/403)",
+   "status": "PASS",
+   "detail": "{'create_session': 403, 'claim': 403, 'renew_lease': 403, 'store_context': 403, 'begin_llm': 403, 'store_llm': 403, 'commit_success': 403, 'finish_error': 403, 'release_recoverable': 403, 'recover_work': 403, 'get_state'"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "service_role: tutte le 13 RPC respinte (401/403)",
+   "status": "PASS",
+   "detail": "{'create_session': 403, 'claim': 403, 'renew_lease': 403, 'store_context': 403, 'begin_llm': 403, 'store_llm': 403, 'commit_success': 403, 'finish_error': 403, 'release_recoverable': 403, 'recover_work': 403, 'get_state'"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "anon: tutte le 13 RPC respinte (401/403)",
+   "status": "PASS",
+   "detail": "{'create_session': 401, 'claim': 401, 'renew_lease': 401, 'store_context': 401, 'begin_llm': 401, 'store_llm': 401, 'commit_success': 401, 'finish_error': 401, 'release_recoverable': 401, 'recover_work': 401, 'get_state'"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "backend con jti revocato/sconosciuto: tutte le 13 RPC respinte (401/403)",
+   "status": "PASS",
+   "detail": "{'create_session': 403, 'claim': 403, 'renew_lease': 403, 'store_context': 403, 'begin_llm': 403, 'store_llm': 403, 'commit_success': 403, 'finish_error': 403, 'release_recoverable': 403, 'recover_work': 403, 'get_state'"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "nessuna mutazione di sessioni/piani dai tentativi respinti (hash prima/dopo identico)",
+   "status": "PASS",
+   "detail": "522cb83af5f551510e360dc928ff0ca01 522cb83af5f551510e360dc928ff0ca01"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "proprietario A: GET/POST/PATCH/DELETE su tutte le 5 tabelle respinti",
+   "status": "PASS",
+   "detail": "{'gptour_semantic_sessions:GET': 403, 'gptour_semantic_sessions:POST': 403, 'gptour_semantic_sessions:PATCH': 403, 'gptour_semantic_sessions:DELETE': 403, 'gptour_semantic_requests:GET': 403, 'gptour_semantic_requests:PO"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "service_role: GET/POST/PATCH/DELETE su tutte le 5 tabelle respinti",
+   "status": "PASS",
+   "detail": "{'gptour_semantic_sessions:GET': 403, 'gptour_semantic_sessions:POST': 403, 'gptour_semantic_sessions:PATCH': 403, 'gptour_semantic_sessions:DELETE': 403, 'gptour_semantic_requests:GET': 403, 'gptour_semantic_requests:PO"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "backend: GET/POST/PATCH/DELETE su tutte le 5 tabelle respinti",
+   "status": "PASS",
+   "detail": "{'gptour_semantic_sessions:GET': 403, 'gptour_semantic_sessions:POST': 403, 'gptour_semantic_sessions:PATCH': 403, 'gptour_semantic_sessions:DELETE': 403, 'gptour_semantic_requests:GET': 403, 'gptour_semantic_requests:PO"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "anon: GET/POST/PATCH/DELETE su tutte le 5 tabelle respinti",
+   "status": "PASS",
+   "detail": "{'gptour_semantic_sessions:GET': 401, 'gptour_semantic_sessions:POST': 401, 'gptour_semantic_sessions:PATCH': 401, 'gptour_semantic_sessions:DELETE': 401, 'gptour_semantic_requests:GET': 401, 'gptour_semantic_requests:PO"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "DB invariato dopo i tentativi diretti (rev 1, nessun jti rogue, 1 piano)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "backend: SELECT diretto sulle tabelle \u2192 permission denied (solo RPC)",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_semantic_requests"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "backend: helper di autorizzazione non invocabile direttamente",
+   "status": "PASS",
+   "detail": "permission denied for function gptour_semantic_is_authorized"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "backend: non pu\u00f2 autorizzarsi nuovi jti",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_semantic_backend_keys"
+  },
+  {
+   "section": "B3-negativi-RPC-tabelle",
+   "label": "SET ROLE backend ma claims non backend \u2192 rifiuto del controllo interno",
+   "status": "PASS",
+   "detail": "backend credential required"
+  },
+  {
+   "section": "B4-ownership-autorizzazione",
+   "label": "B su sessione di A \u2192 404 non enumerante",
+   "status": "PASS",
+   "detail": "404 {'code': 'PT404', 'details': None, 'hint': None, 'message': 'not found'}"
+  },
+  {
+   "section": "B4-ownership-autorizzazione",
+   "label": "B legge piano di A \u2192 404",
+   "status": "PASS",
+   "detail": "404"
+  },
+  {
+   "section": "B4-ownership-autorizzazione",
+   "label": "A crea sessione per l\u2019agente B \u2192 403 (agent_id vincolato all\u2019autorizzazione, a differenza di Fase 4B)",
+   "status": "PASS",
+   "detail": "403 {'code': 'PT403', 'details': None, 'hint': None, 'message': 'agent not authorized'}"
+  },
+  {
+   "section": "B4-ownership-autorizzazione",
+   "label": "admin C senza abilitazione Fase 6 \u2192 403 (kill-switch rispettato anche per admin)",
+   "status": "PASS",
+   "detail": "403 {'code': 'PT403', 'details': None, 'hint': None, 'message': 'agent not authorized'}"
+  },
+  {
+   "section": "B4-ownership-autorizzazione",
+   "label": "ruolo customer \u2192 403",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "B4-ownership-autorizzazione",
+   "label": "accesso revocato (Fase 6 OFF): scritture con token valido, recupero interno e letture/replay \u2192 tutte 404; stato della request intatto",
+   "status": "PASS",
+   "detail": "{'store_context': 404, 'begin_llm': 404, 'commit_success': 404, 'finish_error': 404, 'renew_lease': 404, 'release_recoverable': 404, 'recover_work': 404, 'get_request': 404, 'claim': 404, 'get_state': 404, 'get_plan': 40"
+  },
+  {
+   "section": "B4-ownership-autorizzazione",
+   "label": "request rv ancora pending senza contesto dopo i tentativi post-revoca",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B4-ownership-autorizzazione",
+   "label": "riabilitazione \u2192 accesso ripristinato, dati storici intatti (rev 1)",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "B5-fencing-lease-deadline",
+   "label": "token sconosciuto su tutte le 8 RPC fenced \u2192 409",
+   "status": "PASS",
+   "detail": "{'renew_lease': 409, 'store_context': 409, 'begin_llm': 409, 'store_llm': 409, 'commit_success': 409, 'finish_error': 409, 'release_recoverable': 409, 'recover_work': 409}"
+  },
+  {
+   "section": "B5-fencing-lease-deadline",
+   "label": "lease scaduto: il token corrente non scrive pi\u00f9 \u2192 409",
+   "status": "PASS",
+   "detail": "409"
+  },
+  {
+   "section": "B5-fencing-lease-deadline",
+   "label": "claim \u2192 takeover: nuovo token, processing_attempts 2, base_revision/accepted_at/budget conservati",
+   "status": "PASS",
+   "detail": "{'body': None, 'token': 'fefc1e8c-8772-4118-a880-30e5f295c5da', 'planId': None, 'status': 'pending', 'outcome': 'takeover', 'requestId': 'rv', 'acceptedAt': '2026-10-13T13:50:59.906Z', 'httpStatus': None, 'baseRevision':"
+  },
+  {
+   "section": "B5-fencing-lease-deadline",
+   "label": "worker A risvegliato con il vecchio token \u2192 respinto (T10)",
+   "status": "PASS",
+   "detail": "409"
+  },
+  {
+   "section": "B5-fencing-lease-deadline",
+   "label": "nuovo token scrive",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "B5-fencing-lease-deadline",
+   "label": "renew_lease non resuscita un lease scaduto",
+   "status": "PASS",
+   "detail": "409"
+  },
+  {
+   "section": "B5-fencing-lease-deadline",
+   "label": "deadline superata: claim finalizza per scadenza \u2192 done 503 processing_expired (body TurnResponse canonico), nessuna elaborazione (T38)",
+   "status": "PASS",
+   "detail": "{'body': '{\"gate\": null, \"plan\": null, \"result\": null, \"outcome\": \"committed\", \"errorCode\": \"processing_expired\", \"operation\": \"turn\", \"requestId\": \"rv\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"acceptedAt\":"
+  },
+  {
+   "section": "B5-fencing-lease-deadline",
+   "label": "successo tardivo con worker vivo \u2192 409, sessione invariata",
+   "status": "PASS",
+   "detail": "409"
+  },
+  {
+   "section": "B5-fencing-lease-deadline",
+   "label": "retry \u2192 ricevuta 503 conservata, nessuna seconda finalizzazione (T39)",
+   "status": "PASS",
+   "detail": "{'body': '{\"gate\": null, \"plan\": null, \"result\": null, \"outcome\": \"committed\", \"errorCode\": \"processing_expired\", \"operation\": \"turn\", \"requestId\": \"rv\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"acceptedAt\":"
+  },
+  {
+   "section": "B6-conflitto-finale",
+   "label": "c1 committed rev 2; c2 \u2192 revision_conflict committato come ricevuta 409 (ritorno, non eccezione), nessun planId",
+   "status": "PASS",
+   "detail": "{'body': '{\"gate\": \"planned\", \"plan\": {\"stops\": [\"t2\"], \"planId\": \"9e482c9f-f231-4960-aeb3-5caa82f57b90\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"sessionRevision\": 2}, \"result\": null, \"outcome\": \"committed\""
+  },
+  {
+   "section": "B6-conflitto-finale",
+   "label": "body del conflitto costruito dal SQL: TurnResponse canonico con policy revision_conflict e sessionRevision osservata",
+   "status": "PASS",
+   "detail": "{'gate': None, 'plan': None, 'result': None, 'outcome': 'committed', 'errorCode': 'revision_conflict', 'operation': 'turn', 'requestId': 'c2', 'sessionId': 'b7bd0f97-45f1-45c9-88d5-fafaf9a877e0', 'acceptedAt': '2026-10-1"
+  },
+  {
+   "section": "B6-conflitto-finale",
+   "label": "totale +1, un solo piano nuovo, stato del vincitore",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B6-conflitto-finale",
+   "label": "replay del perdente \u2192 stesso 409 conservato",
+   "status": "PASS",
+   "detail": "{'body': '{\"gate\": null, \"plan\": null, \"result\": null, \"outcome\": \"committed\", \"errorCode\": \"revision_conflict\", \"operation\": \"turn\", \"requestId\": \"c2\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"acceptedAt\": "
+  },
+  {
+   "section": "B6-conflitto-finale",
+   "label": "expectedRevision vecchia \u2192 409 committato, +0 (T03)",
+   "status": "PASS",
+   "detail": "{'body': '{\"gate\": null, \"plan\": null, \"result\": null, \"outcome\": \"committed\", \"errorCode\": \"revision_conflict\", \"operation\": \"turn\", \"requestId\": \"old\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"acceptedAt\":"
+  },
+  {
+   "section": "B7-concorrenza",
+   "label": "10 claim parallele identiche \u2192 1 new, 9 in_progress (T34)",
+   "status": "PASS",
+   "detail": "['new', 'in_progress', 'in_progress', 'in_progress', 'in_progress', 'in_progress', 'in_progress', 'in_progress', 'in_progress', 'in_progress']"
+  },
+  {
+   "section": "B7-concorrenza",
+   "label": "5 riserve concorrenti con invocationId diversi \u2192 esattamente 2 ammesse, 2 righe invocazione (T13)",
+   "status": "PASS",
+   "detail": "[True, True, False, False, False]"
+  },
+  {
+   "section": "B7-concorrenza",
+   "label": "commit concorrenti alla stessa base \u2192 uno committed, uno conflitto; +1 e un solo piano (T04)",
+   "status": "PASS",
+   "detail": "['committed', 'revision_conflict']"
+  },
+  {
+   "section": "B7-concorrenza",
+   "label": "6 replay paralleli di una request done \u2192 body identici (T07/T39)",
+   "status": "PASS",
+   "detail": "['{\"gate\": \"planned\", \"plan\": {\"stops\": [\"t2\"], \"planId\": \"9e482c9f-f231-4960-aeb3-5caa82f57b90\", \"sessionId\": \"b7bd0f97-45f1-45c9-88d5-fafaf9a877e0\", \"sessionRevision\": 2}, \"result\": null, \"outcome\": \"committed\", \"error"
+  },
+  {
+   "section": "B8-scadenze-tombstone",
+   "label": "oltre response_expires_at: claim \u2192 expired; tombstone senza body ma con http_status/revisione/contatori (T19/T20)",
+   "status": "PASS",
+   "detail": "{'body': None, 'planId': '9e482c9f-f231-4960-aeb3-5caa82f57b90', 'status': 'expired', 'outcome': 'expired', 'requestId': 'c1', 'acceptedAt': '2026-10-13T13:51:00.210Z', 'httpStatus': 200, 'baseRevision': 1, 'finalRevisio"
+  },
+  {
+   "section": "B8-scadenze-tombstone",
+   "label": "get_request su tombstone \u2192 410",
+   "status": "PASS",
+   "detail": "410"
+  },
+  {
+   "section": "B8-scadenze-tombstone",
+   "label": "retry oltre retention non reinserisce la coppia (tombstone impedisce il riuso)",
+   "status": "PASS",
+   "detail": "{'body': None, 'planId': '9e482c9f-f231-4960-aeb3-5caa82f57b90', 'status': 'expired', 'outcome': 'expired', 'requestId': 'c1', 'acceptedAt': '2026-10-13T13:51:00.210Z', 'httpStatus': 200, 'baseRevision': 1, 'finalRevisio"
+  },
+  {
+   "section": "B8-scadenze-tombstone",
+   "label": "sessione mai usata oltre 24h \u2192 410 su claim e get_state (T21); nessuna resurrezione",
+   "status": "PASS",
+   "detail": "(410, 410)"
+  },
+  {
+   "section": "B8-scadenze-tombstone",
+   "label": "sessione scaduta: stato, piano e replay \u2192 410 (scadenza logica applicata anche senza job)",
+   "status": "PASS",
+   "detail": "(410, 410, 410)"
+  },
+  {
+   "section": "B8-scadenze-tombstone",
+   "label": "claim verso sessione inventata \u2192 404, nessuna creazione (T02)",
+   "status": "PASS",
+   "detail": "404"
+  },
+  {
+   "section": "B8-scadenze-tombstone",
+   "label": "compatibilit\u00e0 pulizia futura: la cancellazione eseguita come owner (futura RPC di manutenzione) \u00e8 ammessa dai trigger (rollback, nessun job creato)",
+   "status": "PASS",
+   "detail": "01d32a5f-50f8-444e-a28d-c2b6da06fe81\n9e4"
+  },
+  {
+   "section": "B8-scadenze-tombstone",
+   "label": "service_role: DELETE \u2192 permission denied (privilegio), tabelle intatte",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_semantic_plans"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer CON privilegio ma senza policy: UPDATE \u2192 0 righe (rifiuto RLS, non trigger)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: sessione: revision +2 \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "revision advances by exactly 1"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: sessione: stato senza nuova revisione \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "state changes only with a new revision"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: sessione: owner riscritto \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "session identity immutable"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: request: done\u2192pending \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "status cannot return to pending"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: request: risposta sostituita \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "response is write-once"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: request: output dopo finalizzazione \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "output after finalization"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: request: hash riscritto \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "request identity immutable"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: request: budget azzerato \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "budget monotonic"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: request: attempts ridotti \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "processing_attempts monotonic"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: request: lease su request done \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "no lease after finalization"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: piano modificato \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "plans are immutable"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: riserva riscritta \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "reservation immutable"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: sessione: last_plan_id senza nuova revisione \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "state changes only with a new revision"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: request: plan_id sostituito \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "plan reference immutable"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: request: plan_id aggiunto dopo la finalizzazione \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "plan reference only at pending->done"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: DELETE request \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "deletion only through owner maintenance"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "writer con privilegio+policy: DELETE sessione \u2192 RIFIUTO DEL TRIGGER",
+   "status": "PASS",
+   "detail": "deletion only through owner maintenance"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "controllo: campo non vincolato (next_retry_at su pending) passa \u2192 il trigger blocca solo gli invarianti",
+   "status": "PASS",
+   "detail": "rr"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "service_role: stesso UPDATE \u2192 permission denied (privilegio), NON prova del trigger",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_semantic_sessions"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "authenticated proprietario: UPDATE \u2192 permission denied",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_semantic_sessions"
+  },
+  {
+   "section": "B9-trigger-vs-privilegio-vs-RLS",
+   "label": "ruolo e policy di laboratorio rimossi",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "recover_work (worker corrente): contesto + output + riserve persistiti, chiavi esatte",
+   "status": "PASS",
+   "detail": "{'context': {'turn': 1, 'catalog': ['milano', 'monza'], 'acceptedAt': '2026-10-13T13:51:01.629Z'}, 'llmOutput': {'operations': [{'op': 'set_area', 'localities': ['Milano']}], 'clarification': None}, 'requestId': '8f9e690"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "worker perso (lease scaduto): il suo token non recupera pi\u00f9 \u2192 409",
+   "status": "PASS",
+   "detail": "409"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "takeover: nuovo token, budget 1 conservato",
+   "status": "PASS",
+   "detail": "{'body': None, 'token': '27e9ade0-48ed-4912-946b-f21fe18e66ad', 'planId': None, 'status': 'pending', 'outcome': 'takeover', 'requestId': '8f9e6900-a3c8-4522-8b3c-c7dffa310867', 'acceptedAt': '2026-10-13T13:51:01.629Z', '"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "nuovo worker recupera lo STESSO contesto/output gi\u00e0 persistiti",
+   "status": "PASS",
+   "detail": "{'context': {'turn': 1, 'catalog': ['milano', 'monza'], 'acceptedAt': '2026-10-13T13:51:01.629Z'}, 'llmOutput': {'operations': [{'op': 'set_area', 'localities': ['Milano']}], 'clarification': None}, 'requestId': '8f9e690"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "dopo il recupero nessuna nuova riserva n\u00e9 invocazione (zero invii al provider)",
+   "status": "PASS",
+   "detail": "{'reserved': 1, 'mayDispatch': False, 'outputStored': True}"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "vecchio worker risvegliato: recupero respinto (fencing)",
+   "status": "PASS",
+   "detail": "409"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "altro utente con token corrente \u2192 404 (ownership prima del token)",
+   "status": "PASS",
+   "detail": "404"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "proprietario A (authenticated): recover_work non invocabile (403) \u2014 percorso backend-only, distinto dalle proiezioni pubbliche",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "service_role: recover_work non invocabile (403) \u2014 percorso backend-only, distinto dalle proiezioni pubbliche",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "anon: recover_work non invocabile (401) \u2014 percorso backend-only, distinto dalle proiezioni pubbliche",
+   "status": "PASS",
+   "detail": "401"
+  },
+  {
+   "section": "B10-recupero-interno",
+   "label": "proiezione pubblica get_request della request pending: nessun contesto/output/lease",
+   "status": "PASS",
+   "detail": "{'body': None, 'planId': None, 'status': 'pending', 'requestId': '8f9e6900-a3c8-4522-8b3c-c7dffa310867', 'acceptedAt': '2026-10-13T13:51:01.629Z', 'httpStatus': None, 'baseRevision': 0, 'finalRevision': None, 'requestOut"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "gate planned nel body senza p_plan \u2192 422, nessuna transizione",
+   "status": "PASS",
+   "detail": "422"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "p_plan con gate non planned \u2192 422",
+   "status": "PASS",
+   "detail": "422"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "body di un\u2019altra sessione \u2192 422 (raccordo identit\u00e0)",
+   "status": "PASS",
+   "detail": "422"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "body committed con errorCode \u2192 422 (commit_success \u00e8 solo per successi)",
+   "status": "PASS",
+   "detail": "422"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "body non TurnResponse \u2192 422; request ancora pending, token e output intatti (rollback dell\u2019eccezione)",
+   "status": "PASS",
+   "detail": "422"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "commit con piano: planId in ricevuta = body.plan.planId; plan/result/sessionRevision coerenti",
+   "status": "PASS",
+   "detail": "200 735e0f65-fe80-40e6-bc95-c81ef2b740b6"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "DB: requests.plan_id = sessions.last_plan_id = operational.lastPlanId = plans.plan_id = plan.planId; planRevision 1",
+   "status": "PASS",
+   "detail": "735e0f65-fe80-40e6-bc95-c81ef2b740b6|735e0f65-fe80-40e6-bc95-c81ef2b740b6|735e0f65-fe80-40e6-bc95-c81ef2b740b6|1|735e0f65-fe80-40e6-bc95-c81ef2b740b6|1|735e0f65-fe80-40e6-bc95-c81ef2b740b6"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "ACK perso \u2192 replay: cached con lo stesso planId e body byte-identico, nessun token",
+   "status": "PASS",
+   "detail": "735e0f65-fe80-40e6-bc95-c81ef2b740b6"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "get_plan(planId) \u2192 lo stesso piano persistito nel body (byte-uguale)",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "get_state: riferimento al piano nella sessione (lastPlanId + operational), operational del handler conservato",
+   "status": "PASS",
+   "detail": "{'departure': {'lat': 45.0, 'lng': 9.0}, 'lastPlanId': '735e0f65-fe80-40e6-bc95-c81ef2b740b6', 'planRevision': 1, 'departureSource': 'settings'}"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "nessuna seconda creazione del piano",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "dopo la finalizzazione il recupero interno \u00e8 chiuso (409) e contesto/output sono stati azzerati",
+   "status": "PASS",
+   "detail": "409"
+  },
+  {
+   "section": "B11-identita-piano",
+   "label": "commit senza piano: last_plan_id/operational.lastPlanId restano al piano precedente (rev 1), revisione 2",
+   "status": "PASS",
+   "detail": "{'departure': {'lat': 45.0, 'lng': 9.0}, 'lastPlanId': '735e0f65-fe80-40e6-bc95-c81ef2b740b6', 'planRevision': 1, 'departureSource': 'settings'}"
+  },
+  {
+   "section": "B12-T06-guasto-iniettato",
+   "label": "commit_success con guasto dopo UPDATE sessione \u2192 errore propagato (nessuna ricevuta)",
+   "status": "PASS",
+   "detail": "400 {'code': 'U2F01', 'details': None, 'hint': None, 'message': 'U2B LAB FAULT after session update'}"
+  },
+  {
+   "section": "B12-T06-guasto-iniettato",
+   "label": "rollback atomico: sessione rev 2, nessun piano nuovo, request pending con token/contesto/output intatti, nessuna risposta",
+   "status": "PASS",
+   "detail": "2|735e0f65-fe80-40e6-bc95-c81ef2b740b6|1|pending|d67dedcc-7c61-42a8-b545-8365d60ec5da|\u2205|truetrue|\u2205"
+  },
+  {
+   "section": "B12-T06-guasto-iniettato",
+   "label": "contesto/output salvati prima del guasto restano recuperabili dal worker",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "B12-T06-guasto-iniettato",
+   "label": "secondo tentativo con guasto ancora attivo \u2192 stesso rollback, nessun effetto parziale accumulato",
+   "status": "PASS",
+   "detail": "400"
+  },
+  {
+   "section": "B12-T06-guasto-iniettato",
+   "label": "guasto rimosso: un solo commit riuscito al retry (rev 3, un piano nuovo, request done con plan_id)",
+   "status": "PASS",
+   "detail": "3|b3dabd3e-9ec0-4e2f-9838-b68ee8e0e88c|2|done|b3dabd3e-9ec0-4e2f-9838-b68ee8e0e88c|3"
+  },
+  {
+   "section": "B12-T06-guasto-iniettato",
+   "label": "replay dopo il retry \u2192 cached, stesso piano",
+   "status": "PASS",
+   "detail": "b3dabd3e-9ec0-4e2f-9838-b68ee8e0e88c"
+  },
+  {
+   "section": "B12-T06-guasto-iniettato",
+   "label": "guasto di laboratorio rimosso: zero residui (trigger/schema/funzione), 9 trigger della migration",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B13-raccordo-contratto",
+   "label": "processing_expired: TurnResponse canonico (identit\u00e0, policy, metadati di commit dalla request, engine della sessione)",
+   "status": "PASS",
+   "detail": "{'gate': None, 'plan': None, 'result': None, 'outcome': 'committed', 'errorCode': 'processing_expired', 'operation': 'turn', 'requestId': '48f27bec-45c0-40af-97ce-e4cfbf4b1880', 'sessionId': '71ffaa42-0af3-486a-b30d-f8e6"
+  },
+  {
+   "section": "B13-raccordo-contratto",
+   "label": "finish_error: body con gate \u2192 422; body d\u2019errore canonico accettato",
+   "status": "PASS",
+   "detail": "422"
+  },
+  {
+   "section": "B13-raccordo-contratto",
+   "label": "commit R6 (rev 4, secondo piano): engineVersion del body sovrascritta con quella della sessione",
+   "status": "PASS",
+   "detail": "4"
+  },
+  {
+   "section": "B13-raccordo-contratto",
+   "label": "revision_conflict con requestId UUID per il raccordo (finalRevision = revisione osservata)",
+   "status": "PASS",
+   "detail": "revision_conflict"
+  },
+  {
+   "section": "B13-raccordo-contratto",
+   "label": "export per il test Deno: 6 body terminali, 2 policy SQL, get_plan; replay byte-identico; policy SQL assente per codici del handler",
+   "status": "PASS",
+   "detail": "/tmp/voom-u2-replay/u2b_contract_export.json"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "stato iniziale: sessione rev 4 riferita al piano R6, 3 piani, request pending con contesto/output e 1 riserva",
+   "status": "PASS",
+   "detail": "4|ee10d434-2e90-437b-bf31-6efee04c2166|ee10d434-2e90-437b-bf31-6efee04c2166|4|v4|3|0|pending|1cead674-9ec6-4f9a-b60e-3c0f5600a2d7|\u2205|truetrue|1|1|\u2205|\u2205"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "commit_success con guasto dopo INSERT del piano \u2192 errore propagato dal trigger (il piano rev 5 era stato inserito nella transazione)",
+   "status": "PASS",
+   "detail": "400 {'code': 'U2F02', 'details': None, 'hint': None, 'message': 'U2B LAB FAULT after plan insert (plan 6daaab78-964b-4d46-9b0e-f41ac9389a9c rev 5)'}"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "rollback atomico: sessione rev 4 e riferimenti al piano precedente ripristinati, stato invariato, piano rev 5 eliminato (3 piani), request pending con token/contesto/output/riserva intatti, nessuna risposta",
+   "status": "PASS",
+   "detail": "4|ee10d434-2e90-437b-bf31-6efee04c2166|ee10d434-2e90-437b-bf31-6efee04c2166|4|v4|3|0|pending|1cead674-9ec6-4f9a-b60e-3c0f5600a2d7|\u2205|truetrue|1|1|\u2205|\u2205"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "nessun piano orfano della transazione annullata (per revisione o per planId stampato)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "contesto/output precedenti recuperabili dal worker dopo il rollback",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "secondo tentativo con guasto attivo \u2192 stesso rollback, nessun effetto parziale accumulato",
+   "status": "PASS",
+   "detail": "400"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "al retry il worker non ottiene nuove riserve LLM (output gi\u00e0 persistito)",
+   "status": "PASS",
+   "detail": "{'reserved': 1, 'mayDispatch': False, 'outputStored': True}"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "guasto rimosso, stesso requestId: un solo commit (rev 5), un solo nuovo piano (4 totali, 1 a rev 5), request done con plan_id, riserva LLM ancora 1 e 1 sola invocazione",
+   "status": "PASS",
+   "detail": "5|255f8534-0027-41c7-bbdd-72fdabf7288a|255f8534-0027-41c7-bbdd-72fdabf7288a|5|v5|4|1|done|\u2205|255f8534-0027-41c7-bbdd-72fdabf7288a|nullnull|1|1|{\"gate\": \"planned\", \"plan\": {\"date\": \"2026-10-16\", \"stops\": [], \"endMin\": 1080"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "planId coerente fra ricevuta, body e tabella piani",
+   "status": "PASS",
+   "detail": "255f8534-0027-41c7-bbdd-72fdabf7288a"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "replay dopo il retry \u2192 cached, stesso piano, nessun token",
+   "status": "PASS",
+   "detail": "255f8534-0027-41c7-bbdd-72fdabf7288a"
+  },
+  {
+   "section": "B12b-T06-guasto-dopo-insert-piano",
+   "label": "guasto di laboratorio rimosso: zero residui (trigger/schema/funzioni), 9 trigger della migration",
+   "status": "PASS",
+   "detail": ""
+  }
+ ]
+}

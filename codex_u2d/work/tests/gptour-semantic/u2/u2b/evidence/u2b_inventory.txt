@@ -1,0 +1,47 @@
+# Inventario oggetti U2-b rev.2 nel laboratorio (dopo migration x2 e suite) — 2026-10-13T13:51:19Z
+TABLE gptour_semantic_backend_keys owner=gptour_semantic_owner rls=true acl={gptour_semantic_owner=arwdDxt/gptour_semantic_owner}
+TABLE gptour_semantic_llm_invocations owner=gptour_semantic_owner rls=true acl={gptour_semantic_owner=arwdDxt/gptour_semantic_owner}
+TABLE gptour_semantic_plans owner=gptour_semantic_owner rls=true acl={gptour_semantic_owner=arwdDxt/gptour_semantic_owner}
+TABLE gptour_semantic_requests owner=gptour_semantic_owner rls=true acl={gptour_semantic_owner=arwdDxt/gptour_semantic_owner}
+TABLE gptour_semantic_sessions owner=gptour_semantic_owner rls=true acl={gptour_semantic_owner=arwdDxt/gptour_semantic_owner}
+COLUMN gptour_semantic_requests.plan_id uuid
+COLUMN gptour_semantic_sessions.last_plan_id uuid
+FUNCTION gptour_semantic_align_body(p_body jsonb, r gptour_semantic_requests, s gptour_semantic_sessions, p_revision integer) owner=gptour_semantic_owner secdef=false config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_assert_backend() owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_begin_llm(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_token uuid, p_invocation_id text) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_claim(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_payload_hash text, p_expected_revision integer) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_commit_success(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_token uuid, p_new_state jsonb, p_operational jsonb, p_plan jsonb, p_body jsonb) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_create_session(p_caller_uid uuid, p_agent_id uuid, p_contract_version text, p_engine_version text) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_error_policy(p_code text) owner=gptour_semantic_owner secdef=false config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_finish_error(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_token uuid, p_http_status integer, p_body jsonb) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_get_plan(p_caller_uid uuid, p_plan_id uuid) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_get_request(p_caller_uid uuid, p_session_id uuid, p_request_id text) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_get_state(p_caller_uid uuid, p_session_id uuid) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_is_authorized(p_uid uuid, p_agent_id uuid) owner=postgres secdef=true config=search_path="" acl={postgres=X/postgres,gptour_semantic_owner=X/postgres}
+FUNCTION gptour_semantic_lock_fenced(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_token uuid) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_lock_session(p_caller_uid uuid, p_session_id uuid) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_receipt(r gptour_semantic_requests) owner=gptour_semantic_owner secdef=false config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_recover_work(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_token uuid) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_release_recoverable(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_token uuid, p_error_code text, p_retry_after_ms integer) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_renew_lease(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_token uuid) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_store_context(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_token uuid, p_context jsonb) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_store_llm(p_caller_uid uuid, p_session_id uuid, p_request_id text, p_token uuid, p_invocation_id text, p_output jsonb) owner=gptour_semantic_owner secdef=true config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner,gptour_semantic_backend=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_terminal_turn(r gptour_semantic_requests, s gptour_semantic_sessions, p_code text) owner=gptour_semantic_owner secdef=false config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_tg_invocations() owner=gptour_semantic_owner secdef=false config=- acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_tg_no_delete() owner=gptour_semantic_owner secdef=false config=- acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_tg_plans() owner=gptour_semantic_owner secdef=false config=- acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_tg_requests() owner=gptour_semantic_owner secdef=false config=- acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_tg_sessions() owner=gptour_semantic_owner secdef=false config=- acl={gptour_semantic_owner=X/gptour_semantic_owner}
+FUNCTION gptour_semantic_ts(t timestamp with time zone) owner=gptour_semantic_owner secdef=false config=search_path="" acl={gptour_semantic_owner=X/gptour_semantic_owner}
+TRIGGER gptour_semantic_backend_keys.gptour_semantic_no_delete DELETE
+TRIGGER gptour_semantic_llm_invocations.gptour_semantic_invocations_guard UPDATE
+TRIGGER gptour_semantic_llm_invocations.gptour_semantic_no_delete DELETE
+TRIGGER gptour_semantic_plans.gptour_semantic_no_delete DELETE
+TRIGGER gptour_semantic_plans.gptour_semantic_plans_guard UPDATE
+TRIGGER gptour_semantic_requests.gptour_semantic_no_delete DELETE
+TRIGGER gptour_semantic_requests.gptour_semantic_requests_guard UPDATE
+TRIGGER gptour_semantic_sessions.gptour_semantic_no_delete DELETE
+TRIGGER gptour_semantic_sessions.gptour_semantic_sessions_guard UPDATE
+MEMBERSHIP ruolo_concesso=gptour_semantic_backend membro=authenticator
+POLICIES on gptour_semantic_*: 0
+LAB FAULT RESIDUE (trigger|schema|function): 0|0|0

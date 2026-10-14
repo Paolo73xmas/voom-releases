@@ -1,5 +1,10 @@
 # VOOM Sales Mobile App - PRD
 
+## Ultima richiesta — correzioni U2-d dopo Codex: input sorgente mancante
+- Utente autorizza lavoro autonomo locale su baseline identificata nello ZIP, non sul Mobile per supposizione; niente servizi reali/credenziali hosted/commit/push/deploy. Obiettivi: catalog/settings recuperabili, normalizzazione porte planner preservando v7, diagnostica handler opzionale/limitata, pacchetto completo riproducibile e test sulla versione consegnata.
+- Scaricato/letto `verifica_codex_u2d.zip`: SOLO 4 file di rapporto/probe, nessun sorgente. Richiesta originale `gptour_u2d_final_delivery.zip` SHA0f347f3eba425e9cc4933750a0f0c616bf3e2149448b390977fa9f2bbc5c5df9 + baseline259ec92d, entrambi assenti in questo workspace Mobile, nella storia Git locale e nei 66 allegati elencati. Dettagli/hash/ricerca in `codex_u2d/STATUS.md`; archivio conservato in `codex_u2d/incoming/`.
+- BLOCCATO in attesa di sorgenti completi U2-d/U1/v7 e test/baseline. Nessun codice applicativo modificato né probe rieseguito; non dichiarare "pronto" o sostituire la baseline con implementazioni inventate.
+
 ## 12/10/2026 — Regressione cartografia 403 nella preview corretta e verificata (prevale sul rapporto precedente)
 - Utente mostra tile OSM "403 Access blocked / tile usage policy" con percorso/marker già visibili; conferma preview Expo browser, non build nativa. Scope Mobile presentazione, NO business live/Edge/CRM/auth/dep/config/legacy/nativebuild/publish.
 - Diagnostica browser iter82 conferma: iframe srcDoc sandboxallow-scripts, anche con meta/referrerPolicy o URLstatico sandboxed, invia Referer vuoto; controllo normale invia origine vera. 4 tile reali rispondevano200 in questo ambiente: nonriprodotto403 locale, ma violazioneRequisitoReferer provata. Vecchio test256x256insufficiente: può passare conimmagineavviso.

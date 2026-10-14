@@ -1,0 +1,43 @@
+{
+  "summary": "VOOM GPTour U2-d delivery 2 (delta vs iteration_74): deterministic revalidation. Read-only review in /app/voom-repo @ 259ec92d (feature/gptour-semantic-interpreter, no commits). (1) revalidation.unit.ts executed with /opt/deno/deno 2.9.7 (--no-config --no-lock --allow-env=U2C_CONFIG,U2D_KIT_OUT --allow-read --allow-write=tests/gptour-semantic/u2/u2d/kit) → 12/12 PASS (unit: ok/engine_changed BEFORE catalog read/context_changed/no-hash ok/row-order-diff=context_changed/DependencyError('revalidation') on unreadable catalog; runtime via handler: unchanged→planned (2 catalog loads), swapped→409 context_changed with sessionRevision 0, unreadable→503 dependency_unavailable recoverable + same-requestId retry→planned, takeover with newer engine→409 engine_changed). adapters/revalidation.ts confirmed: engine check (line 10) precedes catalog.load (line 13); no silent 'ok' on error (try/catch wraps load and re-throws DependencyError('revalidation')); no network calls. (2) Runtime delta vs previous delivery (unzipped gptour_u2d_handler_delivery.zip into /tmp/u2d_prev) is PURELY ADDITIVE: ports.ts line 17 adds `catalogHash?: string` to RevalidationPort.check ctx; turn.ts line 162 adds `, catalogHash: ctx.catalogHash` to revalidation.check(...) call. No other diffs. (3) index.ts wires makeRevalidation(caller.uid, catalog) with user-RLS catalog port and startup banner: `revalidation:DETERMINISTIC(engine+catalogHash), llm:NOT_WIRED, planner:NOT_WIRED` (confirmed in evidence/entrypoint_report.json line 5). (4) verify_protected.py → rc=0, 40 protected files, 6 modified all with authorization reason (5 U1 rev.4 + orchestrator.ts D3(a)), cumulative=041f2bfa00446526951e79689e2fab9a61276e29b0282ec38e3d29a21b036d88 matches d3a_planner_extraction, unauthorized=[]. (5) lab_entrypoint.py (U2_DENO_BIN=/opt/deno/deno U2_REPLAY_ROOT=/tmp/voom-u2-replay U2_PG_BIN=/usr/lib/postgresql/15/bin U2_PG_OS_USER=postgres) → 11/11 PASS; summary line declares `revalidation DETERMINISTIC; no remote access`. (6) evidence/final/final_status.json: all 9 executed suites rc=0 executed_pass (protected_files, v7_golden_and_suite, v7_edge_check, u2d_all, u2c_regression, u1_deno, u2a_transport, u2b_sql, schema_replay); 5 not_executed entries each with explicit reason (L3 / out of scope). u2d_all.log tail shows `U2D ENTRYPOINT DONE checks=11 pass=11 fail=0`; u2c_regression.log tail shows `conformance 37/37, turn 97/97, interruptions 38/38`; v7_golden_and_suite.log tail shows `ORCHESTRATOR SUITES DONE fail=0`. tool_versions.log reports deno 2.9.7 aarch64, node v20.20.2, esbuild 0.25.12, python 3.11.17, playwright 1.63.0, postgres 15.19, PostgREST 16.2, Chromium 154.0.8037.92, git HEAD 259ec92d. (7) Docs U2_D_VERIFICATION.md and U2_D_RESULTS.md cross-checked against evidence/code: file list, 40 protected / 6 modified counts, cumulative hashes, banner text, suite counts (12/12 revalidation, 42/42 auth+cors, 18/18 planner-core, 8/8 CORS browser, 11/11 entrypoint, 23/23 handler L1/L2, 14/14 v7 suite, 48 golden responses) all match the recorded logs; declared limits (L3: real LLM/OSRM/CRM/hosted JWT; estimated_routing always; agenda follow_ups mapped to infeasible/other; no deploy) are consistent with code (PLANNER_NOT_WIRED, llm:null in index.ts).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/voom-repo/supabase/functions/gptour-semantic-v2/adapters/revalidation.ts",
+    "/app/voom-repo/supabase/functions/_shared/gptour-semantic-runtime/ports.ts",
+    "/app/voom-repo/supabase/functions/_shared/gptour-semantic-runtime/turn.ts",
+    "/app/voom-repo/supabase/functions/gptour-semantic-v2/index.ts",
+    "/app/voom-repo/tests/gptour-semantic/u2/u2d/revalidation.unit.ts",
+    "/app/voom-repo/tests/gptour-semantic/u2/u2d/verify_protected.py",
+    "/app/voom-repo/tests/gptour-semantic/u2/u2d/evidence/final/final_status.json",
+    "/app/voom-repo/tests/gptour-semantic/u2/u2d/evidence/final/tool_versions.log",
+    "/app/voom-repo/tests/gptour-semantic/u2/u2d/evidence/final/u2d_all.log",
+    "/app/voom-repo/tests/gptour-semantic/u2/u2d/evidence/final/u2c_regression.log",
+    "/app/voom-repo/tests/gptour-semantic/u2/u2d/evidence/final/v7_golden_and_suite.log",
+    "/app/voom-repo/tests/gptour-semantic/u2/u2d/evidence/entrypoint_report.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "revalidation.ts (good): engine mismatch is short-circuited BEFORE any catalog I/O (line 10 → return engine_changed), so a takeover from a newer engine is detected even if the catalog port is broken; `ctx.catalogHash === undefined` returns ok (declared backward-compat for older persisted contexts). catalog.load errors are re-wrapped as DependencyError('revalidation'), preserving dependency labelling at the turn boundary — no silent ok path exists.",
+    "Runtime delta is strictly additive (confirmed vs gptour_u2d_handler_delivery.zip): ports.ts adds `catalogHash?: string` (optional) and turn.ts passes `catalogHash: ctx.catalogHash` at the single revalidation call site (line 162). No other runtime surface touched; U2-c conformance/turn/interruptions re-ran green (37/97/38).",
+    "index.ts (good): revalidation port is built with the USER's RLS-limited catalog (makePostgrestCatalog(baseUrl, userJwt)) via the handler per-request callback — so revalidation re-reads the catalog with the caller's authorization, matching the docstring claim. Banner wording matches evidence/entrypoint_report.json verbatim.",
+    "revalidation.unit.ts (good): tests both the adapter in isolation AND the runtime integration (handler + takeover with crash at C3 then expireLease to force takeover under a bumped engine version) — proving engine_changed path end-to-end, not just unit-level.",
+    "verify_protected.py (good): deterministic cumulative hash over 40 protected files; raises SystemExit(1) unless `len==40 and unauthorized==[] and cumulative in known`. Current cumulative 041f2bfa… matches recorded `d3a_planner_extraction`.",
+    "Docs consistency (good): U2_D_RESULTS.md §1 and §4 counts (12/12, 42/42, 18/18, 8/8, 11/11, 23/23, 14/14, 48 golden responses) match evidence logs; no fabricated numbers detected. L3 exclusions in §5-§6 are reflected in code (PLANNER_NOT_WIRED, llm:null, estimated_routing always from FakeRouting)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (12/12 revalidation unit+runtime, 11/11 entrypoint, 40 protected files verified, 9/9 final suites executed_pass)", "frontend": "N/A (backend-only review per request)"},
+  "test_credentials": "Synthetic lab-only JWT at /tmp/voom-u2-replay/jwt.secret (not printed).",
+  "seed_data_creation": "None — reused /tmp/voom-u2-replay lab from previous iterations.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "U2-d delivery 2 clean. Only delta vs iteration_74 is deterministic revalidation (adapters/revalidation.ts NEW + additive catalogHash in RevalidationPort/turn.ts call site). All suites green, runtime delta provably additive (diff vs previous delivery zip extracted in /tmp/u2d_prev), docs match evidence. No file in /app/voom-repo modified during testing; no commits. Lab PostgreSQL/PostgREST at /tmp/voom-u2-replay still running.",
+  "rca of the issue": "N/A — no issues found."
+}

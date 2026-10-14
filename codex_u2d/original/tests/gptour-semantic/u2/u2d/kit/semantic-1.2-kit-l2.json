@@ -1,0 +1,570 @@
+{
+  "contractVersion": "semantic-1.2",
+  "note": "Kit semantic-1.2 generato dal lab (campi variabili mascherati <var>); NON certifica app reali",
+  "level": "postgrest",
+  "cases": [
+    {
+      "name": "malformed_json",
+      "request": "{not json",
+      "http": 400,
+      "response": {
+        "operation": "turn",
+        "contractVersion": "semantic-1.2",
+        "engineVersion": "gptour-semantic-runtime/u2-c",
+        "sessionId": null,
+        "requestId": null,
+        "sessionRevision": null,
+        "outcome": "not_accepted",
+        "errorCode": "invalid_request",
+        "retryableSameRequest": false,
+        "nextAction": "correct_request",
+        "retryAfterMs": null,
+        "acceptedAt": null,
+        "responseExpiresAt": null,
+        "result": null,
+        "gate": null,
+        "plan": null,
+        "openQuestions": [],
+        "openQuestionCount": 0,
+        "notApplied": [],
+        "dataQuality": null,
+        "correlationId": "<var>"
+      }
+    },
+    {
+      "name": "unsupported_contract_1.1",
+      "request": {
+        "operation": "capabilities",
+        "contractVersion": "semantic-1.1"
+      },
+      "http": 400,
+      "response": {
+        "operation": "turn",
+        "contractVersion": "semantic-1.2",
+        "engineVersion": "gptour-semantic-runtime/u2-c",
+        "sessionId": null,
+        "requestId": null,
+        "sessionRevision": null,
+        "outcome": "not_accepted",
+        "errorCode": "unsupported_contract",
+        "retryableSameRequest": false,
+        "nextAction": "update_client",
+        "retryAfterMs": null,
+        "acceptedAt": null,
+        "responseExpiresAt": null,
+        "result": null,
+        "gate": null,
+        "plan": null,
+        "openQuestions": [],
+        "openQuestionCount": 0,
+        "notApplied": [],
+        "dataQuality": null,
+        "correlationId": "<var>"
+      }
+    },
+    {
+      "name": "forbidden_agent_other_user",
+      "request": {
+        "operation": "create_session",
+        "contractVersion": "semantic-1.2",
+        "targetAgentId": "<var>"
+      },
+      "http": 403,
+      "response": {
+        "operation": "turn",
+        "contractVersion": "semantic-1.2",
+        "engineVersion": "gptour-semantic-runtime/u2-c",
+        "sessionId": null,
+        "requestId": null,
+        "sessionRevision": null,
+        "outcome": "not_accepted",
+        "errorCode": "forbidden_agent",
+        "retryableSameRequest": false,
+        "nextAction": "restore_access",
+        "retryAfterMs": null,
+        "acceptedAt": null,
+        "responseExpiresAt": null,
+        "result": null,
+        "gate": null,
+        "plan": null,
+        "openQuestions": [],
+        "openQuestionCount": 0,
+        "notApplied": [],
+        "dataQuality": null,
+        "correlationId": "<var>"
+      }
+    },
+    {
+      "name": "capabilities",
+      "request": {
+        "operation": "capabilities",
+        "contractVersion": "semantic-1.2"
+      },
+      "http": 200,
+      "response": {
+        "operation": "capabilities",
+        "contractVersion": "semantic-1.2",
+        "engineVersion": "gptour-semantic-runtime/u2-c",
+        "operations": [
+          "capabilities",
+          "create_session",
+          "turn",
+          "get_state",
+          "get_request",
+          "get_plan"
+        ],
+        "enabled": true,
+        "supportedVersions": [
+          "semantic-1.2"
+        ],
+        "previousVersions": [
+          "semantic-1.1"
+        ]
+      }
+    },
+    {
+      "name": "create_session",
+      "request": {
+        "operation": "create_session",
+        "contractVersion": "semantic-1.2"
+      },
+      "http": 201,
+      "response": {
+        "operation": "create_session",
+        "contractVersion": "semantic-1.2",
+        "state": {
+          "sessionId": "<var>",
+          "sessionRevision": 0,
+          "criteria": {
+            "schema": 1,
+            "segments": [],
+            "area": null,
+            "dates": [],
+            "startTime": null,
+            "endTime": null,
+            "revenue": null,
+            "project": null,
+            "coverage": "selection",
+            "maxDays": null,
+            "overflowPolicy": null,
+            "lodging": null,
+            "followUpsMode": "consider",
+            "stops": {
+              "required": [],
+              "excluded": []
+            },
+            "followUps": [],
+            "rescheduleProposals": [],
+            "consents": []
+          },
+          "question": null,
+          "openQuestions": [],
+          "openQuestionCount": 0,
+          "notices": [],
+          "gate": null,
+          "expiresAt": "<var>",
+          "contractVersion": "semantic-1.2",
+          "engineVersion": "gptour-semantic-runtime/u2-c",
+          "context": {
+            "departure": null,
+            "departureSource": null,
+            "acquiredAt": null,
+            "gps": null,
+            "lastPlanId": null,
+            "planRevision": null
+          }
+        }
+      }
+    },
+    {
+      "name": "turn_planned",
+      "request": {
+        "operation": "turn",
+        "contractVersion": "semantic-1.2",
+        "sessionId": "<var>",
+        "requestId": "<var>",
+        "expectedRevision": 0,
+        "message": "Vai a Milano",
+        "client": {
+          "platform": "web",
+          "appVersion": "lab"
+        }
+      },
+      "http": 200,
+      "response": {
+        "gate": "planned",
+        "plan": {
+          "date": "2026-10-16",
+          "stops": [],
+          "endMin": 1080,
+          "planId": "<var>",
+          "totals": {
+            "totalKm": 0,
+            "waitMin": 0,
+            "breakMin": 0,
+            "driveMin": 0,
+            "totalMin": 0,
+            "visitMin": 0,
+            "bufferMin": 0,
+            "returnMin": 0,
+            "availableMin": 600
+          },
+          "geometry": [],
+          "returnTo": null,
+          "startMin": 480,
+          "warnings": [
+            "MOCKED"
+          ],
+          "departure": {
+            "lat": 45,
+            "lng": 9
+          },
+          "finishMin": 480,
+          "sessionId": "<var>",
+          "generatedAt": "<var>",
+          "snapshotRef": "MOCKED-not-a-real-plan",
+          "verification": "estimated_routing",
+          "engineVersion": "MOCKED-planner",
+          "contractVersion": "1.0",
+          "sessionRevision": 1,
+          "selectionReasons": {
+            "excluded": [],
+            "selected": []
+          },
+          "dependsOnPendingChanges": []
+        },
+        "result": {
+          "status": "updated",
+          "applied": [
+            {
+              "op": "add_locality",
+              "flag": null,
+              "text": null,
+              "dates": null,
+              "field": null,
+              "refId": null,
+              "number": null,
+              "consent": null,
+              "mention": null,
+              "ownOnly": null,
+              "decision": null,
+              "evidence": "Milano",
+              "locality": "Milano",
+              "provincia": null,
+              "categories": null,
+              "proposedDate": null,
+              "allCategories": null,
+              "minDaysSinceOrder": null,
+              "minDaysSinceVisit": null
+            }
+          ],
+          "changed": [
+            "area"
+          ],
+          "message": "Criteri aggiornati: area.",
+          "notices": [],
+          "criteria": {
+            "area": {
+              "provincia": null,
+              "localities": [
+                {
+                  "name": "Milano",
+                  "provincia": "MI"
+                }
+              ],
+              "allowNearby": false
+            },
+            "dates": [],
+            "stops": {
+              "excluded": [],
+              "required": []
+            },
+            "schema": 1,
+            "endTime": null,
+            "lodging": null,
+            "maxDays": null,
+            "project": null,
+            "revenue": null,
+            "consents": [],
+            "coverage": "selection",
+            "segments": [],
+            "followUps": [],
+            "startTime": null,
+            "followUpsMode": "consider",
+            "overflowPolicy": null,
+            "rescheduleProposals": []
+          },
+          "question": null,
+          "rejected": [],
+          "revision": 1,
+          "errorCode": null,
+          "requestId": "<var>",
+          "sessionId": "<var>",
+          "diagnostics": {
+            "ms": "<var>",
+            "model": "MOCKED-llm",
+            "llmCalls": 1,
+            "interpreter": "llm"
+          },
+          "contractVersion": "semantic-1.2"
+        },
+        "outcome": "committed",
+        "errorCode": null,
+        "operation": "turn",
+        "requestId": "<var>",
+        "sessionId": "<var>",
+        "acceptedAt": "<var>",
+        "nextAction": "none",
+        "notApplied": [],
+        "dataQuality": null,
+        "retryAfterMs": null,
+        "engineVersion": "gptour-semantic-runtime/u2-c",
+        "openQuestions": [],
+        "contractVersion": "semantic-1.2",
+        "sessionRevision": 1,
+        "openQuestionCount": 0,
+        "responseExpiresAt": "<var>",
+        "retryableSameRequest": false
+      }
+    },
+    {
+      "name": "forbidden_session_other_user",
+      "request": {
+        "operation": "get_state",
+        "contractVersion": "semantic-1.2",
+        "sessionId": "<var>"
+      },
+      "http": 403,
+      "response": {
+        "operation": "turn",
+        "contractVersion": "semantic-1.2",
+        "engineVersion": "gptour-semantic-runtime/u2-c",
+        "sessionId": "<var>",
+        "requestId": null,
+        "sessionRevision": null,
+        "outcome": "not_accepted",
+        "errorCode": "forbidden_session",
+        "retryableSameRequest": false,
+        "nextAction": "restore_access",
+        "retryAfterMs": null,
+        "acceptedAt": null,
+        "responseExpiresAt": null,
+        "result": null,
+        "gate": null,
+        "plan": null,
+        "openQuestions": [],
+        "openQuestionCount": 0,
+        "notApplied": [],
+        "dataQuality": null,
+        "correlationId": "<var>"
+      }
+    },
+    {
+      "name": "turn_revision_conflict",
+      "request": {
+        "operation": "turn",
+        "contractVersion": "semantic-1.2",
+        "sessionId": "<var>",
+        "requestId": "<var>",
+        "expectedRevision": 0,
+        "message": "x",
+        "client": {
+          "platform": "web",
+          "appVersion": "lab"
+        }
+      },
+      "http": 409,
+      "response": {
+        "gate": null,
+        "plan": null,
+        "result": null,
+        "outcome": "committed",
+        "errorCode": "revision_conflict",
+        "operation": "turn",
+        "requestId": "<var>",
+        "sessionId": "<var>",
+        "acceptedAt": "<var>",
+        "nextAction": "get_state_and_confirm",
+        "notApplied": [],
+        "dataQuality": null,
+        "retryAfterMs": null,
+        "correlationId": "<var>",
+        "engineVersion": "gptour-semantic-runtime/u2-c",
+        "openQuestions": [],
+        "contractVersion": "semantic-1.2",
+        "sessionRevision": 1,
+        "openQuestionCount": 0,
+        "responseExpiresAt": "<var>",
+        "retryableSameRequest": false
+      }
+    },
+    {
+      "name": "turn_dependency_unavailable",
+      "request": {
+        "operation": "turn",
+        "contractVersion": "semantic-1.2",
+        "sessionId": "<var>",
+        "requestId": "<var>",
+        "expectedRevision": 0,
+        "message": "Vai a Milano",
+        "client": {
+          "platform": "web",
+          "appVersion": "lab"
+        }
+      },
+      "http": 503,
+      "response": {
+        "operation": "turn",
+        "contractVersion": "semantic-1.2",
+        "engineVersion": "gptour-semantic-runtime/u2-c",
+        "sessionId": "<var>",
+        "requestId": "<var>",
+        "sessionRevision": 0,
+        "outcome": "recoverable",
+        "errorCode": "dependency_unavailable",
+        "retryableSameRequest": true,
+        "nextAction": "retry_same_request",
+        "retryAfterMs": 2000,
+        "acceptedAt": "<var>",
+        "responseExpiresAt": "<var>",
+        "result": null,
+        "gate": null,
+        "plan": null,
+        "openQuestions": [],
+        "openQuestionCount": 0,
+        "notApplied": [],
+        "dataQuality": null,
+        "correlationId": "<var>"
+      }
+    },
+    {
+      "name": "turn_blocked_infeasible",
+      "request": {
+        "operation": "turn",
+        "contractVersion": "semantic-1.2",
+        "sessionId": "<var>",
+        "requestId": "<var>",
+        "expectedRevision": 0,
+        "message": "Vai a Milano",
+        "client": {
+          "platform": "web",
+          "appVersion": "lab"
+        }
+      },
+      "http": 200,
+      "response": {
+        "gate": "blocked",
+        "plan": null,
+        "result": {
+          "status": "updated",
+          "applied": [
+            {
+              "op": "add_locality",
+              "flag": null,
+              "text": null,
+              "dates": null,
+              "field": null,
+              "refId": null,
+              "number": null,
+              "consent": null,
+              "mention": null,
+              "ownOnly": null,
+              "decision": null,
+              "evidence": "Milano",
+              "locality": "Milano",
+              "provincia": null,
+              "categories": null,
+              "proposedDate": null,
+              "allCategories": null,
+              "minDaysSinceOrder": null,
+              "minDaysSinceVisit": null
+            }
+          ],
+          "changed": [
+            "area"
+          ],
+          "message": "Criteri aggiornati: area.",
+          "notices": [],
+          "criteria": {
+            "area": {
+              "provincia": null,
+              "localities": [
+                {
+                  "name": "Milano",
+                  "provincia": "MI"
+                }
+              ],
+              "allowNearby": false
+            },
+            "dates": [],
+            "stops": {
+              "excluded": [],
+              "required": []
+            },
+            "schema": 1,
+            "endTime": null,
+            "lodging": null,
+            "maxDays": null,
+            "project": null,
+            "revenue": null,
+            "consents": [],
+            "coverage": "selection",
+            "segments": [],
+            "followUps": [],
+            "startTime": null,
+            "followUpsMode": "consider",
+            "overflowPolicy": null,
+            "rescheduleProposals": []
+          },
+          "question": {
+            "id": "<var>",
+            "kind": "invalid_value",
+            "text": "Nessun piano possibile: MOCKED nessun cliente. Indica altre località o un'area diversa.",
+            "options": []
+          },
+          "rejected": [],
+          "revision": 1,
+          "errorCode": null,
+          "requestId": "<var>",
+          "sessionId": "<var>",
+          "diagnostics": {
+            "ms": "<var>",
+            "model": "MOCKED-llm",
+            "llmCalls": 1,
+            "interpreter": "llm"
+          },
+          "contractVersion": "semantic-1.2"
+        },
+        "outcome": "committed",
+        "errorCode": null,
+        "operation": "turn",
+        "requestId": "<var>",
+        "sessionId": "<var>",
+        "acceptedAt": "<var>",
+        "nextAction": "none",
+        "notApplied": [
+          {
+            "reason": "MOCKED nessun cliente",
+            "criterion": "area"
+          }
+        ],
+        "dataQuality": null,
+        "retryAfterMs": null,
+        "engineVersion": "gptour-semantic-runtime/u2-c",
+        "openQuestions": [
+          {
+            "id": "<var>",
+            "kind": "invalid_value",
+            "text": "Nessun piano possibile: MOCKED nessun cliente. Indica altre località o un'area diversa.",
+            "options": []
+          }
+        ],
+        "contractVersion": "semantic-1.2",
+        "sessionRevision": 1,
+        "openQuestionCount": 1,
+        "responseExpiresAt": "<var>",
+        "retryableSameRequest": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,674 @@
+{
+ "generated_at_utc": "2026-10-13T12:18:31Z",
+ "checks": 111,
+ "pass": 111,
+ "fail": 0,
+ "results": [
+  {
+   "section": "S1-struttura",
+   "label": "gptour_orchestrator_sessions: colonne Fase 4B/6 esatte",
+   "status": "PASS",
+   "detail": "session_id,owner_uid,agent_id,revision,state,created_at,updated_at"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "gptour_orchestrator_plans: colonne Fase 4B/6 esatte",
+   "status": "PASS",
+   "detail": "plan_id,session_id,owner_uid,revision,plan,created_at"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "gptour_orchestrator_requests: colonne Fase 4B/6 esatte",
+   "status": "PASS",
+   "detail": "session_id,request_id,owner_uid,response,created_at"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "gptour_orchestrator_user_access: colonne Fase 4B/6 esatte",
+   "status": "PASS",
+   "detail": "user_id,enabled,note,updated_at,updated_by"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "gptour_orchestrator_access_audit: colonne Fase 4B/6 esatte",
+   "status": "PASS",
+   "detail": "id,user_id,enabled,previous_enabled,action,reason,changed_by,changed_at"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "RLS abilitata su tutte le 5 tabelle gptour_orchestrator_*",
+   "status": "PASS",
+   "detail": "gptour_orchestrator_access_audit=true,gptour_orchestrator_plans=true,gptour_orchestrator_requests=true,gptour_orchestrator_sessions=true,gptour_orchestrator_user_access=true"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "privilegi authenticated minimi Fase 4B (nessun DELETE), nessuno su Fase 6",
+   "status": "PASS",
+   "detail": "gptour_orchestrator_plans:INSERT/SELECT gptour_orchestrator_requests:INSERT/SELECT/UPDATE gptour_orchestrator_sessions:INSERT/SELECT/UPDATE"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "anon senza privilegi su tabelle gptour_*",
+   "status": "PASS",
+   "detail": "0"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "RPC Fase 6 + catalog scope + save_tours_batch presenti",
+   "status": "PASS",
+   "detail": "ai_tour_catalog_area,ai_tour_free_tabaccherie,ai_tour_registry_availability,ai_tour_scope_candidates,gptour_orchestrator_access_list,gptour_orchestrator_bulk_access,gptour_orchestrator_is_active_admin"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "schema aitour_private: viste registry_cards/new_points e geocoder_gate",
+   "status": "PASS",
+   "detail": "geocoder_gate:r,new_points:v,registry_cards:v"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "authenticated senza USAGE su aitour_private (solo SECURITY DEFINER)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S1-struttura",
+   "label": "SECURITY DEFINER del perimetro GPTour tutte con search_path fissato",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S1-struttura",
+   "label": "EXECUTE: authenticated s\u00ec, anon no",
+   "status": "PASS",
+   "detail": "ai_tour_catalog_area:false/true,ai_tour_scope_candidates:false/true,gptour_orchestrator_my_access:false/true,gptour_orchestrator_set_access:false/true,save_gptour_scoped_batch:false/true"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "namespace gptour_semantic_*: libero (0/0, prima di U2-b) oppure esattamente l\u2019inventario della migration U2-b (5 tabelle / 22 funzioni)",
+   "status": "PASS",
+   "detail": "5/22"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "ruoli PostgREST: nessun superuser; solo service_role bypassa RLS (come hosted)",
+   "status": "PASS",
+   "detail": "anon:false/false,authenticated:false/false,authenticator:false/false,service_role:false/true"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "policy reali (snapshot 2026-03-24 + migrazioni) presenti su tutte le tabelle CRM del perimetro",
+   "status": "PASS",
+   "detail": "agent_zones=5,ai_tour_settings=1,appointments=16,customers=22,orders=23,profiles=12,tabaccherie=8"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "FK Fase 6 user_access.user_id -> auth.users(id) ricostruita",
+   "status": "PASS",
+   "detail": "1"
+  },
+  {
+   "section": "S1-struttura",
+   "label": "trigger reali attivi sulle tabelle CRM del perimetro (29)",
+   "status": "PASS",
+   "detail": "29"
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "owner A inserisce sessione",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "owner A inserisce piano",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "upsert richiesta (1\u00aa)",
+   "status": "PASS",
+   "detail": "1"
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "upsert richiesta (2\u00aa, policy UPDATE)",
+   "status": "PASS",
+   "detail": "2"
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "B non vede sessioni di A (set vuoto)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "B non vede piani di A",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "A vede esattamente {s1}",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "update di B su sessione altrui: 0 righe, revisione invariata",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "B non inserisce sessione a nome di A (with check)",
+   "status": "PASS",
+   "detail": "new row violates row-level security policy for table \"gptour_orchestrator_sessions\""
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "piano su sessione altrui respinto",
+   "status": "PASS",
+   "detail": "new row violates row-level security policy for table \"gptour_orchestrator_plans\""
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "DELETE negato anche al proprietario",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_orchestrator_sessions"
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "UPDATE negato su plans (immutabili)",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_orchestrator_plans"
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "anon: privilegio negato (non solo RLS)",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_orchestrator_sessions"
+  },
+  {
+   "section": "S2-Fase4B-RLS",
+   "label": "LIMITE Fase 4B: agent_id diverso dal proprietario accettato dalla policy (nessun controllo autorizzativo SQL su agent_id)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "authenticated: nessun accesso diretto alla tabella abilitazioni",
+   "status": "PASS",
+   "detail": "permission denied for table gptour_orchestrator_user_access"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "agente attivo senza riga \u2192 disabled",
+   "status": "PASS",
+   "detail": "disabled"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "agente non pu\u00f2 abilitare s\u00e9 stesso",
+   "status": "PASS",
+   "detail": "solo amministratori attivi"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "admin attivo abilita A",
+   "status": "PASS",
+   "detail": "true"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "A \u2192 enabled",
+   "status": "PASS",
+   "detail": "enabled"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "ruolo customer \u2192 role_unsupported",
+   "status": "PASS",
+   "detail": "role_unsupported"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "profilo inattivo \u2192 inactive",
+   "status": "PASS",
+   "detail": "inactive"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "anon: EXECUTE negato su my_access",
+   "status": "PASS",
+   "detail": "permission denied for function gptour_orchestrator_my_access"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "elenco negato all\u2019agente",
+   "status": "PASS",
+   "detail": "solo amministratori attivi"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "elenco admin: 4 account (cliente portale escluso)",
+   "status": "PASS",
+   "detail": "4"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "admin revoca A",
+   "status": "PASS",
+   "detail": "false"
+  },
+  {
+   "section": "S3-Fase6-accessi",
+   "label": "OFF nega davvero \u2192 disabled",
+   "status": "PASS",
+   "detail": "disabled"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "ai_tour_catalog_area(A, Milano): registered 6, inside 5, otherAgent 1, eligible 10, territorio s\u00ec",
+   "status": "PASS",
+   "detail": "6/5/1/10/true"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "insieme ESATTO delle chiavi: tab 1-4 + cust 2-7 (esclusi: 5 di B, 6 chiusa, 7 senza gps, 8 Monza; cust 1 via registro, 8 disabilitato, 9/10 fuori territorio)",
+   "status": "PASS",
+   "detail": "[]"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "new_point esattamente i registri liberi 1,2,3 (stato NULL trattato come non visitato)",
+   "status": "PASS",
+   "detail": "{'33333333-0000-4000-8000-000000000002', '33333333-0000-4000-8000-000000000001', '33333333-0000-4000-8000-000000000003'}"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "A chiede il catalogo di B \u2192 42501",
+   "status": "PASS",
+   "detail": "Agente non autorizzato"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "ruolo customer \u2192 Agente non autorizzato (42501)",
+   "status": "PASS",
+   "detail": "Agente non autorizzato"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "profilo inattivo \u2192 negato",
+   "status": "PASS",
+   "detail": "Accesso non autorizzato"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "anon \u2192 EXECUTE negato",
+   "status": "PASS",
+   "detail": "permission denied for function ai_tour_catalog_area"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "admin pu\u00f2 interrogare il catalogo di A (stesso esito)",
+   "status": "PASS",
+   "detail": "10"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "B su Monza: 1 registro + 3 clienti = 4 eligible",
+   "status": "PASS",
+   "detail": "1/4"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "ai_tour_scope_candidates: allowed {ok_tab1, ok_linked, ok_cust2}; esclusi otherAgent2 disabled2 coordinates1 outsideTerritory1 missing1 identity1",
+   "status": "PASS",
+   "detail": "[\"ok_tab1\", \"ok_linked\", \"ok_cust2\"]||{\"missing\": 1, \"disabled\": 2, \"identity\": 1, \"otherAgent\": 2, \"coordinates\": 1, \"outsideTerritory\": 1}"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "p_lock=true: candidati senza planned_lat/lng tutti esclusi (allowedKeys vuoto)",
+   "status": "PASS",
+   "detail": "[]"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "save_gptour_scoped_batch con punto di B \u2192 42501, nessun salvataggio",
+   "status": "PASS",
+   "detail": "Il piano contiene punti fuori territorio o appartenenti ad altri agenti: ricalcola prima di salvare"
+  },
+  {
+   "section": "S4-catalog-scope",
+   "label": "B tenta di salvare un piano per A \u2192 negato (authorized_agent)",
+   "status": "PASS",
+   "detail": "Agente non autorizzato"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "customers: A vede esattamente i propri 10 (inclusi disabilitato/fuori zona: filtro applicativo, non RLS)",
+   "status": "PASS",
+   "detail": "[]"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "customers: B vede esattamente i propri 3",
+   "status": "PASS",
+   "detail": "{'22222222-0000-4000-8000-000000000003', '22222222-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000002'}"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "customers: anon \u2192 nessuna riga (privilegio hosted presente, RLS senza policy anon)",
+   "status": "PASS",
+   "detail": "set()"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "customers: admin vede tutti i 13",
+   "status": "PASS",
+   "detail": "13"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "tabaccherie: registro leggibile per intero dagli agenti (policy reale select authenticated)",
+   "status": "PASS",
+   "detail": "8"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "agent_zones: A vede solo le proprie 2 zone",
+   "status": "PASS",
+   "detail": "{'aa000000-0000-4000-8000-000000000002', 'aa000000-0000-4000-8000-000000000001'}"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "ai_tour_settings: A vede solo le proprie impostazioni",
+   "status": "PASS",
+   "detail": "{'a0000000-0000-4000-8000-00000000000a'}"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "appointments: A vede solo i propri 2",
+   "status": "PASS",
+   "detail": "{'55555555-0000-4000-8000-000000000001', '55555555-0000-4000-8000-000000000002'}"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "orders: A vede solo i propri 3",
+   "status": "PASS",
+   "detail": "{'44444444-0000-4000-8000-000000000003', '44444444-0000-4000-8000-000000000002', '44444444-0000-4000-8000-000000000001'}"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "profiles: A legge almeno il proprio profilo (visibili 1)",
+   "status": "PASS",
+   "detail": "1"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "A non modifica un cliente di B (0 righe)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "cliente di B invariato",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "A non elimina un cliente di B",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "A non si appropria della zona di B (UPDATE 0 righe)",
+   "status": "PASS",
+   "detail": ""
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "A non crea tour a nome di B (policy ai_tours_own)",
+   "status": "PASS",
+   "detail": "new row violates row-level security policy for table \"ai_tours\""
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "A crea un tour proprio (bozza tecnica locale) \u2192 consentito",
+   "status": "PASS",
+   "detail": "cb4836a9-dc92-4f2f-943f-a5506a6675c3"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "B non vede i tour di A",
+   "status": "PASS",
+   "detail": "0"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "profiles: l\u2019agente legge SOLO il proprio profilo (policy admin basate su user_metadata del JWT, non su profiles.role)",
+   "status": "PASS",
+   "detail": "1"
+  },
+  {
+   "section": "S5-CRM-RLS-reali",
+   "label": "A non pu\u00f2 auto-promuoversi admin (trigger reale prevent_profile_privilege_escalation)",
+   "status": "PASS",
+   "detail": "Solo un admin puo modificare i campi di autorizzazione del profilo"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "GET sessioni come A \u2192 {s1,s3}",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "GET sessioni come B \u2192 []",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "GET sessioni anon \u2192 negato",
+   "status": "PASS",
+   "detail": "401"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "POST sessione a nome altrui \u2192 403",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "DELETE via HTTP \u2192 403",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "RPC my_access come A \u2192 disabled",
+   "status": "PASS",
+   "detail": "200 disabled"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "RPC my_access anon \u2192 negato",
+   "status": "PASS",
+   "detail": "401"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "RPC catalog_area via HTTP come A \u2192 eligible 10",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "RPC catalog_area di B come A \u2192 403 (42501)",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "GET customers come A \u2192 set esatto",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "GET customers come ruolo customer \u2192 [] (nessuna fuga)",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "JWT scaduto \u2192 401",
+   "status": "PASS",
+   "detail": "401"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "JWT firma errata \u2192 401",
+   "status": "PASS",
+   "detail": "401"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "JWT audience errata \u2192 401",
+   "status": "PASS",
+   "detail": "401"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "escalation di ruolo nel JWT respinta",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "nessuna RPC U2-b esposta (404)",
+   "status": "PASS",
+   "detail": "404"
+  },
+  {
+   "section": "S6-PostgREST-HTTP",
+   "label": "tabella abilitazioni Fase 6 esposta ma negata via HTTP (403, 42501: nessun privilegio diretto)",
+   "status": "PASS",
+   "detail": "403 {'code': '42501', 'details': None, 'hint': None, 'message': 'permission denied for table gptour_orchestrator_user_access'}"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "POLICY RICOSTRUITA: agente con claim user_metadata.role=admin legge TUTTI i profili (5) tramite \u00abAdmins can view all profiles\u00bb",
+   "status": "PASS",
+   "detail": "5"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "controllo: stesso agente senza il claim legge solo il proprio profilo (1)",
+   "status": "PASS",
+   "detail": "1"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "POLICY RICOSTRUITA: con il claim l\u2019UPDATE di un campo non autorizzativo su un profilo altrui passa (\u00abAdmins can update all profiles\u00bb; rollback, nessuna modifica)",
+   "status": "PASS",
+   "detail": "b0000000-0000-4000-8000-00000000000b"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "TRIGGER REALE: anche con il claim l\u2019autopromozione \u00e8 bloccata (has_any_role legge profiles.role)",
+   "status": "PASS",
+   "detail": "Solo un admin puo modificare i campi di autorizzazione del profilo"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "TRIGGER REALE: con il claim il campo role di un profilo altrui resta protetto (role/supervisor_id/branch_id/custom_permissions)",
+   "status": "PASS",
+   "detail": "Solo un admin puo modificare i campi di autorizzazione del profilo"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "OSSERVAZIONE POLICY RICOSTRUITA: is_active NON \u00e8 tra i campi protetti dal trigger; con il claim l\u2019UPDATE su profilo altrui passa (rollback). Da verificare in L3, non dedotto per la produzione",
+   "status": "PASS",
+   "detail": "b0000000-0000-4000-8000-00000000000b"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "customers: il claim NON amplia la visibilit\u00e0 (customers_admin_full_access usa profiles.role) \u2192 ancora 10",
+   "status": "PASS",
+   "detail": "10"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "RPC Fase 6 my_access: il claim \u00e8 ignorato \u2192 disabled (profiles.role verificato nel DB)",
+   "status": "PASS",
+   "detail": "disabled"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "RPC Fase 6 access_list: con il claim resta negata (gptour_orchestrator_is_active_admin su profiles)",
+   "status": "PASS",
+   "detail": "solo amministratori attivi"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "RPC Fase 6 set_access: con il claim l\u2019agente non si autoabilita",
+   "status": "PASS",
+   "detail": "solo amministratori attivi"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "RPC catalog scope per l\u2019agente B: con il claim resta 42501 (aitour_private.authorized_agent su profiles)",
+   "status": "PASS",
+   "detail": "Agente non autorizzato"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "RPC catalog scope per s\u00e9 stesso: esito identico (10), il claim non cambia il perimetro",
+   "status": "PASS",
+   "detail": "10"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "ai_tours: il claim non apre i tour di B (ai_tours_own usa has_any_role su profiles)",
+   "status": "PASS",
+   "detail": "0"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "HTTP POLICY RICOSTRUITA: GET /profiles con JWT user_metadata.role=admin \u2192 5 righe",
+   "status": "PASS",
+   "detail": "200 5"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "HTTP controllo: GET /profiles senza claim \u2192 1 riga",
+   "status": "PASS",
+   "detail": "200"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "HTTP RPC my_access con il claim \u2192 disabled",
+   "status": "PASS",
+   "detail": "200 disabled"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "HTTP RPC catalog_area di B con il claim \u2192 403",
+   "status": "PASS",
+   "detail": "403"
+  },
+  {
+   "section": "S7-claim-user_metadata-admin",
+   "label": "HTTP GET /customers con il claim \u2192 ancora 10",
+   "status": "PASS",
+   "detail": "200"
+  }
+ ]
+}

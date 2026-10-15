@@ -1,0 +1,73 @@
+{
+  "summary": "Iteration 85 frontend-focused verification completed: durable map recenter harness was rewritten, new web/native location-port and viewport regression unit tests were added, and full frontend unit/tsc/lint/prebuild checks were executed. Unit + static checks pass; browser recenter proof still fails at rapid-tap stage due recenter button remaining disabled in harness run.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Map recenter action lifecycle",
+        "issue": "During durable browser flow, recenter button remained disabled when starting rapid-tap guard stage, causing wait timeout and incomplete end-to-end proof.",
+        "testID": "map-recenter-button",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Map tab recenter stale->fresh->error->retry browser proof (iter84 durable harness)",
+        "issue": "Run aborts on timeout before completion of rapid-tap/callback-archive assertions; JSON evidence captured with traceback.",
+        "affected_testIDs": [
+          "tab-map",
+          "map-screen",
+          "map-recenter-button",
+          "map-location-notice"
+        ]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/e2e/iter84_map_recenter.py",
+    "/app/tests/e2e/run_iter84_map_recenter.py",
+    "/app/frontend/tests/map_location_port_web.test.ts",
+    "/app/frontend/tests/map_platform_ports_guard.test.ts",
+    "/app/frontend/tests/map_viewport.test.ts",
+    "/app/frontend/tests/map_fresh_location.test.ts",
+    "/app/frontend/tests/use_map_location.test.ts",
+    "/app/test_reports/artifacts_iter85/iter85_preview_load_390.jpeg",
+    "/app/test_reports/artifacts_iter85/iter85_browser_result.json",
+    "/app/test_reports/artifacts_iter85/iter85_map_recenter_error.jpeg",
+    "/root/.emergent/automation_output/20261015_091401/console_20261015_091401.log"
+  ],
+  "action_items": [
+    "Main agent should inspect map recenter state transition around locating/disabled toggle during the rapid-tap stage in browser preview.",
+    "Re-run iter84 durable harness after recenter-button state issue is fixed to complete archived-callback and retry-C assertions.",
+    "Optional hardening: expose explicit UI readiness signal for recenter button (testID state marker) to remove timing ambiguity in web preview automation."
+  ],
+  "critical_code_review_comments": [
+    "Web adapter regression guards now verify watchPosition options, full coordinate forwarding, error forwarding, and idempotent clearWatch behavior.",
+    "Native platform port guard confirms location-port.native.ts remains direct Expo Location identity export.",
+    "Viewport tests now enforce invalid/older update rejection and same/newer version acceptance."
+  ],
+  "updated_files": [
+    "/app/tests/e2e/iter84_map_recenter.py",
+    "/app/tests/e2e/run_iter84_map_recenter.py",
+    "/app/frontend/tests/map_location_port_web.test.ts",
+    "/app/frontend/tests/map_platform_ports_guard.test.ts",
+    "/app/frontend/tests/map_viewport.test.ts",
+    "/app/frontend/tests/map_fresh_location.test.ts",
+    "/app/frontend/tests/use_map_location.test.ts",
+    "/app/test_reports/iteration_85.json"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "~88% (all unit/static checks pass; durable browser recenter proof incomplete due timeout)"
+  },
+  "seed_data_creation": "No seed data created.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Do not iterate selectors further unless recenter disabled-state root cause is addressed; three browser attempts already hit same timeout point. Use /app/test_reports/artifacts_iter85/iter85_browser_result.json traceback to resume from the rapid-tap stage.",
+  "rca_of_issue": "Browser proof fails at the rapid-tap phase while waiting for recenter button enabled state, despite earlier stale/fresh transitions and map updates succeeding. This suggests a UI state machine mismatch (locating disabled state not clearing deterministically in preview timing) rather than a selector failure. Repro: run iter84 harness, reach map center at point B, then attempt immediate next recenter cycle; button remains disabled and wait times out."
+}

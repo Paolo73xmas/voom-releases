@@ -1,3 +1,19 @@
+# ACTIVE: Tab Mappe recenter Android (not GPTour/Orchestrator/U2-d).
+# FINAL MAIN VERIFIED 20261015_092629: 550/550 tests59files, TSC/fullESLint0errors/prebuild PASS.
+# Browser realLeaflet, syntheticGPS/Auth/CRM: A->B fresh, stale/late ignored, rapidtap single-flight,
+# error->notice keepsB, retryC, filters/zoom stable, 320nooverflow. 5watch/5clear/0listeners/1map/0errors/0unknownbusiness.
+# Fixed realExpoWEBremoveSubscription incompatibility through public browserlocationport; nativeSDK intact.
+# NativeHTMLprotocol unit/VM tested, Android+iOS JSexports selectnativeport PASS, NOphysicaldevice/binaryproof.
+# Snapshot434filesSHA2565aeb0d7129b703984b204d235911017be00eda6574ab31a103acf425f6e7ee07 re-extracted/TSC/550tests/lint/prebuildPASS.
+# FINAL REPORT: test_reports/MAP_RECENTER_FIX.md. Reports84/85 partial are superseded by main proof.
+# U2-d cancelled; app already installed on devices NOTupdated; no livebusiness/OTA/build/publish.
+# User: apparent refresh then snap-back to old position; iPhone unknown.
+# Main fix: fresh one-shot foreground GPS, immutable map bootstrap/source, atomic marker/center,
+# viewport versioning and native-ready synchronization, stale/tardy result guards, clear error/busy UX.
+# Targeted hook/GPS/Leaflet HTML bridge tests and isolated preview UI completed; final total 550 PASS.
+# Simulated auth/GPS/business IO only; no credentials/live APIs/native build.
+# Files: app/(tabs)/map.tsx, components/map/{leafletHtml.ts,styles.ts}, hooks/useMapLocation.ts,
+# lib/map/{fresh-location.ts,viewport.ts}. U2-d cancelled: do not execute/edit codex_u2d.
 #====================================================================================================
 # START - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================

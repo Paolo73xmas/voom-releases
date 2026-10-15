@@ -1,5 +1,5 @@
 export 
-const LEAFLET_HTML = (lat: number, lng: number) => `
+const LEAFLET_HTML = (lat: number, lng: number, hasFix = true) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -64,6 +64,8 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
   <script>
     var map = L.map('map', {
       zoomControl: false,
+      zoomAnimation: false,
+      markerZoomAnimation: false,
       attributionControl: false
     }).setView([${lat}, ${lng}], 13);
 
@@ -76,6 +78,8 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
 
     var markers = [];
     var userMarker = null;
+    var centerVersion = -1;
+    var locationTimestamp = 0;
     var clusterGroup = L.markerClusterGroup({
       maxClusterRadius: 50,
       spiderfyOnMaxZoom: true,
@@ -105,7 +109,7 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
 
     // zIndexOffset negativo: marker agente SOTTO i marker cliente
     // così quando coincidono il cliente resta cliccabile
-    userMarker = L.marker([${lat}, ${lng}], { icon: userIcon, zIndexOffset: -1000, interactive: false }).addTo(map);
+    if (${hasFix}) userMarker = L.marker([${lat}, ${lng}], { icon: userIcon, zIndexOffset: -1000, interactive: false }).addTo(map);
 
     // Puntini neri: tutte le tabaccherie del registro nell'area visualizzata
     // (layer canvas non interattivo, sta sotto i marker colorati).
@@ -165,11 +169,14 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
     }
 
     map.on('moveend', function() {
+      var center = map.getCenter();
+      sendMessage({ type: 'viewportChanged', lat: center.lat, lng: center.lng, zoom: map.getZoom(), version: Math.max(0, centerVersion) });
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(function() {
         var b = map.getBounds();
         sendMessage({
           type: 'boundsChanged',
+          version: Math.max(0, centerVersion),
           bounds: {
             north: b.getNorth(),
             south: b.getSouth(),
@@ -205,14 +212,22 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
       });
     }
 
-    function setCenter(lat, lng, zoom) {
-      map.setView([lat, lng], zoom || 16);
+    function validPoint(lat, lng) {
+      return Number.isFinite(lat) && Math.abs(lat) <= 90 && Number.isFinite(lng) && Math.abs(lng) <= 180;
+    }
+    function setCenter(lat, lng, zoom, version) {
+      if (!validPoint(lat, lng) || !Number.isFinite(zoom) || zoom < 0 || zoom > 22 || !Number.isSafeInteger(version) || version < 0 || version <= centerVersion) return;
+      centerVersion = version;
+      map.stop();
+      map.setView([lat, lng], zoom, { animate: false });
     }
 
-    function updateUserLocation(lat, lng) {
-      if (userMarker) {
-        userMarker.setLatLng([lat, lng]);
-      }
+    function updateUserLocation(lat, lng, timestamp) {
+      if (!validPoint(lat, lng) || !Number.isFinite(timestamp) || timestamp <= 0 || timestamp < locationTimestamp) return false;
+      locationTimestamp = timestamp;
+      if (userMarker) userMarker.setLatLng([lat, lng]);
+      else userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: -1000, interactive: false }).addTo(map);
+      return true;
     }
 
     // Fire initial bounds
@@ -221,6 +236,7 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
       sendMessage({ type: 'mapReady' });
       sendMessage({
         type: 'boundsChanged',
+        version: Math.max(0, centerVersion),
         bounds: {
           north: b.getNorth(),
           south: b.getSouth(),
@@ -230,27 +246,29 @@ const LEAFLET_HTML = (lat: number, lng: number) => `
       });
     }, 500);
 
-    // Listen for messages from RN
-    document.addEventListener('message', function(e) {
+    // Android may dispatch on document and bubble to window; iOS dispatches on window.
+    // Process each event once and reject replayed/out-of-order camera commands.
+    var handledEvents = new WeakSet();
+    function onNativeMessage(e) {
+      if (handledEvents.has(e)) return;
+      handledEvents.add(e);
       try {
         var msg = JSON.parse(e.data);
         if (msg.type === 'updateMarkers') updateMarkers(msg.data);
         if (msg.type === 'updateDots') updateDots(msg.data);
         if (msg.type === 'setDotsVisible') setDotsVisible(msg.visible);
-        if (msg.type === 'setCenter') setCenter(msg.lat, msg.lng, msg.zoom);
-        if (msg.type === 'updateUserLocation') updateUserLocation(msg.lat, msg.lng);
+        if (msg.type === 'setCenter') setCenter(msg.lat, msg.lng, msg.zoom, msg.version);
+        if (msg.type === 'updateUserLocation') updateUserLocation(msg.lat, msg.lng, msg.timestamp);
+        if (msg.type === 'recenterUser' && Number.isSafeInteger(msg.version) && msg.version > centerVersion
+          && updateUserLocation(msg.lat, msg.lng, msg.timestamp)) setCenter(msg.lat, msg.lng, msg.zoom, msg.version);
+        if (msg.type === 'syncPosition') {
+          if (msg.fix) updateUserLocation(msg.fix.lat, msg.fix.lng, msg.fix.timestamp);
+          if (msg.viewport) setCenter(msg.viewport.lat, msg.viewport.lng, msg.viewport.zoom, msg.viewport.version);
+        }
       } catch(err) {}
-    });
-    window.addEventListener('message', function(e) {
-      try {
-        var msg = JSON.parse(e.data);
-        if (msg.type === 'updateMarkers') updateMarkers(msg.data);
-        if (msg.type === 'updateDots') updateDots(msg.data);
-        if (msg.type === 'setDotsVisible') setDotsVisible(msg.visible);
-        if (msg.type === 'setCenter') setCenter(msg.lat, msg.lng, msg.zoom);
-        if (msg.type === 'updateUserLocation') updateUserLocation(msg.lat, msg.lng);
-      } catch(err) {}
-    });
+    }
+    document.addEventListener('message', onNativeMessage);
+    window.addEventListener('message', onNativeMessage);
   </script>
 </body>
 </html>

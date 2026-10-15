@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
   Platform,
   Linking,
 } from 'react-native';
-import * as Location from 'expo-location';
+import { useMapLocation } from '../../hooks/useMapLocation';
+import { acceptViewport, type MapViewport } from '../../lib/map/viewport';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -47,8 +48,14 @@ export default function MapScreen() {
   const userRole = profile?.role || 'agent';
   const webViewRef = useRef<any>(null);
 
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const location = useMapLocation();
+  const cancelLocation = location.cancel;
+  const userLocation = location.initialView; // Immutable bootstrap, never the recenter source.
+  const loading = !userLocation;
+  const latestFixRef = useRef(location.fix); latestFixRef.current = location.fix;
+  const viewportRef = useRef<MapViewport | null>(null), centerVersionRef = useRef(0);
+  const nativeReadyRef = useRef(false);
+  const nativeSource = useMemo(() => userLocation ? { html: LEAFLET_HTML(userLocation.lat, userLocation.lng, userLocation.hasFix) } : undefined, [userLocation]);
   const [loadingPoints, setLoadingPoints] = useState(false);
   const [tabaccherie, setTabaccherie] = useState<Tabaccheria[]>([]);
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -107,29 +114,6 @@ export default function MapScreen() {
     filterModeRef.current = filterMode;
   }, [filterMode]);
 
-  // Get user location
-  useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          // Fallback: Roma
-          setUserLocation({ lat: 41.9028, lng: 12.4964 });
-          setLoading(false);
-          return;
-        }
-        const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-      } catch {
-        setUserLocation({ lat: 41.9028, lng: 12.4964 });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
   // Load orphan map independently (always, regardless of bounds/filter)
   useEffect(() => {
     if (!user) return;
@@ -163,6 +147,7 @@ export default function MapScreen() {
   useEffect(() => {
     if (Platform.OS !== 'web' || !userLocation || loading) return;
     if (leafletMapRef.current) return; // Already initialized
+    let disposed = false;
 
     // Load Leaflet CSS
     if (!document.getElementById('leaflet-css')) {
@@ -197,6 +182,7 @@ export default function MapScreen() {
 
     // Load Leaflet JS then init map
     const initMap = () => {
+      if (disposed || leafletMapRef.current) return;
       const L = (window as any).L;
       // Find or create the map container by ID
       let container = document.getElementById('leaflet-map-container');
@@ -205,8 +191,10 @@ export default function MapScreen() {
         return;
       }
 
-      const map = L.map(container, { zoomControl: false, attributionControl: false })
-        .setView([userLocation.lat, userLocation.lng], 13);
+      const center = viewportRef.current ?? { ...userLocation, zoom: 13, version: 0 };
+      // A previous zoom transition must not replace a newer explicit GPS center.
+      const map = L.map(container, { zoomControl: false, attributionControl: false, zoomAnimation: false, markerZoomAnimation: false })
+        .setView([center.lat, center.lng], center.zoom);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
       L.control.zoom({ position: 'topright' }).addTo(map);
@@ -219,7 +207,8 @@ export default function MapScreen() {
       });
       // zIndexOffset negativo: il marker agente sta SOTTO i marker cliente
       // così quando coincidono, il cliente resta cliccabile
-      leafletUserMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon, zIndexOffset: -1000, interactive: false }).addTo(map);
+      const fix = latestFixRef.current;
+      if (fix) leafletUserMarkerRef.current = L.marker([fix.lat, fix.lng], { icon: userIcon, zIndexOffset: -1000, interactive: false }).addTo(map);
 
       leafletMapRef.current = map;
       leafletReadyRef.current = true;
@@ -228,8 +217,11 @@ export default function MapScreen() {
       // Debounced bounds change
       let debounce: any = null;
       map.on('moveend', () => {
+        const center = map.getCenter();
+        viewportRef.current = { lat: center.lat, lng: center.lng, zoom: map.getZoom(), version: centerVersionRef.current };
         if (debounce) clearTimeout(debounce);
         debounce = setTimeout(() => {
+          if (disposed) return;
           const b = map.getBounds();
           const bounds = { north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() };
           currentBoundsRef.current = bounds;
@@ -239,6 +231,7 @@ export default function MapScreen() {
 
       // Initial load with slight delay to ensure everything is ready
       setTimeout(() => {
+        if (disposed) return;
         const b = map.getBounds();
         const bounds = { north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() };
         currentBoundsRef.current = bounds;
@@ -246,7 +239,7 @@ export default function MapScreen() {
       }, 500);
 
       // Force map to recalculate size
-      setTimeout(() => map.invalidateSize(), 200);
+      setTimeout(() => { if (!disposed) map.invalidateSize(); }, 200);
     };
 
     if ((window as any).L && (window as any).L.markerClusterGroup) {
@@ -271,11 +264,15 @@ export default function MapScreen() {
     }
 
     return () => {
+      disposed = true;
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
         leafletMapRef.current = null;
         leafletReadyRef.current = false;
         leafletDotsRef.current = null;
+        leafletClusterRef.current = null;
+        leafletUserMarkerRef.current = null;
+        leafletMarkersRef.current = [];
       }
     };
   }, [userLocation, loading]);
@@ -415,12 +412,24 @@ export default function MapScreen() {
 
   // Helper to send messages to map
   const sendToMap = useCallback((msg: any) => {
+    if (msg.type === 'setCenter' || msg.type === 'recenterUser') {
+      const version = ++centerVersionRef.current;
+      viewportRef.current = { lat: msg.lat, lng: msg.lng, zoom: msg.zoom ?? 13, version };
+      msg = { ...msg, version };
+    }
     if (Platform.OS === 'web') {
-      // Direct Leaflet access on web - handled by useEffect on tabaccherie change
-      if (msg.type === 'setCenter' && leafletMapRef.current) {
-        leafletMapRef.current.setView([msg.lat, msg.lng], msg.zoom || 16);
+      const map = leafletMapRef.current, L = (window as any).L;
+      if (msg.type === 'recenterUser' && map && L) {
+        if (!leafletUserMarkerRef.current) {
+          const icon = L.divIcon({ className: 'custom-marker', html: '<div style="background:#3b82f6;width:16px;height:16px;border-radius:50%;border:3px solid white;"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
+          leafletUserMarkerRef.current = L.marker([msg.lat, msg.lng], { icon, zIndexOffset: -1000, interactive: false }).addTo(map);
+        } else leafletUserMarkerRef.current.setLatLng([msg.lat, msg.lng]);
       }
-    } else {
+      if ((msg.type === 'setCenter' || msg.type === 'recenterUser') && map) {
+        map.stop();
+        map.setView([msg.lat, msg.lng], msg.zoom ?? 13, { animate: false });
+      }
+    } else if (nativeReadyRef.current) {
       const str = typeof msg === 'string' ? msg : JSON.stringify(msg);
       webViewRef.current?.postMessage(str);
     }
@@ -543,12 +552,20 @@ export default function MapScreen() {
     try {
       const msg = JSON.parse(event.nativeEvent.data);
 
-      if (msg.type === 'boundsChanged') {
+      if (msg.type === 'boundsChanged' && (!viewportRef.current || msg.version == null || msg.version >= viewportRef.current.version)) {
         currentBoundsRef.current = msg.bounds;
         loadByBounds(msg.bounds, filterModeRef.current);
       }
 
-      if (msg.type === 'mapReady') console.log('[Map] WebView pronta (script Leaflet ok)');
+      if (msg.type === 'viewportChanged') viewportRef.current = acceptViewport(viewportRef.current, msg);
+      if (msg.type === 'mapReady') {
+        nativeReadyRef.current = true;
+        // Restore current GPS/viewport after a genuine WebView reload, never its frozen bootstrap.
+        const fix = latestFixRef.current, viewport = viewportRef.current;
+        webViewRef.current?.postMessage(JSON.stringify({ type: 'syncPosition', fix, viewport }));
+        sendMarkersToWebView(tabaccherieRef.current);
+        sendToMap({ type: 'setDotsVisible', visible: dotsVisibleRef.current });
+      }
       if (msg.type === 'dotsRendered') console.log('[Map] WebView ha disegnato', msg.count, 'puntini registro');
       if (msg.type === 'jsError') console.warn('[Map] errore JS nella WebView:', msg.where, msg.message);
 
@@ -560,7 +577,7 @@ export default function MapScreen() {
         }
       }
     } catch {}
-  }, [loadByBounds, loadAll]);
+  }, [loadByBounds, sendMarkersToWebView, sendToMap]);
 
   // Actions
   const openNavigation = (lat: number, lng: number) => {
@@ -649,12 +666,14 @@ export default function MapScreen() {
 
   // ✅ MPVP: selezione LUOGO dalla barra di ricerca unificata → zoom sulla posizione
   const handleMpvpSelectPlace = useCallback((place: PlaceSuggestion) => {
+    cancelLocation();
     setShowSearch(false);
     sendToMap({ type: 'setCenter', lat: place.lat, lng: place.lon, zoom: 15 });
-  }, [sendToMap]);
+  }, [sendToMap, cancelLocation]);
 
   // ✅ MPVP: selezione CLIENTE → zoom sul punto vendita + apertura popup marker
   const handleMpvpSelectCustomer = useCallback(async (c: MpvpCustomerResult) => {
+    cancelLocation();
     setShowSearch(false);
     if (c.latitude == null || c.longitude == null) {
       Alert.alert('Posizione mancante', 'Questo punto vendita non ha coordinate GPS.');
@@ -674,23 +693,19 @@ export default function MapScreen() {
       setSelectedTab(full);
       setShowPopup(true);
     }
-  }, [sendToMap]);
+  }, [sendToMap, cancelLocation]);
 
   // Recenter on user
-  const recenterOnUser = () => {
-    if (userLocation) {
-      sendToMap({
-        type: 'setCenter',
-        lat: userLocation.lat,
-        lng: userLocation.lng,
-        zoom: 13,
-      });
-    }
+  const recenterOnUser = async () => {
+    const fresh = await location.refresh();
+    if (!fresh) return; // Never label/recenter a cached position as an instantaneous fix.
+    latestFixRef.current = fresh;
+    sendToMap({ type: 'recenterUser', ...fresh, zoom: 13 });
   };
 
   if (loading || !userLocation) {
     return (
-      <View style={styles.loadingContainer}>
+      <View testID="map-location-initial-loading" style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#10B981" />
         <Text style={styles.loadingText}>Ottenendo posizione GPS...</Text>
       </View>
@@ -703,17 +718,20 @@ export default function MapScreen() {
   const isOwnOrphan = selectedColor === 'purple_own' || selectedColor === 'yellow_own';
 
   return (
-    <View style={styles.container}>
+    <View testID="map-screen" style={styles.container}>
       {/* Map rendering: direct div for web, WebView for native */}
       {Platform.OS === 'web' ? (
         <div
           id="leaflet-map-container"
+          data-testid="map-web-surface"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 } as any}
         />
       ) : WebView ? (
         <WebView
           ref={webViewRef}
-          source={{ html: LEAFLET_HTML(userLocation.lat, userLocation.lng) }}
+          testID="map-native-surface"
+          source={nativeSource}
+          onLoadStart={() => { nativeReadyRef.current = false; }}
           style={styles.webview}
           onMessage={onWebViewMessage}
           javaScriptEnabled
@@ -792,11 +810,28 @@ export default function MapScreen() {
 
       {/* Recenter button */}
       <TouchableOpacity
+        testID="map-recenter-button"
+        accessibilityRole="button"
+        accessibilityLabel={location.locating ? 'Ricerca posizione attuale' : 'Centra sulla posizione attuale'}
+        accessibilityState={{ busy: location.locating, disabled: location.locating }}
+        disabled={location.locating}
         style={[styles.fabButton, { bottom: insets.bottom + 100, right: 12 }]}
         onPress={recenterOnUser}
       >
-        <Ionicons name="locate" size={22} color="#3B82F6" />
+        {location.locating ? <ActivityIndicator testID="map-recenter-loading" color={COLORS.primary} /> : <Ionicons name="locate" size={22} color="#3B82F6" />}
       </TouchableOpacity>
+
+      {location.issue && <View testID="map-location-notice" accessibilityRole="alert" style={styles.locationNotice}>
+        <Text testID="map-location-notice-text" style={styles.locationNoticeText}>{location.issue.message}</Text>
+        <View style={styles.locationNoticeActions}>
+          {location.issue.openSettings && <TouchableOpacity testID="map-location-settings" accessibilityRole="button" onPress={() => { void Linking.openSettings().catch(() => {}); }} style={styles.locationNoticeAction}>
+            <Text style={styles.locationNoticeText}>Apri impostazioni</Text>
+          </TouchableOpacity>}
+          <TouchableOpacity testID="map-location-notice-dismiss" accessibilityRole="button" accessibilityLabel="Chiudi avviso posizione" onPress={location.dismissIssue} style={styles.locationNoticeAction}>
+            <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      </View>}
 
       {/* Legend toggle */}
       <TouchableOpacity

@@ -99,6 +99,10 @@ export const styles = StyleSheet.create({
     color: '#FFF',
   },
   // FABs
+  locationNotice: { position: 'absolute', top: 138, left: 12, right: 12, backgroundColor: COLORS.surface, borderRadius: 12, padding: 12, zIndex: 1001, elevation: 5 },
+  locationNoticeText: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19 },
+  locationNoticeActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8 },
+  locationNoticeAction: { minHeight: 44, minWidth: 44, paddingHorizontal: 8, justifyContent: 'center', alignItems: 'center' },
   fabButton: {
     position: 'absolute',
     width: 44,

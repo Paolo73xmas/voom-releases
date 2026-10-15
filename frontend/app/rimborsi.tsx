@@ -12,9 +12,11 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef, memo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert,
-  TextInput, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform, Linking,
+   TextInput, ActivityIndicator, RefreshControl, Keyboard, Platform, Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardForm, KeyboardFormScrollView, KeyboardFormFooter } from '../components/forms/KeyboardForm';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -501,29 +503,29 @@ export default function RimborsiScreen() {
         />
 
         {/* FAB Create */}
-        <TouchableOpacity style={s.fab} onPress={() => setShowCreate(true)}>
+        <TouchableOpacity testID="reimbursement-create-open" accessibilityRole="button" accessibilityLabel="Nuova richiesta di rimborso" style={s.fab} onPress={() => setShowCreate(true)}>
           <Ionicons name="add" size={28} color="#FFF" />
         </TouchableOpacity>
 
         {/* Create Modal */}
         <Modal visible={showCreate} animationType="slide" transparent onRequestClose={() => setShowCreate(false)}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
             <View style={s.modalOverlay}>
-              <View style={s.modalContent}>
+              <ReimbursementForm>
                 <View style={s.modalHeader}>
                   <Text style={s.modalTitle}>Nuova Richiesta</Text>
-                  <TouchableOpacity onPress={() => { setShowCreate(false); resetForm(); }}>
+                  <TouchableOpacity testID="reimbursement-create-close" style={s.modalClose} onPress={() => { Keyboard.dismiss(); setShowCreate(false); resetForm(); }}>
                     <Ionicons name="close" size={24} color="#6B7280" />
                   </TouchableOpacity>
                 </View>
 
-                <ScrollView style={{ maxHeight: '80%' }} contentContainerStyle={{ paddingBottom: 20 }}>
+                <KeyboardFormScrollView testID="reimbursement-create-scroll" contentContainerStyle={{ paddingBottom: 20 }}>
                   {/* Categoria */}
                   <Text style={s.formLbl}>Categoria *</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
+                  <ScrollView horizontal keyboardShouldPersistTaps="handled" showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
                     {categorie.map(c => (
                       <TouchableOpacity
                         key={c.id}
+                        testID={`reimbursement-category-${c.id}`}
                         style={[s.catChip, formCategoria === c.id && s.catChipActive]}
                         onPress={() => setFormCategoria(c.id)}
                       >
@@ -535,6 +537,7 @@ export default function RimborsiScreen() {
                   {/* Importo */}
                   <Text style={s.formLbl}>Importo (€) *</Text>
                   <TextInput
+                    testID="reimbursement-amount"
                     style={s.input}
                     placeholder="0,00"
                     placeholderTextColor={COLORS.textLight}
@@ -546,6 +549,7 @@ export default function RimborsiScreen() {
                   {/* Descrizione */}
                   <Text style={s.formLbl}>Descrizione</Text>
                   <TextInput
+                    testID="reimbursement-description"
                     style={[s.input, { height: 80, textAlignVertical: 'top' }]}
                     placeholder="Dettagli della spesa..."
                     placeholderTextColor={COLORS.textLight}
@@ -601,9 +605,11 @@ export default function RimborsiScreen() {
                       </TouchableOpacity>
                     </View>
                   )}
-                </ScrollView>
+                </KeyboardFormScrollView>
 
+                <KeyboardFormFooter testID="reimbursement-footer" style={s.formFooter}>
                 <TouchableOpacity
+                  testID="reimbursement-submit"
                   style={[s.submitBtn, creating && s.submitBtnDisabled]}
                   onPress={submitCreate}
                   disabled={creating}
@@ -615,13 +621,18 @@ export default function RimborsiScreen() {
                     </>
                   )}
                 </TouchableOpacity>
-              </View>
+                </KeyboardFormFooter>
+              </ReimbursementForm>
             </View>
-          </KeyboardAvoidingView>
         </Modal>
       </View>
     </>
   );
+}
+
+function ReimbursementForm({ children }: React.PropsWithChildren) {
+  const insets = useSafeAreaInsets();
+  return <KeyboardForm testID="reimbursement-create-form" footerBottomInset={Math.max(insets.bottom, 20)} style={[s.modalContent, { paddingBottom: Math.max(insets.bottom, 20) }]}>{children}</KeyboardForm>;
 }
 
 const s = StyleSheet.create({
@@ -691,10 +702,12 @@ const s = StyleSheet.create({
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: {
-    backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%',
+    backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, height: '85%',
   },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  modalClose: { minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
+  formFooter: { backgroundColor: COLORS.surface },
   formLbl: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 6, marginTop: 8 },
   input: {
     backgroundColor: COLORS.bgAlt, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15,

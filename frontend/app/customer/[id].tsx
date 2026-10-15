@@ -11,10 +11,10 @@ import {
   RefreshControl,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
+  Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardForm, KeyboardFormScrollView, KeyboardFormFooter } from '../../components/forms/KeyboardForm';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchCustomerById } from '../../lib/api/customers';
@@ -598,15 +598,15 @@ function CustomerDetailScreen() {
 
       {/* Modale modifica dati (contatto / indirizzo / fiscali) */}
       <Modal visible={!!editSection} transparent animationType="slide" onRequestClose={() => setEditSection(null)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.editBackdrop}>
-          <View style={styles.editCard} testID="customer-edit-modal">
+        <View style={styles.editBackdrop}>
+          <CustomerEditForm>
             <View style={styles.editHeader}>
               <Text style={styles.editTitle}>{editSection ? EDIT_SECTIONS[editSection].title : ''}</Text>
-              <TouchableOpacity onPress={() => setEditSection(null)} hitSlop={10}>
+              <TouchableOpacity testID="customer-edit-close" onPress={() => { Keyboard.dismiss(); setEditSection(null); }} style={styles.editClose} hitSlop={10}>
                 <Ionicons name="close" size={22} color={COLORS.textMuted} />
               </TouchableOpacity>
             </View>
-            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 380 }}>
+            <KeyboardFormScrollView testID="customer-edit-scroll">
               {editSection && EDIT_SECTIONS[editSection].fields.map((f) => (
                 <View key={f.key} style={styles.editField}>
                   <Text style={styles.editLabel}>{f.label}</Text>
@@ -623,20 +623,25 @@ function CustomerDetailScreen() {
                   />
                 </View>
               ))}
-            </ScrollView>
-            <View style={styles.editFooter}>
-              <TouchableOpacity style={styles.editCancelBtn} onPress={() => setEditSection(null)} activeOpacity={0.7}>
+            </KeyboardFormScrollView>
+            <KeyboardFormFooter testID="customer-edit-footer" style={styles.editFooter}>
+              <TouchableOpacity testID="customer-edit-cancel" style={styles.editCancelBtn} onPress={() => { Keyboard.dismiss(); setEditSection(null); }} activeOpacity={0.7}>
                 <Text style={styles.editCancelText}>Annulla</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.editSaveBtn, editSaving && { opacity: 0.6 }]} onPress={saveEdit} disabled={editSaving} activeOpacity={0.75} testID="customer-edit-save">
                 {editSaving ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.editSaveText}>Salva</Text>}
               </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
+            </KeyboardFormFooter>
+          </CustomerEditForm>
+        </View>
       </Modal>
     </SafeAreaView>
   );
+}
+
+function CustomerEditForm({ children }: React.PropsWithChildren) {
+  const insets = useSafeAreaInsets();
+  return <KeyboardForm testID="customer-edit-modal" footerBottomInset={Math.max(insets.bottom, 18)} style={[styles.editCard, { paddingBottom: Math.max(insets.bottom, 18) }]}>{children}</KeyboardForm>;
 }
 
 function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
@@ -717,13 +722,14 @@ const styles = StyleSheet.create({
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 3, paddingHorizontal: 9, borderRadius: 8, borderWidth: 1, borderColor: COLORS.primary, marginBottom: 8 },
   editBtnText: { fontSize: 11.5, fontWeight: '700', color: COLORS.primary },
   editBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  editCard: { backgroundColor: COLORS.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 18, paddingBottom: 26 },
+  editCard: { height: '85%', backgroundColor: COLORS.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 18, paddingBottom: 26 },
+  editClose: { minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   editHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   editTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text },
   editField: { marginBottom: 10 },
   editLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 4 },
   editInput: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, fontSize: 14.5, color: COLORS.text, backgroundColor: COLORS.bgAlt },
-  editFooter: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  editFooter: { flexDirection: 'row', gap: 10, paddingTop: 12, backgroundColor: COLORS.surface },
   editCancelBtn: { flex: 1, height: 46, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
   editCancelText: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },
   editSaveBtn: { flex: 1.4, height: 46, borderRadius: 10, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },

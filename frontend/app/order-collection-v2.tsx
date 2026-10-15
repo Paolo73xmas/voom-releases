@@ -4,11 +4,13 @@
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, FlatList, TouchableOpacity, TextInput,
-  Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
+  Alert, ActivityIndicator, Modal,
   Keyboard,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardForm, KeyboardFormScrollView, KeyboardFormFooter } from '../components/forms/KeyboardForm';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -1427,6 +1429,7 @@ function OrderCollectionV2() {
 
   const handleNext = () => {
     if (!canAdvance()) return;
+    Keyboard.dismiss();
     if (currentStep < STEPS.length - 1) {
       if (currentStep === 0 && selectedCustomer) {
         loadCashBackBalance(selectedCustomer.id);
@@ -1438,6 +1441,7 @@ function OrderCollectionV2() {
   };
 
   const handleBack = () => {
+    Keyboard.dismiss();
     if (currentStep > 0) setCurrentStep(currentStep - 1);
     else leaveOrder();
   };
@@ -1454,7 +1458,7 @@ function OrderCollectionV2() {
             <TouchableOpacity
               testID={`order-step-${i + 1}`}
               style={[s.stepDot, i < currentStep && s.stepDotDone, i === currentStep && s.stepDotCurrent]}
-              onPress={() => i < currentStep && setCurrentStep(i)}
+              onPress={() => { if (i < currentStep) { Keyboard.dismiss(); setCurrentStep(i); } }}
             >
               {i < currentStep ? (
                 <Ionicons name="checkmark" size={14} color="#fff" />
@@ -1483,6 +1487,9 @@ function OrderCollectionV2() {
         {customerSearch.length > 0 && <TouchableOpacity testID="order-customer-search-clear" accessibilityLabel="Cancella ricerca cliente" hitSlop={13} onPress={() => setCustomerSearch('')}><Ionicons name="close-circle" size={18} color="#9CA3AF" /></TouchableOpacity>}
       </View>
       <FlatList
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        removeClippedSubviews={false}
         testID="order-customer-list"
         data={filteredCustomers}
         keyExtractor={c => c.id}
@@ -1547,7 +1554,7 @@ function OrderCollectionV2() {
           )}
         </View>
 
-        <TouchableOpacity style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { setEditCartItem(inCart); setEditPrice(inCart.unit_price.toFixed(2)); setEditQty(inCart.quantity); } }}>
+        <TouchableOpacity testID={`order-product-edit-${item.id}`} style={s.prodInfo} disabled={!inCart} onPress={() => { if (inCart) { Keyboard.dismiss(); setEditCartItem(inCart); setEditPrice(inCart.unit_price.toFixed(2)); setEditQty(inCart.quantity); } }}>
           <Text style={[
             s.prodName,
             inCart && { color: '#7C3AED' },
@@ -1733,11 +1740,15 @@ function OrderCollectionV2() {
 
       <View style={s.searchBar}>
         <Ionicons name="search" size={18} color="#9CA3AF" />
-        <TextInput style={s.searchInput} placeholder="Cerca prodotto..." value={productSearch} onChangeText={setProductSearch} placeholderTextColor={COLORS.textLight} />
+        <TextInput testID="order-product-search" style={s.searchInput} placeholder="Cerca prodotto..." value={productSearch} onChangeText={setProductSearch} placeholderTextColor={COLORS.textLight} />
         {productSearch.length > 0 && <TouchableOpacity onPress={() => setProductSearch('')}><Ionicons name="close-circle" size={18} color="#9CA3AF" /></TouchableOpacity>}
       </View>
 
       <FlatList
+        testID="order-product-results"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        removeClippedSubviews={false}
         data={filteredProducts}
         keyExtractor={p => p.id}
         renderItem={renderProductRow}
@@ -1817,7 +1828,7 @@ function OrderCollectionV2() {
     };
 
     return (
-      <ScrollView style={s.stepContent} keyboardShouldPersistTaps="handled">
+      <KeyboardFormScrollView testID="order-summary-scroll" style={s.stepContent}>
         <Text style={s.stepTitle}>Riepilogo Ordine</Text>
 
         {/* ✅ Canale di raccolta ordine (parità web) */}
@@ -2163,7 +2174,7 @@ function OrderCollectionV2() {
         {/* Notes */}
         <View style={s.summaryCard}>
           <Text style={s.summaryLabel}>Note</Text>
-          <TextInput style={s.textArea} placeholder="Note per l'ordine..." value={notes} onChangeText={setNotes} multiline placeholderTextColor={COLORS.textLight} />
+          <TextInput testID="order-notes" style={s.textArea} placeholder="Note per l'ordine..." value={notes} onChangeText={setNotes} multiline textAlignVertical="top" placeholderTextColor={COLORS.textLight} />
         </View>
 
         {/* ═══ PDF Preventivo ═══ */}
@@ -2195,7 +2206,7 @@ function OrderCollectionV2() {
         </View>
 
         <View style={{ height: 100 }} />
-      </ScrollView>
+      </KeyboardFormScrollView>
     );
   };
 
@@ -2204,18 +2215,22 @@ function OrderCollectionV2() {
   // ═══════════════════════════════════════════════════
 
   const renderPackageModal = () => (
-    <Modal visible={showPackageModal} animationType="slide" transparent>
-      <View style={s.modalOverlay}>
+    <Modal visible={showPackageModal} animationType="slide" transparent onRequestClose={() => { Keyboard.dismiss(); setShowPackageModal(false); }}>
+      <KeyboardAvoidingView testID="order-package-keyboard" behavior="height" style={s.modalOverlay}>
         <View style={s.modalContent}>
           <View style={s.modalHeader}>
             <Text style={s.modalTitle}>Seleziona Pacchetto</Text>
-            <TouchableOpacity onPress={() => setShowPackageModal(false)}><Ionicons name="close" size={24} color="#374151" /></TouchableOpacity>
+            <TouchableOpacity testID="order-packages-close" style={s.modalClose} onPress={() => { Keyboard.dismiss(); setShowPackageModal(false); }}><Ionicons name="close" size={24} color="#374151" /></TouchableOpacity>
           </View>
           <View style={[s.searchBar, { marginHorizontal: 16 }]}>
             <Ionicons name="search" size={18} color="#9CA3AF" />
-            <TextInput style={s.searchInput} placeholder="Cerca pacchetto..." value={packageSearch} onChangeText={setPackageSearch} placeholderTextColor={COLORS.textLight} />
+            <TextInput testID="order-package-search" style={s.searchInput} placeholder="Cerca pacchetto..." value={packageSearch} onChangeText={setPackageSearch} placeholderTextColor={COLORS.textLight} />
           </View>
           <FlatList
+            testID="order-package-list"
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            removeClippedSubviews={false}
             data={packages.filter(p => !packageSearch.trim() || p.name.toLowerCase().includes(packageSearch.toLowerCase()))}
             keyExtractor={p => p.id}
             contentContainerStyle={{ padding: 16 }}
@@ -2230,7 +2245,7 @@ function OrderCollectionV2() {
             )}
           />
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 
@@ -2275,17 +2290,17 @@ function OrderCollectionV2() {
 
     return (
       <Modal visible={!!editCartItem} animationType="slide" transparent onRequestClose={() => { Keyboard.dismiss(); setEditCartItem(null); }}>
-        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => Keyboard.dismiss()}>
-          <TouchableOpacity activeOpacity={1} style={s.modalContent}>
+        <View style={s.modalOverlay}>
+          <KeyboardForm testID="order-edit-product-form" style={[s.modalContent, s.editForm]}>
             {/* Header */}
             <View style={s.modalHeader}>
               <Text style={s.modalTitle} numberOfLines={1}>Modifica Prodotto</Text>
-              <TouchableOpacity onPress={() => { Keyboard.dismiss(); setEditCartItem(null); }}>
+              <TouchableOpacity testID="edit-modal-close" style={s.modalClose} onPress={() => { Keyboard.dismiss(); setEditCartItem(null); }}>
                 <Ionicons name="close" size={24} color="#374151" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ padding: 16 }} keyboardShouldPersistTaps="handled">
+            <KeyboardFormScrollView testID="order-edit-product-scroll" contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}>
               {/* Product name */}
               <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 4 }}>
                 {editCartItem.product.short_description || editCartItem.product.name}
@@ -2375,9 +2390,9 @@ function OrderCollectionV2() {
               </TouchableOpacity>
 
               <View style={{ height: 20 }} />
-            </ScrollView>
-          </TouchableOpacity>
-        </TouchableOpacity>
+            </KeyboardFormScrollView>
+          </KeyboardForm>
+        </View>
       </Modal>
     );
   };
@@ -2419,8 +2434,9 @@ function OrderCollectionV2() {
   }
 
   return (
-    <View style={s.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+    <KeyboardForm testID="order-keyboard-form" style={s.container}>
+      {/* Search/list steps resize; long form steps use aware scrolling + translated footer, never both. */}
+      <KeyboardAvoidingView behavior="height" enabled={currentStep < 3 && !editCartItem && !showPackageModal} style={{ flex: 1 }}>
         {/* Header — dynamic safe area */}
         <View style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
           <TouchableOpacity onPress={handleBack} style={{ padding: 4 }}>
@@ -2469,7 +2485,7 @@ function OrderCollectionV2() {
         </View>
 
         {/* Bottom Navigation — with safe area inset */}
-        <View testID="order-bottom-navigation" style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <KeyboardFormFooter testID="order-bottom-navigation" enabled={currentStep >= 3 && !editCartItem && !showPackageModal} style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {currentStep > 0 && (
             <TouchableOpacity testID="order-previous-step" style={s.backBtn} onPress={handleBack}>
               <Ionicons name="arrow-back" size={18} color="#374151" />
@@ -2492,13 +2508,13 @@ function OrderCollectionV2() {
               )}
             </TouchableOpacity>
           )}
-        </View>
+        </KeyboardFormFooter>
 
         {renderPackageModal()}
         {renderEditPriceModal()}
         {renderProductDetailModal()}
       </KeyboardAvoidingView>
-    </View>
+    </KeyboardForm>
   );
 }
 
@@ -2506,6 +2522,8 @@ function OrderCollectionV2() {
 // STYLES
 // ═══════════════════════════════════════════════════════
 const s = StyleSheet.create({
+  editForm: { height: '85%', maxHeight: '90%' },
+  modalClose: { minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   auditStep: { color: COLORS.textMuted, fontSize: 12, paddingHorizontal: 16, paddingVertical: 8 },
   auditError: { padding: 12, color: COLORS.danger, fontSize: 14, lineHeight: 20 },
   auditNotice: { padding: 12, backgroundColor: COLORS.primarySoft },

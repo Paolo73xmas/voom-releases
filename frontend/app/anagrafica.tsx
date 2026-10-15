@@ -5,17 +5,16 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  ScrollView,
   Modal,
   Alert,
   ActivityIndicator,
-  Platform,
-  KeyboardAvoidingView,
   Keyboard,
   Switch,
   FlatList,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardForm, KeyboardFormScrollView, KeyboardFormFooter } from '../components/forms/KeyboardForm';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -758,12 +757,12 @@ export default function AnagraficaScreen() {
   // ========== RENDERERS ==========
 
   const renderStep1 = () => (
-    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
+    <KeyboardFormScrollView testID="anagrafica-photos-scroll" style={styles.stepContent} showsVerticalScrollIndicator={false}>
       {/* Phone Visit Toggle */}
       <View style={styles.phoneToggleRow}>
         <Ionicons name="call" size={20} color="#3B82F6" />
         <Text style={styles.phoneToggleLabel}>Visita Telefonica</Text>
-        <Switch value={isPhoneVisit} onValueChange={setIsPhoneVisit}
+        <Switch testID="anagrafica-phone-visit" value={isPhoneVisit} onValueChange={setIsPhoneVisit}
           trackColor={{ false: '#E5E7EB', true: '#93C5FD' }}
           thumbColor={isPhoneVisit ? '#3B82F6' : '#9CA3AF'} />
       </View>
@@ -827,14 +826,13 @@ export default function AnagraficaScreen() {
           )}
         </>
       )}
-    </ScrollView>
+    </KeyboardFormScrollView>
   );
 
   const renderStep2 = () => (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <KeyboardFormScrollView testID="anagrafica-details-scroll" style={styles.stepContent} showsVerticalScrollIndicator={false} enabled={!showSearch && !showProjectPicker && !showCustomerTypePicker}>
         {/* Search Tabaccheria Button */}
-        <TouchableOpacity style={styles.searchTabBtn} onPress={() => setShowSearch(true)}>
+        <TouchableOpacity testID="anagrafica-search-open" style={styles.searchTabBtn} onPress={() => { Keyboard.dismiss(); setShowSearch(true); }}>
           <Ionicons name="search" size={18} color="#7C3AED" />
           <Text style={styles.searchTabBtnText}>Cerca Tabaccheria</Text>
         </TouchableOpacity>
@@ -901,7 +899,8 @@ export default function AnagraficaScreen() {
         <Text style={styles.sectionTitle}>Progetto</Text>
         <TouchableOpacity
           style={styles.projectPicker}
-          onPress={() => setShowProjectPicker(true)}
+          testID="anagrafica-project-open"
+          onPress={() => { Keyboard.dismiss(); setShowProjectPicker(true); }}
           activeOpacity={0.75}
         >
           {(() => {
@@ -939,7 +938,8 @@ export default function AnagraficaScreen() {
             L'admin può aggiungere/modificare/eliminare tipi dalla web app. */}
         <TouchableOpacity
           style={styles.projectPicker}
-          onPress={() => setShowCustomerTypePicker(true)}
+          testID="anagrafica-customer-type-open"
+          onPress={() => { Keyboard.dismiss(); setShowCustomerTypePicker(true); }}
           activeOpacity={0.75}
         >
           {(() => {
@@ -957,16 +957,15 @@ export default function AnagraficaScreen() {
         </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Note *</Text>
-        <TextInput style={styles.textArea} multiline numberOfLines={4} textAlignVertical="top"
+        <TextInput testID="anagrafica-input-notes" accessibilityLabel="Note sulla visita" style={styles.textArea} multiline numberOfLines={4} textAlignVertical="top"
           value={form.notes} onChangeText={v => updateField('notes', v)} placeholder="Note sulla visita..." placeholderTextColor={COLORS.textLight} />
 
         <View style={{ height: 40 }} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardFormScrollView>
   );
 
   const renderStep3 = () => (
-    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
+    <KeyboardFormScrollView testID="anagrafica-summary-scroll" style={styles.stepContent} showsVerticalScrollIndicator={false}>
       <Text style={styles.sectionTitle}>Riepilogo Anagrafica</Text>
       <View style={styles.summaryCard}>
         <SummaryRow label="Ragione Sociale" value={form.businessName} />
@@ -989,7 +988,7 @@ export default function AnagraficaScreen() {
       <View style={styles.phoneToggleRow}>
         <Ionicons name="calendar" size={20} color="#7C3AED" />
         <Text style={styles.phoneToggleLabel}>Pianifica appuntamento</Text>
-        <Switch value={scheduleAppointment} onValueChange={setScheduleAppointment}
+        <Switch testID="anagrafica-followup-toggle" value={scheduleAppointment} onValueChange={setScheduleAppointment}
           trackColor={{ false: '#E5E7EB', true: '#DDD6FE' }} thumbColor={scheduleAppointment ? '#7C3AED' : '#9CA3AF'} />
       </View>
       {scheduleAppointment && (
@@ -1002,15 +1001,15 @@ export default function AnagraficaScreen() {
       )}
 
       <View style={{ height: 20 }} />
-    </ScrollView>
+    </KeyboardFormScrollView>
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <KeyboardForm testID="anagrafica-form" style={[styles.container, { paddingTop: insets.top }]}>
       <StamperView />
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity testID="anagrafica-back" onPress={() => { Keyboard.dismiss(); router.back(); }} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#1F2937" />
           <Text style={styles.backBtnText}>Indietro</Text>
         </TouchableOpacity>
@@ -1040,22 +1039,22 @@ export default function AnagraficaScreen() {
       {step === 3 && renderStep3()}
 
       {/* Bottom Navigation */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 8 }]}>
+      <KeyboardFormFooter testID="anagrafica-navigation" enabled={!showSearch && !showProjectPicker && !showCustomerTypePicker} style={[styles.bottomBar, { paddingBottom: insets.bottom + 8 }]}>
         {step > 1 && (
-          <TouchableOpacity style={styles.prevBtn} onPress={() => setStep(step - 1)}>
+          <TouchableOpacity testID="anagrafica-previous" style={styles.prevBtn} onPress={() => { Keyboard.dismiss(); setStep(step - 1); }}>
             <Ionicons name="arrow-back" size={18} color="#6B7280" />
             <Text style={styles.prevBtnText}>Indietro</Text>
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }} />
         {step < 3 ? (
-          <TouchableOpacity style={[styles.nextBtn, !canProceed() && styles.nextBtnDisabled]}
-            onPress={() => setStep(step + 1)} disabled={!canProceed()}>
+          <TouchableOpacity testID="anagrafica-next" style={[styles.nextBtn, !canProceed() && styles.nextBtnDisabled]}
+            onPress={() => { Keyboard.dismiss(); setStep(step + 1); }} disabled={!canProceed()}>
             <Text style={styles.nextBtnText}>Avanti</Text>
             <Ionicons name="arrow-forward" size={18} color="#FFF" />
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={[styles.submitBtn, loading && { opacity: 0.6 }]}
+          <TouchableOpacity testID="anagrafica-submit" style={[styles.submitBtn, loading && { opacity: 0.6 }]}
             onPress={handleSubmit} disabled={loading}>
             {loading ? <ActivityIndicator color="#FFF" size="small" /> : (
               <>
@@ -1065,43 +1064,46 @@ export default function AnagraficaScreen() {
             )}
           </TouchableOpacity>
         )}
-      </View>
+      </KeyboardFormFooter>
 
       {/* Search Tabaccheria Modal - Fullscreen with keyboard handling */}
       <Modal visible={showSearch} animationType="slide" onRequestClose={() => setShowSearch(false)}>
-        <View style={[styles.searchModalFull, { paddingTop: insets.top }]}>
+        <KeyboardAvoidingView testID="anagrafica-search-modal" behavior="height" style={[styles.searchModalFull, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Cerca Tabaccheria</Text>
-            <TouchableOpacity onPress={() => { setShowSearch(false); setSearchCity(''); setSearchAddress(''); setSearchNumOrdinale(''); }} style={{ padding: 4 }}>
+            <TouchableOpacity testID="anagrafica-search-close" onPress={() => { Keyboard.dismiss(); setShowSearch(false); setSearchCity(''); setSearchAddress(''); setSearchNumOrdinale(''); }} style={{ padding: 10, minHeight: 44, minWidth: 44 }}>
               <Ionicons name="close" size={24} color="#6B7280" />
             </TouchableOpacity>
           </View>
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
+          <View style={{ flex: 1, minHeight: 0 }}>
             <View style={styles.searchInputRow}>
               <Ionicons name="location" size={18} color="#9CA3AF" />
-              <TextInput style={styles.searchInput} placeholder="Comune *..." value={searchCity}
+              <TextInput testID="anagrafica-search-city" style={styles.searchInput} placeholder="Comune *..." value={searchCity}
                 onChangeText={setSearchCity} placeholderTextColor={COLORS.textLight} autoCapitalize="characters" />
             </View>
             <View style={styles.searchInputRow}>
               <Ionicons name="home" size={18} color="#9CA3AF" />
-              <TextInput style={styles.searchInput} placeholder="Indirizzo (opzionale)..." value={searchAddress}
+              <TextInput testID="anagrafica-search-address" style={styles.searchInput} placeholder="Indirizzo (opzionale)..." value={searchAddress}
                 onChangeText={setSearchAddress} placeholderTextColor={COLORS.textLight} autoCapitalize="characters" />
             </View>
             <View style={styles.searchInputRow}>
               <Ionicons name="list-outline" size={18} color="#9CA3AF" />
-              <TextInput style={styles.searchInput} placeholder="N. Ordinale (opzionale)..." value={searchNumOrdinale}
+              <TextInput testID="anagrafica-search-number" style={styles.searchInput} placeholder="N. Ordinale (opzionale)..." value={searchNumOrdinale}
                 onChangeText={setSearchNumOrdinale} placeholderTextColor={COLORS.textLight} keyboardType="numeric" />
             </View>
             {searchLoading ? (
               <ActivityIndicator style={{ marginTop: 20 }} color="#7C3AED" size="large" />
             ) : (
               <FlatList
+                testID="anagrafica-search-results"
+                keyboardDismissMode="on-drag"
+                removeClippedSubviews={false}
                 data={searchResults}
                 keyExtractor={item => item.id}
                 style={{ flex: 1, marginTop: 4 }}
                 keyboardShouldPersistTaps="handled"
                 renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.searchResultItem} onPress={() => handleSelectTab(item)}>
+                  <TouchableOpacity testID={`anagrafica-search-result-${item.id}`} style={styles.searchResultItem} onPress={() => { Keyboard.dismiss(); handleSelectTab(item); }}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.searchResultName} numberOfLines={1}>
                         {item.Num_Ordinale ? `[${item.Num_Ordinale}] ` : ''}{item.denominazione}
@@ -1124,17 +1126,18 @@ export default function AnagraficaScreen() {
                 )}
               />
             )}
-          </KeyboardAvoidingView>
+          </View>
           <View style={{ paddingBottom: insets.bottom }} />
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ✅ Web parity: Project Picker Modal */}
       <Modal visible={showProjectPicker} animationType="fade" transparent onRequestClose={() => setShowProjectPicker(false)}>
         <TouchableOpacity style={styles.projectOverlay} activeOpacity={1} onPress={() => setShowProjectPicker(false)}>
-          <View style={styles.projectSheet}>
+          <View testID="anagrafica-project-picker" style={styles.projectSheet}>
             <Text style={styles.projectSheetTitle}>Seleziona Progetto</Text>
             <TouchableOpacity
+              testID="anagrafica-project-none"
               style={[styles.projectItem, form.projectType === 'nessun_progetto' && styles.projectItemActive]}
               onPress={() => { setForm(p => ({ ...p, projectType: 'nessun_progetto' })); setShowProjectPicker(false); }}
             >
@@ -1145,6 +1148,7 @@ export default function AnagraficaScreen() {
             {projects.map(p => (
               <TouchableOpacity
                 key={p.id}
+                testID={`anagrafica-project-${p.id}`}
                 style={[styles.projectItem, form.projectType === p.slug && styles.projectItemActive]}
                 onPress={() => { setForm(prev => ({ ...prev, projectType: p.slug })); setShowProjectPicker(false); }}
               >
@@ -1160,7 +1164,7 @@ export default function AnagraficaScreen() {
       {/* ✅ Web parity: Customer Type Picker Modal (dinamico) */}
       <Modal visible={showCustomerTypePicker} animationType="fade" transparent onRequestClose={() => setShowCustomerTypePicker(false)}>
         <TouchableOpacity style={styles.projectOverlay} activeOpacity={1} onPress={() => setShowCustomerTypePicker(false)}>
-          <View style={styles.projectSheet}>
+          <View testID="anagrafica-type-picker" style={styles.projectSheet}>
             <Text style={styles.projectSheetTitle}>Seleziona Tipo Cliente</Text>
             {customerTypes.length === 0 ? (
               <Text style={{ textAlign: 'center', color: COLORS.textLight, paddingVertical: 16 }}>
@@ -1170,6 +1174,7 @@ export default function AnagraficaScreen() {
               customerTypes.map(t => (
                 <TouchableOpacity
                   key={t.id}
+                  testID={`anagrafica-type-${t.id}`}
                   style={[styles.projectItem, form.customerType === t.value && styles.projectItemActive]}
                   onPress={() => { setForm(prev => ({ ...prev, customerType: t.value })); setShowCustomerTypePicker(false); }}
                 >
@@ -1225,7 +1230,7 @@ export default function AnagraficaScreen() {
           handleSubmit();
         }}
       />
-    </View>
+    </KeyboardForm>
   );
 }
 
@@ -1236,17 +1241,22 @@ function FormField({ label, value, field, onChange, error, ...props }: {
   error?: string; placeholder?: string;
   keyboardType?: any; maxLength?: number; autoCapitalize?: any;
 }) {
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.fieldWrap}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text testID={`anagrafica-label-${field}`} style={styles.fieldLabel}>{label}</Text>
       <TextInput
-        style={[styles.fieldInput, error ? styles.fieldInputError : null]}
+        testID={`anagrafica-input-${field}`}
+        accessibilityLabel={label}
+        style={[styles.fieldInput, focused && styles.fieldInputFocused, error ? styles.fieldInputError : null]}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         value={value}
         onChangeText={v => onChange(field, v)}
         placeholderTextColor={COLORS.textLight}
         {...props}
       />
-      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+      {error ? <Text testID={`anagrafica-error-${field}`} style={styles.fieldError}>{error}</Text> : null}
     </View>
   );
 }
@@ -1309,6 +1319,7 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted, marginBottom: 4 },
   fieldInput: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: COLORS.text },
   fieldInputError: { borderColor: '#EF4444' },
+  fieldInputFocused: { borderColor: COLORS.primary, borderWidth: 2, paddingHorizontal: 13, paddingVertical: 9 },
   fieldError: { fontSize: 11, color: '#EF4444', marginTop: 2 },
   validationHint: { fontSize: 12, color: '#D97706', marginBottom: 8 },
   typeRow: { flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' },

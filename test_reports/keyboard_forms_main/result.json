@@ -1,0 +1,15 @@
+{
+  "unknown": [],
+  "writes": [],
+  "page_errors": [],
+  "requests": 21,
+  "passed": [
+    "anagrafica_complete_required_fields_search_pickers_followup_preserved",
+    "anagrafica_viewport_matrix",
+    "customer_three_edit_sections",
+    "reimbursement_fields_category_close_reopen_matrix",
+    "inspection_customer_firsttap_notes",
+    "substitution_all_steps_and_notes",
+    "rivendita_validated_manual_gps_to_photo_step"
+  ]
+}

@@ -1,4 +1,4 @@
-# ACTIVE: Tab Mappe recenter Android (not GPTour/Orchestrator/U2-d).
+# ACTIVE: Keyboard-safe mobile forms Android tablets. See keyboard_forms_current below. GPS history unchanged.
 # FINAL MAIN VERIFIED 20261015_092629: 550/550 tests59files, TSC/fullESLint0errors/prebuild PASS.
 # Browser realLeaflet, syntheticGPS/Auth/CRM: A->B fresh, stale/late ignored, rapidtap single-flight,
 # error->notice keepsB, retryC, filters/zoom stable, 320nooverflow. 5watch/5clear/0listeners/1map/0errors/0unknownbusiness.
@@ -119,6 +119,24 @@
 #====================================================================================================
 
 user_problem_statement: "Correzione urgente SOLO UI Mobile GPTour Orchestrator: esperienza mappa/tappe del classico, conversazione senza duplicazioni. Server, contratto 1.0, CRM, routing, legacy invariati. NO chiamate live, build native, Publish/deploy/OTA/push. Test locali distinti dal collaudo Android/iPhone non disponibile."
+
+keyboard_forms_current:
+  implemented: true
+  working: true
+  needs_retesting: false
+  native_verified: false
+  final_report: test_reports/KEYBOARD_FORMS_FIX.md
+  final_verification: "MAIN postrestart20261015_102434 PASS:561/561tests61files,TSC,fullESlint0errors147warnings,lockfilecheck.10browserflowgroupsPASS actualscreens+syntheticIO43requests/0unknownbusiness/0writes/0pageerrors.390/320/800x1280/800x650 sizes, nativeIME/AndroidTablet/iPhoneNOTverified.9existingUIfiles+newKeyboardForm, backend/auth/GPTour/config/depsprotectedunchangedbaseline471ef1df/envdigestsunchanged."
+  iteration86_resolution: "Preliminary report superseded. Anagrafica tests omitted requiredfields; substitutionsprefixselectedsearchnotcustomer and lookedforNextonfinalstep; rivenditetestlackedGPSandplaceholderVAT; validationsNOTchanged. RimborsiFABaddedtestID+a11y. Initial42unknownmostlyCloudflarestaticnotbusiness. ActualnewbugWEBon-drag blurs focusonprogrammaticscroll, fixedPlatformwebnone/nativeondrag; testedcharbychar+contextwiring. Scriptsnowpersisted preciseIDs/nonforcedclicks/awaitbounds."
+  priority: high
+  user_problem_statement: "Tablet Android: tastiera virtuale rende anagrafica e altri moduli sovrapposti, campo attivo non visibile e tocchi inutilizzabili. Utente conferma correzione comune solo Mobile, niente servizi reali, backend/GPTour/auth/dep/config/build/publish."
+  status_history:
+    - agent: main
+      comment: "Rimossi KAV RNheight incoerenti. KeyboardForm shared context misura footer; KASV unica authority per scroll/caret/IME, stickyfooter sola translate senza resize; insetautooff/tapshandled/clippingoff. Scope permodale, fogli85%altezza no380pxrigido. Anagrafica campi+summaryfollowup+searchmodal, customeredit, rimborsi, inspection, rivendite, appointment, substitutions. Order KAVcontroller SOLOsteps0-2, KASV+sticky SOLOsteps3-4; modalprice realView+aware noTouchablewrapper. Business logic invariata; dismissnavigation e IDs. TSC/lint0erroriPASS iniziali, preview inizialePASS."
+  test_plan:
+    current_focus: [anagrafica_fields_focus_and_persistence, summary_followup, customer_edit_modals, reimbursements, inspection, order_shipping_summary_price, appointment, substitutions, rivendite, common_footer_clearance, small_tablet_layout, unit_regressions]
+    protected_data: "TUTTO ISOLATO. memory/test_credentials.md presente ma NON USARE. Nessuna Supabase/Auth/Edge/CRM reale o GPS/photos/networkpermissions reali. Tutte richieste business intercettate failclosed PRIMA navigazione; fixtures solo test. No temp production routes left behind. Nessun nativebuild/exportnecessario/Publish/OTA/push. Non modificare appauth/config/dep/legacy o U2-d. Browserviewport ridotta NON prova tastiera Android."
+  agent_communication: "Tester: aggiungere regressioni prop/context e noenabledKAV+KASV, verificare runtime UI reale con fixture e viewport390/320/800x1280 e ridotta800x650; clic reali nonforced, caret input stays same after typing, firsttapselection, notes/scroll/navigation/state, all modals, no horizontal overflow/images overlapping. FullVitest/TSC/lint. Baseline471ef1df. Test harness earlier isolated bootstrap tests/e2e/iter84_map_recenter.py and iter62_order_welcome_fixture.py reference ONLY. No live old scripts. Report exactlimits/screenshots/pageerrors/unknownbusiness."
 
 orchestrator_presentation_fix_current:
   implemented: true

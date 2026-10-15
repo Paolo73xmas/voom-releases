@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Keyboard, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardForm, KeyboardFormScrollView, KeyboardFormFooter } from '../forms/KeyboardForm';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { randomUUID } from 'expo-crypto';
 import { format } from 'date-fns';
 import { useAuthStore } from '../../store/authStore';
@@ -10,6 +11,7 @@ import { Customer } from '../../types';
 import { COLORS } from '../../lib/theme';
 
 export function AppointmentForm({ initialDate, onClose, onSaved }: { initialDate: Date; onClose: () => void; onSaved: (id: string, date: Date) => void }) {
+  const insets = useSafeAreaInsets();
   const user = useAuthStore(s => s.user);
   const [mode, setMode] = useState<'customer' | 'free'>('customer');
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -30,7 +32,7 @@ export function AppointmentForm({ initialDate, onClose, onSaved }: { initialDate
     finally { setLoading(false); }
   };
   useEffect(() => { void load(); }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const close = () => { if (!locked.current) onClose(); };
+  const close = () => { if (!locked.current) { Keyboard.dismiss(); onClose(); } };
   const set = (field: keyof typeof form, value: string) => { setForm(old => ({ ...old, [field]: value })); setError(''); };
   const save = async () => {
     if (!user || locked.current) return;
@@ -50,8 +52,8 @@ export function AppointmentForm({ initialDate, onClose, onSaved }: { initialDate
   return <Modal visible animationType="slide" onRequestClose={close}>
     <SafeAreaView testID="appointment-form" style={styles.page}>
       <View style={styles.header}><Text testID="appointment-form-title" style={styles.title}>Nuovo appuntamento</Text><TouchableOpacity testID="appointment-cancel" onPress={close} disabled={busy} style={styles.textButton}><Text style={styles.link}>Chiudi</Text></TouchableOpacity></View>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+      <KeyboardForm testID="appointment-keyboard-form" footerBottomInset={insets.bottom} style={styles.flex}>
+        <KeyboardFormScrollView testID="appointment-fields-scroll" contentContainerStyle={styles.content}>
           <View style={styles.row}>{(['customer', 'free'] as const).map(value => <TouchableOpacity key={value} testID={`appointment-mode-${value}`} disabled={busy} accessibilityState={{ selected: mode === value }} onPress={() => { setMode(value); setError(''); }} style={[styles.mode, mode === value && styles.active]}><Text style={mode === value ? styles.white : styles.label}>{value === 'customer' ? 'Cliente / Follow-up' : 'Impegno libero'}</Text></TouchableOpacity>)}</View>
           {mode === 'customer' ? <View style={styles.field}>
             <Text testID="appointment-customer-help" style={styles.hint}>Il cliente apparirà tra i follow-up di AI Tour per il giorno scelto.</Text>
@@ -71,14 +73,17 @@ export function AppointmentForm({ initialDate, onClose, onSaved }: { initialDate
           {field('duration', 'Durata in minuti *', '30', true)}
           {field('notes', 'Note', 'Motivo e dettagli dell’appuntamento')}
           {!!error && <Text testID="appointment-error" accessibilityRole="alert" style={styles.error}>{error}</Text>}
-        </ScrollView>
+        </KeyboardFormScrollView>
+        <KeyboardFormFooter testID="appointment-footer" style={styles.footer}>
         <TouchableOpacity testID="appointment-save" onPress={save} disabled={busy} style={[styles.save, busy && styles.disabled]}>{busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.white}>Salva appuntamento</Text>}</TouchableOpacity>
-      </KeyboardAvoidingView>
+        </KeyboardFormFooter>
+      </KeyboardForm>
     </SafeAreaView>
   </Modal>;
 }
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: COLORS.bg }, flex: { flex: 1 },
+  footer: { backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 8 },
   title: { fontSize: 22, fontWeight: '700', color: COLORS.text, flex: 1 },
   content: { padding: 20, paddingBottom: 32, gap: 20 }, row: { flexDirection: 'row', gap: 8 },

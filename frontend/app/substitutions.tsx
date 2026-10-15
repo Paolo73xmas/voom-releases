@@ -6,9 +6,11 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert,
-  ActivityIndicator, Modal, ScrollView, KeyboardAvoidingView, Platform, Keyboard,
+  ActivityIndicator, Modal, ScrollView, Keyboard,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardForm, KeyboardFormScrollView, KeyboardFormFooter } from '../components/forms/KeyboardForm';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -297,7 +299,7 @@ export default function SubstitutionsScreen() {
             <Text style={{ fontSize: 12, fontWeight: '700', color }}>{type === 'retrieve' ? 'Ritiro' : 'Invio'} #{idx + 1}</Text>
             {cards.length > 1 && <TouchableOpacity onPress={() => setCards(cards.filter((_, i) => i !== idx))}><Ionicons name="close-circle" size={18} color="#DC2626" /></TouchableOpacity>}
           </View>
-          <TouchableOpacity style={st.pickerBtn} onPress={() => openPicker(type, idx)}>
+          <TouchableOpacity testID={`substitution-product-open-${type}-${idx}`} style={st.pickerBtn} onPress={() => { Keyboard.dismiss(); openPicker(type, idx); }}>
             <Text style={card.product_id ? { fontSize: 13, fontWeight: '600', color: COLORS.text, flex: 1 } : { fontSize: 13, color: COLORS.textLight, flex: 1 }} numberOfLines={1}>
               {card.product_id ? getProductName(card.product_id) : 'Seleziona prodotto...'}
             </Text>
@@ -325,9 +327,9 @@ export default function SubstitutionsScreen() {
 
   const renderCreateWizard = () => (
     <Modal visible={showCreate} animationType="slide" onRequestClose={() => setShowCreate(false)}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, paddingTop: insets.top, backgroundColor: COLORS.bg }}>
+      <KeyboardForm testID="substitution-keyboard-form" style={{ flex: 1, paddingTop: insets.top, backgroundColor: COLORS.bg }}>
         <View style={st.wizHeader}>
-          <TouchableOpacity onPress={() => setShowCreate(false)} style={{ padding: 4 }}><Ionicons name="close" size={24} color="#FFF" /></TouchableOpacity>
+          <TouchableOpacity testID="substitution-create-close" onPress={() => { Keyboard.dismiss(); setShowCreate(false); }} style={{ padding: 10, minHeight: 44, minWidth: 44 }}><Ionicons name="close" size={24} color="#FFF" /></TouchableOpacity>
           <Text style={st.wizTitle}>Nuova Sostituzione</Text>
           <Text style={{ fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)' }}>Step {createStep + 1}/4</Text>
         </View>
@@ -359,7 +361,7 @@ export default function SubstitutionsScreen() {
           </View>
         )}
 
-        <ScrollView style={{ flex: 1, padding: 16 }} keyboardShouldPersistTaps="handled">
+        <KeyboardFormScrollView testID="substitution-fields-scroll" enabled={!showProductPicker} contentContainerStyle={{ padding: 16 }}>
           {createStep === 0 && (() => {
             // Ricerca multi-parola su nome + comune + provincia (parità web):
             // ogni parola digitata deve comparire in almeno uno dei tre campi
@@ -372,10 +374,9 @@ export default function SubstitutionsScreen() {
               : customers;
             return (<>
             <Text style={st.formLabel}>Seleziona Cliente</Text>
-            <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca nome, comune o provincia..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor={COLORS.textLight} /></View>
+            <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput testID="substitution-customer-search" style={st.searchInput} placeholder="Cerca nome, comune o provincia..." value={customerSearch} onChangeText={setCustomerSearch} placeholderTextColor={COLORS.textLight} /></View>
             {selectedCustomer && <View style={st.selectedPill}><Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#7C3AED' }}>{selectedCustomer.business_name}</Text><TouchableOpacity onPress={() => setSelectedCustomer(null)}><Ionicons name="close-circle" size={18} color="#7C3AED" /></TouchableOpacity></View>}
-            <FlatList data={filteredCust.slice(0, 50)} keyExtractor={c => c.id} scrollEnabled={false}
-              renderItem={({ item: c }) => (<TouchableOpacity style={[st.listItem, selectedCustomer?.id === c.id && st.listItemSelected]} onPress={() => setSelectedCustomer(c)}><Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.text }}>{c.business_name}</Text><Text style={{ fontSize: 11, color: COLORS.textLight }}>{c.city}{c.province ? ` (${c.province})` : ''}</Text></TouchableOpacity>)} />
+            {filteredCust.slice(0, 50).map(c => (<TouchableOpacity key={c.id} testID={`substitution-customer-${c.id}`} style={[st.listItem, selectedCustomer?.id === c.id && st.listItemSelected]} onPress={() => setSelectedCustomer(c)}><Text style={{ fontSize: 14, fontWeight: '600', color: COLORS.text }}>{c.business_name}</Text><Text style={{ fontSize: 11, color: COLORS.textLight }}>{c.city}{c.province ? ` (${c.province})` : ''}</Text></TouchableOpacity>))}
             {filteredCust.length > 50 && (
               <Text style={{ fontSize: 11, color: COLORS.textMuted, textAlign: 'center', paddingVertical: 8 }}>
                 Mostrati 50 di {filteredCust.length} clienti: digita per restringere la ricerca
@@ -398,9 +399,9 @@ export default function SubstitutionsScreen() {
           </>)}
           {createStep === 3 && (<>
             <Text style={st.formLabel}>Motivo della sostituzione *</Text>
-            <TextInput style={[st.input, { minHeight: 80, textAlignVertical: 'top' }]} placeholder="Descrivi il motivo..." value={reason} onChangeText={setReason} multiline placeholderTextColor={COLORS.textLight} />
+            <TextInput testID="substitution-reason" style={[st.input, { minHeight: 80, textAlignVertical: 'top' }]} placeholder="Descrivi il motivo..." value={reason} onChangeText={setReason} multiline placeholderTextColor={COLORS.textLight} />
             <Text style={[st.formLabel, { marginTop: 16 }]}>Note aggiuntive</Text>
-            <TextInput style={[st.input, { minHeight: 60, textAlignVertical: 'top' }]} placeholder="Opzionale..." value={formNotes} onChangeText={setFormNotes} multiline placeholderTextColor={COLORS.textLight} />
+            <TextInput testID="substitution-notes" style={[st.input, { minHeight: 60, textAlignVertical: 'top' }]} placeholder="Opzionale..." value={formNotes} onChangeText={setFormNotes} multiline placeholderTextColor={COLORS.textLight} />
             <View style={[st.infoCard, { marginTop: 16 }]}>
               <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 6 }}>Riepilogo</Text>
               <Text style={{ fontSize: 13, color: COLORS.text }}>Cliente: {selectedCustomer?.business_name}</Text>
@@ -408,46 +409,46 @@ export default function SubstitutionsScreen() {
               <Text style={{ fontSize: 13, color: '#059669', marginTop: 2 }}>Prodotti Invio: {sendCards.filter(c => c.product_id).length} · {formatCurrency(totalSend)}</Text>
             </View>
           </>)}
-        </ScrollView>
+        </KeyboardFormScrollView>
 
-        <View style={[st.wizBottom, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <KeyboardFormFooter testID="substitution-navigation" enabled={!showProductPicker} style={[st.wizBottom, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {createStep > 0 && <TouchableOpacity style={st.wizBackBtn} onPress={() => setCreateStep(createStep - 1)}><Ionicons name="arrow-back" size={18} color="#374151" /><Text style={{ color: COLORS.textSecondary, fontWeight: '600' }}>Indietro</Text></TouchableOpacity>}
           <View style={{ flex: 1 }} />
           {createStep < 3 ? (
-            <TouchableOpacity style={[st.wizNextBtn, !canNext[createStep] && { opacity: 0.4 }]} onPress={() => { Keyboard.dismiss(); setCreateStep(createStep + 1); }} disabled={!canNext[createStep]}>
+            <TouchableOpacity testID="substitution-next" style={[st.wizNextBtn, !canNext[createStep] && { opacity: 0.4 }]} onPress={() => { Keyboard.dismiss(); setCreateStep(createStep + 1); }} disabled={!canNext[createStep]}>
               <Text style={{ color: '#FFF', fontWeight: '700' }}>Avanti</Text><Ionicons name="arrow-forward" size={18} color="#FFF" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={[st.wizSubmitBtn, !canNext[3] && { opacity: 0.4 }]} onPress={handleSubmitCreate} disabled={!canNext[3] || creating}>
+            <TouchableOpacity testID="substitution-submit" style={[st.wizSubmitBtn, !canNext[3] && { opacity: 0.4 }]} onPress={handleSubmitCreate} disabled={!canNext[3] || creating}>
               {creating ? <ActivityIndicator color="#FFF" /> : <><Ionicons name="checkmark-circle" size={18} color="#FFF" /><Text style={{ color: '#FFF', fontWeight: '700' }}>Crea Richiesta</Text></>}
             </TouchableOpacity>
           )}
-        </View>
+        </KeyboardFormFooter>
 
         {/* Product Picker nested INSIDE wizard modal (RN limitation: two sibling modals don't stack reliably) */}
         {renderProductPicker()}
-      </KeyboardAvoidingView>
+      </KeyboardForm>
     </Modal>
   );
 
   // ── Product Picker ──
   const renderProductPicker = () => (
     <Modal visible={showProductPicker} animationType="slide" transparent onRequestClose={() => setShowProductPicker(false)}>
-      <View style={st.modalOverlay}><View style={[st.modalContent, { paddingBottom: insets.bottom + 16 }]}>
+      <KeyboardAvoidingView testID="substitution-product-keyboard" behavior="height" style={st.modalOverlay}><View style={[st.modalContent, { paddingBottom: insets.bottom + 16 }]}>
         <View style={st.modalHandle} />
         <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border }}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 8 }}>Seleziona Prodotto</Text>
-          <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput style={st.searchInput} placeholder="Cerca prodotto (min 2 car.)..." value={pickerSearch} onChangeText={setPickerSearch} placeholderTextColor={COLORS.textLight} autoFocus /></View>
+          <View style={st.searchBar}><Ionicons name="search" size={16} color="#9CA3AF" /><TextInput testID="substitution-product-search" style={st.searchInput} placeholder="Cerca prodotto (min 2 car.)..." value={pickerSearch} onChangeText={setPickerSearch} placeholderTextColor={COLORS.textLight} autoFocus /></View>
         </View>
-        <FlatList data={filteredPicker} keyExtractor={p => p.id} style={{ maxHeight: 400 }}
+        <FlatList testID="substitution-product-results" keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" removeClippedSubviews={false} data={filteredPicker} keyExtractor={p => p.id} style={{ flexShrink: 1 }}
           renderItem={({ item: p }) => (
-            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }} onPress={() => selectProduct(p.id)}>
+            <TouchableOpacity testID={`substitution-product-${p.id}`} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }} onPress={() => { Keyboard.dismiss(); selectProduct(p.id); }}>
               <View style={{ flex: 1 }}><Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.text }} numberOfLines={1}>{p.short_description || p.name}</Text>{p.sku && <Text style={{ fontSize: 11, color: COLORS.textLight }}>{p.sku}</Text>}</View>
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#7C3AED' }}>{p.unit_price != null ? formatCurrency(Number(p.unit_price)) : ''}</Text>
             </TouchableOpacity>
           )} />
-        <TouchableOpacity style={{ padding: 16, alignItems: 'center' }} onPress={() => setShowProductPicker(false)}><Text style={{ color: COLORS.textMuted, fontWeight: '600' }}>Annulla</Text></TouchableOpacity>
-      </View></View>
+        <TouchableOpacity testID="substitution-product-cancel" style={{ padding: 16, alignItems: 'center' }} onPress={() => { Keyboard.dismiss(); setShowProductPicker(false); }}><Text style={{ color: COLORS.textMuted, fontWeight: '600' }}>Annulla</Text></TouchableOpacity>
+      </View></KeyboardAvoidingView>
     </Modal>
   );
 

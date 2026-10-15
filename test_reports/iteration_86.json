@@ -1,0 +1,84 @@
+{
+  "summary": "Frontend-only regression/testing run completed with synthetic guarded browser session. App loads; vitest/tsc/lockfile checks pass; key mobile flows partially verified; multiple UI/integration issues remain for keyboard-form scenarios.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Anagrafica Step 1 -> Step 2 progression",
+        "issue": "With synthetic run, tapping phone-visit toggle did not enable Avanti; could not consistently reach follow-up controls from that path.",
+        "testID": "anagrafica-phone-visit / anagrafica-next",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Rimborsi create FAB",
+        "issue": "Create entry point lacks stable testID; modal could not be reliably opened in mobile automation without coordinate hacks.",
+        "testID": "MISSING (FAB)",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Substitutions wizard",
+        "issue": "Next action became non-interactable/outside viewport in tested path after step transitions.",
+        "testID": "substitution-next",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Rivendite no mappa",
+        "issue": "Could not reliably progress to photo step in synthetic run (validation/navigation blocked in tested path).",
+        "testID": "rivendita-next",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Fail-closed traffic guard during synthetic frontend tests",
+        "issue": "42 unknown/blocked business requests were intercepted by guard; flows depending on unmocked business endpoints remain unverified in this run.",
+        "affected_testIDs": []
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Viewport matrix (320x568, 800x1280, 800x650)",
+        "issues": [
+          "No horizontal overflow detected on tested routes/screenshots"
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/tests/keyboard_form_regression.test.ts",
+    "/app/test_reports/artifacts_iter86/anagrafica_390x844.jpg",
+    "/app/test_reports/artifacts_iter86/order_390x844.jpg",
+    "/app/test_reports/artifacts_iter86/viewport_320x568.jpg",
+    "/app/test_reports/artifacts_iter86/viewport_800x1280.jpg",
+    "/app/test_reports/artifacts_iter86/viewport_800x650.jpg"
+  ],
+  "action_items": [
+    "Fix Anagrafica step progression consistency for phone-visit path and re-verify follow-up fields persistence.",
+    "Add missing testID to Rimborsi FAB open button for deterministic mobile testing.",
+    "Resolve Substitutions wizard next-button viewport/interactability issue after step transitions.",
+    "Recheck Rivendite no mappa step validation/navigation path under keyboard-safe flow.",
+    "If business endpoints are expected during these routes, provide/extend synthetic intercept fixtures before rerun."
+  ],
+  "critical_code_review_comments": [
+    "KeyboardForm core contract appears in place (footer measurement, +12 bottom offset, no extra IME padding props, taps handled, clipping false, ref forwarding) and now has dedicated regression tests.",
+    "Several critical interactive entry points still lack or underuse deterministic testIDs (notably Rimborsi FAB), reducing automation reliability.",
+    "No protected Expo config files were modified."
+  ],
+  "updated_files": [
+    "/app/frontend/tests/keyboard_form_regression.test.ts",
+    "/app/test_reports/iteration_86.json"
+  ],
+  "success_rate": {
+    "backend": "N/A",
+    "frontend": "70%"
+  },
+  "seed_data_creation": "No DB seed data created. Synthetic in-browser session and network fixtures only.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Unit/static regression for KeyboardForm added and passing. Full vitest/tsc/full-eslint(no errors, 147 warnings)/lockfile check passed. Browser synthetic run passed: app load, customer edit modals, inspection customer+notes, order flow through summary, viewport overflow checks. Failed/partial: anagrafica follow-up reachability in tested branch, rimborsi modal open reliability (missing FAB testID), substitutions wizard next interactability, rivendite step progression.",
+  "rca_of_issue": "Repro summary: (1) Anagrafica synthetic path: toggle->next did not consistently unlock expected progression, so follow-up selector wait timed out. (2) Rimborsi create path relies on FAB without stable testID; coordinate click is flaky and not deterministic. (3) Substitutions next became non-interactable/out-of-viewport after step transitions. (4) Rivendite progression remained blocked under tested synthetic inputs. Mitigation: add deterministic testIDs and review navigation/validation guards per step with keyboard-safe container active."
+}

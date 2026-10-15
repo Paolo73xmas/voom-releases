@@ -1,5 +1,6 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardFormScrollView } from '../forms/KeyboardForm';
 import { Ionicons } from '@expo/vector-icons';
 import type { ShippingMethod } from '../../lib/api/order-collection';
 import { getShippingBaseCost } from '../../lib/order-checkout';
@@ -13,7 +14,7 @@ const money = (value: number) => `€${value.toFixed(2)}`;
 
 export function ShippingMethodStep(props: Props) {
   const { methods, selectedId, onSelect, isForeignOrder, orderBase, address, onAddressChange } = props;
-  return <ScrollView testID="order-shipping-list" style={styles.list} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+  return <KeyboardFormScrollView testID="order-shipping-list" style={styles.list} contentContainerStyle={styles.content}>
     <Text testID="order-shipping-title" style={styles.title}>Metodo di Spedizione</Text>
     <Text testID="order-shipping-scope" style={styles.scope}>{isForeignOrder ? 'Ordine Estero · Spedizioni tipo ESTERO del gestionale' : 'Ordine Italia · Spedizioni tipo ITALIA del gestionale'}</Text>
     {methods.length === 0 && <Text testID="order-shipping-empty" style={styles.scope}>Nessuna spedizione attiva compatibile con questo ordine.</Text>}
@@ -34,7 +35,7 @@ export function ShippingMethodStep(props: Props) {
     <Text testID="order-shipping-address-title" style={styles.title}>Indirizzo di spedizione (opzionale)</Text>
     <TextInput testID="order-shipping-address" accessibilityLabel="Indirizzo di spedizione personalizzato" style={styles.address}
       placeholder="Indirizzo personalizzato..." value={address} onChangeText={onAddressChange} multiline placeholderTextColor={COLORS.textLight} />
-  </ScrollView>;
+  </KeyboardFormScrollView>;
 }
 
 const styles = StyleSheet.create({

@@ -8,10 +8,11 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardFormScrollView } from '../../components/forms/KeyboardForm';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -26,6 +27,7 @@ import { usePhotoStamper } from '../../components/PhotoStamper';
 import { COLORS } from '../../lib/theme';
 
 export default function NewInspectionScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
   const { user } = useAuthStore();
@@ -229,12 +231,9 @@ export default function NewInspectionScreen() {
   );
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <StamperView />
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardFormScrollView testID="inspection-form-scroll" contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
         {/* GPS Status */}
         <View style={styles.gpsCard}>
           <View style={styles.gpsHeader}>
@@ -265,6 +264,7 @@ export default function NewInspectionScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Cliente *</Text>
           <TouchableOpacity
+            testID="inspection-customer-picker"
             style={styles.pickerButton}
             onPress={() => setShowCustomerPicker(!showCustomerPicker)}
           >
@@ -291,16 +291,18 @@ export default function NewInspectionScreen() {
               <View style={styles.searchBar}>
                 <Ionicons name="search" size={18} color="#6B7280" />
                 <TextInput
+                  testID="inspection-customer-search"
                   style={styles.searchInput}
                   placeholder="Cerca cliente..."
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
               </View>
-              <ScrollView style={styles.customerList} nestedScrollEnabled>
+              <ScrollView testID="inspection-customer-results" style={styles.customerList} nestedScrollEnabled keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" removeClippedSubviews={false}>
                 {filteredCustomers.slice(0, 20).map((customer) => (
                   <TouchableOpacity
                     key={customer.id}
+                    testID={`inspection-customer-${customer.id}`}
                     style={styles.customerOption}
                     onPress={() => {
                       setSelectedCustomer(customer);
@@ -351,6 +353,7 @@ export default function NewInspectionScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Note</Text>
           <TextInput
+            testID="inspection-notes"
             style={styles.notesInput}
             placeholder="Aggiungi note sull'ispezione..."
             placeholderTextColor={COLORS.textLight}
@@ -364,6 +367,7 @@ export default function NewInspectionScreen() {
 
         {/* Submit Button */}
         <TouchableOpacity
+          testID="inspection-submit"
           style={[
             styles.submitButton,
             (!selectedCustomer || !location || loading) && styles.submitButtonDisabled
@@ -380,10 +384,10 @@ export default function NewInspectionScreen() {
             </>
           )}
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardFormScrollView>
       {/* Invio foto in corso: barra 0-100%, non chiudere l'app */}
       <UploadProgressOverlay visible={uploadPct != null} progress={uploadPct ?? 0} label="Invio foto ispezione" />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

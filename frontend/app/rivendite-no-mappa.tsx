@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  Alert, ActivityIndicator, Switch, Platform, KeyboardAvoidingView,
+  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  Alert, ActivityIndicator, Switch, Keyboard,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { KeyboardForm, KeyboardFormScrollView, KeyboardFormFooter } from '../components/forms/KeyboardForm';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -422,7 +423,7 @@ export default function RivenditeNoMappaScreen() {
 
   // ==== STEP 1: ANAGRAFICA + GPS ====
   const renderStep1 = () => (
-    <ScrollView style={styles.scrollContent} keyboardShouldPersistTaps="handled">
+    <KeyboardFormScrollView testID="rivendita-details-scroll" style={styles.scrollContent}>
       {/* GPS Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Posizione GPS</Text>
@@ -443,12 +444,12 @@ export default function RivenditeNoMappaScreen() {
           <View style={styles.manualGpsRow}>
             <View style={styles.gpsInputWrap}>
               <Text style={styles.inputLabel}>Latitudine</Text>
-              <TextInput style={styles.input} value={manualLat} onChangeText={setManualLat}
+              <TextInput testID="rivendita-latitude" style={styles.input} value={manualLat} onChangeText={setManualLat}
                 placeholder="es. 45.4642" placeholderTextColor={COLORS.textLight} keyboardType="decimal-pad" />
             </View>
             <View style={styles.gpsInputWrap}>
               <Text style={styles.inputLabel}>Longitudine</Text>
-              <TextInput style={styles.input} value={manualLng} onChangeText={setManualLng}
+              <TextInput testID="rivendita-longitude" style={styles.input} value={manualLng} onChangeText={setManualLng}
                 placeholder="es. 9.1900" placeholderTextColor={COLORS.textLight} keyboardType="decimal-pad" />
             </View>
           </View>
@@ -479,7 +480,7 @@ export default function RivenditeNoMappaScreen() {
         <Text style={styles.sectionTitle}>Dati Anagrafica</Text>
 
         <Text style={styles.inputLabel}>Ragione Sociale *</Text>
-        <TextInput style={styles.input} value={form.businessName} onChangeText={v => updateForm('businessName', v)}
+        <TextInput testID="rivendita-business-name" style={styles.input} value={form.businessName} onChangeText={v => updateForm('businessName', v)}
           placeholder="Ragione Sociale" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
         {linkedTab ? (
           <RegistryLinkedBanner
@@ -496,37 +497,37 @@ export default function RivenditeNoMappaScreen() {
         )}
 
         <Text style={styles.inputLabel}>N. Ordinale</Text>
-        <TextInput style={styles.input} value={form.numOrdinale} onChangeText={v => updateForm('numOrdinale', v)}
+        <TextInput testID="rivendita-number" style={styles.input} value={form.numOrdinale} onChangeText={v => updateForm('numOrdinale', v)}
           placeholder="Numero Ordinale (opzionale)" placeholderTextColor={COLORS.textLight} keyboardType="numeric" />
 
         <Text style={styles.inputLabel}>P.IVA * (11 cifre)</Text>
-        <TextInput style={styles.input} value={form.vatNumber} onChangeText={v => updateForm('vatNumber', v)}
+        <TextInput testID="rivendita-vat" style={styles.input} value={form.vatNumber} onChangeText={v => updateForm('vatNumber', v)}
           placeholder="12345678901" placeholderTextColor={COLORS.textLight} keyboardType="numeric" maxLength={11} />
 
         <Text style={styles.inputLabel}>Codice Fiscale (16 caratteri)</Text>
-        <TextInput style={styles.input} value={form.fiscalCode}
+        <TextInput testID="rivendita-fiscal-code" style={styles.input} value={form.fiscalCode}
           onChangeText={v => updateForm('fiscalCode', v.toUpperCase())}
           placeholder="ABCDEF12G34H567I" placeholderTextColor={COLORS.textLight} autoCapitalize="characters" maxLength={16} />
 
         <Text style={styles.inputLabel}>Indirizzo *</Text>
-        <TextInput style={styles.input} value={form.address} onChangeText={v => updateForm('address', v)}
+        <TextInput testID="rivendita-address" style={styles.input} value={form.address} onChangeText={v => updateForm('address', v)}
           placeholder="Via Roma 1" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
 
         <View style={styles.row}>
           <View style={{ flex: 2 }}>
             <Text style={styles.inputLabel}>Città *</Text>
-            <TextInput style={styles.input} value={form.city} onChangeText={v => updateForm('city', v)}
+            <TextInput testID="rivendita-city" style={styles.input} value={form.city} onChangeText={v => updateForm('city', v)}
               placeholder="Roma" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={styles.inputLabel}>Prov. *</Text>
-            <TextInput style={styles.input} value={form.province}
+            <TextInput testID="rivendita-province" style={styles.input} value={form.province}
               onChangeText={v => updateForm('province', v.toUpperCase())}
               placeholder="RM" placeholderTextColor={COLORS.textLight} autoCapitalize="characters" maxLength={2} />
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={styles.inputLabel}>CAP</Text>
-            <TextInput style={styles.input} value={form.postalCode} onChangeText={v => updateForm('postalCode', v)}
+            <TextInput testID="rivendita-postal-code" style={styles.input} value={form.postalCode} onChangeText={v => updateForm('postalCode', v)}
               placeholder="00100" placeholderTextColor={COLORS.textLight} keyboardType="numeric" maxLength={5} />
           </View>
         </View>
@@ -539,34 +540,34 @@ export default function RivenditeNoMappaScreen() {
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <Text style={styles.inputLabel}>Nome</Text>
-            <TextInput style={styles.input} value={form.contactName} onChangeText={v => updateForm('contactName', v)}
+            <TextInput testID="rivendita-contact-name" style={styles.input} value={form.contactName} onChangeText={v => updateForm('contactName', v)}
               placeholder="Mario" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={styles.inputLabel}>Cognome</Text>
-            <TextInput style={styles.input} value={form.contactSurname}
+            <TextInput testID="rivendita-contact-surname" style={styles.input} value={form.contactSurname}
               onChangeText={v => updateForm('contactSurname', v)}
               placeholder="Rossi" placeholderTextColor={COLORS.textLight} autoCapitalize="words" />
           </View>
         </View>
 
         <Text style={styles.inputLabel}>Telefono</Text>
-        <TextInput style={styles.input} value={form.contactPhone} onChangeText={v => updateForm('contactPhone', v)}
+        <TextInput testID="rivendita-phone" style={styles.input} value={form.contactPhone} onChangeText={v => updateForm('contactPhone', v)}
           placeholder="333 1234567" placeholderTextColor={COLORS.textLight} keyboardType="phone-pad" />
 
         <Text style={styles.inputLabel}>Email</Text>
-        <TextInput style={styles.input} value={form.contactEmail} onChangeText={v => updateForm('contactEmail', v)}
+        <TextInput testID="rivendita-email" style={styles.input} value={form.contactEmail} onChangeText={v => updateForm('contactEmail', v)}
           placeholder="email@esempio.com" placeholderTextColor={COLORS.textLight} keyboardType="email-address" autoCapitalize="none" />
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <Text style={styles.inputLabel}>PEC</Text>
-            <TextInput style={styles.input} value={form.pec} onChangeText={v => updateForm('pec', v)}
+            <TextInput testID="rivendita-pec" style={styles.input} value={form.pec} onChangeText={v => updateForm('pec', v)}
               placeholder="pec@esempio.it" placeholderTextColor={COLORS.textLight} keyboardType="email-address" autoCapitalize="none" />
           </View>
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={styles.inputLabel}>SDI</Text>
-            <TextInput style={styles.input} value={form.sdi}
+            <TextInput testID="rivendita-sdi" style={styles.input} value={form.sdi}
               onChangeText={v => updateForm('sdi', v.toUpperCase())}
               placeholder="ABCDE12" placeholderTextColor={COLORS.textLight} autoCapitalize="characters" maxLength={7} />
           </View>
@@ -594,19 +595,19 @@ export default function RivenditeNoMappaScreen() {
       {/* Notes */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Note</Text>
-        <TextInput style={[styles.input, styles.textArea]} value={form.notes}
+        <TextInput testID="rivendita-notes" style={[styles.input, styles.textArea]} value={form.notes}
           onChangeText={v => updateForm('notes', v)}
           placeholder="Note sulla rivendita..." placeholderTextColor={COLORS.textLight}
           multiline numberOfLines={3} textAlignVertical="top" />
       </View>
 
       <View style={{ height: 24 }} />
-    </ScrollView>
+    </KeyboardFormScrollView>
   );
 
   // ==== STEP 2: PHOTOS ====
   const renderStep2 = () => (
-    <ScrollView style={styles.scrollContent}>
+    <KeyboardFormScrollView testID="rivendita-photos-scroll" style={styles.scrollContent}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Foto della Rivendita</Text>
         <Text style={styles.sectionDesc}>Scatta almeno 2 foto del punto vendita (fronte e interno)</Text>
@@ -663,11 +664,11 @@ export default function RivenditeNoMappaScreen() {
       </View>
 
       <View style={{ height: 24 }} />
-    </ScrollView>
+    </KeyboardFormScrollView>
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <KeyboardForm testID="rivendita-keyboard-form" style={[styles.container, { paddingTop: insets.top }]}>
       <StamperView />
       {/* Header */}
       <View style={styles.header}>
@@ -692,19 +693,18 @@ export default function RivenditeNoMappaScreen() {
       <Text style={styles.stepLabel}>{step === 1 ? 'Anagrafica + GPS' : 'Foto e Registrazione'}</Text>
 
       {/* Content */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {step === 1 ? renderStep1() : renderStep2()}
-      </KeyboardAvoidingView>
+      {step === 1 ? renderStep1() : renderStep2()}
 
       {/* Bottom button */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 8 }]}>
+      <KeyboardFormFooter testID="rivendita-navigation" style={[styles.bottomBar, { paddingBottom: insets.bottom + 8 }]}>
         {step === 1 ? (
-          <TouchableOpacity style={styles.primaryBtn} onPress={goToStep2}>
+          <TouchableOpacity testID="rivendita-next" style={styles.primaryBtn} onPress={() => { Keyboard.dismiss(); goToStep2(); }}>
             <Text style={styles.primaryBtnText}>Avanti - Foto</Text>
             <Ionicons name="arrow-forward" size={20} color="#FFF" />
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
+            testID="rivendita-submit"
             style={[styles.primaryBtn, (photos.length < 2 || loading) && styles.primaryBtnDisabled]}
             onPress={handleSubmit}
             disabled={photos.length < 2 || loading}
@@ -719,7 +719,7 @@ export default function RivenditeNoMappaScreen() {
             )}
           </TouchableOpacity>
         )}
-      </View>
+      </KeyboardFormFooter>
       {/* Invio foto in corso: barra 0-100%, non chiudere l'app */}
       <UploadProgressOverlay visible={uploadPct != null} progress={uploadPct ?? 0} label="Invio foto visita" />
       <DuplicateVatDialog
@@ -736,7 +736,7 @@ export default function RivenditeNoMappaScreen() {
           handleSubmit();
         }}
       />
-    </View>
+    </KeyboardForm>
   );
 }
 

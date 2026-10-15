@@ -1,0 +1,11 @@
+{
+  "unknown": [],
+  "writes": [],
+  "page_errors": [],
+  "requests": 22,
+  "passed": [
+    "order_search_price_package_shipping_summary_state_and_viewports",
+    "appointment_free_all_fields_customer_pick_and_cancel",
+    "substitution_nested_product_picker_selection"
+  ]
+}
